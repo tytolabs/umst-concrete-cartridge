@@ -1,0 +1,54 @@
+use burn::tensor::{backend::Backend, Tensor};
+
+/// Pure tensor implementation of the Transport Engine.
+/// Models capillary porosity, tortuosity, and chloride diffusivity
+/// across the material manifold.
+pub struct TransportEngine<B: Backend> {
+    _backend: std::marker::PhantomData<B>,
+}
+
+impl<B: Backend> TransportEngine<B> {
+    /// Computes Capillary Porosity based on water/cement ratio and hydration degree.
+    ///
+    /// phi_c = (w/c - 0.36 * alpha) / (w/c + 0.32)
+    ///
+    /// # Arguments
+    /// * `wc_ratio` - Water/Cement ratio tensor [Batch, Depth, Height, Width]
+    /// * `degree_hydration` (alpha) - Degree of hydration [Batch, Depth, Height, Width]
+    pub fn compute_capillary_porosity(
+        wc_ratio: Tensor<B, 4>,
+        degree_hydration: Tensor<B, 4>,
+    ) -> Tensor<B, 4> {
+        let alpha_036 = degree_hydration.mul_scalar(0.36_f32);
+        let numerator = wc_ratio.clone().sub(alpha_036);
+
+        let denominator = wc_ratio.add_scalar(0.32_f32);
+
+        // Denominator is always positive for valid W/C, but clamp for safety
+        let safe_den = denominator.clamp_min(0.01_f32);
+
+        let porosity = numerator.div(safe_den);
+
+        // Porosity cannot be negative
+        porosity.clamp_min(0.0_f32)
+    }
+
+    /// Computes apparent chloride diffusivity using the empirical Life-365 / Nernst-Planck model.
+    ///
+    /// D = D_ref * (phi_c)^n
+    ///
+    /// # Arguments
+    /// * `capillary_porosity` - Computed porosity tensor
+    /// * `ref_diffusivity` - Reference diffusivity scalar tensor
+    pub fn compute_chloride_diffusivity(
+        capillary_porosity: Tensor<B, 4>,
+        ref_diffusivity: Tensor<B, 4>,
+    ) -> Tensor<B, 4> {
+        // Typical exponent for concrete diffusivity vs porosity is ~3.0 to 4.0
+        let exponent = 3.5_f32;
+
+        let pore_network = capillary_porosity.powf_scalar(exponent);
+
+        pore_network.mul(ref_diffusivity)
+    }
+}

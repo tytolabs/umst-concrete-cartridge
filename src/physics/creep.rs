@@ -1,0 +1,89 @@
+use burn::tensor::{backend::Backend, Tensor};
+
+/// Pure tensor implementation of the Creep Engine.
+/// Computes basic and drying creep compliance (Extended Microprestress Solidification theory / fib Model Code 2010).
+pub struct CreepEngine<B: Backend> {
+    _backend: std::marker::PhantomData<B>,
+}
+
+impl<B: Backend> CreepEngine<B> {
+    /// Computes the total creep compliance (elastic + basic + drying creep).
+    /// Used by the orchestrator to evaluate long-term viscoelastic stability.
+    ///
+    /// # Arguments
+    /// * `compressive_strength` - 28-day compressive strength (MPa)
+    /// * `wc_ratio` - Water/Cement ratio
+    /// * `ambient_rh` - Relative humidity (0.0 to 1.0)
+    /// * `t_load_days` - Age at loading (days)
+    /// * `t_current_days` - Current age (days)
+    pub fn compute_compliance(
+        compressive_strength: Tensor<B, 4>,
+        wc_ratio: Tensor<B, 4>,
+        ambient_rh: Tensor<B, 4>,
+        t_load_days: f32,
+        t_current_days: f32,
+    ) -> Tensor<B, 4> {
+        let duration = (t_current_days - t_load_days).max(0.1_f32);
+
+        // 1. Elastic Modulus
+        let fc_safe = compressive_strength.clone().clamp_min(1.0_f32);
+        let e_28 = fc_safe
+            .clone()
+            .div_scalar(10.0_f32)
+            .powf_scalar(0.3_f32)
+            .mul_scalar(22.0_f32); // GPa
+
+        // β_cc load factor
+        let high_strength_mask = fc_safe.clone().greater_elem(50.0_f32);
+        let mid_strength_mask = fc_safe
+            .clone()
+            .lower_equal_elem(50.0_f32)
+            .bool_and(fc_safe.clone().greater_elem(35.0_f32));
+
+        let mut s_factor = fc_safe.clone().zeros().add_scalar(0.38_f32);
+        s_factor = s_factor
+            .mask_fill(high_strength_mask, 0.20_f32)
+            .mask_fill(mid_strength_mask, 0.25_f32);
+
+        let t_ratio = (28.0_f32 / t_load_days).sqrt();
+        let beta_cc_load = s_factor.mul_scalar(1.0_f32 - t_ratio).exp();
+        let e_load = e_28.clone().mul(beta_cc_load.sqrt());
+
+        let elastic_compliance = e_load.powf_scalar(-1.0_f32);
+
+        // 2. Aging Factor
+        let aging_factor = 1.0_f32 / (0.1_f32 + t_load_days.powf(0.2_f32));
+
+        // 3. Basic Creep Compliance
+        let lambda_0 = 10.0_f32;
+        let c0_base = wc_ratio.clone().mul_scalar(0.40_f32).add_scalar(0.30_f32);
+        let strength_factor = fc_safe.powf_scalar(-1.0_f32).mul_scalar(40.0_f32).sqrt();
+
+        let c0 = c0_base
+            .mul(strength_factor.clone())
+            .mul_scalar(aging_factor);
+        let time_func = (1.0_f32 + duration / lambda_0).ln();
+        let basic_creep = c0.mul_scalar(time_func).div(e_28.clone());
+
+        // 4. Drying Creep Compliance (Pickett Effect)
+        let rh_effect = ambient_rh
+            .clone()
+            .mul_scalar(-1.0_f32)
+            .add_scalar(1.0_f32)
+            .clamp_min(0.0_f32)
+            .powf_scalar(1.5_f32);
+        let drying_time_factor = (duration / (duration + 100.0_f32)).min(1.0_f32);
+
+        let cd = wc_ratio
+            .div_scalar(0.45_f32)
+            .powf_scalar(1.5_f32)
+            .mul(strength_factor)
+            .mul_scalar(0.15_f32);
+        let drying_creep = cd.mul(rh_effect).mul_scalar(drying_time_factor).div(e_28);
+
+        // 5. Total Compliance
+        let total_compliance = elastic_compliance.add(basic_creep).add(drying_creep);
+
+        total_compliance
+    }
+}

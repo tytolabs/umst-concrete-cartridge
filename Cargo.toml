@@ -1,0 +1,37 @@
+[package]
+name = "umst-concrete-cartridge"
+version = "0.1.0"
+edition = "2021"
+authors = ["Santhosh Shyamsundar", "Santosh Prabhu Shenbagamoorthy", "Studio Tyto"]
+description = "The First Thermodynamic Science Cartridge for the UMST Framework"
+repository = "https://github.com/studiotyto/umst-concrete-cartridge"
+license = "Apache-2.0"
+keywords = ["concrete", "materials", "thermodynamics", "physics", "burn"]
+
+[dependencies]
+# Deep Learning & Differentiable Physics
+burn = { version = "0.13.0", features = ["wgpu", "train"] }
+time = "=0.3.36"
+bincode = "=2.0.0-rc.3"
+umst-manifold = { path = "../umst-manifold" }
+burn-ndarray = "0.13.0"
+
+# Serialization & Deserialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Concurrency & Async (for API)
+tokio = { version = "1.36", features = ["full"] }
+
+# API & gRPC
+axum = "0.7"
+tonic = "0.11"
+prost = "0.12"
+
+# Math & Utils
+rand = "0.8"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[build-dependencies]
+tonic-build = "0.11"
