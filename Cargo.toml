@@ -22,14 +22,10 @@ categories = ["science", "mathematics", "simulation"]
 burn = { version = "0.13.0", default-features = false }
 burn-ndarray = "0.13.0"
 
-# UMST manifold substrate.
-#
-# Default build assumes a sibling checkout (`../umst-manifold`) for
-# co-developed thesis work. To consume from a tagged release without
-# the sibling checkout, comment the path line and uncomment the git
-# block below.
-umst-manifold = { path = "../umst-manifold" }
-# umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
+# UMST manifold substrate (git so CI and standalone clones resolve).
+# For local co-development with a sibling checkout, use `cargo patch` or swap to `path`:
+# umst-manifold = { path = "../umst-manifold" }
+umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
 
 # Serialization.
 serde = { version = "1.0", features = ["derive"] }

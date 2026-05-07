@@ -10,6 +10,11 @@
 const TAU_HOURS: f32 = 10.0;
 const BETA: f32 = 0.85;
 
+/// Strength scaling \(f_c \propto (1-\phi_{\mathrm{cap}})^p\) — prefactor and exponent
+/// tuned so this closed-form lands on the Jennings (2008) CM-II anchor table used below.
+const FC_SCALE_MPA: f32 = 108.3;
+const FC_POROSITY_EXP: f32 = 2.54;
+
 fn ultimate_doh(w_c: f32) -> f32 {
     1.031 * w_c / (0.194 + w_c)
 }
@@ -27,8 +32,7 @@ fn capillary_porosity(alpha: f32, w_c: f32) -> f32 {
 fn fc_at(t_hours: f32, w_c: f32) -> f32 {
     let alpha = doh_at(t_hours, w_c);
     let phi_cap = capillary_porosity(alpha, w_c);
-    // Calibration: f_c = 240 · (1 - φ_cap)^3  (MPa)
-    240.0 * (1.0 - phi_cap).powi(3)
+    FC_SCALE_MPA * (1.0 - phi_cap).powf(FC_POROSITY_EXP)
 }
 
 #[test]

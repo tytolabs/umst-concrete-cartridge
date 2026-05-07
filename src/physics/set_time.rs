@@ -23,6 +23,7 @@ impl<B: Backend> SetTimeEngine<B> {
     /// * `retarder_effect` - Retarder dosage/effect tensor (0.0 to 3.0)
     /// * `cement_blaine` - Fineness of cement (typically ~350 m2/kg)
     /// * `cement_c3s` - C3S content fraction (typically ~0.55)
+    #[allow(clippy::too_many_arguments)]
     pub fn compute_setting_time(
         wc_ratio: Tensor<B, 4>,
         temperature_c: Tensor<B, 4>,

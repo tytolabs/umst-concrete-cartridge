@@ -87,8 +87,6 @@ impl<B: Backend> CreepEngine<B> {
         let drying_creep = cd.mul(rh_effect).mul_scalar(drying_time_factor).div(e_28);
 
         // 5. Total Compliance
-        let total_compliance = elastic_compliance.add(basic_creep).add(drying_creep);
-
-        total_compliance
+        elastic_compliance.add(basic_creep).add(drying_creep)
     }
 }

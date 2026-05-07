@@ -20,6 +20,12 @@ impl<B: Backend> ConcreteCartridge<B> {
     }
 }
 
+impl<B: Backend> Default for ConcreteCartridge<B> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<B: Backend> IScienceCartridge<B> for ConcreteCartridge<B> {
     fn compute_all(&self, _mix: &MixTensor<B>) -> PhysicalResult<B> {
         // Placeholder for 1D batch implementation

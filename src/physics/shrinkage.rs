@@ -124,11 +124,9 @@ impl<B: Backend> ShrinkageEngine<B> {
         let scm_factor = scm_ratio.mul_scalar(0.3_f32).add_scalar(1.0_f32);
 
         // Final Autogenous Strain (microstrain, negative value)
-        let autogenous_strain = eps_as_ult
+        eps_as_ult
             .mul(development)
             .mul(paste_factor)
-            .mul(scm_factor);
-
-        autogenous_strain
+            .mul(scm_factor)
     }
 }

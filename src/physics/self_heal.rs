@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Autogenous Healing Engine.
@@ -37,11 +36,9 @@ impl<B: Backend> SelfHealEngine<B> {
         let nano_boost = nano_dosage.clone().mul_scalar(0.5_f32).add_scalar(1.0_f32);
 
         // Healing potential metric (0.0 to 1.0)
-        let healing_potential = unhydrated_fraction
+        unhydrated_fraction
             .mul(moisture_factor)
             .mul(nano_boost)
-            .clamp(0.0_f32, 1.0_f32);
-
-        healing_potential
+            .clamp(0.0_f32, 1.0_f32)
     }
 }

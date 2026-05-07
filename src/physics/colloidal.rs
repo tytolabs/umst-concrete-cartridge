@@ -73,11 +73,9 @@ impl<B: Backend> ColloidalEngine<B> {
         // If potential < -5 kT, flocculation increases yield stress
         // multiplier ranges from 1.0 (stable) to ~3.0 (highly flocculated)
         let negative_barrier = dlvo_potential_kt.clone().clamp_max(-5.0_f32);
-        let flocculation = negative_barrier
+        negative_barrier
             .mul_scalar(-0.1_f32)
             .add_scalar(1.0_f32)
-            .clamp(1.0_f32, 5.0_f32);
-
-        flocculation
+            .clamp(1.0_f32, 5.0_f32)
     }
 }
