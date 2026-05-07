@@ -2,36 +2,57 @@
 name = "umst-concrete-cartridge"
 version = "0.1.0"
 edition = "2021"
-authors = ["Santhosh Shyamsundar", "Santosh Prabhu Shenbagamoorthy", "Studio Tyto"]
-description = "The First Thermodynamic Science Cartridge for the UMST Framework"
-repository = "https://github.com/studiotyto/umst-concrete-cartridge"
+rust-version = "1.75"
+authors = [
+    "Santhosh Shyamsundar <santhoshshyamsundar@gmail.com>",
+    "Santosh Prabhu Shenbagamoorthy",
+    "Studio TYTO",
+]
+description = "Differentiable constitutive engine for cementitious materials, mounted on the UMST manifold."
+documentation = "https://docs.rs/umst-concrete-cartridge"
+homepage = "https://github.com/tytolabs/umst-concrete-cartridge"
+repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 license = "MIT"
-keywords = ["concrete", "materials", "thermodynamics", "physics", "burn"]
+readme = "README.md"
+keywords = ["concrete", "materials", "thermodynamics", "constitutive", "burn"]
+categories = ["science", "mathematics", "simulation"]
 
 [dependencies]
-# Deep Learning & Differentiable Physics
+# Differentiable physics on the burn tensor framework.
 burn = { version = "0.13.0", features = ["wgpu", "train"] }
-time = "=0.3.36"
-bincode = "=2.0.0-rc.3"
-umst-manifold = { path = "../umst-manifold" }
 burn-ndarray = "0.13.0"
 
-# Serialization & Deserialization
+# UMST manifold substrate.
+#
+# Default build assumes a sibling checkout (`../umst-manifold`) for
+# co-developed thesis work. To consume from a tagged release without
+# the sibling checkout, comment the path line and uncomment the git
+# block below.
+umst-manifold = { path = "../umst-manifold", git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
+
+# Serialization.
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-# Concurrency & Async (for API)
+# Async runtime (used by the optional API surface).
 tokio = { version = "1.36", features = ["full"] }
 
-# API & gRPC
-axum = "0.7"
-tonic = "0.11"
-prost = "0.12"
+# Pinned for upstream MSRV compatibility.
+time = "=0.3.36"
+bincode = "=2.0.0-rc.3"
 
-# Math & Utils
+# Numerics & utilities.
 rand = "0.8"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
-[build-dependencies]
-tonic-build = "0.11"
+[dev-dependencies]
+approx = "0.5"
+
+[lib]
+name = "umst_concrete_cartridge"
+path = "src/lib.rs"
+
+[[example]]
+name = "hydration_simulation"
+path = "examples/hydration_simulation.rs"

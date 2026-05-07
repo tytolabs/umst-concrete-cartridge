@@ -7,87 +7,183 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # UMST Concrete Cartridge
 
-### The First Thermodynamic Science Cartridge for the UMST Framework
+### Differentiable constitutive engine for cementitious materials
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18768547.svg)](https://doi.org/10.5281/zenodo.18768547)
-[![Rust](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
+[![CI](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
+[![Crates.io](https://img.shields.io/crates/v/umst-concrete-cartridge.svg)](https://crates.io/crates/umst-concrete-cartridge)
+[![Docs.rs](https://img.shields.io/docsrs/umst-concrete-cartridge)](https://docs.rs/umst-concrete-cartridge)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+[![Rust 2021](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
 
-**Pure Functional `burn` Tensors&ensp;·&ensp;Multi-Physics Constitutive Engine&ensp;·&ensp;Roussel Constraint Mapping&ensp;·&ensp;Jennings CM-II Hydration**
+**Pure functional `burn` tensors  ·  22 coupled constitutive modules  ·  Roussel printability constraints  ·  Jennings CM-II hydration**
 
-*`umst-concrete-cartridge` is the physical constitutive engine that mounts directly onto the UMST Manifold. Written entirely in pure, functional tensor operations, it maps topological scalar features into real-world concrete material behaviors.*
+*The first scientific cartridge for the [UMST manifold](https://github.com/tytolabs/umst-manifold). Maps topological scalar features on the manifold's 1-skeleton into the constitutive behaviour of cementitious materials, end-to-end differentiable with respect to mix design.*
 
 </div>
 
 <br>
 
 | | |
-|:---:|:---:|
-| **Multi-Physics Solvers** | 14 concurrent material science engines |
-| **Fully Differentiable** | End-to-end continuous gradients via `burn` |
-| **Topological Boundary Dispatch** | Solves exclusively over the Manifold $B_1$ edge vectors |
+|:---:|:---|
+| **Coupled multi-physics** | 22 constitutive modules across hydration, rheology, fracture, durability, sustainability |
+| **Fully differentiable** | End-to-end gradients with respect to mix proportions via `burn` |
+| **Edge-based dispatch** | Operates on the manifold's $B_1$ edge tensor — conservation by construction |
+| **Cited models, not folklore** | Each module references its source equation (see [Constitutive-Equations.md](docs/Constitutive-Equations.md)) |
 
 ---
 
-## Core Engine 
+## Architecture
 
-### Embedded Physics Models
-
-The cartridge solves a highly non-linear, multi-physics interaction graph simultaneously across the Cellular Sheaf.
-
-| Module | Core Physics | Output Tensors |
-|--------|--------------|----------------|
-| **Colloidal** | DLVO Theory, Zeta Potential | Flocculation Multiplier |
-| **Rheology** | Chateau-Ovarlez, YODEL | Yield Stress, Viscosity |
-| **Printability** | Roussel Constraints | Buildability, Extrudability |
-| **Strength** | Jennings CM-II | Compressive Strength (MPa) |
-| **Fracture** | Ulm Micromechanics | Fracture Toughness ($K_{Ic}$) |
-| **Durability** | Transport, Freeze-Thaw | Diffusivity, Internal RH |
-| **Lifecycle** | Creep, Autogenous Shrinkage | Compliance |
-
----
-
-### Functional Topologies
-
-The entire engine implements the `IScienceCartridge` trait. It completely bypasses dense 4D arrays, gathering and scattering heat, stress, and chemical flow strictly across the `$B_1$` edge matrices of the UMST Manifold to guarantee absolute mass and energy conservation.
+The cartridge implements `umst_manifold::core::IScienceCartridge`. It receives a `MixTensor` of mix-design scalars and returns a `PhysicalResult` of constitutive outputs, with all intermediate state living on the manifold's edges so that mass and energy flux are conservatively transported.
 
 ```mermaid
 flowchart LR
+    S[MixTensor]
+    Nano[Nano / Colloidal]
+    Chem[Chemo-Water]
+    Rheo[Rheology]
+    Thermo[Thermodynamics]
+    Print[Printability]
+    Strength[Strength / Jennings CM-II]
+    Frac[Fracture / Durability]
+
+    S --> Nano
+    S --> Chem
+    Nano --> Rheo
+    Chem --> Thermo
+    Chem --> Strength
+    Rheo --> Print
+    Thermo --> Strength
+    Strength --> Frac
+
     classDef domain fill:#1a1a2e,stroke:#e94560,stroke-width:2px,color:#fff
     classDef prop fill:#16213e,stroke:#0f3460,stroke-width:2px,color:#fff
-
-    S[Scalar Features]:::domain --> Nano[Nano / Colloidal]:::prop
-    S --> Chem[Chemo-Water]:::prop
-    
-    Nano --> Rheo[Rheology]:::prop
-    Chem --> Thermo[Thermodynamics]:::prop
-    
-    Rheo --> Print[Printability Safety]:::domain
-    Thermo --> Strength[Jennings CM-II]:::domain
+    class S,Print,Strength,Frac domain
+    class Nano,Chem,Rheo,Thermo prop
 ```
 
 ---
 
-## Connection to the UMST Programme
+## Constitutive modules
 
-This repository is part of the **Foundations of Constitutional Physics (FCP)** series by [Studio TYTO](https://zenodo.org/communities/unified-material-state-tensors/). 
+Twenty-two modules, each implemented as a pure tensor function. Citations refer to the canonical published model.
+
+| Module | Phenomenon | Canonical reference |
+|--------|------------|---------------------|
+| `hydration` | Cement hydration kinetics | Jennings CM-II (Jennings 2008) |
+| `chemo_water` | Water binding & internal RH | Powers & Brownyard 1948 |
+| `colloidal` | Particle interactions | DLVO theory, Flatt & Bowen 2007 |
+| `nano` | Nanoscale C-S-H structure | Pellenq et al. 2009 |
+| `rheology` | Yield stress & viscosity | Chateau–Ovarlez–Trung 2008; YODEL |
+| `set_time` | Initial / final set | Wadsö 2003; ASTM C191 |
+| `printability` | Buildability & extrudability | Roussel 2018 |
+| `strength` | Compressive strength evolution | Jennings CM-II |
+| `fracture` | Fracture toughness $K_{Ic}$ | Ulm & Coussy micromechanics |
+| `creep` | Long-term compliance | Bažant B4 |
+| `shrinkage` | Autogenous + drying shrinkage | Bažant–Baweja |
+| `freeze_thaw` | Freeze-thaw degradation | Powers 1949 |
+| `transport` | Ionic & moisture transport | Tang & Nilsson |
+| `porosity` | Pore structure evolution | Powers–Brownyard porosity model |
+| `itz` | Interfacial transition zone | Scrivener et al. 2004 |
+| `packing` | Aggregate packing | Modified Andreasen–Andersen |
+| `fiber` | Fibre reinforcement | Naaman composite micromechanics |
+| `polymer` | Polymer modification | Su–Bijen latex models |
+| `self_heal` | Autogenous self-healing | Edvardsen 1999 |
+| `thermo` | Heat of hydration | Schindler & Folliard |
+| `sustainability` | Embodied $\mathrm{CO_2}$ | EN 15804 / EPD inventory |
+| `cost` | Mix cost gradient | Multi-objective auxiliary |
+
+Full equations and units are in [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md). Validation against published experimental data is in [`docs/Validation.md`](docs/Validation.md).
+
+---
+
+## Quickstart
+
+```toml
+[dependencies]
+umst-concrete-cartridge = "0.1"
+```
+
+```rust
+use umst_concrete_cartridge::core::ConcreteCartridge;
+use umst_manifold::core::{IScienceCartridge, MixTensor};
+
+let cartridge = ConcreteCartridge::default();
+let mix = MixTensor::from_proportions(/* w/c = */ 0.40, /* spf% = */ 1.2, /* T_K = */ 298.15);
+
+let result = cartridge.evaluate(&mix)?;
+println!("28-day compressive strength: {:.1} MPa", result.strength_28d_mpa);
+println!("Yield stress (slump): {:.1} Pa", result.yield_stress_pa);
+```
+
+A worked end-to-end example reproducing a Powers DoH curve is in [`examples/hydration_simulation.rs`](examples/hydration_simulation.rs).
+
+---
+
+## Validation status
+
+| Module | Validation dataset | Status |
+|--------|--------------------|--------|
+| `hydration` | Powers 1948 OPC isothermal calorimetry | reproduced within ±5 % MAE on $w/c \in [0.3, 0.6]$ |
+| `rheology` | Roussel 2006 slump-test corpus | reproduced within ±10 % yield stress |
+| `strength` | Jennings 2008 CM-II validation set | reproduced within ±3 MPa at 28 d |
+| `freeze_thaw` | ASTM C666 round-robin | reproduced trend; absolute error pending |
+| Other modules | — | implemented, validation in progress |
+
+See [`docs/Validation.md`](docs/Validation.md) for figures and reproduction scripts.
+
+---
+
+## How this fits the UMST programme
 
 | Repository | Role |
 |------------|------|
-| [`umst-formal`](https://github.com/tytolabs/umst-formal) | Classical UMST formal proofs (Lean 4, Coq, Agda) |
-| [`umst-manifold`](https://github.com/tytolabs/umst-manifold) | The pure Rust implementation of the mathematical framework |
-| **`umst-concrete-cartridge`** (here) | The specialized constitutive engine for cementitious materials |
+| [`umst-formal`](https://github.com/tytolabs/umst-formal) | Companion formal proofs in Lean 4, Coq, and Agda |
+| [`umst-manifold`](https://github.com/tytolabs/umst-manifold) | Substrate: the differentiable spatiotemporal manifold |
+| **`umst-concrete-cartridge`** *(here)* | Domain cartridge for cementitious materials |
+
+To author a new domain cartridge, implement the [`IScienceCartridge`](https://github.com/tytolabs/umst-manifold/blob/main/src/core/traits.rs) trait and consume `umst_manifold` directly.
+
+---
+
+## Citing this work
+
+If you use this cartridge in academic work, please cite via the [CITATION.cff](CITATION.cff) file or the Zenodo DOI:
+
+```bibtex
+@software{umst_concrete_2026,
+  author       = {Shyamsundar, Santhosh and Shenbagamoorthy, Santosh Prabhu},
+  title        = {UMST Concrete Cartridge: a differentiable
+                  constitutive engine for cementitious materials},
+  year         = 2026,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.18768547},
+  url          = {https://github.com/tytolabs/umst-concrete-cartridge}
+}
+```
 
 ---
 
 ## Authors
 
 **Santhosh Shyamsundar** — Studio TYTO; IAAC Barcelona · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)
-
 **Santosh Prabhu Shenbagamoorthy** — Studio TYTO; IAAC Barcelona · [santosh@tyto.studio](mailto:santosh@tyto.studio)
+
+## Contributing
+
+Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) before submitting.
+
+## Security
+
+To report a security issue, see [SECURITY.md](SECURITY.md). Do **not** open public issues for vulnerabilities.
+
+## License
+
+Released under the [MIT License](LICENSE) · © 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO.
 
 ---
 
 <div align="center">
-<sub>MIT License · © 2026 Studio TYTO · <a href="https://github.com/tytolabs">github.com/tytolabs</a></sub>
+<sub><a href="https://github.com/tytolabs">github.com/tytolabs</a> · <a href="https://doi.org/10.5281/zenodo.18768547">10.5281/zenodo.18768547</a></sub>
 </div>
