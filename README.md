@@ -4,7 +4,7 @@
 
 `umst-concrete-cartridge` is the physical constitutive engine that mounts directly onto the **UMST Manifold**. Written entirely in pure, functional `burn` tensor operations, it maps topological scalar features into real-world material behaviors.
 
-## 🔬 Embedded Physics Models
+## Embedded Physics Models
 
 The cartridge solves a highly non-linear, multi-physics interaction graph simultaneously across the Cellular Sheaf.
 
@@ -18,7 +18,7 @@ The cartridge solves a highly non-linear, multi-physics interaction graph simult
 | **Durability** | Transport, Freeze-Thaw | Diffusivity, Internal RH |
 | **Lifecycle** | Creep, Autogenous Shrinkage | Compliance |
 
-## ⚙️ Functional Topologies
+## Functional Topologies
 
 The entire engine implements the `IScienceCartridge` trait. It completely bypasses dense 4D arrays, gathering and scattering heat, stress, and chemical flow strictly across the `$B_1$` edge matrices of the UMST Manifold to guarantee absolute mass and energy conservation.
 
@@ -37,6 +37,6 @@ flowchart LR
     Thermo --> Strength[Jennings CM-II]:::domain
 ```
 
-## 📜 License
+## License
 
 Apache License 2.0. Copyright Studio Tyto.

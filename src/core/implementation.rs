@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use burn::tensor::{backend::Backend, Tensor};
-use umst_manifold::core::tensors::{MixTensor, SpatialTensor};
+use umst_manifold::core::tensors::MixTensor;
 use umst_manifold::core::traits::{IScienceCartridge, PhysicalResult};
 
 use crate::physics::chemo_water::ChemoWaterEngine;
