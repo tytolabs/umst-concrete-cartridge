@@ -17,6 +17,8 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 *`umst-concrete-cartridge` is the physical constitutive engine that mounts directly onto the UMST Manifold. Written entirely in pure, functional tensor operations, it maps topological scalar features into real-world concrete material behaviors.*
 
+</div>
+
 <br>
 
 | | |
@@ -24,8 +26,6 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 | **Multi-Physics Solvers** | 14 concurrent material science engines |
 | **Fully Differentiable** | End-to-end continuous gradients via `burn` |
 | **Topological Boundary Dispatch** | Solves exclusively over the Manifold $B_1$ edge vectors |
-
-</div>
 
 ---
 
