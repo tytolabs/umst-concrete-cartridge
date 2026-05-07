@@ -65,10 +65,9 @@ impl<B: Backend> FractureEngine<B> {
             .add(v_itz.div(safe_ei))
             .add(v_agg.div(safe_ea));
 
-        let safe_reuss_denom = reuss_denom.clone().mask_fill(
-            reuss_denom.clone().lower_equal_elem(0.0_f32),
-            1.0_f32,
-        );
+        let safe_reuss_denom = reuss_denom
+            .clone()
+            .mask_fill(reuss_denom.clone().lower_equal_elem(0.0_f32), 1.0_f32);
         let e_reuss = safe_reuss_denom.powf_scalar(-1.0_f32);
 
         // Hashin-Shtrikman approximation (Geometric Mean of bounds)

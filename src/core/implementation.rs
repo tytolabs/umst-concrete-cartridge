@@ -44,14 +44,8 @@ impl<B: Backend> IScienceCartridge<B> for ConcreteCartridge<B> {
         let dev = features.device();
         let n_nodes = features.dims()[0];
 
-        let temp_c = features
-            .clone()
-            .slice([0..n_nodes, 3..4])
-            .unsqueeze_dim(0);
-        let damage = features
-            .clone()
-            .slice([0..n_nodes, 4..5])
-            .unsqueeze_dim(0);
+        let temp_c = features.clone().slice([0..n_nodes, 3..4]).unsqueeze_dim(0);
+        let damage = features.clone().slice([0..n_nodes, 4..5]).unsqueeze_dim(0);
 
         // 2. Thermodynamic heat flow on the 1-skeleton (graph Laplacian).
         let heat_flux_gradient =
