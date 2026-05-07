@@ -141,7 +141,7 @@ See [`docs/Validation.md`](docs/Validation.md) for figures and reproduction scri
 | [`umst-manifold`](https://github.com/tytolabs/umst-manifold) | Substrate: the differentiable spatiotemporal manifold |
 | **`umst-concrete-cartridge`** *(here)* | Domain cartridge for cementitious materials |
 
-To author a new domain cartridge, implement the [`IScienceCartridge`](https://github.com/tytolabs/umst-manifold/blob/main/src/core/traits.rs) trait and consume `umst_manifold` directly.
+To author a new domain cartridge, implement the [`IScienceCartridge`](https://github.com/tytolabs/umst-manifold/blob/master/src/core/traits.rs) trait and consume `umst_manifold` directly.
 
 ---
 
