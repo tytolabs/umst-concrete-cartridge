@@ -19,7 +19,7 @@ categories = ["science", "mathematics", "simulation"]
 
 [dependencies]
 # Differentiable physics on the burn tensor framework.
-burn = { version = "0.13.0", features = ["wgpu", "train"] }
+burn = { version = "0.13.0", default-features = false }
 burn-ndarray = "0.13.0"
 
 # UMST manifold substrate.

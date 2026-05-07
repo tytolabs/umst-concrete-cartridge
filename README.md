@@ -9,10 +9,8 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 ### Differentiable constitutive engine for cementitious materials
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18768547.svg)](https://doi.org/10.5281/zenodo.18768547)
 [![CI](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
-[![Crates.io](https://img.shields.io/crates/v/umst-concrete-cartridge.svg)](https://crates.io/crates/umst-concrete-cartridge)
-[![Docs.rs](https://img.shields.io/docsrs/umst-concrete-cartridge)](https://docs.rs/umst-concrete-cartridge)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 [![Rust 2021](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
 
@@ -149,7 +147,7 @@ To author a new domain cartridge, implement the [`IScienceCartridge`](https://gi
 
 ## Citing this work
 
-If you use this cartridge in academic work, please cite via the [CITATION.cff](CITATION.cff) file or the Zenodo DOI:
+A formal Zenodo deposit will accompany the v0.1.0 release; the DOI below is reserved for that record. Until the deposit is live, please cite using the GitHub URL or the [CITATION.cff](CITATION.cff) file.
 
 ```bibtex
 @software{umst_concrete_2026,
@@ -168,7 +166,7 @@ If you use this cartridge in academic work, please cite via the [CITATION.cff](C
 ## Authors
 
 **Santhosh Shyamsundar** — Studio TYTO; IAAC Barcelona · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)
-**Santosh Prabhu Shenbagamoorthy** — Studio TYTO; IAAC Barcelona
+**Santosh Prabhu Shenbagamoorthy** — Studio TYTO; IAAC Barcelona · [santosh@tyto.studio](mailto:santosh@tyto.studio)
 
 ## Contributing
 
@@ -185,5 +183,5 @@ Released under the [MIT License](LICENSE) · © 2026 Santhosh Shyamsundar, Santo
 ---
 
 <div align="center">
-<sub><a href="https://github.com/tytolabs">github.com/tytolabs</a> · <a href="https://doi.org/10.5281/zenodo.18768547">10.5281/zenodo.18768547</a></sub>
+<sub><a href="https://github.com/tytolabs">github.com/tytolabs</a></sub>
 </div>
