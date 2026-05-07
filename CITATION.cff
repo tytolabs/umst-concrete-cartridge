@@ -4,9 +4,18 @@ authors:
   - family-names: "Shyamsundar"
     given-names: "Santhosh"
     orcid: "https://orcid.org/0009-0004-9842-1234"
+    affiliation: "Institute for Advanced Architecture of Catalonia (IAAC) / Studio TYTO"
   - family-names: "Shenbagamoorthy"
     given-names: "Santosh Prabhu"
+    affiliation: "Institute for Advanced Architecture of Catalonia (IAAC) / Studio TYTO"
 title: "UMST Concrete Cartridge: Differentiable Constitutive Engine"
+abstract: "The first scientific cartridge for the UMST manifold. Maps topological scalar features into 22 coupled constitutive modules of cementitious materials, providing end-to-end differentiable mix design optimization."
+keywords:
+  - concrete
+  - materials
+  - thermodynamics
+  - constitutive
+  - burn
 version: 0.1.0
 date-released: 2026-05-07
 url: "https://github.com/tytolabs/umst-concrete-cartridge"
