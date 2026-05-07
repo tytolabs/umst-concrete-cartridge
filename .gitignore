@@ -1,2 +1,4 @@
-target/\n.env\n*.DS_Store
+/target
+.env
+.DS_Store
 Cargo.lock

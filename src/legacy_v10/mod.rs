@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2018-2026 Studio TYTO
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 pub mod calibration; // Bayesian learning from experimental errors
 pub mod chemo_water;
 pub mod colloidal;

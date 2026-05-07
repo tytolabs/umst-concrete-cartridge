@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2018-2026 Santhosh Shyamsundar & Santosh Prabhu Shenbagamoorthy
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //
 // MaOS — Material Agnostic Operating System
 // God-Grade Material Definitions (Parity with TypeScript Material2)

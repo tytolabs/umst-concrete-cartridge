@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Santhosh Shyamsundar", "Santosh Prabhu Shenbagamoorthy", "Studio Tyto"]
 description = "The First Thermodynamic Science Cartridge for the UMST Framework"
 repository = "https://github.com/studiotyto/umst-concrete-cartridge"
-license = "Apache-2.0"
+license = "MIT"
 keywords = ["concrete", "materials", "thermodynamics", "physics", "burn"]
 
 [dependencies]
