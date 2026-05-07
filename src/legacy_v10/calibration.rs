@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2018-2026 Santhosh Shyamsundar & Santosh Prabhu Shenbagamoorthy
-// SPDX-License-Identifier: LicenseRef-Proprietary
+// SPDX-License-Identifier: Apache-2.0
 //
 // MaOS — Bayesian Calibrator: Learning from Experimental Errors (AP04)
 //

@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2018-2026 Studio TYTO
-// SPDX-License-Identifier: LicenseRef-Proprietary
+// SPDX-License-Identifier: Apache-2.0
 //
 // MaOS — Material Agnostic Operating System
 // CreepEngine: Extended Microprestress Solidification (XMPS) Model

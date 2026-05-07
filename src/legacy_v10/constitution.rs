@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: 2018-2026 Studio TYTO
-// SPDX-License-Identifier: LicenseRef-Proprietary
+// SPDX-License-Identifier: Apache-2.0
 
 //! Constitutional Physics Layer (Elevated v2 - Ported to MaOS-Core)
 //! First-class PhysicalAxiom trait with proof-carrying witnesses and umst-formal traceability.
