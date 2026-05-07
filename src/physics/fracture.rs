@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Fracture & Mechanics Engine.
@@ -51,17 +50,25 @@ impl<B: Backend> FractureEngine<B> {
         // E_r = 1 / (v_p/E_p + v_itz/E_itz + v_agg/E_agg)
 
         // Safe denominators
-        let safe_ep = e_paste.mask_fill(e_paste.clone().lower_equal_elem(0.0_f32), 1.0_f32);
-        let safe_ei = e_itz.mask_fill(e_itz.clone().lower_equal_elem(0.0_f32), 1.0_f32);
-        let safe_ea = e_agg.mask_fill(e_agg.clone().lower_equal_elem(0.0_f32), 1.0_f32);
+        let safe_ep = e_paste
+            .clone()
+            .mask_fill(e_paste.clone().lower_equal_elem(0.0_f32), 1.0_f32);
+        let safe_ei = e_itz
+            .clone()
+            .mask_fill(e_itz.clone().lower_equal_elem(0.0_f32), 1.0_f32);
+        let safe_ea = e_agg
+            .clone()
+            .mask_fill(e_agg.clone().lower_equal_elem(0.0_f32), 1.0_f32);
 
         let reuss_denom = safe_v_paste
             .div(safe_ep)
             .add(v_itz.div(safe_ei))
             .add(v_agg.div(safe_ea));
 
-        let safe_reuss_denom =
-            reuss_denom.mask_fill(reuss_denom.clone().lower_equal_elem(0.0_f32), 1.0_f32);
+        let safe_reuss_denom = reuss_denom.clone().mask_fill(
+            reuss_denom.clone().lower_equal_elem(0.0_f32),
+            1.0_f32,
+        );
         let e_reuss = safe_reuss_denom.powf_scalar(-1.0_f32);
 
         // Hashin-Shtrikman approximation (Geometric Mean of bounds)

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the 3D Printability Engine.
@@ -91,7 +90,7 @@ impl<B: Backend> PrintabilityEngine<B> {
         // Bn 1-5 -> optimal (1.0)
         // Bn > 10 -> severe penalty (plug flow)
 
-        let mut score = yield_stress.clone().zeros();
+        let mut score = yield_stress.clone().zeros_like();
         score = score.add_scalar(1.0_f32);
 
         // If bn > 5.0, score decreases
@@ -103,7 +102,7 @@ impl<B: Backend> PrintabilityEngine<B> {
             .mul_scalar(0.3_f32);
         let reduced_score = score.clone().sub(high_penalty);
         score = score
-            .mask_fill(high_bn_mask, 0.0_f32)
+            .mask_fill(high_bn_mask.clone(), 0.0_f32)
             .add(reduced_score.mask_fill(high_bn_mask.clone().bool_not(), 0.0_f32));
 
         // Very high yield penalty (> 1000 Pa)

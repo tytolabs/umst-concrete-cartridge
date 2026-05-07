@@ -28,8 +28,8 @@ burn-ndarray = "0.13.0"
 # co-developed thesis work. To consume from a tagged release without
 # the sibling checkout, comment the path line and uncomment the git
 # block below.
-# umst-manifold = { path = "../umst-manifold" }
-umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
+umst-manifold = { path = "../umst-manifold" }
+# umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
 
 # Serialization.
 serde = { version = "1.0", features = ["derive"] }

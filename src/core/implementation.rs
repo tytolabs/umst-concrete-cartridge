@@ -1,28 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
 use umst_manifold::core::tensors::MixTensor;
 use umst_manifold::core::traits::{IScienceCartridge, PhysicalResult};
-
-use crate::physics::chemo_water::ChemoWaterEngine;
-use crate::physics::colloidal::ColloidalEngine;
-use crate::physics::creep::CreepEngine;
-use crate::physics::fiber::FiberEngine;
-use crate::physics::fracture::FractureEngine;
-use crate::physics::freeze_thaw::FreezeThawEngine;
-use crate::physics::nano::NanoEngine;
-use crate::physics::polymer::PolymerEngine;
-use crate::physics::printability::PrintabilityEngine;
-use crate::physics::rheology::RheologyEngine;
-use crate::physics::self_heal::SelfHealEngine;
-use crate::physics::set_time::SetTimeEngine;
-use crate::physics::shrinkage::ShrinkageEngine;
-use crate::physics::strength::StrengthEngine;
-use crate::physics::sustainability::SustainabilityEngine;
-use crate::physics::thermo::ThermoEngine;
-use crate::physics::transport::TransportEngine;
 
 /// The Concrete Cartridge Dispatcher.
 /// This acts as the Functor F: G -> P, mapping geometric spatial states
@@ -52,23 +33,21 @@ impl<B: Backend> IScienceCartridge<B> for ConcreteCartridge<B> {
         &self,
         manifold: &umst_manifold::core::tensors::UnifiedMaterialStateTensor<B>,
     ) -> PhysicalResult<B> {
-        // 1. Extract scalar features [Batch, N_active_voxels, Features]
-        // In reality, this would be a 3D tensor where dim 2 contains the F=64 features.
-        // For this skeletal proof, we mock the scalar fields.
+        // 1. `scalar_features` is [N_nodes, F] on the manifold; index 3 = temperature, 4 = damage.
         let features = manifold.scalar_features.clone();
+        let dev = features.device();
+        let n_nodes = features.dims()[0];
 
-        let batch_size = features.dims()[0];
-        let num_voxels = features.dims()[1];
+        let temp_c = features
+            .clone()
+            .slice([0..n_nodes, 3..4])
+            .unsqueeze_dim(0);
+        let damage = features
+            .clone()
+            .slice([0..n_nodes, 4..5])
+            .unsqueeze_dim(0);
 
-        // 2. Extract Heat Rate, Hydration, and Fracture Damage variables
-        // Let's assume idx 3 is temperature, idx 1 is hydration, idx 4 is damage
-        let temp_c = features.clone().slice([0..batch_size, 0..num_voxels, 3..4]);
-        let _hydration = features.clone().slice([0..batch_size, 0..num_voxels, 1..2]);
-        let damage = features.clone().slice([0..batch_size, 0..num_voxels, 4..5]);
-
-        // 3. Thermodynamic Heat Flow via Graph Laplacian
-        // Instead of 4D Convolutions, we compute heat flow strictly across the Cellular Sheaf edges
-        // This mathematically prevents heat from flowing through "empty space" (cracks).
+        // 2. Thermodynamic heat flow on the 1-skeleton (graph Laplacian).
         let heat_flux_gradient =
             umst_manifold::physics::laplacian::TopologicalLaplacian::scalar_laplacian(
                 temp_c,
@@ -76,14 +55,11 @@ impl<B: Backend> IScienceCartridge<B> for ConcreteCartridge<B> {
                 damage,
             );
 
-        // The dissipation is the absolute heat flux generated across the topology
-        let dissipation = heat_flux_gradient.abs().squeeze(2); // [Batch, N_voxels]
+        let dissipation = heat_flux_gradient.abs().squeeze(2);
 
-        // 4. Fracture mechanics and other properties
-        // (Mocking these fields to complete the Sparse Tensor shapes)
-        let free_energy = Tensor::<B, 2>::zeros([batch_size, num_voxels]).add_scalar(10.0_f32);
-        let safety_margin = Tensor::<B, 2>::zeros([batch_size, num_voxels]).add_scalar(1.0_f32);
-        let cost = Tensor::<B, 2>::zeros([batch_size, num_voxels]).add_scalar(0.01_f32);
+        let free_energy = Tensor::<B, 2>::zeros([1, n_nodes], &dev).add_scalar(10.0_f32);
+        let safety_margin = Tensor::<B, 2>::zeros([1, n_nodes], &dev).add_scalar(1.0_f32);
+        let cost = Tensor::<B, 2>::zeros([1, n_nodes], &dev).add_scalar(0.01_f32);
 
         PhysicalResult {
             free_energy,

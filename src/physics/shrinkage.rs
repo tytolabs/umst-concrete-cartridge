@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
+
+use crate::burn_compat::bool_and;
 
 /// Pure tensor implementation of the Shrinkage Engine.
 /// Computes Autogenous and Drying shrinkage strain using fib Model Code 2010 / B4 model approximations.
@@ -30,16 +31,16 @@ impl<B: Backend> ShrinkageEngine<B> {
         // 1. Ultimate shrinkage as a function of w/c (empirical B4 fit)
         // High shrinkage at low w/c, low shrinkage at high w/c
         let low_wc_mask = wc_ratio.clone().lower_equal_elem(0.30_f32);
-        let mid_wc_mask = wc_ratio
-            .clone()
-            .lower_equal_elem(0.42_f32)
-            .bool_and(wc_ratio.clone().greater_elem(0.30_f32));
-        let high_wc_mask = wc_ratio
-            .clone()
-            .lower_equal_elem(0.50_f32)
-            .bool_and(wc_ratio.clone().greater_elem(0.42_f32));
+        let mid_wc_mask = bool_and(
+            wc_ratio.clone().lower_equal_elem(0.42_f32),
+            wc_ratio.clone().greater_elem(0.30_f32),
+        );
+        let high_wc_mask = bool_and(
+            wc_ratio.clone().lower_equal_elem(0.50_f32),
+            wc_ratio.clone().greater_elem(0.42_f32),
+        );
 
-        let mut eps_as_ult = wc_ratio.clone().zeros();
+        let mut eps_as_ult = wc_ratio.clone().zeros_like();
 
         // < 0.30: -1000 - 500 * (0.30 - w/c) / 0.05
         let eps_low = wc_ratio
@@ -80,21 +81,21 @@ impl<B: Backend> ShrinkageEngine<B> {
             .add(
                 wc_ratio
                     .clone()
-                    .zeros()
+                    .zeros_like()
                     .mask_fill(mid_wc_mask, 1.0_f32)
                     .mul(eps_mid),
             )
             .add(
                 wc_ratio
                     .clone()
-                    .zeros()
+                    .zeros_like()
                     .mask_fill(high_wc_mask, 1.0_f32)
                     .mul(eps_high),
             )
             .add(
                 wc_ratio
                     .clone()
-                    .zeros()
+                    .zeros_like()
                     .mask_fill(wc_ratio.clone().greater_elem(0.50_f32), 1.0_f32)
                     .mul(eps_very_high),
             );

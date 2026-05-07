@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Set Time Engine.
@@ -70,8 +69,8 @@ impl<B: Backend> SetTimeEngine<B> {
         // 5. Humidity Effect
         // if humidity < 0.5 { 0.9 + 0.2*humidity } else { 1.0 }
         let low_humidity_mask = humidity.clone().lower_elem(0.5_f32);
-        let low_humidity_val = humidity.mul_scalar(0.2_f32).add_scalar(0.9_f32);
-        let mut humidity_factor = humidity.clone().zeros().add_scalar(1.0_f32);
+        let low_humidity_val = humidity.clone().mul_scalar(0.2_f32).add_scalar(0.9_f32);
+        let mut humidity_factor = humidity.clone().zeros_like().add_scalar(1.0_f32);
         humidity_factor = humidity_factor
             .mask_fill(low_humidity_mask.clone(), 0.0_f32)
             .add(low_humidity_val.mask_fill(low_humidity_mask.bool_not(), 0.0_f32));

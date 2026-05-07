@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
+
+use crate::burn_compat::bool_and;
 
 /// Pure tensor implementation of the Creep Engine.
 /// Computes basic and drying creep compliance (Extended Microprestress Solidification theory / fib Model Code 2010).
@@ -39,12 +40,12 @@ impl<B: Backend> CreepEngine<B> {
 
         // β_cc load factor
         let high_strength_mask = fc_safe.clone().greater_elem(50.0_f32);
-        let mid_strength_mask = fc_safe
-            .clone()
-            .lower_equal_elem(50.0_f32)
-            .bool_and(fc_safe.clone().greater_elem(35.0_f32));
+        let mid_strength_mask = bool_and(
+            fc_safe.clone().lower_equal_elem(50.0_f32),
+            fc_safe.clone().greater_elem(35.0_f32),
+        );
 
-        let mut s_factor = fc_safe.clone().zeros().add_scalar(0.38_f32);
+        let mut s_factor = fc_safe.clone().zeros_like().add_scalar(0.38_f32);
         s_factor = s_factor
             .mask_fill(high_strength_mask, 0.20_f32)
             .mask_fill(mid_strength_mask, 0.25_f32);

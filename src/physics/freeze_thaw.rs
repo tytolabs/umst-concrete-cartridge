@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
+
+use crate::burn_compat::bool_and;
 
 /// Pure tensor implementation of the Freeze-Thaw Durability Engine.
 /// Computes air-void spacing factors and critical saturation to prevent cyclic frost damage.
@@ -47,21 +48,22 @@ impl<B: Backend> FreezeThawEngine<B> {
 
         let adequate_air_mask = air_content_pct.clone().greater_equal_elem(required_air);
         let air_effectiveness = air_content_pct
+            .clone()
             .div_scalar(required_air)
             .sqrt()
             .clamp_max(1.0_f32);
         let final_air_eff = air_content_pct
             .clone()
-            .zeros()
+            .zeros_like()
             .mask_fill(adequate_air_mask.clone(), 1.0_f32)
             .add(air_effectiveness.mask_fill(adequate_air_mask.bool_not(), 0.0_f32));
 
         // Spacing effectiveness: L <= 0.2 is ideal (1.0). Drops rapidly after.
         let good_spacing = spacing_factor.clone().lower_equal_elem(0.2_f32);
-        let mid_spacing = spacing_factor
-            .clone()
-            .greater_elem(0.2_f32)
-            .bool_and(spacing_factor.clone().lower_equal_elem(0.4_f32));
+        let mid_spacing = bool_and(
+            spacing_factor.clone().greater_elem(0.2_f32),
+            spacing_factor.clone().lower_equal_elem(0.4_f32),
+        );
 
         let eff_mid = spacing_factor
             .clone()
@@ -80,20 +82,20 @@ impl<B: Backend> FreezeThawEngine<B> {
 
         let spacing_eff = spacing_factor
             .clone()
-            .zeros()
+            .zeros_like()
             .mask_fill(good_spacing, 1.0_f32)
             .add(
                 spacing_factor
                     .clone()
-                    .zeros()
+                    .zeros_like()
                     .mask_fill(mid_spacing, 1.0_f32)
                     .mul(eff_mid),
             )
             .add(
                 spacing_factor
                     .clone()
-                    .zeros()
-                    .mask_fill(spacing_factor.greater_elem(0.4_f32), 1.0_f32)
+                    .zeros_like()
+                    .mask_fill(spacing_factor.clone().greater_elem(0.4_f32), 1.0_f32)
                     .mul(eff_poor),
             );
 

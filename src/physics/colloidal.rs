@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-
 use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Colloidal Engine.
@@ -49,7 +48,7 @@ impl<B: Backend> ColloidalEngine<B> {
         let zeta_sq = zeta_v.clone().mul(zeta_v);
 
         // Decay term: exp(-h / debye_len)
-        let decay_exponent = separation_nm.div(debye_len_nm).mul_scalar(-1.0_f32);
+        let decay_exponent = separation_nm.clone().div(debye_len_nm).mul_scalar(-1.0_f32);
         let decay = decay_exponent.exp();
 
         // Repulsion magnitude approx: V_R = eps * zeta^2 * exp(-kappa * h)
