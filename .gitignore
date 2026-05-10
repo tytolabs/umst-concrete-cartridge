@@ -16,3 +16,10 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Python build artefacts (PyO3 + maturin)
+__pycache__/
+*.py[cod]
+*$py.class
+*.abi3.so
+*.so
