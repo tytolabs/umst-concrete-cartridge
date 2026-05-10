@@ -24,3 +24,6 @@ __pycache__/
 *$py.class
 *.abi3.so
 *.so
+
+# Notebook side-effect (the canonical figure lives inside the .ipynb)
+notebooks/audit_three_panels.png
