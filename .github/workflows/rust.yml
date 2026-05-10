@@ -12,6 +12,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Cargo's libgit2 fetcher fails to anonymously clone public GitHub
+  # repos in CI; fall back to the system git CLI which handles it.
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
 
 jobs:
   # Required job: build the library + run tests.
