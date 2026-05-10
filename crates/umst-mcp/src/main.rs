@@ -286,62 +286,72 @@ fn tool_evaluate_mix(id: Value, args: &Value) -> Value {
         f32::NAN
     };
 
-    let frac = fractions_from_mix_row(&row, agg_vf);
-    let dev = NdArrayDevice::default();
-    let mix_tensor = mix_tensor_from_layout::<Backend>(&frac, &dev);
-    let pipe = run_full_physics_pipeline::<Backend>(&profile, &mix_tensor);
-    let pipe_json = serde_json::to_value(&pipe).unwrap_or_else(|_| json!({}));
+    match compressive_strength_mpa(&profile, &row) {
+        Ok(strength) => {
+            let frac = fractions_from_mix_row(&row, agg_vf);
+            let dev = NdArrayDevice::default();
+            let mix_tensor = mix_tensor_from_layout::<Backend>(&frac, &dev);
+            let pipe = run_full_physics_pipeline::<Backend>(&profile, &mix_tensor);
+            let pipe_json = serde_json::to_value(&pipe).unwrap_or_else(|_| json!({}));
 
-    let mut result = json!({
-        "profile": profile_id,
-        "cement_kg_m3": cement,
-        "water_kg_m3": water,
-        "water_cement_ratio": wc,
-        "slag_kg_m3": slag,
-        "fly_ash_kg_m3": fly_ash,
-        "superplasticizer_kg_m3": sp,
-        "temperature_c": temp_c,
-        "age_days": age_d,
-        "aggregate_volume_fraction": agg_raw,
-        "predicted_compressive_strength_mpa_tensor_jennings": pipe.summary.strength_jennings_mpa,
-        "physics_pipeline": pipe_json,
-        "engine": "umst-concrete-cartridge",
-        "engine_version": env!("CARGO_PKG_VERSION")
-    });
+            let mut result = json!({
+                "profile": profile_id,
+                "cement_kg_m3": cement,
+                "water_kg_m3": water,
+                "water_cement_ratio": wc,
+                "slag_kg_m3": slag,
+                "fly_ash_kg_m3": fly_ash,
+                "superplasticizer_kg_m3": sp,
+                "temperature_c": temp_c,
+                "age_days": age_d,
+                "aggregate_volume_fraction": agg_vf,
+                "predicted_compressive_strength_mpa_homogeneous": strength,
+                "predicted_compressive_strength_mpa_tensor_jennings": pipe.summary.strength_jennings_mpa,
+                "physics_pipeline": pipe_json,
+                "engine": "umst-concrete-cartridge",
+                "engine_version": env!("CARGO_PKG_VERSION")
+            });
 
-    if compare_homogeneous {
-        let binder = (cement + slag + fly_ash).max(1.0);
-        let w_c_row = (water / cement.max(1e-6)).clamp(0.05, 0.95);
-        let sp_pct = (sp / binder) * 100.0;
-        
-        if let Ok(strength) = compressive_strength_mpa(&profile, &row) {
-            if let Ok(alpha_h) = degree_of_hydration_alpha(&profile, &row) {
-                let tau_h = yield_stress_pa(&profile, w_c_row, sp_pct, agg_vf);
-                let agg_mass = 2_600.0_f32 * agg_vf;
-                let gwp_h =
-                    embodied_co2_kg_per_m3(&profile, cement, slag + fly_ash, agg_mass, water);
-                let margin_h = safety_margin(&profile, w_c_row, alpha_h);
-                let h = json!({
-                    "compressive_strength_mpa": f64::from(strength),
-                    "yield_stress_pa": f64::from(tau_h),
-                    "degree_of_hydration": f64::from(alpha_h),
-                    "gwp_kg_co2_eq_per_m3": f64::from(gwp_h),
-                    "safety_margin": f64::from(margin_h),
-                });
-                if let Value::Object(ref mut m) = result {
-                    m.insert("homogeneous_compare".into(), h);
+            if compare_homogeneous {
+                let binder = (cement + slag + fly_ash).max(1.0);
+                let w_c_row = (water / cement.max(1e-6)).clamp(0.05, 0.95);
+                let sp_pct = (sp / binder) * 100.0;
+                if let Ok(alpha_h) = degree_of_hydration_alpha(&profile, &row) {
+                    let tau_h = yield_stress_pa(&profile, w_c_row, sp_pct, agg_vf);
+                    let agg_mass = 2_600.0_f32 * agg_vf;
+                    let gwp_h =
+                        embodied_co2_kg_per_m3(&profile, cement, slag + fly_ash, agg_mass, water);
+                    let margin_h = safety_margin(&profile, w_c_row, alpha_h);
+                    let h = json!({
+                        "compressive_strength_mpa": f64::from(strength),
+                        "yield_stress_pa": f64::from(tau_h),
+                        "degree_of_hydration": f64::from(alpha_h),
+                        "gwp_kg_co2_eq_per_m3": f64::from(gwp_h),
+                        "safety_margin": f64::from(margin_h),
+                    });
+                    if let Value::Object(ref mut m) = result {
+                        m.insert("homogeneous_compare".into(), h);
+                    }
                 }
             }
-        }
-    }
 
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "result": {
-            "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result).unwrap_or_default() }]
+            json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": {
+                    "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result).unwrap_or_default() }]
+                }
+            })
         }
-    })
+        Err(e) => json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "result": {
+                "content": [{ "type": "text", "text": format!("Physics evaluation error: {e}") }],
+                "isError": true
+            }
+        }),
+    }
 }
 
 fn tool_list_profiles(id: Value) -> Value {
