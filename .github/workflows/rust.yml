@@ -49,33 +49,47 @@ jobs:
       - name: Formal-anchor hygiene (no boilerplate / retired tokens in Rust sources)
         run: |
           set -euo pipefail
-          ! grep -REn 'Differentiable training' src/ --include='*.rs'
-          ! grep -REn 'formal_status:[[:space:]]*Library' src/ --include='*.rs'
-          ! grep -REn 'formal_status:[[:space:]]*Option' src/ --include='*.rs'
-          ! grep -REn 'formal_status:[[:space:]]*Boundary' src/ --include='*.rs'
+          ! grep -REn 'Differentiable training' crates/ --include='*.rs'
+          ! grep -REn 'formal_status:[[:space:]]*Library' crates/ --include='*.rs'
+          ! grep -REn 'formal_status:[[:space:]]*Option' crates/ --include='*.rs'
+          ! grep -REn 'formal_status:[[:space:]]*Boundary' crates/ --include='*.rs'
+
+      - name: Vendor-name guard (README / notebooks)
+        run: |
+          set -euo pipefail
+          for f in README.md notebooks/README.md crates/umst-mcp/README.md; do
+            if grep -Ei '(comsol multiphysics|abaqus\s+finite)' "$f"; then
+              echo "FAIL: benchmarking vendor token in $f"
+              exit 1
+            fi
+          done
 
       - name: Build (default features, workspace)
         run: cargo build --workspace --verbose
 
+      - name: Check all-features
+        run: cargo check --workspace --all-features --verbose
+
       - name: Build examples
         run: cargo build --workspace --examples --verbose
 
-      - name: Run tests (library + CLI workspace crates)
+      - name: Run tests (workspace)
         run: cargo test --workspace --verbose
 
-      - name: Verify optional deps stay out of default tree (depth 1)
+      - name: MCP stdio smoke
+        run: python3 scripts/mcp_smoke.py
+
+      - name: Verify core crate default tree excludes transport deps (depth 1)
         run: |
           set -euo pipefail
-          # `toml` is an intentional library dependency for calibration parsing.
-          # Block accidental CLI/async/csv leakage at depth 1 only (see Calibration plan step 12).
-          leaks=$(cargo tree --no-default-features -e normal --depth 1 \
-                   | grep -E '(tokio|clap|serde_json|csv|anyhow|thiserror) ' || true)
+          leaks=$(cargo tree -p umst-concrete-cartridge --no-default-features -e normal --depth 1 \
+                   | grep -E '(tokio|clap|serde_json|csv|anyhow|thiserror|pyo3) ' || true)
           if [ -n "$leaks" ]; then
-            echo "FAIL: optional/forbidden deps leaked into default depth-1 tree:"
+            echo "FAIL: forbidden deps leaked into umst-concrete-cartridge depth-1:"
             echo "$leaks"
             exit 1
           fi
-          echo "OK: no CLI/async/csv deps at default depth 1"
+          echo "OK: core cartridge default tree excludes pyo3/CLI/async/transport layers"
 
   # Advisory jobs: surface quality issues without blocking the merge.
   lint:
@@ -91,4 +105,19 @@ jobs:
       - name: rustfmt
         run: cargo fmt --all -- --check
       - name: clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  python-bindings-smoke:
+    name: maturin develop (umst-py)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install maturin
+        run: pip install "maturin>=1.7,<2"
+      - name: maturin develop
+        run: maturin develop --release --manifest-path crates/umst-py/Cargo.toml

@@ -233,7 +233,16 @@ impl<'ast> Visit<'ast> for CollectVisitor {
 
 fn collect_all_rows() -> Result<Vec<Row>, Box<dyn Error>> {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let roots = [manifest.join("src"), manifest.join("crates/umst-cli/src")];
+    let workspace = manifest
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("crate in workspace");
+    let roots = [
+        manifest.join("src"),
+        workspace.join("crates/umst-cli/src"),
+        workspace.join("crates/umst-mcp/src"),
+        workspace.join("crates/umst-py/src"),
+    ];
     let mut rows = Vec::new();
     for root in roots {
         if !root.is_dir() {
@@ -247,7 +256,7 @@ fn collect_all_rows() -> Result<Vec<Row>, Box<dyn Error>> {
                 if pth.is_dir() {
                     stack.push(pth);
                 } else if pth.extension() == Some(OsStr::new("rs")) {
-                    let rel = pth.strip_prefix(&manifest)?;
+                    let rel = pth.strip_prefix(workspace)?;
                     let file_path = rel.to_string_lossy().into_owned();
                     let src = fs::read_to_string(&pth)?;
                     let syn_file = syn::parse_file(&src)?;
@@ -288,7 +297,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # Proof status (Rust cartridge sources)
 
-Generated from `src/**/*.rs` and `crates/umst-cli/src/**/*.rs` formal documentation blocks. Regenerate with:
+Generated from `crates/umst-concrete-cartridge/src/**/*.rs`, `crates/umst-cli/src/**/*.rs`, `crates/umst-mcp/src/**/*.rs`, and `crates/umst-py/src/**/*.rs` formal documentation blocks. Regenerate with:
 
 ```bash
 cargo test -p umst-concrete-cartridge --test proof_status_doc \
@@ -333,7 +342,13 @@ fn generate_proof_status_documentation() -> Result<String, Box<dyn Error>> {
 #[test]
 fn proof_status_markdown_matches_committed_snapshot() -> Result<(), Box<dyn Error>> {
     let gen = generate_proof_status_documentation()?;
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/PROOF-STATUS.md");
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join("docs/PROOF-STATUS.md")
+        .canonicalize()
+        .unwrap_or_else(|_| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/PROOF-STATUS.md")
+        });
     let on_disk =
         fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {} ({e})", path.display()));
     assert_eq!(
@@ -347,7 +362,7 @@ fn proof_status_markdown_matches_committed_snapshot() -> Result<(), Box<dyn Erro
 #[ignore = "Writes docs/PROOF-STATUS.md; run intentionally after edits to Rust formal_status doc lines."]
 fn proof_status_refresh_markdown_on_disk() -> Result<(), Box<dyn Error>> {
     let gen = generate_proof_status_documentation()?;
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("docs/PROOF-STATUS.md");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/PROOF-STATUS.md");
     fs::write(&path, gen).expect("write PROOF-STATUS.md");
     Ok(())
 }

@@ -3,7 +3,7 @@
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! Bundled calibration profiles (`calibration/*.toml`): provenance, regime bounds, Powers parameters,
-//! and verification contract metadata lifted from prototype-3 SSOT JSON (see [`calibration/SCHEMA.md`](../../calibration/SCHEMA.md)).
+//! and verification contract metadata lifted from prototype-3 SSOT JSON (see [`calibration/SCHEMA.md`](../../../calibration/SCHEMA.md)).
 
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -422,14 +422,14 @@ fn bundle_id_normalized(name: &str) -> Result<String, CalibrationError> {
 fn bundled_toml_source(name: &str) -> Result<&'static str, CalibrationError> {
     let id = bundle_id_normalized(name)?;
     let s = match id.as_str() {
-        "default" => include_str!("../calibration/profiles/default.v1.toml"),
-        "uci_d1" => include_str!("../calibration/profiles/uci_d1.v1.toml"),
-        "zenodo_ndt" => include_str!("../calibration/profiles/zenodo_ndt.v1.toml"),
-        "zenodo_sonreb" => include_str!("../calibration/profiles/zenodo_sonreb.v1.toml"),
-        "zenodo_rh" => include_str!("../calibration/profiles/zenodo_rh.v1.toml"),
-        "uhpc" => include_str!("../calibration/profiles/uhpc.v1.toml"),
-        "highscm" => include_str!("../calibration/profiles/highscm.v1.toml"),
-        "selfheal" => include_str!("../calibration/profiles/selfheal.v1.toml"),
+        "default" => include_str!("../../../calibration/profiles/default.v1.toml"),
+        "uci_d1" => include_str!("../../../calibration/profiles/uci_d1.v1.toml"),
+        "zenodo_ndt" => include_str!("../../../calibration/profiles/zenodo_ndt.v1.toml"),
+        "zenodo_sonreb" => include_str!("../../../calibration/profiles/zenodo_sonreb.v1.toml"),
+        "zenodo_rh" => include_str!("../../../calibration/profiles/zenodo_rh.v1.toml"),
+        "uhpc" => include_str!("../../../calibration/profiles/uhpc.v1.toml"),
+        "highscm" => include_str!("../../../calibration/profiles/highscm.v1.toml"),
+        "selfheal" => include_str!("../../../calibration/profiles/selfheal.v1.toml"),
         _ => return Err(CalibrationError::UnknownBundledProfile(name.to_string())),
     };
     Ok(s)

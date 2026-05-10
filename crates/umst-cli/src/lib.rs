@@ -3,4 +3,6 @@
 
 //! Shared CLI logic (`predict`, wire JSON, certify) used by the `umst` binary and integration tests.
 
+pub mod audit;
+pub mod canonical;
 pub mod cli;

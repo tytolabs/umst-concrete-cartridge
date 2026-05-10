@@ -2,78 +2,22 @@
 # Copyright (c) 2026 Santhosh Shyamsundar,
 # Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-[package]
-name = "umst-concrete-cartridge"
-version = "0.1.0"
-edition = "2021"
-rust-version = "1.75"
-autobenches = false
-authors = [
-    "Santhosh Shyamsundar <santhoshshyamsundar@gmail.com>",
-    "Santosh Prabhu Shenbagamoorthy",
-    "Studio TYTO",
-]
-description = "Differentiable constitutive engine for cementitious materials, mounted on the UMST manifold."
-documentation = "https://docs.rs/umst-concrete-cartridge"
-homepage = "https://github.com/tytolabs/umst-concrete-cartridge"
-repository = "https://github.com/tytolabs/umst-concrete-cartridge"
-license = "MIT"
-readme = "README.md"
-keywords = ["concrete", "materials", "thermodynamics", "constitutive", "burn"]
-categories = ["science", "mathematics", "simulation"]
-
-[features]
-default = []
-
-[dependencies]
-# Differentiable physics on the burn tensor framework.
-burn = { version = "0.13.0", default-features = false }
-burn-ndarray = "0.13.0"
-
-# UMST manifold substrate (git so CI and standalone clones resolve).
-umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
-
-serde = { version = "1.0", features = ["derive"] }
-toml = "0.8"
-
-# Pinned for upstream MSRV compatibility.
-time = "=0.3.36"
-bincode = "=2.0.0-rc.3"
-
-# Numerics & utilities.
-rand = "0.8"
-tracing = "0.1"
-tracing-subscriber = "0.3"
-
-[dev-dependencies]
-approx = "0.5"
-proc-macro2 = { version = "1.0.95", features = ["span-locations"] }
-syn = { version = "2.0", features = ["full", "visit"] }
-walkdir = "2.5"
-
-[lib]
-name = "umst_concrete_cartridge"
-path = "src/lib.rs"
-
-[[test]]
-name = "formal_anchors"
-path = "tests/formal_anchors.rs"
-
-[[test]]
-name = "proof_status_doc"
-path = "tests/proof_status_doc.rs"
-
-[[test]]
-name = "realism_adversarial_physics"
-path = "tests/realism/adversarial_physics.rs"
-
-[[example]]
-name = "hydration_simulation"
-path = "examples/hydration_simulation.rs"
-
 [workspace]
+resolver = "2"
 members = [
-    ".",
+    "crates/umst-concrete-cartridge",
     "crates/umst-cli",
     "crates/umst-mcp",
+    "crates/umst-py",
 ]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+authors = [
+    "Santhosh Shyamsundar <santhoshshyamsundar@tyto.studio>",
+    "Santosh Prabhu Shenbagamoorthy",
+]
+repository = "https://github.com/tytolabs/umst-concrete-cartridge"

@@ -74,9 +74,28 @@ cargo build --workspace --verbose
 cargo test --workspace --verbose
 ```
 
-Bulk **`predict`** and MCP **`evaluate_mix`** run the feedforward tensor pipeline **`run_full_physics_pipeline`** (batch-collapsed ranks; topology remains `compute_topology`). Mix column layout lives in [`src/mix_layout.rs`](src/mix_layout.rs); honesty / proof buckets in [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md).
+Bulk **`predict`** and MCP **`umst_predict`** / **`umst_audit`** delegate to **`umst_concrete_cartridge::facade`** (tensor pipeline + certify/audit wire). Mix column layout lives in [`crates/umst-concrete-cartridge/src/mix_layout.rs`](crates/umst-concrete-cartridge/src/mix_layout.rs); honesty / proof buckets in [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md).
 
 ---
+
+## Surfaces
+
+| Surface | Entry | Notes |
+|--------|-------|------|
+| Rust library | `crates/umst-concrete-cartridge` | serde-only façade under `umst_concrete_cartridge::facade` (**no `serde_json` / `tokio` / `clap`** in-tree) |
+| CLI | **`umst`** binary (`crates/umst-cli`) | `predict`, `audit`, `certify`, `profiles`, deterministic **`umst-canonical`** JSON (sorted keys + Ryū literals) |
+| Python | **`maturin develop`** inside `crates/umst-py` | `predict(spec, *, profile="default", schema_version="v2")`, `audit` / `certify`, `canonical_json`; parity with `umst predict` → `umst-canonical` enforced in tests and **`scripts/check_predict_determinism.py`** / acceptance step **[7]** |
+| MCP · Docker | `umst-mcp` + `Dockerfile` / `docker-compose.yml` | **`umst_predict`**, **`umst_audit`**, **`umst_profiles`**, **`umst_certify`** over stdio JSON-RPC |
+
+Canonical JSON acceptance: **`target/$PROFILE/umst-canonical`** reads one JSON blob from stdin and prints compact deterministic bytes (**sorted object keys recursively**, finite floats only).
+
+### Claim wording (claims / positioning)
+
+Where we describe accuracy against calibration envelopes:
+
+- *in-regime predictions land within the profile’s [acceptance] envelope*
+- *predictions out of regime surface explicit warnings*
+- *every prediction returns the calibration profile, the formal anchor URI, the axiom set, and any regime warnings*
 
 ## Constitutive modules
 
@@ -115,7 +134,7 @@ Full equations and units are in [`docs/Constitutive-Equations.md`](docs/Constitu
 
 ```toml
 [dependencies]
-umst-concrete-cartridge = "0.1"
+umst-concrete-cartridge = "0.2"
 ```
 
 ### 1. Human Interface (CLI)

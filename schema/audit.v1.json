@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schema/audit.v1.json",
+  "title": "UMST Corpus Audit Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "calibration_profile",
+    "formal_anchor",
+    "calibration_model",
+    "axioms",
+    "summary",
+    "rows"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "audit.v1"
+    },
+    "calibration_profile": {
+      "type": "string"
+    },
+    "formal_anchor": {
+      "type": "string"
+    },
+    "calibration_model": {
+      "type": "string"
+    },
+    "axioms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["row_count", "rows_with_observations"],
+      "properties": {
+        "row_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rows_with_observations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mean_absolute_error_mpa": {
+          "type": "number",
+          "minimum": 0.0
+        }
+      }
+    },
+    "rows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/audit_row_v1"
+      }
+    }
+  },
+  "$defs": {
+    "audit_mix_input_v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cement_kg_m3",
+        "slag_kg_m3",
+        "fly_ash_kg_m3",
+        "water_kg_m3",
+        "superplasticizer_kg_m3",
+        "aggregate_volume_fraction",
+        "age_days",
+        "temperature_c"
+      ],
+      "properties": {
+        "cement_kg_m3": {
+          "type": "number"
+        },
+        "slag_kg_m3": {
+          "type": "number"
+        },
+        "fly_ash_kg_m3": {
+          "type": "number"
+        },
+        "water_kg_m3": {
+          "type": "number"
+        },
+        "superplasticizer_kg_m3": {
+          "type": "number"
+        },
+        "aggregate_volume_fraction": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.92
+        },
+        "age_days": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "temperature_c": {
+          "type": "number"
+        }
+      }
+    },
+    "audit_row_v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_index",
+        "input",
+        "profile_used",
+        "formal_anchor",
+        "predicted_strength_mpa",
+        "regime_warnings",
+        "safety_margin"
+      ],
+      "properties": {
+        "row_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "input": {
+          "$ref": "#/$defs/audit_mix_input_v1"
+        },
+        "profile_used": {
+          "type": "string",
+          "minLength": 1
+        },
+        "formal_anchor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "predicted_strength_mpa": {
+          "type": "number"
+        },
+        "observed_strength_mpa": {
+          "type": "number"
+        },
+        "abs_error_mpa": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "regime_warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "safety_margin": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}

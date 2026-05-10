@@ -9,8 +9,12 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process::ExitCode;
-use umst_cli::cli::{self, MixSpec, PredictionWireVersion};
+use umst_cli::{
+    audit,
+    cli::{self, mix_spec_from_json_value, MixSpec, PredictionWireVersion},
+};
 use umst_concrete_cartridge::calibration::Profile;
+use umst_concrete_cartridge::facade::schema_audit_v1_json;
 
 const MIX_SCHEMA_V1: &str = include_str!("../../../schema/mix.v1.json");
 const RESULT_SCHEMA_V1: &str = include_str!("../../../schema/result.v1.json");
@@ -67,6 +71,19 @@ enum Command {
     Profiles(ProfilesCmd),
     /// Emit certify JSON (formal-anchor chain) for bundled `NAME`.
     Certify { name: String },
+    /// Batch-audit CSV rows (dataset headers like `datasets/dataset_d1.csv`).
+    Audit {
+        #[arg(long, value_name = "FILE")]
+        input: Option<PathBuf>,
+        /// Read CSV from stdin (default if `--input` is omitted).
+        #[arg(long)]
+        stdin: bool,
+        /// Audit at most `N` data rows after the header.
+        #[arg(long, value_name = "N")]
+        limit: Option<usize>,
+        #[arg(long, value_enum, default_value_t = AuditFormatCli::Json)]
+        format: AuditFormatCli,
+    },
 }
 
 #[derive(Subcommand)]
@@ -85,6 +102,15 @@ enum SchemaCmd {
     Result,
     /// JSON Schema draft 2020-12 for `result.v2` wire objects.
     ResultV2,
+    /// JSON Schema draft 2020-12 for `audit.v1` corpus reports.
+    Audit,
+}
+
+#[derive(Clone, Copy, Debug, Default, clap::ValueEnum)]
+enum AuditFormatCli {
+    #[default]
+    Json,
+    Csv,
 }
 
 #[derive(Clone, Copy, Debug, Default, clap::ValueEnum)]
@@ -163,6 +189,49 @@ fn run_optimize(profile: &Profile, base: MixSpec, target_raw: String, steps: usi
     Ok(())
 }
 
+fn print_audit_stdout_csv(v: &Value) -> Result<()> {
+    let rows = v
+        .get("rows")
+        .and_then(|x| x.as_array())
+        .context("audit report missing rows array")?;
+    let mut w = csv::Writer::from_writer(io::stdout());
+    w.write_record([
+        "row_index",
+        "predicted_strength_mpa",
+        "observed_strength_mpa",
+        "abs_error_mpa",
+        "safety_margin",
+        "regime_warnings",
+    ])?;
+    for row in rows {
+        let idx = row["row_index"].to_string();
+        let pred = row["predicted_strength_mpa"].to_string();
+        let obs = row
+            .get("observed_strength_mpa")
+            .filter(|x| !x.is_null())
+            .map(ToString::to_string)
+            .unwrap_or_default();
+        let res = row
+            .get("abs_error_mpa")
+            .filter(|x| !x.is_null())
+            .map(ToString::to_string)
+            .unwrap_or_default();
+        let margin = row["safety_margin"].to_string();
+        let warns = row["regime_warnings"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str())
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            })
+            .unwrap_or_default();
+        w.write_record([idx, pred, obs, res, margin, warns])?;
+    }
+    w.flush().context("flush audit CSV")?;
+    Ok(())
+}
+
 fn main() -> ExitCode {
     let root = CliRoot::parse();
 
@@ -172,6 +241,7 @@ fn main() -> ExitCode {
                 SchemaCmd::Mix => MIX_SCHEMA_V1,
                 SchemaCmd::Result => RESULT_SCHEMA_V1,
                 SchemaCmd::ResultV2 => RESULT_SCHEMA_V2,
+                SchemaCmd::Audit => schema_audit_v1_json(),
             };
             println!("{payload}");
             Ok(())
@@ -212,7 +282,7 @@ fn main() -> ExitCode {
                     return ExitCode::from(1);
                 }
             };
-            let spec = match MixSpec::try_from(v) {
+            let spec = match mix_spec_from_json_value(v) {
                 Ok(mut s) => {
                     if globals.profile_file.is_none() {
                         s.profile_name = globals.profile.clone();
@@ -257,7 +327,7 @@ fn main() -> ExitCode {
                     return ExitCode::from(1);
                 }
             };
-            let base = match MixSpec::try_from(v) {
+            let base = match mix_spec_from_json_value(v) {
                 Ok(mut s) => {
                     if globals.profile_file.is_none() {
                         s.profile_name = globals.profile.clone();
@@ -272,6 +342,56 @@ fn main() -> ExitCode {
                 }
             };
             run_optimize(&profile, base, target.clone(), *steps).map_err(|e| e.to_string())
+        }
+        Command::Audit {
+            input,
+            stdin,
+            limit,
+            format,
+        } => {
+            let globals = &root.globals;
+            let profile = match load_profile(globals) {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("{e:#}");
+                    return ExitCode::from(1);
+                }
+            };
+            let csv_text = match (*stdin, input.as_ref()) {
+                (true, _) | (false, None) => match audit::stdin_to_string() {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("{e:#}");
+                        return ExitCode::from(1);
+                    }
+                },
+                (false, Some(p)) => match fs::read_to_string(p) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        eprintln!("read {}: {e}", p.display());
+                        return ExitCode::from(1);
+                    }
+                },
+            };
+            let v = match audit::audit_csv_buf(&profile, &csv_text, *limit) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("{e:#}");
+                    return ExitCode::from(1);
+                }
+            };
+            match format {
+                AuditFormatCli::Json => {
+                    println!("{}", serde_json::to_string_pretty(&v).unwrap_or_default());
+                }
+                AuditFormatCli::Csv => {
+                    if let Err(e) = print_audit_stdout_csv(&v) {
+                        eprintln!("{e:#}");
+                        return ExitCode::from(1);
+                    }
+                }
+            }
+            Ok(())
         }
     };
 

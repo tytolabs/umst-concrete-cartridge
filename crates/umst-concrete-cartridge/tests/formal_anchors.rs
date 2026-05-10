@@ -432,7 +432,16 @@ fn visit_file(
 
 fn walk_src() -> Result<Vec<Violation>, Box<dyn Error>> {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let roots = [manifest.join("src"), manifest.join("crates/umst-cli/src")];
+    let workspace = manifest
+        .parent()
+        .and_then(Path::parent)
+        .expect("crate in workspace");
+    let roots = [
+        manifest.join("src"),
+        workspace.join("crates/umst-cli/src"),
+        workspace.join("crates/umst-mcp/src"),
+        workspace.join("crates/umst-py/src"),
+    ];
     let mut out = Vec::new();
     for root in roots {
         if !root.is_dir() {
@@ -446,7 +455,12 @@ fn walk_src() -> Result<Vec<Violation>, Box<dyn Error>> {
                 if pth.is_dir() {
                     stack.push(pth);
                 } else {
-                    let rel = pth.strip_prefix(&manifest)?;
+                    let rel = pth.strip_prefix(workspace).unwrap_or_else(|_| {
+                        panic!(
+                            "walk_src path {:?} not under workspace root {:?}",
+                            pth, workspace
+                        )
+                    });
                     let static_rel: &'static str =
                         Box::leak(rel.to_string_lossy().into_owned().into_boxed_str());
                     visit_file(&pth, static_rel, &mut out)?;
@@ -482,7 +496,16 @@ fn all_public_symbols_have_formal_anchor_doc() -> Result<(), Box<dyn Error>> {
 #[test]
 fn src_formal_status_histogram_sanity() -> Result<(), Box<dyn Error>> {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let roots = [manifest.join("src"), manifest.join("crates/umst-cli/src")];
+    let workspace = manifest
+        .parent()
+        .and_then(Path::parent)
+        .expect("crate in workspace");
+    let roots = [
+        manifest.join("src"),
+        workspace.join("crates/umst-cli/src"),
+        workspace.join("crates/umst-mcp/src"),
+        workspace.join("crates/umst-py/src"),
+    ];
     let mut combined = String::new();
     for root in roots {
         if !root.is_dir() {

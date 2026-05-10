@@ -3,25 +3,21 @@
 
 [package]
 name = "umst-cli"
-version = "0.1.0"
-edition = "2021"
-rust-version = "1.75"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
 autobenches = false
-authors = [
-    "Santhosh Shyamsundar <santhoshshyamsundar@gmail.com>",
-    "Santosh Prabhu Shenbagamoorthy",
-    "Studio TYTO",
-]
 description = "Command-line front-end for the UMST concrete cartridge."
-license = "MIT"
-repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 
 [lib]
 name = "umst_cli"
 path = "src/lib.rs"
 
 [dependencies]
-umst-concrete-cartridge = { path = "../.." }
+umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
 umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
 burn = { version = "0.13.0", default-features = false }
 burn-ndarray = "0.13.0"
@@ -31,6 +27,7 @@ anyhow = "1.0"
 csv = "1.3"
 sha2 = "0.10"
 serde = { version = "1.0", features = ["derive"] }
+ryu = "1.0"
 
 [dev-dependencies]
 approx = "0.5"
@@ -38,6 +35,10 @@ assert_cmd = "2.0"
 predicates = "3.1"
 jsonschema = "0.26"
 rand = "0.8"
+
+[[bin]]
+name = "umst-canonical"
+path = "src/canonical_bin.rs"
 
 [[bin]]
 name = "umst"
@@ -54,6 +55,10 @@ path = "tests/predict.rs"
 [[test]]
 name = "cli_schema"
 path = "tests/schema.rs"
+
+[[test]]
+name = "cli_audit"
+path = "tests/audit.rs"
 
 [[test]]
 name = "cli_public_contract"

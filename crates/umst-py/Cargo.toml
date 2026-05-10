@@ -1,23 +1,25 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-#
-# Stdio MCP server: sync JSON-RPC over lines; depends on `umst-cli` transport + `umst-concrete-cartridge` façade.
 
 [package]
-name = "umst-mcp"
+name = "umst-py"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Model Context Protocol (MCP) server exposing the UMST concrete engine to AI agents."
+description = "PyO3 extension for UMST concrete cartridge wire APIs."
+
+[lib]
+name = "_umst_concrete_cartridge"
+crate-type = ["cdylib"]
 
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
 umst-cli = { path = "../umst-cli" }
-serde = { version = "1.0", features = ["derive"] }
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py310"] }
 serde_json = "1.0"
-tracing = "0.1"
-tracing-subscriber = "0.3"
 
+[build-dependencies]
+pyo3-build-config = "0.22"

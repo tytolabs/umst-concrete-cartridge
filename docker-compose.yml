@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+# Stdio MCP: keep stdin_open + tty when attaching from a compose shell.
+
+services:
+  umst-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./calibration:/srv/calibration:ro

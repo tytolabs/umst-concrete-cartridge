@@ -2,45 +2,329 @@
 // Copyright (c) 2026 Santhosh Shyamsundar,
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! A lightweight MCP (Model Context Protocol) server that exposes the
-//! UMST concrete cartridge to AI agents via JSON-RPC 2.0 over stdin/stdout.
-//!
-//! Start with `cargo run -p umst-mcp` and point Claude Desktop (or any
-//! MCP-compatible agent) at the resulting binary.
+//! MCP stdio JSON-RPC server for **`umst_predict`**, **`umst_audit`**, **`umst_profiles`**, **`umst_certify`** (facade + CLI canonical JSON).
 
 use std::io::{self, BufRead, Write};
 
-use anyhow::Result;
-use burn_ndarray::{NdArray, NdArrayDevice};
 use serde_json::{json, Value};
-use umst_concrete_cartridge::calibration::Profile;
-use umst_concrete_cartridge::homogeneous::{
-    compressive_strength_mpa, degree_of_hydration_alpha, embodied_co2_kg_per_m3, safety_margin,
-    yield_stress_pa, MixRow,
+use umst_cli::canonical::canonical_json_bytes;
+use umst_cli::{
+    audit::audit_csv_buf,
+    cli::{
+        certify_profile_json, mix_spec_from_json_value, predict_with_options, serialize_prediction,
+        MixSpec, PredictOptions, PredictionWireVersion,
+    },
 };
-use umst_concrete_cartridge::mix_layout::{fractions_from_mix_row, mix_tensor_from_layout};
-use umst_concrete_cartridge::run_full_physics_pipeline;
+use umst_concrete_cartridge::calibration::{Profile, BUNDLED_PROFILE_IDS};
 
-type Backend = NdArray<f32>;
+fn err_frame(id: Value, msg: impl Into<String>) -> Value {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "error": { "code": -32603, "message": msg.into() },
+    })
+}
 
-// ---------------------------------------------------------------------------
-// Entry-point
-// ---------------------------------------------------------------------------
+fn text_result(id: Value, text: String, is_error: bool) -> Value {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "result": {
+            "content": [{ "type": "text", "text": text }],
+            "isError": is_error,
+        },
+    })
+}
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Tracing goes to stderr so it never contaminates the JSON-RPC channel.
+fn dispatch_tools_list(id: Value) -> Value {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "result": {
+            "tools": [
+                {
+                    "name": "umst_predict",
+                    "description": "`result.v2` prediction JSON via `umst_concrete_cartridge::facade::predict_with_options`; optional `canonical` forces sorted-key deterministic bytes.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "mix": {
+                                "type": "object",
+                                "description": "MixSpec wire (`w_c`, `temperature_k`, optional fractions)."
+                            },
+                            "profile": { "type": "string", "default": "default" },
+                            "compare_homogeneous": { "type": "boolean", "default": false },
+                            "schema_version": { "type": "string", "enum": ["v1", "v2"], "default": "v2" },
+                            "canonical": { "type": "boolean", "default": false, "description": "Emit canonical JSON bytes (UTF-8) as escaped string"}
+                        },
+                        "required": ["mix"]
+                    }
+                },
+                {
+                    "name": "umst_audit",
+                    "description": "Batch CSV audit envelope `audit.v1` (dataset_d1-compatible headers).",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "profile": { "type": "string", "default": "uci_d1" },
+                            "csv_text": {
+                                "type": "string",
+                                "description": "Full CSV text including header row"
+                            },
+                            "limit": { "type": "integer", "minimum": 0 },
+                            "canonical": { "type": "boolean", "default": false }
+                        },
+                        "required": ["csv_text"]
+                    }
+                },
+                {
+                    "name": "umst_profiles",
+                    "description": "List bundled calibration profile ids sorted lexicographically with descriptions.",
+                    "inputSchema": { "type": "object", "properties": {} }
+                },
+                {
+                    "name": "umst_certify",
+                    "description": "Emit certify chain JSON (`CertifyChain`) for a bundled profile.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "profile": { "type": "string" },
+                            "canonical": { "type": "boolean", "default": false }
+                        },
+                        "required": ["profile"]
+                    }
+                }
+            ]
+        }
+    })
+}
+
+fn tool_umst_predict(id: Value, args: &Value) -> Value {
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let compare = args
+        .get("compare_homogeneous")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false);
+    let canon = args
+        .get("canonical")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false);
+    let schema_version = args.get("schema_version").and_then(|x| x.as_str());
+    let wire = match schema_version.unwrap_or("v2") {
+        "v1" | "V1" => PredictionWireVersion::V1,
+        _ => PredictionWireVersion::V2,
+    };
+
+    let mix_v = args.get("mix").cloned().unwrap_or(json!({}));
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => return err_frame(id, format!("profile load error: {e}")),
+    };
+    let mut spec: MixSpec = match mix_spec_from_json_value(mix_v.clone()) {
+        Ok(s) => s,
+        Err(e) => return err_frame(id, format!("mix parse error: {e}")),
+    };
+    spec.profile_name = profile_id.to_string();
+
+    let bundle = match predict_with_options(
+        &profile,
+        &spec,
+        PredictOptions {
+            compare_homogeneous: compare,
+        },
+    ) {
+        Ok(b) => b,
+        Err(e) => return err_frame(id, format!("predict error: {e}")),
+    };
+    let out = match serialize_prediction(&bundle, wire) {
+        Ok(v) => v,
+        Err(e) => return err_frame(id, format!("serialize_prediction: {e}")),
+    };
+
+    if canon {
+        let bytes = match canonical_json_bytes(&out) {
+            Ok(b) => b,
+            Err(e) => return err_frame(id, format!("canonical JSON: {e}")),
+        };
+        let escaped =
+            serde_json::to_string(&String::from_utf8_lossy(&bytes).to_string()).unwrap_or_default();
+        return text_result(id, escaped, false);
+    }
+
+    let pretty = serde_json::to_string_pretty(&out).unwrap_or_else(|_| "{}".to_string());
+    text_result(id, pretty, false)
+}
+
+fn tool_umst_audit(id: Value, args: &Value) -> Value {
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("uci_d1");
+    let csv_text = match args.get("csv_text").and_then(|v| v.as_str()) {
+        Some(t) => t.to_string(),
+        None => return err_frame(id, String::from("missing csv_text")),
+    };
+    let limit = args.get("limit").and_then(|v| {
+        let n = v.as_u64()? as usize;
+        Some(n)
+    });
+    let canon = args
+        .get("canonical")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false);
+
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => return err_frame(id, format!("profile load error: {e}")),
+    };
+
+    let v = match audit_csv_buf(&profile, &csv_text, limit) {
+        Ok(x) => x,
+        Err(e) => return err_frame(id, format!("audit csv: {e}")),
+    };
+
+    if canon {
+        let bytes = match canonical_json_bytes(&v) {
+            Ok(b) => b,
+            Err(e) => return err_frame(id, format!("canonical JSON: {e}")),
+        };
+        let escaped =
+            serde_json::to_string(&String::from_utf8_lossy(&bytes).to_string()).unwrap_or_default();
+        return text_result(id, escaped, false);
+    }
+    text_result(
+        id,
+        serde_json::to_string_pretty(&v).unwrap_or_default(),
+        false,
+    )
+}
+
+fn tool_umst_profiles(id: Value) -> Value {
+    let mut ids = BUNDLED_PROFILE_IDS.to_vec();
+    ids.sort_unstable();
+
+    let profs: Vec<Value> = ids
+        .iter()
+        .map(|pid| {
+            let desc = umst_concrete_cartridge::calibration::profile_descriptions()
+                .get(pid)
+                .copied()
+                .unwrap_or("no description");
+            json!({ "id": pid, "description": desc })
+        })
+        .collect();
+
+    text_result(
+        id,
+        serde_json::to_string_pretty(&profs).unwrap_or_default(),
+        false,
+    )
+}
+
+fn tool_umst_certify(id: Value, args: &Value) -> Value {
+    let profile_id = match args.get("profile").and_then(|v| v.as_str()) {
+        Some(x) => x,
+        None => return err_frame(id, String::from("missing profile")),
+    };
+    let canon = args
+        .get("canonical")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false);
+
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => return err_frame(id, format!("profile load error: {e}")),
+    };
+    let v = certify_profile_json(&profile);
+    if canon {
+        let bytes = match canonical_json_bytes(&v) {
+            Ok(b) => b,
+            Err(e) => return err_frame(id, format!("canonical JSON: {e}")),
+        };
+        let escaped =
+            serde_json::to_string(&String::from_utf8_lossy(&bytes).to_string()).unwrap_or_default();
+        return text_result(id, escaped, false);
+    }
+    text_result(
+        id,
+        serde_json::to_string_pretty(&v).unwrap_or_default(),
+        false,
+    )
+}
+
+fn handle_tools_call(id: Value, params: Option<&Value>) -> Value {
+    let name = params
+        .and_then(|p| p.get("name"))
+        .and_then(|n| n.as_str())
+        .unwrap_or("");
+
+    let args = params
+        .and_then(|p| p.get("arguments"))
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+
+    match name {
+        "umst_predict" => tool_umst_predict(id, &args),
+        "umst_audit" => tool_umst_audit(id, &args),
+        "umst_profiles" => tool_umst_profiles(id),
+        "umst_certify" => tool_umst_certify(id, &args),
+        other => json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": { "code": -32601, "message": format!("Unknown tool: {other}") },
+        }),
+    }
+}
+
+fn dispatch(req: &Value) -> Value {
+    let id = req.get("id").cloned().unwrap_or(Value::Null);
+    let method = req.get("method").and_then(|m| m.as_str()).unwrap_or("");
+
+    match method {
+        "initialize" => json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "result": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": { "tools": {} },
+                "serverInfo": {
+                    "name": "umst-concrete-cartridge",
+                    "version": env!("CARGO_PKG_VERSION"),
+                },
+            },
+        }),
+
+        "tools/list" => dispatch_tools_list(id),
+        "tools/call" => handle_tools_call(id, req.get("params")),
+        _ => json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "error": { "code": -32601, "message": format!("Method not found: {method}") },
+        }),
+    }
+}
+
+fn main() {
     tracing_subscriber::fmt()
         .with_writer(std::io::stderr)
         .init();
 
-    tracing::info!("UMST MCP server started (stdio transport).");
+    tracing::info!("UMST MCP server (stdio facade tools).");
 
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
     for line in stdin.lock().lines() {
-        let line = line?;
+        let line = match line {
+            Ok(l) => l,
+            Err(e) => {
+                tracing::error!("stdin read failed: {e}");
+                continue;
+            }
+        };
         if line.trim().is_empty() {
             continue;
         }
@@ -53,324 +337,12 @@ async fn main() -> Result<()> {
             }
         };
 
-        let out = serde_json::to_string(&response)? + "\n";
-        stdout.write_all(out.as_bytes())?;
-        stdout.flush()?;
+        let out = match serde_json::to_string(&response) {
+            Ok(s) => s + "\n",
+            Err(_) => "{}".to_string(),
+        };
+
+        let _ = stdout.write_all(out.as_bytes());
+        let _ = stdout.flush();
     }
-
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// JSON-RPC dispatcher
-// ---------------------------------------------------------------------------
-
-fn dispatch(req: &Value) -> Value {
-    let id = req.get("id").cloned().unwrap_or(Value::Null);
-    let method = req.get("method").and_then(|m| m.as_str()).unwrap_or("");
-
-    match method {
-        // ── MCP discovery ──────────────────────────────────────────────
-        "initialize" => json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "result": {
-                "protocolVersion": "2024-11-05",
-                "capabilities": { "tools": {} },
-                "serverInfo": {
-                    "name": "umst-concrete-cartridge",
-                    "version": env!("CARGO_PKG_VERSION")
-                }
-            }
-        }),
-
-        "tools/list" => handle_tools_list(id),
-        "tools/call" => handle_tools_call(id, req.get("params")),
-
-        _ => json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "error": { "code": -32601, "message": format!("Method not found: {method}") }
-        }),
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Tool catalogue
-// ---------------------------------------------------------------------------
-
-fn handle_tools_list(id: Value) -> Value {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "result": {
-            "tools": [
-                {
-                    "name": "evaluate_mix",
-                    "description": "Run tensor physics pipeline (`run_full_physics_pipeline`) plus homogeneous strength; optional `compare_homogeneous` adds legacy scalar envelope for regressions.",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "cement_kg_m3": {
-                                "type": "number",
-                                "description": "Cement content in kg/m³ (e.g. 350)"
-                            },
-                            "water_kg_m3": {
-                                "type": "number",
-                                "description": "Water content in kg/m³ (e.g. 160)"
-                            },
-                            "slag_kg_m3": {
-                                "type": "number",
-                                "description": "Ground granulated blast-furnace slag in kg/m³",
-                                "default": 0.0
-                            },
-                            "fly_ash_kg_m3": {
-                                "type": "number",
-                                "description": "Fly ash in kg/m³",
-                                "default": 0.0
-                            },
-                            "superplasticizer_kg_m3": {
-                                "type": "number",
-                                "description": "Superplasticizer dosage in kg/m³",
-                                "default": 0.0
-                            },
-                            "temperature_c": {
-                                "type": "number",
-                                "description": "Curing temperature in °C",
-                                "default": 20.0
-                            },
-                            "age_days": {
-                                "type": "number",
-                                "description": "Age at evaluation in days",
-                                "default": 28.0
-                            },
-                            "profile": {
-                                "type": "string",
-                                "description": "Calibration profile id (default, uci_d1, uhpc, …)",
-                                "default": "default"
-                            },
-                            "compare_homogeneous": {
-                                "type": "boolean",
-                                "description": "When true, include `homogeneous_compare` block (legacy scalar envelope) alongside tensor pipeline JSON.",
-                                "default": false
-                            },
-                            "aggregate_volume_fraction": {
-                                "type": "number",
-                                "description": "Solids volume fraction of aggregate in the mix [0, 0.85]; must match CLI `MixSpec` for parity (default 0.65).",
-                                "default": 0.65
-                            }
-                        },
-                        "required": ["cement_kg_m3", "water_kg_m3"]
-                    }
-                },
-                {
-                    "name": "list_profiles",
-                    "description": "List available calibration profiles with descriptions.",
-                    "inputSchema": { "type": "object", "properties": {} }
-                }
-            ]
-        }
-    })
-}
-
-// ---------------------------------------------------------------------------
-// Tool execution
-// ---------------------------------------------------------------------------
-
-fn handle_tools_call(id: Value, params: Option<&Value>) -> Value {
-    let name = params
-        .and_then(|p| p.get("name"))
-        .and_then(|n| n.as_str())
-        .unwrap_or("");
-
-    let args = params
-        .and_then(|p| p.get("arguments"))
-        .cloned()
-        .unwrap_or(json!({}));
-
-    match name {
-        "evaluate_mix" => tool_evaluate_mix(id, &args),
-        "list_profiles" => tool_list_profiles(id),
-        other => json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "error": { "code": -32601, "message": format!("Unknown tool: {other}") }
-        }),
-    }
-}
-
-fn tool_evaluate_mix(id: Value, args: &Value) -> Value {
-    let cement = args
-        .get("cement_kg_m3")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(350.0) as f32;
-    let water = args
-        .get("water_kg_m3")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(160.0) as f32;
-    let slag = args
-        .get("slag_kg_m3")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(0.0) as f32;
-    let fly_ash = args
-        .get("fly_ash_kg_m3")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(0.0) as f32;
-    let sp = args
-        .get("superplasticizer_kg_m3")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(0.0) as f32;
-    let temp_c = args
-        .get("temperature_c")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(20.0) as f32;
-    let age_d = args
-        .get("age_days")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(28.0) as f32;
-    let profile_id = args
-        .get("profile")
-        .and_then(|v| v.as_str())
-        .unwrap_or("default");
-    let compare_homogeneous = args
-        .get("compare_homogeneous")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
-    let agg_raw = args
-        .get("aggregate_volume_fraction")
-        .and_then(|v| v.as_f64())
-        .unwrap_or(0.65) as f32;
-    if !(0.0..=0.85).contains(&agg_raw) {
-        return json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "result": {
-                "content": [{ "type": "text", "text": format!(
-                    "aggregate_volume_fraction must be in [0, 0.85] (same as CLI MixSpec); got {agg_raw}"
-                ) }],
-                "isError": true
-            }
-        });
-    }
-    let agg_vf = agg_raw;
-
-    // Load calibration profile
-    let profile = match Profile::load_bundled(profile_id) {
-        Ok(p) => p,
-        Err(e) => {
-            return json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": {
-                    "content": [{ "type": "text", "text": format!("Error loading profile '{profile_id}': {e}") }],
-                    "isError": true
-                }
-            });
-        }
-    };
-
-    // Build the homogeneous mix row using the actual MixRow struct fields
-    let row = MixRow {
-        cement_kg_m3: cement,
-        slag_kg_m3: slag,
-        fly_ash_kg_m3: fly_ash,
-        water_kg_m3: water,
-        superplasticizer_kg_m3: sp,
-        temperature_c: temp_c,
-        age_days: age_d,
-    };
-
-    let wc = if cement > 0.0 {
-        water / cement
-    } else {
-        f32::NAN
-    };
-
-    match compressive_strength_mpa(&profile, &row) {
-        Ok(strength) => {
-            let frac = fractions_from_mix_row(&row, agg_vf);
-            let dev = NdArrayDevice::default();
-            let mix_tensor = mix_tensor_from_layout::<Backend>(&frac, &dev);
-            let pipe = run_full_physics_pipeline::<Backend>(&profile, &mix_tensor);
-            let pipe_json = serde_json::to_value(&pipe).unwrap_or_else(|_| json!({}));
-
-            let mut result = json!({
-                "profile": profile_id,
-                "cement_kg_m3": cement,
-                "water_kg_m3": water,
-                "water_cement_ratio": wc,
-                "slag_kg_m3": slag,
-                "fly_ash_kg_m3": fly_ash,
-                "superplasticizer_kg_m3": sp,
-                "temperature_c": temp_c,
-                "age_days": age_d,
-                "aggregate_volume_fraction": agg_vf,
-                "predicted_compressive_strength_mpa_homogeneous": strength,
-                "predicted_compressive_strength_mpa_tensor_jennings": pipe.summary.strength_jennings_mpa,
-                "physics_pipeline": pipe_json,
-                "engine": "umst-concrete-cartridge",
-                "engine_version": env!("CARGO_PKG_VERSION")
-            });
-
-            if compare_homogeneous {
-                let binder = (cement + slag + fly_ash).max(1.0);
-                let w_c_row = (water / cement.max(1e-6)).clamp(0.05, 0.95);
-                let sp_pct = (sp / binder) * 100.0;
-                if let Ok(alpha_h) = degree_of_hydration_alpha(&profile, &row) {
-                    let tau_h = yield_stress_pa(&profile, w_c_row, sp_pct, agg_vf);
-                    let agg_mass = 2_600.0_f32 * agg_vf;
-                    let gwp_h =
-                        embodied_co2_kg_per_m3(&profile, cement, slag + fly_ash, agg_mass, water);
-                    let margin_h = safety_margin(&profile, w_c_row, alpha_h);
-                    let h = json!({
-                        "compressive_strength_mpa": f64::from(strength),
-                        "yield_stress_pa": f64::from(tau_h),
-                        "degree_of_hydration": f64::from(alpha_h),
-                        "gwp_kg_co2_eq_per_m3": f64::from(gwp_h),
-                        "safety_margin": f64::from(margin_h),
-                    });
-                    if let Value::Object(ref mut m) = result {
-                        m.insert("homogeneous_compare".into(), h);
-                    }
-                }
-            }
-
-            json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": {
-                    "content": [{ "type": "text", "text": serde_json::to_string_pretty(&result).unwrap_or_default() }]
-                }
-            })
-        }
-        Err(e) => json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "result": {
-                "content": [{ "type": "text", "text": format!("Physics evaluation error: {e}") }],
-                "isError": true
-            }
-        }),
-    }
-}
-
-fn tool_list_profiles(id: Value) -> Value {
-    let profiles: Vec<Value> = umst_concrete_cartridge::calibration::BUNDLED_PROFILE_IDS
-        .iter()
-        .map(|pid| {
-            let desc = umst_concrete_cartridge::calibration::profile_descriptions()
-                .get(pid)
-                .copied()
-                .unwrap_or("no description");
-            json!({ "id": pid, "description": desc })
-        })
-        .collect();
-
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "result": {
-            "content": [{ "type": "text", "text": serde_json::to_string_pretty(&profiles).unwrap_or_default() }]
-        }
-    })
 }

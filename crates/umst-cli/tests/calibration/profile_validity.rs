@@ -3,6 +3,7 @@
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 use std::error::Error;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use umst_concrete_cartridge::calibration::{Profile, BUNDLED_PROFILE_IDS};
@@ -76,5 +77,25 @@ fn formal_uris_point_at_existing_lean_when_root_set() -> Result<(), Box<dyn Erro
             );
         }
     }
+    Ok(())
+}
+
+#[test]
+fn lemma_naturality_square_exists_when_formal_root_set() -> Result<(), Box<dyn Error>> {
+    let root = match std::env::var("UMST_FORMAL_ROOT") {
+        Ok(r) => r,
+        Err(_) => {
+            eprintln!("SKIP: UMST_FORMAL_ROOT unset; Naturality lemma check not run");
+            return Ok(());
+        }
+    };
+    let lean = Path::new(&root).join("Lean/Naturality.lean");
+    assert!(lean.is_file(), "missing {}", lean.display());
+    let body = fs::read_to_string(&lean)?;
+    assert!(
+        body.contains("naturalitySquare"),
+        "expected `naturalitySquare` marker in {}",
+        lean.display()
+    );
     Ok(())
 }

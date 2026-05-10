@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! Adversarial-input sanity bounds on tensor engines; dataset claims are grounded in
-//! [`datasets/PROVENANCE.md`](../../datasets/PROVENANCE.md); colloidal, rheological, thermal,
+//! [`datasets/PROVENANCE.md`](../../../datasets/PROVENANCE.md); colloidal, rheological, thermal,
 //! transport, printability, and ITZ behaviours reference the citations collected in
 //! [`docs/Constitutive-Equations.md`](../../docs/Constitutive-Equations.md).
 

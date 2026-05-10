@@ -10,6 +10,32 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-05-07
+
+### Added
+
+- **Virtual workspace** root with the library in `crates/umst-concrete-cartridge` and members `umst-cli`, `umst-mcp`, `umst-py`.
+- **`umst_concrete_cartridge::facade`**: serde-only transport surface + `predict` / audit / certify helpers without `serde_json` / `tokio` / `clap` in the core crate.
+- **`umst audit`** + **`audit.v1`** schema; CSV header synonyms for `datasets/dataset_d1.csv`-style corpora.
+- **`umst-canonical`** binary: deterministic JSON bytes (sorted object keys, Ryū float literals, rejects non-finite numbers).
+- **Python** (`crates/umst-py`, PyO3 0.22, `abi3-py310`): `predict`, `audit`, `certify`, `schema`, `canonical_json`; maturin `pyproject.toml` + `python/umst_concrete_cartridge` shim.
+- **MCP** (`umst-mcp`): **`umst_predict`**, **`umst_audit`**, **`umst_profiles`**, **`umst_certify`** with optional `canonical` flag.
+- **Docker / compose** + **`scripts/mcp_smoke.py`**; **`scripts/acceptance_v02.sh`** bundles smoke steps.
+- **Notebooks** (`notebooks/sustainable_mix_audit.ipynb`, `run_all.sh`) with approved envelope claim language.
+- **CI**: `python-wheels.yml`, `docker.yml`, `notebook.yml`; `rust.yml` scans `crates/**`, `cargo check --all-features`, `cargo tree -p umst-concrete-cartridge` dep guard, MCP smoke, maturin develop job.
+- Formal hygiene: **`naturalitySquare`** marker check when **`UMST_FORMAL_ROOT`** points at `umst-formal`.
+
+### Changed
+
+- README / **`CITATION.cff`** now document CLI · Python · MCP · Docker surfaces.
+- **`audit.v1` row objects** are contract-shaped: nested **`input`** mix map, **`profile_used`**, per-row **`formal_anchor`**, **`predicted_strength_mpa`**, optional **`observed_strength_mpa`** / **`abs_error_mpa`**, **`safety_margin`**, and **`regime_warnings`** (JSON Schema enforces the stable row shape).
+- **Python `predict`**: `predict(spec, *, profile="default", schema_version="v2")` — mix dict first, keyword-only profile/schema; `compare_homogeneous` removed from the public binding surface.
+- **`scripts/acceptance_v02.sh`** step **[7]** asserts **`umst predict` → `umst-canonical`** bytes match **`canonical_json(predict(...))`** (after `maturin develop` if needed).
+
+### Fixed
+
+- **`CITATION.cff` `date-released`** advanced past the v0.1.0 stamp to reflect the v0.2.0 citation cut.
+
 ## [Unreleased]
 
 ### Added

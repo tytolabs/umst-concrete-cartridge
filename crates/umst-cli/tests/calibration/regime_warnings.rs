@@ -5,11 +5,13 @@
 use serde_json::json;
 use std::error::Error;
 
-use umst_cli::cli::{predict, serialize_prediction, MixSpec, PredictionWireVersion};
+use umst_cli::cli::{
+    mix_spec_from_json_value, predict, serialize_prediction, MixSpec, PredictionWireVersion,
+};
 use umst_concrete_cartridge::calibration::Profile;
 
 fn spec(w: f32, tk: f32, fly: f32, sf: f32, age: f32) -> Result<MixSpec, Box<dyn Error>> {
-    Ok(MixSpec::try_from(json!({
+    Ok(mix_spec_from_json_value(json!({
         "w_c": w as f64,
         "temperature_k": tk as f64,
         "fly_ash_pct": fly as f64,

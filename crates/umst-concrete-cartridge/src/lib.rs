@@ -15,6 +15,9 @@ pub mod physics;
 /// Tensor engine orchestration (`compute_all`) and MCP/CLI capsules.
 pub mod pipeline;
 
+/// Wire DTOs and pure `predict` / schema bytes without `serde_json` in this crate.
+pub mod facade;
+
 mod burn_compat;
 
 /// formal_anchor: NONE
