@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Versioned **calibration** artefacts: nine bundled `calibration/profiles/*.v1.toml` profiles (lifted from prototype-3 JSON SHA-256 documented in `calibration/SCHEMA.md`), copy-of-record CSVs under `datasets/`, and homogeneous **Powers gel-space** routing via `Profile`.
+- Versioned **calibration** artefacts: eight bundled `calibration/profiles/*.v1.toml` profiles (lifted from prototype-3 JSON SHA-256 documented in `calibration/SCHEMA.md`), copy-of-record CSVs under `datasets/`, and homogeneous **Powers gel-space** routing via `Profile`.
 - **result.v2** JSON schema (`schema/result.v2.json`): default `umst predict` payload now includes `calibration_profile`, `calibration_model`, `formal_anchor`, and `warnings`; `result.v1` remains available via `--schema-version v1` for one minor cycle.
 - **`umst` CLI** extensions: global `--profile` / `--profile-file`, `umst profiles {list,describe,regime}`, `umst certify NAME`, `umst schema result-v2`, and stderr notice when the default profile applies.
 - Regression tests: CSV-backed dataset metrics (`tests/calibration/dataset_metrics.rs`), formal-anchor doc lint (`tests/formal_anchors.rs`), regime warnings, migration anchor sampling.
@@ -22,8 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional **`sha2`** dependency (behind `calibration` feature) for deterministic profile file digests in the report binary.
 
 ### Changed
-- **Boundary calibration profiles** (`lunar`, `uhpc`, `selfheal`) no longer carry `[acceptance]` headline metrics; `tests/calibration/dataset_metrics.rs` skips any profile with `verification_status = "Boundary"`. UHPC TOML documents that Powers gel-space is the wrong model class for dense UHPC microstructure.
+- Renamed profiles `uci_d2` / `uci_d3` / `uci_d4` → **`zenodo_ndt`** / **`zenodo_sonreb`** / **`zenodo_rh`** to match the IROS Paper 2 reproducibility manifest (TU/e + TNO, Zenodo Record **14921019**, CC-BY 4.0). `[provenance]` blocks carry the full attribution; on-disk CSV filenames stay `dataset_d2.csv`, ….
+- **`Profile::regime_check_scalars`** now documents a mechanised anchor to **`RegimeSoundness.warnings_empty_iff_in_regime`** (`umst-formal`). Other calibration-layer structs keep explicit **`NONE`** anchors where the witness lives in another crate or awaits a future homogeneous Jennings branch — see **`docs/FormalAnchors.md`** (“Future formal links”) and the **`TODO_FORMAL`** note on **`powers_compressive_strength_mpa`**.
+- **`umst certify`** JSON includes optional **`zenodo_record`** / **`zenodo_doi`** / **`zenodo_url`** / **`license`** / **`subset`** when present on the profile.
+- **`docs/SSOT.json`** uses **`total_data_rows`** (= **17646**) as the summed row-count field name.
+- **Boundary calibration profiles** (`uhpc`, `selfheal`) no longer carry `[acceptance]` headline metrics; `tests/calibration/dataset_metrics.rs` skips any profile with `verification_status = "Boundary"`. UHPC TOML documents that Powers gel-space is the wrong model class for dense UHPC microstructure.
 - New integration tests [`tests/cli/public_contract.rs`](tests/cli/public_contract.rs) lock in live-binary acceptance checks 7–10 (`profiles list`, `predict` v2 fields, temperature regime `warnings`, `certify` JSON).
+
+### Removed
+- **`lunar`** bundled calibration profile and **`datasets/dataset_lunar.csv`**. No real lunar concrete corpus exists at the v0.1 horizon; shipping a synthetic placeholder violated the measurement-or-derivation provenance rule.
+
 ## [0.1.0] — 2026-05-07
 
 ### Added

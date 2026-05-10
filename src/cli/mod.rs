@@ -407,6 +407,16 @@ pub struct CertifyChain {
     pub acceptance_anchor: String,
     pub axioms: Vec<String>,
     pub provenance_sha256: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub zenodo_record: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub zenodo_doi: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub zenodo_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub license: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subset: Option<String>,
 }
 
 /// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#kleisliComposeWellTypedN
@@ -434,6 +444,11 @@ pub fn certify_profile_json(profile: &Profile) -> Value {
         acceptance_anchor,
         axioms,
         provenance_sha256: profile.provenance.prototype_3_sha256.clone(),
+        zenodo_record: profile.provenance.zenodo_record.clone(),
+        zenodo_doi: profile.provenance.zenodo_doi.clone(),
+        zenodo_url: profile.provenance.zenodo_url.clone(),
+        license: profile.provenance.license.clone(),
+        subset: profile.provenance.subset.clone(),
     };
     serde_json::to_value(&chain).unwrap_or(Value::Null)
 }

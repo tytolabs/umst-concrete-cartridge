@@ -17,7 +17,7 @@ Place **`--profile`** / **`--profile-file` immediately after `umst`** (they are 
 
 ## Global flags
 
-- **`--profile NAME`** — bundled calibration bundle id (`default`, `uci_d1`, …). Default: `default`.
+- **`--profile NAME`** — bundled calibration bundle id (`default`, `uci_d1`, `zenodo_ndt`, `zenodo_sonreb`, `zenodo_rh`, …). Default: `default`.
 - **`--profile-file PATH`** — external TOML profile; **`--profile`** still supplies the bundle id label.
 
 When neither flag pins a profile beyond the implicit default, the CLI prints one **stderr info line** stating that `default` is in use (delivery **C6** in the calibration formal-anchors plan).
@@ -42,6 +42,7 @@ umst profiles regime highscm
 umst certify uci_d1
 
 cargo run -q --bin calibration_report --features "cli,calibration" > docs/Calibration.md
+# also writes results/canonical/table_per_dataset_metrics.csv + results/canonical/README.md
 ```
 
 Wire contracts live under **`schema/`**:

@@ -109,6 +109,7 @@ umst-concrete-cartridge = "0.1"
 cargo install umst-concrete-cartridge --features cli
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict
+echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile zenodo_ndt predict
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict --schema-version v1
 umst profiles list
 umst schema result-v2
@@ -118,6 +119,8 @@ Regenerate **`docs/Calibration.md`** from the deterministic report (`cargo insta
 
 ```bash
 cargo run --quiet --bin calibration_report --manifest-path /path/to/umst-concrete-cartridge/Cargo.toml --features "cli,calibration" > docs/Calibration.md
+# The same command refreshes `results/canonical/table_per_dataset_metrics.csv` (see `results/canonical/README.md`).
+# Dataset scope and row totals: `datasets/PROVENANCE.md` and `docs/SSOT.json`.
 ```
 
 Calibration is delivered as **versioned TOML profiles** (`calibration/profiles/*.v1.toml`) with explicit regime bounds; the CLI selects a profile via **`--profile`** or **`--profile-file`**, and `predict` defaults to **`result.v2`** metadata (profile id, model wire name, Lean `formal_anchor` URI, regime `warnings`). See [`docs/Calibration.md`](docs/Calibration.md), [`calibration/SCHEMA.md`](calibration/SCHEMA.md), and [`docs/FormalAnchors.md`](docs/FormalAnchors.md).

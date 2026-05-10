@@ -6,7 +6,9 @@
 #![allow(clippy::doc_lazy_continuation)]
 
 pub mod calibration;
+pub mod calibration_metrics;
 pub mod core;
+pub mod formulas;
 pub mod homogeneous;
 pub mod physics;
 

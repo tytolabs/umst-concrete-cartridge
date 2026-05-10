@@ -7,13 +7,12 @@ Keys and sections are sorted for stable diffs.
 
 - `default`: `867ff48353f12368f47c12873d3b2c46a966131aed5f591aca3e78a9d4fcd0fd`
 - `highscm`: `40f2881be897de005831c8c1b4111c528cbe0d0f51b8f96fb07dbfaa1d7473f6`
-- `lunar`: `2eecf2375f4d798b59b8bd7e7d575f612744acddaddfd2093444b5335534b4c2`
 - `selfheal`: `7a2297514563e382a1f13cdd95d0446382abf78b9bb464e98719b05661197a2d`
 - `uci_d1`: `da098f9b023684f18f923704fcca11d12119167a4bbf255f41c2eace931d8022`
-- `uci_d2`: `bf6407232b456414afd8ddaf70e3b45a7d960b0fff6314918fd1055e6b4c624c`
-- `uci_d3`: `35f8136432bbb83c52d154415f92846ca3413cf1167212c10b23acc9ead1ae7c`
-- `uci_d4`: `4e5e8f444aee2961a82303a79b29827f8b1d58594ce69841220a77c18380bffa`
 - `uhpc`: `74da242763870501829dbfc6916434f32f78ba27b2e9b0923f73423d64f3f9d6`
+- `zenodo_ndt`: `8aa5fd46bcb2aa04646d8cc828cb355c9911d3187d340dccd89de3c77c86de29`
+- `zenodo_rh`: `06402b36924e79ecf4965eee1d58bd2b2a8fb77ee2f3b727e5893d22b40c4774`
+- `zenodo_sonreb`: `5f54568f0df1b052826e035c535d4ac31c2b0713df267f5b85b47d110a189ae4`
 
 ## Parsed profile summaries
 
@@ -62,25 +61,6 @@ Keys and sections are sorted for stable diffs.
 | provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
-### `lunar`
-
-| key | value |
-|-----|-------|
-| model_kind | PowersGelSpace |
-| regime.w_c_min | 0.2000 |
-| regime.w_c_max | 0.7000 |
-| regime.temperature_k_min | 273.0000 |
-| regime.temperature_k_max | 353.0000 |
-| regime.age_hours_min | 1.0000 |
-| regime.age_hours_max | 87600.0000 |
-| powers.s_intrinsic | 30.0000 |
-| powers.k_slag | 0.1000 |
-| powers.k_fly_ash | 0.1000 |
-| powers.k_ref | 0.7000 |
-| powers.early_boost | 1.0000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
-| contract.verification_status | Boundary |
-
 ### `selfheal`
 
 | key | value |
@@ -122,7 +102,26 @@ Keys and sections are sorted for stable diffs.
 | provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
-### `uci_d2`
+### `uhpc`
+
+| key | value |
+|-----|-------|
+| model_kind | PowersGelSpace |
+| regime.w_c_min | 0.1800 |
+| regime.w_c_max | 0.2800 |
+| regime.temperature_k_min | 273.0000 |
+| regime.temperature_k_max | 353.0000 |
+| regime.age_hours_min | 1.0000 |
+| regime.age_hours_max | 87600.0000 |
+| powers.s_intrinsic | 180.0000 |
+| powers.k_slag | 1.2000 |
+| powers.k_fly_ash | 0.9000 |
+| powers.k_ref | 0.2500 |
+| powers.early_boost | 1.6000 |
+| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| contract.verification_status | Boundary |
+
+### `zenodo_ndt`
 
 | key | value |
 |-----|-------|
@@ -144,29 +143,7 @@ Keys and sections are sorted for stable diffs.
 | provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
-### `uci_d3`
-
-| key | value |
-|-----|-------|
-| model_kind | PowersGelSpace |
-| regime.w_c_min | 0.2500 |
-| regime.w_c_max | 0.7000 |
-| regime.temperature_k_min | 273.0000 |
-| regime.temperature_k_max | 353.0000 |
-| regime.age_hours_min | 1.0000 |
-| regime.age_hours_max | 87600.0000 |
-| powers.s_intrinsic | 45.2400 |
-| powers.k_slag | 0.0000 |
-| powers.k_fly_ash | 0.0000 |
-| powers.k_ref | 2.5630 |
-| powers.early_boost | 1.1910 |
-| acceptance.strength_mae_max | 50.000000 |
-| acceptance.strength_rmse_max | 65.000000 |
-| acceptance.strength_r2_min | -5.000000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
-| contract.verification_status | Contract |
-
-### `uci_d4`
+### `zenodo_rh`
 
 | key | value |
 |-----|-------|
@@ -188,22 +165,28 @@ Keys and sections are sorted for stable diffs.
 | provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
-### `uhpc`
+### `zenodo_sonreb`
 
 | key | value |
 |-----|-------|
 | model_kind | PowersGelSpace |
-| regime.w_c_min | 0.1800 |
-| regime.w_c_max | 0.2800 |
+| regime.w_c_min | 0.2500 |
+| regime.w_c_max | 0.7000 |
 | regime.temperature_k_min | 273.0000 |
 | regime.temperature_k_max | 353.0000 |
 | regime.age_hours_min | 1.0000 |
 | regime.age_hours_max | 87600.0000 |
-| powers.s_intrinsic | 180.0000 |
-| powers.k_slag | 1.2000 |
-| powers.k_fly_ash | 0.9000 |
-| powers.k_ref | 0.2500 |
-| powers.early_boost | 1.6000 |
+| powers.s_intrinsic | 45.2400 |
+| powers.k_slag | 0.0000 |
+| powers.k_fly_ash | 0.0000 |
+| powers.k_ref | 2.5630 |
+| powers.early_boost | 1.1910 |
+| acceptance.strength_mae_max | 50.000000 |
+| acceptance.strength_rmse_max | 65.000000 |
+| acceptance.strength_r2_min | -5.000000 |
 | provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
-| contract.verification_status | Boundary |
+| contract.verification_status | Contract |
 
+## Per-dataset headline metrics (CSV artefact)
+
+See `results/canonical/table_per_dataset_metrics.csv`, regenerated alongside this binary. Row totals for each mirror file are keyed in **`datasets/PROVENANCE.md`** and audited by **`tests/calibration/ssot_row_counts`**.

@@ -27,7 +27,10 @@ explicitly rather than implying coverage we have not yet achieved.
 | `freeze_thaw` | ASTM C666 round-robin | mass loss trend | qualitative | [`tests/freeze_thaw.rs::astm_c666_trend`](../tests/freeze_thaw.rs) | trend reproduced; absolute calibration in progress |
 | `transport` | Tang–Nilsson migration | $D_{\mathrm{Cl}}$ | $\le 25\%$ relative | [`tests/transport.rs::tang_nilsson`](../tests/transport.rs) | passing |
 | `nano`, `colloidal`, `porosity`, `itz`, `packing`, `fiber`, `polymer`, `self_heal`, `thermo`, `sustainability`, `cost` | — | — | — | — | implemented; published-dataset validation in progress |
-| Homogeneous Powers lift (`src/homogeneous.rs`) | Bundled CSV mirrors under `datasets/` for **`[contract].verification_status = "Contract"`** profiles only | compressive strength $f_c^\prime$ vs observed | Per-profile **`[acceptance]`** in TOML (MAE / RMSE / $R^2$). **Boundary** profiles (`lunar`, `uhpc`, `selfheal`, …) omit `[acceptance]` and are **excluded** from this gate — no widened bounds | [`tests/calibration/dataset_metrics.rs`](../tests/calibration/dataset_metrics.rs) | passing with `cargo test --features cli` |
+| Homogeneous Powers lift (`src/homogeneous.rs`) | Bundled CSV mirrors under `datasets/` for **`[contract].verification_status = "Contract"`** profiles only | compressive strength $f_c^\prime$ vs observed | Per-profile **`[acceptance]`** in TOML (MAE / RMSE / $R^2$). **Boundary** profiles (`uhpc`, `selfheal`, …) omit `[acceptance]` and are **excluded** from this gate — no widened bounds | [`tests/calibration/dataset_metrics.rs`](../tests/calibration/dataset_metrics.rs) | passing with `cargo test --features cli` |
+| Single source of truth row counts | `datasets/*.csv` vs `docs/SSOT.json` | line counts (data rows) | exact equality on sum and per file | [`tests/calibration/ssot_row_counts.rs`](../tests/calibration/ssot_row_counts.rs) | passing |
+| Tensor engine adversarial guards | `burn` engines in `src/physics/` | finite outputs; order-of-magnitude bands for DLVO, YODEL, thermo proxy, chloride diffusivity, printability, ITZ | regression | [`tests/realism/adversarial_physics.rs`](../tests/realism/adversarial_physics.rs) | passing |
+| `formal_status` documentation ledger | `src/**/*.rs` doc lines | bucket counts | snapshot file | [`tests/proof_status_doc.rs`](../tests/proof_status_doc.rs) + [`docs/PROOF-STATUS.md`](../docs/PROOF-STATUS.md) | passing |
 | Live `umst` wire + certify | N/A (binary) | `result.v2` fields; regime `warnings`; certify JSON | See [`tests/cli/public_contract.rs`](../tests/cli/public_contract.rs) (acceptance checks 7–10) | `cli_public_contract` | passing with `cargo test --features cli` |
 
 The validation envelope is deliberately narrow. We choose a small number
@@ -44,7 +47,7 @@ cargo test --no-default-features --release
 cargo test --features cli --release
 ```
 
-The deep calibration / CLI integration tests (dataset metrics, regime warnings, JSON schema round-trips) require **`--features cli`**. Formal-anchor documentation is enforced by **`cargo test --test formal_anchors`** (no extra feature flags).
+The deep calibration / CLI integration tests (dataset metrics, regime warnings, JSON schema round-trips) require **`--features cli`**. Formal-anchor documentation is enforced by **`cargo test --test formal_anchors`** (no extra feature flags). Row-count SSOT and tensor realism harnesses run under the same default integration suite; use **`cargo test --test proof_status_doc`** for the `formal_status` Markdown snapshot.
 
 CI runs the full suite on every push and pull request — see
 [`.github/workflows/rust.yml`](../.github/workflows/rust.yml).

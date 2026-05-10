@@ -3,7 +3,7 @@
 # Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 [meta]
-name = "uci_d3"
+name = "zenodo_rh"
 schema = "calibration.v1"
 material = "concrete"
 source_repo = "umst-prototype-3"
@@ -11,7 +11,12 @@ source_repo = "umst-prototype-3"
 [provenance]
 dataset_lift_from = "umst-prototype-3/data/calibration/concrete_calibration.json"
 prototype_3_sha256 = "6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1"
-primary_reference = "Prototype internal extension D3"
+primary_reference = "Eindhoven University of Technology and TNO. Non-destructive Estimation of Concrete Compressive Strength. Zenodo, 2025."
+zenodo_record = "14921019"
+zenodo_doi = "10.5281/zenodo.14921019"
+zenodo_url = "https://zenodo.org/records/14921019"
+license = "CC-BY 4.0"
+subset = "RH"
 
 [provenance.formal]
 anchor = "lean://umst-formal/Lean/Powers.lean#powers_monotone"
@@ -30,11 +35,11 @@ age_hours_max = 87600.0
 kind = "powers_gel_space"
 
 [parameters.powers_gel_space]
-s_intrinsic = 45.2400
+s_intrinsic = 76.5100
 k_slag = 0.0000
 k_fly_ash = 0.0000
-k_ref = 2.5630
-early_boost = 1.1910
+k_ref = 1.3920
+early_boost = 1.0840
 
 [acceptance]
 strength_mae_max = 50.0

@@ -26,7 +26,7 @@ Regression: `cargo test --test formal_anchors`.
 | `CalibrationError` | `enum` | `src/calibration.rs` | NONE |
 | `load_bundled` | `fn` | `src/calibration.rs` | lean://umst-formal/Lean/Constitutional.lean#kleisliCompose |
 | `load_from_path` | `fn` | `src/calibration.rs` | lean://umst-formal/Lean/LandauerLaw.lean#ErasureProcess |
-| `regime_check_scalars` | `fn` | `src/calibration.rs` | lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration |
+| `regime_check_scalars` | `fn` | `src/calibration.rs` | lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime |
 | `any_bundled_profile_covers_scalars` | `fn` | `src/calibration.rs` | lean://umst-formal/Lean/Naturality.lean#naturalitySquare |
 | `profile_descriptions` | `fn` | `src/calibration.rs` | lean://umst-formal/Lean/Constitutional.lean#KleisliArrow |
 | `PredictionWireVersion` | `enum` | `src/cli/mod.rs` | lean://umst-formal/Lean/Naturality.lean#gateMaterialAgnostic |
@@ -108,5 +108,13 @@ Regression: `cargo test --test formal_anchors`.
 | `TransportEngine` | `struct` | `src/physics/transport.rs` | NONE |
 | `compute_capillary_porosity` | `fn` | `src/physics/transport.rs` | NONE |
 | `compute_chloride_diffusivity` | `fn` | `src/physics/transport.rs` | NONE |
+
+### Future formal links (cross-repo / deferred)
+
+These lemmas exist in **`umst-formal`** or are planned on **`umst-manifold`**, but this cartridge does **not** assert a `formal_anchor` on the inventory rows above until the Rust call site is the mechanised witness:
+
+- **Adjoint / terminal gradient:** `lean://umst-formal/Lean/Adjoint.lean#adjoint_recovers_gradient` — belongs with the differentiable **manifold** adjoint pathway, not TOML provenance parsing.
+- **DEC / graph Laplacian mass conservation:** `lean://umst-formal/Lean/DEC.lean#laplacian_row_sum_zero` (and related DEC lemmas) — target **`umst-manifold`** `physics::laplacian` once that surface is anchor-audited.
+- **Jennings gel-space monotone strength:** `lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone` — reserved for **`powers_compressive_strength_mpa`** once a **`JenningsGelSpace`** homogeneous branch ships (**TODO_FORMAL** note on that function).
 
 *Total documented public items: **98**.*

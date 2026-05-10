@@ -13,6 +13,7 @@ use std::error::Error;
 use std::path::PathBuf;
 
 use umst_concrete_cartridge::calibration::Profile;
+use umst_concrete_cartridge::calibration_metrics::{regression_metrics, RegressionMetrics};
 use umst_concrete_cartridge::homogeneous::{compressive_strength_mpa, MixRow};
 
 fn datasets_dir() -> PathBuf {
@@ -42,10 +43,6 @@ fn metrics(profile_id: &str, csv_name: &str) -> Result<(), Box<dyn Error>> {
 
     let mut rdr = csv::Reader::from_path(datasets_dir().join(csv_name))?;
     let records: Vec<_> = rdr.records().filter_map(|x| x.ok()).collect();
-    let mut sum_abs = 0.0_f64;
-    let mut sum_sq = 0.0_f64;
-    let mut sum_y = 0.0_f64;
-    let mut max_err = 0.0_f64;
     let mut preds = Vec::with_capacity(records.len());
     let mut obs = Vec::with_capacity(records.len());
     for rec in records {
@@ -54,27 +51,14 @@ fn metrics(profile_id: &str, csv_name: &str) -> Result<(), Box<dyn Error>> {
         let pred = compressive_strength_mpa(&p, &row)? as f64;
         preds.push(pred);
         obs.push(y);
-        let ae = (pred - y).abs();
-        sum_abs += ae;
-        sum_sq += (pred - y).powi(2);
-        max_err = max_err.max(ae);
-        sum_y += y;
     }
-    let n = preds.len() as f64;
-    let mae = sum_abs / n;
-    let rmse = (sum_sq / n).sqrt();
-    let mean_y = sum_y / n;
-    let ss_tot = obs.iter().map(|yi| (yi - mean_y).powi(2)).sum::<f64>();
-    let ss_res = preds
-        .iter()
-        .zip(&obs)
-        .map(|(pi, yi)| (yi - pi).powi(2))
-        .sum::<f64>();
-    let r2 = if ss_tot <= 1e-12 {
-        0.0
-    } else {
-        1.0 - ss_res / ss_tot
-    };
+    let RegressionMetrics {
+        mae,
+        rmse,
+        r2,
+        max_abs_error: max_err,
+        ..
+    } = regression_metrics(&preds, &obs);
 
     let mae_max = p.acceptance.strength_mae_max.unwrap_or(f64::INFINITY);
     let rmse_max = p.acceptance.strength_rmse_max.unwrap_or(f64::INFINITY);
@@ -101,13 +85,12 @@ fn metrics(profile_id: &str, csv_name: &str) -> Result<(), Box<dyn Error>> {
 fn headline_contract_profiles_vs_csv() -> Result<(), Box<dyn Error>> {
     let mut pairs = BTreeMap::new();
     pairs.insert("uci_d1", "dataset_d1.csv");
-    pairs.insert("uci_d2", "dataset_d2.csv");
-    pairs.insert("uci_d3", "dataset_d3.csv");
-    pairs.insert("uci_d4", "dataset_d4.csv");
+    pairs.insert("zenodo_ndt", "dataset_d2.csv");
+    pairs.insert("zenodo_sonreb", "dataset_d3.csv");
+    pairs.insert("zenodo_rh", "dataset_d4.csv");
     pairs.insert("uhpc", "dataset_uhpc.csv");
     pairs.insert("highscm", "dataset_highscm.csv");
     pairs.insert("selfheal", "dataset_selfheal.csv");
-    pairs.insert("lunar", "dataset_lunar.csv");
     for (id, csv) in pairs {
         metrics(id, csv)?;
     }

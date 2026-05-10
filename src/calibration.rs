@@ -18,7 +18,14 @@ use thiserror::Error;
 ///
 /// Ordered names of bundled [`Profile`] artefacts embedded via [`include_str!`].
 pub const BUNDLED_PROFILE_IDS: &[&str] = &[
-    "default", "uci_d1", "uci_d2", "uci_d3", "uci_d4", "uhpc", "highscm", "selfheal", "lunar",
+    "default",
+    "uci_d1",
+    "zenodo_ndt",
+    "zenodo_sonreb",
+    "zenodo_rh",
+    "uhpc",
+    "highscm",
+    "selfheal",
 ];
 
 /// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#kleisliComposeWellTypedN
@@ -92,7 +99,7 @@ pub struct CalibrationMeta {
 /// formal_anchor: NONE
 /// formal_status: Library
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_anchor_rationale: Dataset and Zenodo citation bundle parsed from TOML; adjoint terminal-gradient identity lives on the differentiable manifold substrate — see `docs/FormalAnchors.md` “Future formal links”.
 pub struct CalibrationProvenance {
     #[serde(default)]
     pub dataset_lift_from: Option<String>,
@@ -103,6 +110,16 @@ pub struct CalibrationProvenance {
     pub secondary_references: Vec<String>,
     #[serde(default)]
     pub formal: Option<ProvenanceFormal>,
+    #[serde(default)]
+    pub zenodo_record: Option<String>,
+    #[serde(default)]
+    pub zenodo_doi: Option<String>,
+    #[serde(default)]
+    pub zenodo_url: Option<String>,
+    #[serde(default)]
+    pub license: Option<String>,
+    #[serde(default)]
+    pub subset: Option<String>,
 }
 
 /// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration
@@ -134,7 +151,7 @@ pub struct RegimeBounds {
 /// formal_anchor: NONE
 /// formal_status: Library
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_anchor_rationale: Dispatch metadata only; Jennings gel-space monotone strength witness applies once `powers_compressive_strength_mpa` ships a Jennings branch (TODO_FORMAL note on that function).
 pub struct CalibrationModelSection {
     pub kind: ModelKind,
 }
@@ -158,7 +175,7 @@ pub struct AcceptanceBlock {
 /// formal_anchor: NONE
 /// formal_status: Library
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_anchor_rationale: Contract metadata (`verification_status`); hyperbox regime warnings are soundness-witnessed on `regime_check_scalars` — see RegimeSoundness anchor there.
 pub struct ContractBlock {
     pub verification_status: String,
 }
@@ -190,7 +207,7 @@ pub struct RegimeViolation {
 }
 
 /// formal_anchor: NONE
-/// formal_anchor_rationale: IO and parse errors for bundled calibration artefacts.
+/// formal_anchor_rationale: Bundled profile IO / TOML parse failures; discrete mass-conservation DEC witness belongs on the manifold Laplacian implementation — see `docs/FormalAnchors.md` “Future formal links”.
 #[derive(Debug, Error)]
 pub enum CalibrationError {
     #[error("unknown bundled profile `{0}`")]
@@ -255,7 +272,7 @@ impl Profile {
         }
     }
 
-    /// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration
+    /// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
     /// formal_status: Mechanised
     /// formal_axioms: NONE
     ///
@@ -377,13 +394,12 @@ fn bundled_toml_source(name: &str) -> Result<&'static str, CalibrationError> {
     let s = match id.as_str() {
         "default" => include_str!("../calibration/profiles/default.v1.toml"),
         "uci_d1" => include_str!("../calibration/profiles/uci_d1.v1.toml"),
-        "uci_d2" => include_str!("../calibration/profiles/uci_d2.v1.toml"),
-        "uci_d3" => include_str!("../calibration/profiles/uci_d3.v1.toml"),
-        "uci_d4" => include_str!("../calibration/profiles/uci_d4.v1.toml"),
+        "zenodo_ndt" => include_str!("../calibration/profiles/zenodo_ndt.v1.toml"),
+        "zenodo_sonreb" => include_str!("../calibration/profiles/zenodo_sonreb.v1.toml"),
+        "zenodo_rh" => include_str!("../calibration/profiles/zenodo_rh.v1.toml"),
         "uhpc" => include_str!("../calibration/profiles/uhpc.v1.toml"),
         "highscm" => include_str!("../calibration/profiles/highscm.v1.toml"),
         "selfheal" => include_str!("../calibration/profiles/selfheal.v1.toml"),
-        "lunar" => include_str!("../calibration/profiles/lunar.v1.toml"),
         _ => return Err(CalibrationError::UnknownBundledProfile(name.to_string())),
     };
     Ok(s)
@@ -424,12 +440,20 @@ pub fn profile_descriptions() -> HashMap<&'static str, &'static str> {
         "generic OPC fallback (Contract, synthetic anchor)",
     );
     m.insert("uci_d1", "Yeh 1998 UCI concrete strength (D1, 1030 rows)");
-    m.insert("uci_d2", "Augmented UCI-style strength dataset D2");
-    m.insert("uci_d3", "Augmented UCI-style strength dataset D3");
-    m.insert("uci_d4", "Augmented UCI-style strength dataset D4");
+    m.insert(
+        "zenodo_ndt",
+        "Zenodo 14921019 NDT subset (dataset_d2.csv, TU/e + TNO)",
+    );
+    m.insert(
+        "zenodo_sonreb",
+        "Zenodo 14921019 SonReb subset (dataset_d3.csv, TU/e + TNO)",
+    );
+    m.insert(
+        "zenodo_rh",
+        "Zenodo 14921019 RH subset (dataset_d4.csv, TU/e + TNO)",
+    );
     m.insert("uhpc", "Ultra-high performance concrete (Boundary)");
     m.insert("highscm", "High SCM blends (Contract on paired CSV)");
     m.insert("selfheal", "Self-healing specialty mix (Boundary)");
-    m.insert("lunar", "Lunar geopolymer-style stub (Boundary)");
     m
 }

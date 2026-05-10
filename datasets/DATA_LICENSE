@@ -3,12 +3,35 @@ Copyright (c) 2026 Santhosh Shyamsundar,
 Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 MIT License applies to cartridge-internal aggregation, filenames, provenance markdown,
-and augmented variants D2–D4 originated in prototype-3 (MIT).
+and prototype lift paths documented in PROVENANCE.md.
 
-UCI Concrete Compressive Strength (Yeh 1998) attribution (dataset_d1.csv basis):
+================================================================================
+UCI Concrete Compressive Strength (Yeh 1998) — applies to dataset_d1.csv
+================================================================================
 
   I-Cheng Yeh, "Modeling of strength of high-performance concrete using artificial
   neural networks," Cement and Concrete Research, Vol. 28, No. 12, pp. 1797–1808 (1998).
   Original UCI Machine Learning Repository record used under repository terms.
+
+================================================================================
+Zenodo TU/e + TNO (CC-BY 4.0) — applies to dataset_d2.csv, dataset_d3.csv, dataset_d4.csv
+================================================================================
+
+  Eindhoven University of Technology and TNO. Non-destructive Estimation of Concrete
+  Compressive Strength. Zenodo, 2025.
+
+  Zenodo record: 14921019
+  DOI: 10.5281/zenodo.14921019
+  URL: https://zenodo.org/records/14921019
+  License: CC-BY 4.0
+
+  Subsets paired with calibration profiles (see PROVENANCE.md):
+    • dataset_d2.csv — NDT subset — profile zenodo_ndt
+    • dataset_d3.csv — SonReb subset — profile zenodo_sonreb
+    • dataset_d4.csv — RH subset — profile zenodo_rh
+
+Every CSV row shipped under datasets/ is traceable to one of the two corpora above,
+or to other prototype-sourced profiles documented in PROVENANCE.md (UHPC, HIGHSCM,
+SELFHEAL) under their respective regime notes.
 
 See PROVENANCE.md per file for lift paths and SHA-256.

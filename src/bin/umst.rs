@@ -31,7 +31,7 @@ struct CliRoot {
 
 #[derive(Parser)]
 struct Globals {
-    /// Calibration bundle id (`default`, `uci_d1`, …) unless `--profile-file` is set.
+    /// Calibration bundle id (`default`, `uci_d1`, `zenodo_ndt`, …) unless `--profile-file` is set.
     #[arg(long, default_value = "default")]
     profile: String,
     /// Override bundled profile with external TOML (wins over `--profile`).
@@ -285,13 +285,12 @@ fn handle_profiles(cmd: &ProfilesCmd) -> Result<()> {
             let txt = match p.bundle_id.as_str() {
                 "default" => include_str!("../../calibration/profiles/default.v1.toml"),
                 "uci_d1" => include_str!("../../calibration/profiles/uci_d1.v1.toml"),
-                "uci_d2" => include_str!("../../calibration/profiles/uci_d2.v1.toml"),
-                "uci_d3" => include_str!("../../calibration/profiles/uci_d3.v1.toml"),
-                "uci_d4" => include_str!("../../calibration/profiles/uci_d4.v1.toml"),
+                "zenodo_ndt" => include_str!("../../calibration/profiles/zenodo_ndt.v1.toml"),
+                "zenodo_sonreb" => include_str!("../../calibration/profiles/zenodo_sonreb.v1.toml"),
+                "zenodo_rh" => include_str!("../../calibration/profiles/zenodo_rh.v1.toml"),
                 "uhpc" => include_str!("../../calibration/profiles/uhpc.v1.toml"),
                 "highscm" => include_str!("../../calibration/profiles/highscm.v1.toml"),
                 "selfheal" => include_str!("../../calibration/profiles/selfheal.v1.toml"),
-                "lunar" => include_str!("../../calibration/profiles/lunar.v1.toml"),
                 _ => return Err(anyhow::anyhow!("unknown profile")),
             };
             print!("{txt}");

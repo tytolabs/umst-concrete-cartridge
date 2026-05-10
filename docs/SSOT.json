@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "manifest_note": "Aggregate dataset scope for this cartridge. Bibliography and per-file digests live in datasets/PROVENANCE.md. Align manuscript or external excerpts to these counts.",
+  "total_data_rows": 17646,
+  "datasets": [
+    {
+      "profile_id": "uci_d1",
+      "csv": "dataset_d1.csv",
+      "data_rows": 1030
+    },
+    {
+      "profile_id": "zenodo_ndt",
+      "csv": "dataset_d2.csv",
+      "data_rows": 4891
+    },
+    {
+      "profile_id": "zenodo_sonreb",
+      "csv": "dataset_d3.csv",
+      "data_rows": 2780
+    },
+    {
+      "profile_id": "zenodo_rh",
+      "csv": "dataset_d4.csv",
+      "data_rows": 7445
+    },
+    {
+      "profile_id": "uhpc",
+      "csv": "dataset_uhpc.csv",
+      "data_rows": 500
+    },
+    {
+      "profile_id": "highscm",
+      "csv": "dataset_highscm.csv",
+      "data_rows": 500
+    },
+    {
+      "profile_id": "selfheal",
+      "csv": "dataset_selfheal.csv",
+      "data_rows": 500
+    }
+  ],
+  "canonical_metrics_csv": "results/canonical/table_per_dataset_metrics.csv",
+  "ssot_row_count_test": "tests/calibration/ssot_row_counts.rs"
+}

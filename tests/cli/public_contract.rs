@@ -14,7 +14,7 @@ use std::error::Error;
 use umst_concrete_cartridge::calibration::BUNDLED_PROFILE_IDS;
 
 #[test]
-fn acceptance_7_profiles_list_is_exactly_nine_bundled_ids() -> Result<(), Box<dyn Error>> {
+fn acceptance_7_profiles_list_matches_bundled_ids() -> Result<(), Box<dyn Error>> {
     let assert = Command::cargo_bin("umst")?
         .arg("profiles")
         .arg("list")
@@ -29,7 +29,10 @@ fn acceptance_7_profiles_list_is_exactly_nine_bundled_ids() -> Result<(), Box<dy
         }
         ids.insert(id.to_string());
     }
-    let expected: BTreeSet<String> = BUNDLED_PROFILE_IDS.iter().map(|s| (*s).to_string()).collect();
+    let expected: BTreeSet<String> = BUNDLED_PROFILE_IDS
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect();
     assert_eq!(
         ids, expected,
         "profiles list must enumerate exactly BUNDLED_PROFILE_IDS"
@@ -53,9 +56,7 @@ fn acceptance_8_predict_uci_d1_populates_v2_contract_fields() -> Result<(), Box<
         .as_str()
         .ok_or("calibration_model missing")?;
     assert!(!model.is_empty());
-    let anchor = v["formal_anchor"]
-        .as_str()
-        .ok_or("formal_anchor missing")?;
+    let anchor = v["formal_anchor"].as_str().ok_or("formal_anchor missing")?;
     assert!(
         anchor.starts_with("lean://"),
         "formal_anchor should be a Lean URI, got {anchor:?}"

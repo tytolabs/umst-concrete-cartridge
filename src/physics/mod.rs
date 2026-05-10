@@ -7,6 +7,7 @@ pub mod creep;
 pub mod fiber;
 pub mod fracture;
 pub mod freeze_thaw;
+pub mod itz;
 pub mod nano;
 pub mod polymer;
 pub mod printability;

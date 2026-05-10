@@ -8,6 +8,7 @@
 #![allow(clippy::excessive_precision)]
 
 use crate::calibration::{ModelKind, Profile};
+use crate::formulas::{hydration_degree_calibrated, ultimate_doh_wc};
 use thiserror::Error;
 
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
@@ -37,13 +38,12 @@ pub enum HomogeneousError {
 fn dataset_key(profile: &Profile) -> &'static str {
     match profile.bundle_id.as_str() {
         "uci_d1" => "UCI-D1",
-        "uci_d2" => "UCI-D2",
-        "uci_d3" => "UCI-D3",
-        "uci_d4" => "UCI-D4",
+        "zenodo_ndt" => "ZENODO-NDT",
+        "zenodo_sonreb" => "ZENODO-SONREB",
+        "zenodo_rh" => "ZENODO-RH",
         "uhpc" => "UHPC",
         "highscm" => "HIGHSCM",
         "selfheal" => "SELFHEAL",
-        "lunar" => "LUNAR",
         _ => "DEFAULT",
     }
 }
@@ -52,25 +52,7 @@ fn dataset_key(profile: &Profile) -> &'static str {
 /// formal_anchor_rationale: Mills (1966) literature closure; not part of prototype JSON calibration lift.
 #[must_use]
 pub fn ultimate_doh(_profile: &Profile, w_c: f32) -> f32 {
-    1.031 * w_c / (0.194 + w_c)
-}
-
-fn hydration_degree_calibrated(
-    age_days: f32,
-    temp_c: f32,
-    scm_ratio: f32,
-    k_ref_multiplier: f32,
-) -> f32 {
-    let alpha_max = 0.95 - scm_ratio * 0.15;
-    let k_ref = 0.55 * k_ref_multiplier;
-    let t_ref_k = 293.15_f32;
-    let t_k = temp_c + 273.15;
-    let e_over_r = 5000.0;
-    let temp_factor = (e_over_r * (1.0 / t_ref_k - 1.0 / t_k)).exp();
-    let scm_factor = 1.0 - scm_ratio * 0.4;
-    let k = k_ref * temp_factor * scm_factor;
-    let alpha = alpha_max * (1.0 - (-k * age_days.sqrt()).exp());
-    alpha.clamp(0.0, 1.0)
+    ultimate_doh_wc(w_c)
 }
 
 /// Effective w/c, degree of hydration, curing temperature (deg C). Mirrors prototype-3 `mix_hydration_state`.
@@ -82,9 +64,6 @@ pub fn mix_hydration_state(
     row: &MixRow,
 ) -> Result<(f32, f32, f32), HomogeneousError> {
     let dk = dataset_key(profile);
-    if dk == "LUNAR" {
-        return Err(HomogeneousError::InvalidMix);
-    }
 
     let binder = row.cement_kg_m3 + row.slag_kg_m3 + row.fly_ash_kg_m3;
     if binder <= 0.0 {
@@ -121,7 +100,7 @@ pub fn mix_hydration_state(
 
     let mut alpha = hydration_degree_calibrated(effective_age, temp_c, scm_ratio, k_ref_eff);
 
-    if dk == "UCI-D3" && effective_age >= 14.0 {
+    if dk == "ZENODO-SONREB" && effective_age >= 14.0 {
         let alpha_14 = hydration_degree_calibrated(14.0, temp_c, scm_ratio, k_ref_eff);
         let diff = effective_age - 14.0;
         alpha = alpha_14 + (1.0 - alpha_14) * (1.0 - (-k_ref_eff * diff.sqrt()).exp());
@@ -142,6 +121,7 @@ pub fn mix_hydration_state(
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
+/// formal_anchor_rationale: Powers gel-space strength path only; TODO_FORMAL v0.2 Jennings homogeneous dispatch should cite `lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone` — URI not asserted as formal_anchor until that branch is implemented (currently returns JenningsNotImplemented).
 pub fn powers_compressive_strength_mpa(
     profile: &Profile,
     row: &MixRow,
@@ -154,15 +134,6 @@ pub fn powers_compressive_strength_mpa(
 
     let dk = dataset_key(profile);
     let p = &profile.powers;
-
-    if dk == "LUNAR" {
-        let k_geo = 0.8_f32;
-        let n_geo = 0.7_f32;
-        let fc_max = 35.0_f32;
-        let mut fc = fc_max * (1.0 - (-k_geo * row.age_days.powf(n_geo)).exp());
-        fc *= 0.80;
-        return Ok(fc.clamp(0.0, 250.0));
-    }
 
     let vg = 0.68 * alpha;
     let vc = w_c_effective - 0.36 * alpha;
@@ -177,7 +148,7 @@ pub fn powers_compressive_strength_mpa(
         fc *= p.early_boost as f32;
     }
 
-    let long_term_gain = if row.age_days > 365.0 && dk != "UHPC" && dk != "LUNAR" {
+    let long_term_gain = if row.age_days > 365.0 && dk != "UHPC" {
         let doublings = (row.age_days / 365.0).log2().max(0.0);
         1.0 + 0.05 * doublings
     } else {
@@ -203,9 +174,6 @@ pub fn powers_compressive_strength_mpa(
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 pub fn compressive_strength_mpa(profile: &Profile, row: &MixRow) -> Result<f32, HomogeneousError> {
-    if dataset_key(profile) == "LUNAR" {
-        return powers_compressive_strength_mpa(profile, row, 0.0, 0.0);
-    }
     mix_hydration_state(profile, row)
         .and_then(|(wc, alpha, _tc)| powers_compressive_strength_mpa(profile, row, alpha, wc))
 }
@@ -214,9 +182,6 @@ pub fn compressive_strength_mpa(profile: &Profile, row: &MixRow) -> Result<f32, 
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 pub fn degree_of_hydration_alpha(profile: &Profile, row: &MixRow) -> Result<f32, HomogeneousError> {
-    if dataset_key(profile) == "LUNAR" {
-        return Ok(0.0);
-    }
     mix_hydration_state(profile, row).map(|(_, a, _)| a)
 }
 

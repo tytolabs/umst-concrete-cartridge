@@ -25,7 +25,7 @@ categories = ["science", "mathematics", "simulation"]
 [features]
 default = []
 cli = ["dep:clap", "dep:serde_json", "dep:anyhow"]
-calibration = ["dep:sha2"]
+calibration = ["dep:sha2", "dep:csv"]
 
 [dependencies]
 # Differentiable physics on the burn tensor framework.
@@ -44,6 +44,7 @@ thiserror = "1.0"
 
 toml = "0.8"
 sha2 = { version = "0.10", optional = true }
+csv = { version = "1.3", optional = true }
 
 # Pinned for upstream MSRV compatibility.
 time = "=0.3.36"
@@ -115,6 +116,18 @@ required-features = ["cli"]
 name = "calibration_dataset_metrics"
 path = "tests/calibration/dataset_metrics.rs"
 required-features = ["cli"]
+
+[[test]]
+name = "calibration_ssot_row_counts"
+path = "tests/calibration/ssot_row_counts.rs"
+
+[[test]]
+name = "proof_status_doc"
+path = "tests/proof_status_doc.rs"
+
+[[test]]
+name = "realism_adversarial_physics"
+path = "tests/realism/adversarial_physics.rs"
 
 [[example]]
 name = "hydration_simulation"
