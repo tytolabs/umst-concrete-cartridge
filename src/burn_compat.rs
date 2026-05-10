@@ -7,6 +7,10 @@ use burn::tensor::{backend::Backend, Bool, Tensor};
 
 /// Logical AND for boolean tensors (Burn ≤0.12 exposed `bool_and`; later versions use float multiply).
 #[inline]
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub fn bool_and<B: Backend, const D: usize>(
     a: Tensor<B, D, Bool>,
     b: Tensor<B, D, Bool>,

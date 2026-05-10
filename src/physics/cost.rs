@@ -9,6 +9,10 @@ use umst_manifold::core::tensors::MixTensor;
 /// 
 /// Because it is composed purely of `burn` tensor operations, the gradient of the cost
 /// with respect to the input mix fractions allows the agent to naturally step towards cheaper mixes.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub fn compute_cost<B: Backend>(mix: &MixTensor<B>, unit_cost_factors: Tensor<B, 2>) -> Tensor<B, 2> {
     // Assumes mix.fractions and unit_cost_factors are [Batch, Features]
     // Computes the dot product per batch item (sum over the features dimension)

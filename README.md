@@ -108,9 +108,19 @@ umst-concrete-cartridge = "0.1"
 ```bash
 cargo install umst-concrete-cartridge --features cli
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict
+echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict --profile uci_d1
+echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict --schema-version v1
+umst profiles list
+umst schema result-v2
 ```
 
-More options: [docs/CLI.md](docs/CLI.md).
+Regenerate **`docs/Calibration.md`** from the deterministic report (`cargo install --features "cli,calibration"`):
+
+```bash
+cargo run --quiet --bin calibration_report --manifest-path /path/to/umst-concrete-cartridge/Cargo.toml --features "cli,calibration" > docs/Calibration.md
+```
+
+Calibration is delivered as **versioned TOML profiles** (`calibration/profiles/*.v1.toml`) with explicit regime bounds; the CLI selects a profile via **`--profile`** or **`--profile-file`**, and `predict` defaults to **`result.v2`** metadata (profile id, model wire name, Lean `formal_anchor` URI, regime `warnings`). See [`docs/Calibration.md`](docs/Calibration.md), [`calibration/SCHEMA.md`](calibration/SCHEMA.md), and [`docs/FormalAnchors.md`](docs/FormalAnchors.md).
 
 ```rust
 use umst_concrete_cartridge::core::ConcreteCartridge;

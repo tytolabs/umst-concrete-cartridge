@@ -5,6 +5,10 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Polymer Modification Engine.
 /// Computes Ohama's film formation model and resultant mechanical enhancements.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct PolymerEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -19,6 +23,10 @@ impl<B: Backend> PolymerEngine<B> {
     /// * `humidity` - Relative humidity (0.0 to 1.0)
     /// * `min_film_temp` - Minimum film-forming temperature of the polymer (MFT)
     /// * `flexibility_mod` - Material-specific flexibility parameter (e.g., 1.0 for SBR)
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_modifiers(
         pc_ratio: Tensor<B, 4>,
         temperature_c: Tensor<B, 4>,

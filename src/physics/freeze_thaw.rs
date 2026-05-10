@@ -7,6 +7,10 @@ use crate::burn_compat::bool_and;
 
 /// Pure tensor implementation of the Freeze-Thaw Durability Engine.
 /// Computes air-void spacing factors and critical saturation to prevent cyclic frost damage.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct FreezeThawEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -20,6 +24,10 @@ impl<B: Backend> FreezeThawEngine<B> {
     /// * `paste_fraction` - Volume fraction of cement paste (0.2 to 0.4)
     /// * `air_void_specific_surface` - Surface area of air voids (mm^-1, typically 25 to 45)
     /// * `required_air` - Target air percentage based on exposure severity (e.g. 6.0 for severe)
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_durability(
         air_fraction: Tensor<B, 4>,
         paste_fraction: Tensor<B, 4>,

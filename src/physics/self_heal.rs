@@ -5,6 +5,10 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Autogenous Healing Engine.
 /// Computes crack-closure potential from unhydrated cement particles and precipitation.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct SelfHealEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -12,6 +16,10 @@ pub struct SelfHealEngine<B: Backend> {
 impl<B: Backend> SelfHealEngine<B> {
     /// Computes the healing potential and recovered fracture energy.
     /// Unhydrated cement and moisture presence allow microcracks to seal over time.
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_healing_potential(
         degree_hydration: Tensor<B, 4>,
         internal_rh: Tensor<B, 4>,

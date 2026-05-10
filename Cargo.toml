@@ -1,8 +1,13 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar,
+# Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 [package]
 name = "umst-concrete-cartridge"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.75"
+autobenches = false
 authors = [
     "Santhosh Shyamsundar <santhoshshyamsundar@gmail.com>",
     "Santosh Prabhu Shenbagamoorthy",
@@ -19,7 +24,8 @@ categories = ["science", "mathematics", "simulation"]
 
 [features]
 default = []
-cli = ["dep:clap", "dep:serde_json", "dep:anyhow", "dep:thiserror"]
+cli = ["dep:clap", "dep:serde_json", "dep:anyhow"]
+calibration = ["dep:sha2"]
 
 [dependencies]
 # Differentiable physics on the burn tensor framework.
@@ -27,17 +33,17 @@ burn = { version = "0.13.0", default-features = false }
 burn-ndarray = "0.13.0"
 
 # UMST manifold substrate (git so CI and standalone clones resolve).
-# For local co-development with a sibling checkout, use `cargo patch` or swap to path:
-# umst-manifold = { path = "../umst-manifold" }
 umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
 
-# Serialization.
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
 
 clap = { version = "4.5", features = ["derive"], optional = true }
 anyhow = { version = "1.0", optional = true }
-thiserror = { version = "1.0", optional = true }
+thiserror = "1.0"
+
+toml = "0.8"
+sha2 = { version = "0.10", optional = true }
 
 # Pinned for upstream MSRV compatibility.
 time = "=0.3.36"
@@ -54,6 +60,9 @@ assert_cmd = "2.0"
 predicates = "3.1"
 jsonschema = "0.26"
 serde_json = "1.0"
+csv = "1.3"
+syn = { version = "2.0", features = ["full", "visit"] }
+walkdir = "2.5"
 
 [lib]
 name = "umst_concrete_cartridge"
@@ -64,6 +73,11 @@ name = "umst"
 path = "src/bin/umst.rs"
 required-features = ["cli"]
 
+[[bin]]
+name = "calibration_report"
+path = "benches/calibration_report.rs"
+required-features = ["cli", "calibration"]
+
 [[test]]
 name = "cli_predict"
 path = "tests/cli/predict.rs"
@@ -72,6 +86,29 @@ required-features = ["cli"]
 [[test]]
 name = "cli_schema"
 path = "tests/cli/schema.rs"
+required-features = ["cli"]
+
+[[test]]
+name = "formal_anchors"
+path = "tests/formal_anchors.rs"
+
+[[test]]
+name = "calibration_migration_anchor"
+path = "tests/calibration/migration_anchor.rs"
+required-features = ["cli"]
+
+[[test]]
+name = "calibration_profile_validity"
+path = "tests/calibration/profile_validity.rs"
+
+[[test]]
+name = "calibration_regime_warnings"
+path = "tests/calibration/regime_warnings.rs"
+required-features = ["cli"]
+
+[[test]]
+name = "calibration_dataset_metrics"
+path = "tests/calibration/dataset_metrics.rs"
 required-features = ["cli"]
 
 [[example]]

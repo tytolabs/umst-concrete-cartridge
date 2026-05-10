@@ -5,6 +5,10 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Thermodynamic Engine
 /// Computes hydration heat evolution using the Arrhenius law across a differentiable manifold.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct ThermoEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -19,6 +23,10 @@ impl<B: Backend> ThermoEngine<B> {
     ///
     /// # Returns
     /// A tuple of tensors: `(heat_rate, adiabatic_temp_rise)`
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_heat_rate(
         temp_c: Tensor<B, 4>,
         alpha: Tensor<B, 4>,

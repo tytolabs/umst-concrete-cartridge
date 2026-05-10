@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schema/result.v2.json",
+  "title": "UMST Concrete PredictionResult v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "compressive_strength_mpa",
+    "yield_stress_pa",
+    "degree_of_hydration",
+    "gwp_kg_co2_eq_per_m3",
+    "safety_margin",
+    "calibration_profile",
+    "calibration_model",
+    "formal_anchor",
+    "warnings",
+    "schema_version"
+  ],
+  "properties": {
+    "compressive_strength_mpa": {
+      "type": "number",
+      "description": "Predicted compressive strength (MPa)"
+    },
+    "yield_stress_pa": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Predicted static yield stress (Pa)"
+    },
+    "degree_of_hydration": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Degree of hydration alpha (dimensionless)"
+    },
+    "gwp_kg_co2_eq_per_m3": {
+      "type": "number",
+      "description": "Embodied GWP indicator (kg CO2-eq per m3 concrete)"
+    },
+    "safety_margin": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Non-negative admissibility margin"
+    },
+    "calibration_profile": {
+      "type": "string",
+      "description": "Bundled or file-backed calibration profile id"
+    },
+    "calibration_model": {
+      "type": "string",
+      "description": "Homogeneous model discriminator (e.g. powers_gel_space)"
+    },
+    "formal_anchor": {
+      "type": "string",
+      "description": "Primary Lean formal anchor URI for the active profile"
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Non-empty when operating outside the active profile regime (no silent extrapolation)"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "result.v2"
+    }
+  }
+}

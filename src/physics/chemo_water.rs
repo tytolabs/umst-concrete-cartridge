@@ -5,6 +5,10 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Chemo-Mechanical Water Transport Engine.
 /// Computes moisture diffusion and capillary tension gradients inside the pore network.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct ChemoWaterEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -12,6 +16,10 @@ pub struct ChemoWaterEngine<B: Backend> {
 impl<B: Backend> ChemoWaterEngine<B> {
     /// Computes the internal Relative Humidity profile and resulting capillary tension.
     /// This causes drying shrinkage and limits late-stage hydration.
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_moisture_transport(
         wc_ratio: Tensor<B, 4>,
         degree_hydration: Tensor<B, 4>,

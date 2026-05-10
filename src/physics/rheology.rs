@@ -5,6 +5,10 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Rheology Engine.
 /// Computes yield stress and plastic viscosity using YODEL and Chateau-Ovarlez models.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct RheologyEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -19,6 +23,10 @@ impl<B: Backend> RheologyEngine<B> {
     /// * `max_packing` (phi_m) - Maximum packing fraction [Batch, Depth, Height, Width]
     /// * `intrinsic_viscosity` ([η]) - Shape factor (2.5 for spheres) [Batch, Depth, Height, Width]
     /// * `fluid_viscosity` - Viscosity of the suspending fluid [Batch, Depth, Height, Width]
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_chateau_ovarlez(
         solid_fraction: Tensor<B, 4>,
         max_packing: Tensor<B, 4>,
@@ -63,6 +71,10 @@ impl<B: Backend> RheologyEngine<B> {
     /// * `max_packing` (phi_m)
     /// * `particle_size_d50` - Median particle size
     /// * `interparticle_force` (f_sigma)
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_yield_stress_yodel(
         solid_fraction: Tensor<B, 4>,
         max_packing: Tensor<B, 4>,

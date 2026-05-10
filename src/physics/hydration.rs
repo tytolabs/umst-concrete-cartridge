@@ -9,6 +9,10 @@ use umst_manifold::core::tensors::MixTensor;
 /// 
 /// Because it is composed purely of `burn` tensor operations, the gradient of the hydration
 /// degree with respect to the input mix fractions can be computed natively.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub fn compute_hydration_degree<B: Backend>(mix: &MixTensor<B>, age_days: Tensor<B, 2>, temperature_c: Tensor<B, 2>) -> Tensor<B, 2> {
     let dims = mix.fractions.dims();
     let batch_size = dims[0];

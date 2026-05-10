@@ -1,0 +1,14 @@
+SPDX-License-Identifier: MIT
+Copyright (c) 2026 Santhosh Shyamsundar,
+Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
+MIT License applies to cartridge-internal aggregation, filenames, provenance markdown,
+and augmented variants D2–D4 originated in prototype-3 (MIT).
+
+UCI Concrete Compressive Strength (Yeh 1998) attribution (dataset_d1.csv basis):
+
+  I-Cheng Yeh, "Modeling of strength of high-performance concrete using artificial
+  neural networks," Cement and Concrete Research, Vol. 28, No. 12, pp. 1797–1808 (1998).
+  Original UCI Machine Learning Repository record used under repository terms.
+
+See PROVENANCE.md per file for lift paths and SHA-256.

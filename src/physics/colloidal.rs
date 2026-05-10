@@ -6,6 +6,10 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Colloidal Engine.
 /// Computes DLVO (Derjaguin, Landau, Verwey, Overbeek) theory
 /// to determine particle flocculation, dispersion, and structural stability.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct ColloidalEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -18,6 +22,10 @@ impl<B: Backend> ColloidalEngine<B> {
     /// * `separation_nm` - Average particle separation distance (nm)
     /// * `zeta_potential_mv` - Zeta potential of particles in suspension (mV)
     /// * `ionic_strength_m` - Molar ionic strength of the pore solution (M)
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_dlvo_potential(
         separation_nm: Tensor<B, 4>,
         zeta_potential_mv: Tensor<B, 4>,
@@ -69,6 +77,10 @@ impl<B: Backend> ColloidalEngine<B> {
 
     /// Translates DLVO potential into a flocculation multiplier for Rheology yield stress.
     /// Highly negative potential = strong flocculation = higher yield stress.
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_flocculation_multiplier(dlvo_potential_kt: Tensor<B, 4>) -> Tensor<B, 4> {
         // If potential < -5 kT, flocculation increases yield stress
         // multiplier ranges from 1.0 (stable) to ~3.0 (highly flocculated)

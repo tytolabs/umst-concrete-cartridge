@@ -6,6 +6,10 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Transport Engine.
 /// Models capillary porosity, tortuosity, and chloride diffusivity
 /// across the material manifold.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct TransportEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -18,6 +22,10 @@ impl<B: Backend> TransportEngine<B> {
     /// # Arguments
     /// * `wc_ratio` - Water/Cement ratio tensor [Batch, Depth, Height, Width]
     /// * `degree_hydration` (alpha) - Degree of hydration [Batch, Depth, Height, Width]
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_capillary_porosity(
         wc_ratio: Tensor<B, 4>,
         degree_hydration: Tensor<B, 4>,
@@ -43,6 +51,10 @@ impl<B: Backend> TransportEngine<B> {
     /// # Arguments
     /// * `capillary_porosity` - Computed porosity tensor
     /// * `ref_diffusivity` - Reference diffusivity scalar tensor
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_chloride_diffusivity(
         capillary_porosity: Tensor<B, 4>,
         ref_diffusivity: Tensor<B, 4>,

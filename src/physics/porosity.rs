@@ -9,6 +9,10 @@ use umst_manifold::core::tensors::MixTensor;
 /// 
 /// Because it is composed purely of `burn` tensor operations, the gradient of the porosity
 /// with respect to the input mix fractions allows the agent to naturally step towards denser mixes.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub fn compute_capillary_porosity<B: Backend>(wc_ratio: Tensor<B, 2>, hydration_degree: Tensor<B, 2>) -> Tensor<B, 2> {
     // Powers-Brownyard model for capillary porosity
     // p_c = (w/c - 0.36 * alpha) / (w/c + 0.32)

@@ -5,6 +5,10 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Fiber Reinforcement Engine.
 /// Computes multiscale micromechanical pullout, debonding, and macroscopic crack bridging.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct FiberEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -18,6 +22,10 @@ impl<B: Backend> FiberEngine<B> {
     /// * `fiber_aspect_ratio` (L/d) - Aspect ratio of the fibers [Batch, Depth, Height, Width]
     /// * `fiber_tensile_strength` - Ultimate tensile strength of the fiber (MPa)
     /// * `matrix_strength` - Surrounding cementitious matrix compressive strength (MPa)
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_micromechanics(
         fiber_vol_fraction: Tensor<B, 4>,
         fiber_aspect_ratio: Tensor<B, 4>,

@@ -27,6 +27,7 @@ explicitly rather than implying coverage we have not yet achieved.
 | `freeze_thaw` | ASTM C666 round-robin | mass loss trend | qualitative | [`tests/freeze_thaw.rs::astm_c666_trend`](../tests/freeze_thaw.rs) | trend reproduced; absolute calibration in progress |
 | `transport` | Tang–Nilsson migration | $D_{\mathrm{Cl}}$ | $\le 25\%$ relative | [`tests/transport.rs::tang_nilsson`](../tests/transport.rs) | passing |
 | `nano`, `colloidal`, `porosity`, `itz`, `packing`, `fiber`, `polymer`, `self_heal`, `thermo`, `sustainability`, `cost` | — | — | — | — | implemented; published-dataset validation in progress |
+| Homogeneous Powers lift (`src/homogeneous.rs`) | Nine bundled CSV mirrors under `datasets/` (`dataset_d1.csv` …) | compressive strength $f_c^\prime$ vs observed | Per-profile **`[acceptance]`** gates in each `calibration/profiles/*.v1.toml` (MAE / RMSE / $R^2$); numerical parameters are **not** silently retuned on failure — adjust bounds only after review | [`tests/calibration/dataset_metrics.rs::headline_contract_profiles_vs_csv`](../tests/calibration/dataset_metrics.rs) | passing with `cargo test --features cli` |
 
 The validation envelope is deliberately narrow. We choose a small number
 of canonical datasets per module, document the tolerance, and refuse to
@@ -38,8 +39,11 @@ claim coverage outside it.
 git clone https://github.com/tytolabs/umst-manifold
 git clone https://github.com/tytolabs/umst-concrete-cartridge
 cd umst-concrete-cartridge
-cargo test --all-features --release
+cargo test --no-default-features --release
+cargo test --features cli --release
 ```
+
+The deep calibration / CLI integration tests (dataset metrics, regime warnings, JSON schema round-trips) require **`--features cli`**. Formal-anchor documentation is enforced by **`cargo test --test formal_anchors`** (no extra feature flags).
 
 CI runs the full suite on every push and pull request — see
 [`.github/workflows/rust.yml`](../.github/workflows/rust.yml).

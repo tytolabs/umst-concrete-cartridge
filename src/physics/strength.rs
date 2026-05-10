@@ -6,6 +6,10 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Strength & Micromechanics Engine.
 /// Upgraded to the absolute SOTA: Jennings CM-II (Colloidal Model of C-S-H)
 /// coupled with Ulm & Constantinides (2004) nano-indentation continuum micromechanics.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct StrengthEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -19,6 +23,10 @@ impl<B: Backend> StrengthEngine<B> {
     /// * `degree_hydration` - Hydration degree tensor α (0.0 to 1.0)
     /// * `air_content` - Entrapped/entrained air volume fraction
     /// * `intrinsic_strength` - Intrinsic scaling factor for the specific cement chemistry (MPa)
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_strength_jennings(
         wc_ratio: Tensor<B, 4>,
         degree_hydration: Tensor<B, 4>,

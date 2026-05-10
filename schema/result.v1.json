@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schema/result.v1.json",
-  "title": "UMST Concrete PredictionResult v1",
+  "title": "UMST Concrete PredictionResult v1 (deprecated)",
+  "description": "Deprecated wire format; prefer result.v2 for calibration metadata and regime warnings.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -40,6 +41,10 @@
     "schema_version": {
       "type": "string",
       "const": "result.v1"
+    },
+    "deprecation": {
+      "type": "string",
+      "description": "Migration hint when emitted by the CLI"
     }
   }
 }

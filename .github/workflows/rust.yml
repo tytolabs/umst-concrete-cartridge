@@ -37,17 +37,19 @@ jobs:
       - name: Run tests (library default + optional CLI targets)
         run: cargo test --features cli --verbose
 
-      - name: Verify CLI deps stay out of default tree
+      - name: Verify optional deps stay out of default tree (depth 1)
         run: |
           set -euo pipefail
+          # `toml` is an intentional library dependency for calibration parsing.
+          # Block accidental CLI/async/csv leakage at depth 1 only (see Calibration plan step 12).
           leaks=$(cargo tree --no-default-features -e normal --depth 1 \
-                   | grep -E '(tokio|clap|serde_json|anyhow|thiserror) ' || true)
+                   | grep -E '(tokio|clap|serde_json|csv|anyhow|thiserror) ' || true)
           if [ -n "$leaks" ]; then
-            echo "FAIL: optional CLI deps leaked into default build:"
+            echo "FAIL: optional/forbidden deps leaked into default depth-1 tree:"
             echo "$leaks"
             exit 1
           fi
-          echo "OK: no async/CLI deps in default tree"
+          echo "OK: no CLI/async/csv deps at default depth 1"
 
   # Advisory jobs: surface quality issues without blocking the merge.
   lint:

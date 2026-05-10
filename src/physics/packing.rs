@@ -9,6 +9,10 @@ use burn::tensor::{Tensor, backend::Backend};
 /// 
 /// Because it is composed purely of `burn` tensor operations, the gradient of the packing density
 /// with respect to the aggregate fractions allows the agent to perfectly grade the mix.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub fn compute_packing_density<B: Backend>(coarse_fraction: Tensor<B, 2>, fine_fraction: Tensor<B, 2>) -> Tensor<B, 2> {
     // Empirical interaction model (de Larrard approximation)
     let total_agg = coarse_fraction.clone().add(fine_fraction.clone()).clamp_min(1e-6);

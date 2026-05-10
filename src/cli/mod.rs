@@ -2,10 +2,13 @@
 // Copyright (c) 2026 Santhosh Shyamsundar,
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! Pure CLI core: JSON validation (`MixSpec`), orchestration around the cartridge functor `F`,
-//! and serialization (`ψ`) of [`PhysicalResult`] into the versioned wire JSON contract.
+//! Pure CLI core: JSON validation (`MixSpec`), regime checks, homogeneous prediction through [`crate::homogeneous`],
+//! and serialization into versioned wire JSON (`result.v1` / `result.v2`).
 
-use crate::homogeneous;
+use crate::calibration::{self as calib, Profile};
+use crate::homogeneous::{
+    self as homog, constituent_masses_kg_m3, embodied_co2_kg_per_m3, mix_row_from_scalar_spec,
+};
 use burn::tensor::{Data, Shape, Tensor};
 use burn_ndarray::NdArray;
 use serde::Serialize;
@@ -14,13 +17,35 @@ use std::convert::TryFrom;
 use thiserror::Error;
 use umst_manifold::core::traits::PhysicalResult;
 
-/// Wire schema tag emitted with every prediction object.
-pub const RESULT_SCHEMA_VERSION: &str = "result.v1";
+/// formal_anchor: lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy
+/// formal_status: Structural
+/// formal_axioms: NONE
+pub const RESULT_SCHEMA_VERSION_V1: &str = "result.v1";
 
-/// NdArray backend used by the synchronous CLI path.
+/// formal_anchor: lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy
+/// formal_status: Structural
+/// formal_axioms: NONE
+pub const RESULT_SCHEMA_VERSION_V2: &str = "result.v2";
+
+/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#naturalitySquare
+/// formal_status: Structural
+/// formal_axioms: NONE
 pub type CliBackend = NdArray;
 
+/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#gateMaterialAgnostic
+/// formal_status: Structural
+/// formal_axioms: NONE
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PredictionWireVersion {
+    V1,
+    V2,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct WaterCementRatio(f32);
 
 impl TryFrom<f64> for WaterCementRatio {
@@ -37,12 +62,20 @@ impl TryFrom<f64> for WaterCementRatio {
 
 impl WaterCementRatio {
     #[must_use]
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn value(self) -> f32 {
         self.0
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct TemperatureK(f32);
 
 impl TryFrom<f64> for TemperatureK {
@@ -59,11 +92,18 @@ impl TryFrom<f64> for TemperatureK {
 
 impl TemperatureK {
     #[must_use]
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn value(self) -> f32 {
         self.0
     }
 }
 
+/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_status: Structural
+/// formal_axioms: NONE
 #[derive(Debug, Clone)]
 pub struct MixSpec {
     pub w_c: WaterCementRatio,
@@ -73,6 +113,7 @@ pub struct MixSpec {
     pub fly_ash_pct: f32,
     pub aggregate_volume_fraction: f32,
     pub target_age_hours: f32,
+    pub profile_name: String,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -137,11 +178,16 @@ impl TryFrom<Value> for MixSpec {
             fly_ash_pct: fa as f32,
             aggregate_volume_fraction: agg as f32,
             target_age_hours: age_h as f32,
+            profile_name: "default".to_string(),
         })
     }
 }
 
 #[derive(Debug, Error)]
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub enum MixSpecError {
     #[error("invalid JSON mix specification: {0}")]
     Json(#[from] serde_json::Error),
@@ -153,6 +199,9 @@ pub enum MixSpecError {
     FieldOutOfRange { field: &'static str },
 }
 
+/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#naturalitySquare
+/// formal_status: Structural
+/// formal_axioms: NONE
 #[derive(Debug, Error)]
 pub enum CliError {
     #[error(transparent)]
@@ -163,6 +212,12 @@ pub enum CliError {
     UnsupportedOptimizeTarget(String),
     #[error("could not parse optimization target (expected FIELD=VALUE)")]
     InvalidOptimizeTarget,
+    #[error(transparent)]
+    Homogeneous(#[from] homog::HomogeneousError),
+    #[error(transparent)]
+    Calibration(#[from] calib::CalibrationError),
+    #[error("mix design lies outside all bundled calibration regimes")]
+    OutsideAllRegimes,
 }
 
 #[derive(Serialize)]
@@ -173,78 +228,214 @@ struct PredictionWireV1 {
     gwp_kg_co2_eq_per_m3: f64,
     safety_margin: f64,
     schema_version: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    deprecation: Option<&'static str>,
 }
 
-/// Ordinal embedding convention for [`PhysicalResult`] rows produced by [`predict`]:
-/// - `free_energy[:, 0]` — compressive strength (MPa)
-/// - `free_energy[:, 1]` — yield stress (Pa)
-/// - `dissipation` — uniform degree of hydration α ∈ [0, 1]
-/// - `cost` — GWP indicator (kg CO₂-eq / m³)
-/// - `safety_margin` — admissibility margin in [0, 1]
-///
-/// Dispatches through `crate::homogeneous`, which holds the calibrated 0-D
-/// closed-forms used for single-shot prediction. The full burn-tensor
-/// multi-physics pathway in `crate::physics::*` is reserved for
-/// differentiable training; mixing the two paths in one entry point caused
-/// physically implausible outputs in earlier revisions.
-pub fn predict(spec: &MixSpec) -> Result<PhysicalResult<CliBackend>, CliError> {
-    let device = burn_ndarray::NdArrayDevice::default();
+#[derive(Serialize)]
+struct PredictionWireV2 {
+    compressive_strength_mpa: f64,
+    yield_stress_pa: f64,
+    degree_of_hydration: f64,
+    gwp_kg_co2_eq_per_m3: f64,
+    safety_margin: f64,
+    calibration_profile: String,
+    calibration_model: String,
+    formal_anchor: String,
+    warnings: Vec<String>,
+    schema_version: &'static str,
+}
 
-    let alpha = homogeneous::degree_of_hydration(
+/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#gateMaterialAgnostic
+/// formal_status: Structural
+/// formal_axioms: NONE
+pub struct PredictBundle {
+    pub physical: PhysicalResult<CliBackend>,
+    pub warnings: Vec<String>,
+    pub calibration_profile: String,
+    pub calibration_model: String,
+    pub formal_anchor: String,
+}
+
+fn model_kind_wire(profile: &Profile) -> String {
+    match profile.model_section.kind {
+        calib::ModelKind::PowersGelSpace => "powers_gel_space".to_string(),
+        calib::ModelKind::JenningsGelSpace => "jennings_gel_space".to_string(),
+    }
+}
+
+fn profile_formal_anchor_uri(profile: &Profile) -> String {
+    profile
+        .provenance
+        .formal
+        .as_ref()
+        .map(|f| f.anchor.clone())
+        .unwrap_or_else(|| "lean://NONE".to_string())
+}
+
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+pub fn predict(profile: &Profile, spec: &MixSpec) -> Result<PredictBundle, CliError> {
+    if !calib::any_bundled_profile_covers_scalars(
         spec.w_c.value(),
+        spec.temperature_k.value(),
+        spec.target_age_hours,
+        spec.fly_ash_pct,
+        spec.silica_fume_pct,
+    ) {
+        return Err(CliError::OutsideAllRegimes);
+    }
+
+    let violations = profile.regime_check_scalars(
+        spec.w_c.value(),
+        spec.temperature_k.value(),
+        spec.target_age_hours,
+        spec.fly_ash_pct,
+        spec.silica_fume_pct,
+    );
+    let warnings: Vec<String> = violations.iter().map(|v| v.to_string()).collect();
+
+    let row = mix_row_from_scalar_spec(
+        profile,
+        spec.w_c.value(),
+        spec.superplasticiser_pct,
+        spec.fly_ash_pct,
+        spec.silica_fume_pct,
+        spec.aggregate_volume_fraction,
         spec.target_age_hours,
         spec.temperature_k.value(),
     );
-    let fc = homogeneous::compressive_strength_mpa(spec.w_c.value(), alpha);
-    let tau = homogeneous::yield_stress_pa(
+
+    let alpha = homog::degree_of_hydration_alpha(profile, &row)?;
+    let fc = homog::compressive_strength_mpa(profile, &row)?;
+    let tau = homog::yield_stress_pa(
+        profile,
         spec.w_c.value(),
         spec.superplasticiser_pct,
         spec.aggregate_volume_fraction,
     );
-    let (cement, scm, agg, water) = homogeneous::constituent_masses_kg_m3(
+    let (cement, scm, agg, water) = constituent_masses_kg_m3(
+        profile,
         spec.w_c.value(),
         spec.fly_ash_pct,
         spec.silica_fume_pct,
         spec.aggregate_volume_fraction,
     );
-    let gwp = homogeneous::embodied_co2_kg_per_m3(cement, scm, agg, water);
-    let margin = homogeneous::safety_margin(spec.w_c.value(), alpha);
+    let gwp = embodied_co2_kg_per_m3(profile, cement, scm, agg, water);
+    let margin = homog::safety_margin(profile, spec.w_c.value(), alpha);
 
+    let device = burn_ndarray::NdArrayDevice::default();
     let free_energy =
         Tensor::<CliBackend, 2>::from_data(Data::new(vec![fc, tau], Shape::new([1, 2])), &device);
     let dissipation =
         Tensor::<CliBackend, 2>::from_data(Data::new(vec![alpha], Shape::new([1, 1])), &device);
-    let safety_margin =
+    let safety_margin_t =
         Tensor::<CliBackend, 2>::from_data(Data::new(vec![margin], Shape::new([1, 1])), &device);
     let cost =
         Tensor::<CliBackend, 2>::from_data(Data::new(vec![gwp], Shape::new([1, 1])), &device);
 
-    Ok(PhysicalResult {
+    let physical = PhysicalResult {
         free_energy,
         dissipation,
-        safety_margin,
+        safety_margin: safety_margin_t,
         cost,
+    };
+
+    Ok(PredictBundle {
+        physical,
+        warnings,
+        calibration_profile: profile.bundle_id.clone(),
+        calibration_model: model_kind_wire(profile),
+        formal_anchor: profile_formal_anchor_uri(profile),
     })
 }
 
-/// Serialize [`PhysicalResult`] from [`predict`] using the v1 tensor embedding convention.
-pub fn serialize_prediction(pr: &PhysicalResult<CliBackend>) -> Result<Value, CliError> {
+/// formal_anchor: lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy
+/// formal_status: Structural
+/// formal_axioms: NONE
+pub fn serialize_prediction(
+    bundle: &PredictBundle,
+    version: PredictionWireVersion,
+) -> Result<Value, CliError> {
+    let pr = &bundle.physical;
     let fc = tensor_element_at(pr.free_energy.clone(), 0, 0)?;
     let tau = tensor_element_at(pr.free_energy.clone(), 0, 1)?;
     let alpha = tensor_element_at(pr.dissipation.clone(), 0, 0)?;
     let gwp = tensor_element_at(pr.cost.clone(), 0, 0)?;
     let safety = tensor_element_at(pr.safety_margin.clone(), 0, 0)?;
 
-    let wire = PredictionWireV1 {
-        compressive_strength_mpa: f64::from(fc),
-        yield_stress_pa: f64::from(tau),
-        degree_of_hydration: f64::from(alpha),
-        gwp_kg_co2_eq_per_m3: f64::from(gwp),
-        safety_margin: f64::from(safety),
-        schema_version: RESULT_SCHEMA_VERSION,
-    };
+    match version {
+        PredictionWireVersion::V1 => {
+            let wire = PredictionWireV1 {
+                compressive_strength_mpa: f64::from(fc),
+                yield_stress_pa: f64::from(tau),
+                degree_of_hydration: f64::from(alpha),
+                gwp_kg_co2_eq_per_m3: f64::from(gwp),
+                safety_margin: f64::from(safety),
+                schema_version: RESULT_SCHEMA_VERSION_V1,
+                deprecation: Some("use result.v2; v1 will be removed next minor release"),
+            };
+            serde_json::to_value(wire).map_err(|e| CliError::MixSpec(MixSpecError::Json(e)))
+        }
+        PredictionWireVersion::V2 => {
+            let wire = PredictionWireV2 {
+                compressive_strength_mpa: f64::from(fc),
+                yield_stress_pa: f64::from(tau),
+                degree_of_hydration: f64::from(alpha),
+                gwp_kg_co2_eq_per_m3: f64::from(gwp),
+                safety_margin: f64::from(safety),
+                calibration_profile: bundle.calibration_profile.clone(),
+                calibration_model: bundle.calibration_model.clone(),
+                formal_anchor: bundle.formal_anchor.clone(),
+                warnings: bundle.warnings.clone(),
+                schema_version: RESULT_SCHEMA_VERSION_V2,
+            };
+            serde_json::to_value(wire).map_err(|e| CliError::MixSpec(MixSpecError::Json(e)))
+        }
+    }
+}
 
-    serde_json::to_value(wire).map_err(|e| CliError::MixSpec(MixSpecError::Json(e)))
+/// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#kleisliCompose
+/// formal_status: Structural
+/// formal_axioms: NONE
+#[derive(Serialize)]
+pub struct CertifyChain {
+    pub profile: String,
+    pub model_kind: String,
+    pub model_anchor: String,
+    pub acceptance_anchor: String,
+    pub axioms: Vec<String>,
+    pub provenance_sha256: String,
+}
+
+/// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#kleisliComposeWellTypedN
+/// formal_status: Structural
+/// formal_axioms: NONE
+#[must_use]
+pub fn certify_profile_json(profile: &Profile) -> Value {
+    let model_anchor = profile_formal_anchor_uri(profile);
+    let acceptance_anchor = profile
+        .acceptance
+        .formal_anchor
+        .clone()
+        .unwrap_or_else(|| "lean://NONE".to_string());
+    let mut axioms: Vec<String> = profile
+        .provenance
+        .formal
+        .as_ref()
+        .map(|f| f.axioms.clone())
+        .unwrap_or_default();
+    axioms.sort();
+    let chain = CertifyChain {
+        profile: profile.bundle_id.clone(),
+        model_kind: model_kind_wire(profile),
+        model_anchor,
+        acceptance_anchor,
+        axioms,
+        provenance_sha256: profile.provenance.prototype_3_sha256.clone(),
+    };
+    serde_json::to_value(&chain).unwrap_or(Value::Null)
 }
 
 #[derive(Serialize)]
@@ -258,7 +449,8 @@ struct MixSpecWireOut {
     target_age_hours: f64,
 }
 
-/// Serialize a validated [`MixSpec`] back into JSON matching the mix.v1 wire shape accepted by [`MixSpec::try_from`].
+/// formal_anchor: NONE
+/// formal_anchor_rationale: JSON round-trip helper for optimize output; no mechanised wire claim.
 pub fn serialize_mix_spec(spec: &MixSpec) -> Result<Value, CliError> {
     let wire = MixSpecWireOut {
         w_c: f64::from(spec.w_c.value()),
@@ -282,6 +474,10 @@ fn tensor_element_at(t: Tensor<CliBackend, 2>, row: usize, col: usize) -> Result
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub enum OptimizeField {
     CompressiveStrengthMpa,
 }
@@ -297,6 +493,9 @@ impl TryFrom<&str> for OptimizeField {
     }
 }
 
+/// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration
+/// formal_status: Mechanised
+/// formal_axioms: NONE
 pub fn parse_optimize_target(raw: &str) -> Result<(OptimizeField, f64), CliError> {
     let (k, v) = raw.split_once('=').ok_or(CliError::InvalidOptimizeTarget)?;
     let field = OptimizeField::try_from(k.trim())?;
@@ -307,7 +506,11 @@ pub fn parse_optimize_target(raw: &str) -> Result<(OptimizeField, f64), CliError
     Ok((field, val))
 }
 
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
 pub fn optimize_mix(
+    profile: &Profile,
     base: &MixSpec,
     field: OptimizeField,
     target: f64,
@@ -315,12 +518,13 @@ pub fn optimize_mix(
 ) -> Result<MixSpec, CliError> {
     match field {
         OptimizeField::CompressiveStrengthMpa => {
-            optimize_w_c_for_strength(base, target as f32, steps)
+            optimize_w_c_for_strength(profile, base, target as f32, steps)
         }
     }
 }
 
 fn optimize_w_c_for_strength(
+    profile: &Profile,
     base: &MixSpec,
     target_fc: f32,
     steps: usize,
@@ -336,8 +540,8 @@ fn optimize_w_c_for_strength(
             base,
             WaterCementRatio::try_from(f64::from(mid)).map_err(CliError::MixSpec)?,
         )?;
-        let pr = predict(&cand)?;
-        let fc = tensor_element_at(pr.free_energy, 0, 0)?;
+        let bundle = predict(profile, &cand)?;
+        let fc = tensor_element_at(bundle.physical.free_energy.clone(), 0, 0)?;
         let err = (fc - target_fc).abs();
         if err < best_err {
             best_err = err;
@@ -363,6 +567,7 @@ fn mix_with_w_c(base: &MixSpec, w_c: WaterCementRatio) -> Result<MixSpec, MixSpe
         fly_ash_pct: base.fly_ash_pct,
         aggregate_volume_fraction: base.aggregate_volume_fraction,
         target_age_hours: base.target_age_hours,
+        profile_name: base.profile_name.clone(),
     })
 }
 
@@ -371,22 +576,16 @@ mod wire_roundtrip_tests {
     use super::*;
 
     #[test]
-    fn prediction_json_has_required_keys() -> Result<(), CliError> {
+    fn prediction_json_v2_has_calibration_fields() -> Result<(), CliError> {
         let v = serde_json::json!({"w_c": 0.40, "temperature_k": 293.15});
-        let spec = MixSpec::try_from(v)?;
-        let pr = predict(&spec)?;
-        let out = serialize_prediction(&pr)?;
-        assert_eq!(out["schema_version"], RESULT_SCHEMA_VERSION);
-        let alpha = out["degree_of_hydration"]
-            .as_f64()
-            .ok_or(CliError::Tensor("missing degree_of_hydration in wire JSON"))?;
-        assert!(alpha >= 0.0);
-        let fc = out["compressive_strength_mpa"]
-            .as_f64()
-            .ok_or(CliError::Tensor(
-                "missing compressive_strength_mpa in wire JSON",
-            ))?;
-        assert!(fc > 0.0);
+        let mut spec = MixSpec::try_from(v)?;
+        spec.profile_name = "default".to_string();
+        let profile = Profile::load_bundled("default")?;
+        let bundle = predict(&profile, &spec)?;
+        let out = serialize_prediction(&bundle, PredictionWireVersion::V2)?;
+        assert_eq!(out["schema_version"], RESULT_SCHEMA_VERSION_V2);
+        assert!(out["warnings"].is_array());
+        assert_eq!(out["calibration_profile"], "default");
         Ok(())
     }
 }

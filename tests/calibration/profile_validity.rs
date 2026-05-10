@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar,
+// Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
+use std::error::Error;
+use std::path::{Path, PathBuf};
+
+use umst_concrete_cartridge::calibration::{Profile, BUNDLED_PROFILE_IDS};
+
+fn lean_path_from_uri(uri: &str) -> Option<PathBuf> {
+    let rest = uri.strip_prefix("lean://umst-formal/Lean/")?;
+    let stem = rest.split('#').next()?;
+    let root = std::env::var("UMST_FORMAL_ROOT").ok()?;
+    Some(Path::new(&root).join("Lean").join(stem))
+}
+
+#[test]
+fn all_profiles_parse_and_bounds_positive() -> Result<(), Box<dyn Error>> {
+    for id in BUNDLED_PROFILE_IDS {
+        let p = Profile::load_bundled(id)?;
+        assert!(
+            p.regime.w_c_min < p.regime.w_c_max && p.regime.w_c_min >= 0.10,
+            "{} w/c bounds",
+            id
+        );
+        assert!(
+            p.regime.temperature_k_min < p.regime.temperature_k_max,
+            "{} temperature bounds",
+            id
+        );
+        assert!(p.powers.s_intrinsic > 0.0, "{} s_intrinsic", id);
+        assert!(
+            p.acceptance.strength_mae_max.is_some(),
+            "{} missing strength_mae_max",
+            id
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn formal_uris_point_at_existing_lean_when_root_set() -> Result<(), Box<dyn Error>> {
+    let root = match std::env::var("UMST_FORMAL_ROOT") {
+        Ok(r) => r,
+        Err(_) => {
+            eprintln!("SKIP: UMST_FORMAL_ROOT unset; Lean existence check not run");
+            return Ok(());
+        }
+    };
+    assert!(
+        Path::new(&root).join("Lean").is_dir(),
+        "UMST_FORMAL_ROOT={root} missing Lean/"
+    );
+    for id in BUNDLED_PROFILE_IDS {
+        let p = Profile::load_bundled(id)?;
+        let pf = p.provenance.formal.as_ref().expect("formal block");
+        assert!(
+            pf.anchor.starts_with("lean://"),
+            "{id} provenance.formal.anchor"
+        );
+        let path =
+            lean_path_from_uri(&pf.anchor).unwrap_or_else(|| panic!("bad URI {}", pf.anchor));
+        assert!(
+            path.exists(),
+            "{id} anchor file missing: {}",
+            path.display()
+        );
+        if let Some(acc) = &p.acceptance.formal_anchor {
+            let ap = lean_path_from_uri(acc).unwrap_or_else(|| panic!("bad URI {acc}"));
+            assert!(
+                ap.exists(),
+                "{} acceptance anchor missing {}",
+                id,
+                ap.display()
+            );
+        }
+    }
+    Ok(())
+}

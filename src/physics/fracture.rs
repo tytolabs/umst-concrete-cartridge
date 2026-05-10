@@ -6,6 +6,10 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Fracture & Mechanics Engine.
 /// Computes effective elastic properties and fracture toughness using
 /// Mori-Tanaka Homogenization across the manifold.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct FractureEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -20,6 +24,10 @@ impl<B: Backend> FractureEngine<B> {
     /// * `e_itz` - Elastic modulus of the ITZ shell [Batch, Depth, Height, Width]
     /// * `v_agg` - Volume fraction of aggregate [Batch, Depth, Height, Width]
     /// * `v_itz` - Volume fraction of ITZ [Batch, Depth, Height, Width]
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_effective_modulus_mt(
         e_paste: Tensor<B, 4>,
         e_agg: Tensor<B, 4>,
@@ -79,6 +87,10 @@ impl<B: Backend> FractureEngine<B> {
 
     /// Computes Fracture Toughness (K_Ic) based on the effective modulus and tensile strength.
     /// K_Ic ≈ sqrt(E_eff * G_F) where G_F is fracture energy.
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_fracture_toughness(
         e_eff: Tensor<B, 4>,
         fracture_energy: Tensor<B, 4>,

@@ -6,6 +6,10 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Sustainability & Economics Engine.
 /// Computes Embodied Carbon (CO2e) and Financial Cost across the manifold.
 /// This acts as the critical negative-reward penalty for the optimization engine's topology exploration.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct SustainabilityEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -21,6 +25,10 @@ impl<B: Backend> SustainabilityEngine<B> {
     /// * `mass_aggregate` - Tensor [Batch, Depth, Height, Width]
     /// * `mass_water` - Tensor [Batch, Depth, Height, Width]
     /// * `co2_factors` - Tuple (cement_f, scm_f, agg_f, water_f) as scalars
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_embodied_carbon(
         mass_cement: Tensor<B, 4>,
         mass_scm: Tensor<B, 4>,
@@ -39,6 +47,10 @@ impl<B: Backend> SustainabilityEngine<B> {
     }
 
     /// Computes the total financial cost ($/m3) per voxel.
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_financial_cost(
         mass_cement: Tensor<B, 4>,
         mass_scm: Tensor<B, 4>,

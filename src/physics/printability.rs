@@ -6,6 +6,10 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the 3D Printability Engine.
 /// Computes extrudability, buildability, and open time using Roussel's models.
 /// This acts as the geometric constraint mapping for the optimization engine.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct PrintabilityEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -18,6 +22,10 @@ impl<B: Backend> PrintabilityEngine<B> {
     /// * `yield_stress` (tau_0) - Static yield stress [Batch, Depth, Height, Width]
     /// * `thixotropy_index` (A_thix) - Structural buildup rate [Batch, Depth, Height, Width]
     /// * `target_height_mm` - Constant scalar target height for the layer or part.
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_buildability(
         yield_stress: Tensor<B, 4>,
         thixotropy_index: Tensor<B, 4>,
@@ -71,6 +79,10 @@ impl<B: Backend> PrintabilityEngine<B> {
     }
 
     /// Computes Extrudability based on the Bingham number (tau_0 / (eta * gamma_dot))
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_extrudability(
         yield_stress: Tensor<B, 4>,
         plastic_viscosity: Tensor<B, 4>,

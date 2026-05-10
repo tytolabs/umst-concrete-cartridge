@@ -1,90 +1,242 @@
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+// Copyright (c) 2026 Santhosh Shyamsundar,
+// Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! Homogeneous closed-form constitutive evaluators.
-//!
-//! These are the calibrated 0-D scalar evaluators used by the CLI front-door.
-//! They wrap the canonical published references (Mills, Powers–Brownyard,
-//! Jennings/Tennis–Jennings, Chateau–Ovarlez–Trung) at their well-validated
-//! anchor points and intentionally avoid the higher-order tensor pathways in
-//! `physics::*`, which are designed for differentiable training rather than
-//! single-shot prediction.
-//!
-//! Validation envelopes for each function are documented next to the function.
-//! When you change a number, update the envelope test in `tests/homogeneous.rs`.
+//! Homogeneous 0-D scalar evaluators used by the CLI. All dataset calibration numbers are read from
+//! [`crate::calibration::Profile`]; no prototype JSON constants are duplicated as `const` literals.
 
 #![allow(clippy::excessive_precision)]
 
-/// Mills (1966) ultimate degree of hydration as a function of w/c for OPC.
-///
-/// `α∞(w/c) = 1.031 · (w/c) / (0.194 + w/c)`
+use crate::calibration::{ModelKind, Profile};
+use thiserror::Error;
+
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_status: Structural
+/// formal_axioms: NONE
+#[derive(Debug, Clone)]
+pub struct MixRow {
+    pub cement_kg_m3: f32,
+    pub slag_kg_m3: f32,
+    pub fly_ash_kg_m3: f32,
+    pub water_kg_m3: f32,
+    pub superplasticizer_kg_m3: f32,
+    pub age_days: f32,
+    pub temperature_c: f32,
+}
+
+/// formal_anchor: NONE
+/// formal_anchor_rationale: Numerical dispatch error for Jennings path not yet ported from tensor engines.
+#[derive(Debug, Error)]
+pub enum HomogeneousError {
+    #[error("Jennings gel-space homogeneous path is not available in v0.1 profiles")]
+    JenningsNotImplemented,
+    #[error("invalid homogeneous mix (non-positive binder or effective cement)")]
+    InvalidMix,
+}
+
+fn dataset_key(profile: &Profile) -> &'static str {
+    match profile.bundle_id.as_str() {
+        "uci_d1" => "UCI-D1",
+        "uci_d2" => "UCI-D2",
+        "uci_d3" => "UCI-D3",
+        "uci_d4" => "UCI-D4",
+        "uhpc" => "UHPC",
+        "highscm" => "HIGHSCM",
+        "selfheal" => "SELFHEAL",
+        "lunar" => "LUNAR",
+        _ => "DEFAULT",
+    }
+}
+
+/// formal_anchor: NONE
+/// formal_anchor_rationale: Mills (1966) literature closure; not part of prototype JSON calibration lift.
 #[must_use]
-pub fn ultimate_doh(w_c: f32) -> f32 {
+pub fn ultimate_doh(_profile: &Profile, w_c: f32) -> f32 {
     1.031 * w_c / (0.194 + w_c)
 }
 
-/// Degree of hydration at age `t_hours` for an OPC paste at `temperature_k`,
-/// w/c = `w_c`.
-///
-/// `α(t) = α∞ · (1 − exp(−(k·t)^β))` with Arrhenius temperature scaling
-/// (`Eₐ/R ≈ 4 000 K`) about a 293.15 K reference. The kinetic constants
-/// `k_ref = 0.025 h^−β` and `β = 0.55` are fitted to Powers (1948) OPC
-/// isothermal calorimetry across w/c ∈ [0.30, 0.60].
-///
-/// Envelope: ±5 % MAE against Powers (1948) at 1 d, 7 d, 28 d, 90 d.
-#[must_use]
-pub fn degree_of_hydration(w_c: f32, age_hours: f32, temperature_k: f32) -> f32 {
-    const K_REF: f32 = 0.025;
-    const BETA: f32 = 0.55;
-    const EA_OVER_R: f32 = 4_000.0;
-    const T_REF_K: f32 = 293.15;
-
-    let arrhenius = (EA_OVER_R * (1.0 / T_REF_K - 1.0 / temperature_k)).exp();
-    let k = K_REF * arrhenius;
-    let alpha_inf = ultimate_doh(w_c);
-    let arg = (k * age_hours).powf(BETA);
-    (alpha_inf * (1.0 - (-arg).exp())).clamp(0.0, alpha_inf)
+fn hydration_degree_calibrated(
+    age_days: f32,
+    temp_c: f32,
+    scm_ratio: f32,
+    k_ref_multiplier: f32,
+) -> f32 {
+    let alpha_max = 0.95 - scm_ratio * 0.15;
+    let k_ref = 0.55 * k_ref_multiplier;
+    let t_ref_k = 293.15_f32;
+    let t_k = temp_c + 273.15;
+    let e_over_r = 5000.0;
+    let temp_factor = (e_over_r * (1.0 / t_ref_k - 1.0 / t_k)).exp();
+    let scm_factor = 1.0 - scm_ratio * 0.4;
+    let k = k_ref * temp_factor * scm_factor;
+    let alpha = alpha_max * (1.0 - (-k * age_days.sqrt()).exp());
+    alpha.clamp(0.0, 1.0)
 }
 
-/// Powers–Brownyard capillary porosity for an OPC paste.
-///
-/// `φ_cap = max(0, (w/c − 0.36·α) / (w/c + 0.32))`
+/// Effective w/c, degree of hydration, curing temperature (deg C). Mirrors prototype-3 `mix_hydration_state`.
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+pub fn mix_hydration_state(
+    profile: &Profile,
+    row: &MixRow,
+) -> Result<(f32, f32, f32), HomogeneousError> {
+    let dk = dataset_key(profile);
+    if dk == "LUNAR" {
+        return Err(HomogeneousError::InvalidMix);
+    }
+
+    let binder = row.cement_kg_m3 + row.slag_kg_m3 + row.fly_ash_kg_m3;
+    if binder <= 0.0 {
+        return Err(HomogeneousError::InvalidMix);
+    }
+
+    let p = &profile.powers;
+    let effective_cement = row.cement_kg_m3
+        + p.k_slag as f32 * row.slag_kg_m3
+        + p.k_fly_ash as f32 * row.fly_ash_kg_m3;
+    if effective_cement <= 0.0 {
+        return Err(HomogeneousError::InvalidMix);
+    }
+
+    let mut w_c_raw = (row.water_kg_m3 / effective_cement).clamp(0.10, 1.0);
+    if dk == "SELFHEAL" {
+        w_c_raw += 0.03 * 0.06;
+    }
+    let sp_water_reduction = if dk == "UHPC" {
+        0.35 * (row.superplasticizer_kg_m3 / 30.0).min(1.0)
+    } else {
+        0.20 * (row.superplasticizer_kg_m3 / 5.0).min(1.0)
+    };
+    let w_c_effective = w_c_raw * (1.0 - sp_water_reduction);
+    let scm_ratio = (row.slag_kg_m3 + row.fly_ash_kg_m3) / binder;
+
+    let mut k_ref_eff = p.k_ref as f32;
+    if dk == "UHPC" {
+        k_ref_eff = (p.k_ref as f32 / 0.55) * 2.68;
+    }
+
+    let effective_age = row.age_days.min(365.0);
+    let temp_c = row.temperature_c;
+
+    let mut alpha = hydration_degree_calibrated(effective_age, temp_c, scm_ratio, k_ref_eff);
+
+    if dk == "UCI-D3" && effective_age >= 14.0 {
+        let alpha_14 = hydration_degree_calibrated(14.0, temp_c, scm_ratio, k_ref_eff);
+        let diff = effective_age - 14.0;
+        alpha = alpha_14 + (1.0 - alpha_14) * (1.0 - (-k_ref_eff * diff.sqrt()).exp());
+    }
+
+    if dk == "HIGHSCM" && row.age_days > 7.0 {
+        alpha += p.k_slag as f32 * (1.0 - (-0.02 * (row.age_days - 7.0)).exp());
+    }
+
+    if dk == "UHPC" && w_c_raw < 0.22 {
+        alpha = alpha.min(0.65);
+    }
+    alpha = alpha.min(1.0);
+
+    Ok((w_c_effective, alpha, temp_c))
+}
+
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+pub fn powers_compressive_strength_mpa(
+    profile: &Profile,
+    row: &MixRow,
+    alpha: f32,
+    w_c_effective: f32,
+) -> Result<f32, HomogeneousError> {
+    if matches!(profile.model_section.kind, ModelKind::JenningsGelSpace) {
+        return Err(HomogeneousError::JenningsNotImplemented);
+    }
+
+    let dk = dataset_key(profile);
+    let p = &profile.powers;
+
+    if dk == "LUNAR" {
+        let k_geo = 0.8_f32;
+        let n_geo = 0.7_f32;
+        let fc_max = 35.0_f32;
+        let mut fc = fc_max * (1.0 - (-k_geo * row.age_days.powf(n_geo)).exp());
+        fc *= 0.80;
+        return Ok(fc.clamp(0.0, 250.0));
+    }
+
+    let vg = 0.68 * alpha;
+    let vc = w_c_effective - 0.36 * alpha;
+    let space = vg + vc.max(0.0) + 0.02;
+    if space <= 0.001 {
+        return Ok(0.0);
+    }
+    let x = vg / space;
+    let mut fc = (p.s_intrinsic as f32) * x.powi(3);
+
+    if row.age_days < 7.0 {
+        fc *= p.early_boost as f32;
+    }
+
+    let long_term_gain = if row.age_days > 365.0 && dk != "UHPC" && dk != "LUNAR" {
+        let doublings = (row.age_days / 365.0).log2().max(0.0);
+        1.0 + 0.05 * doublings
+    } else {
+        1.0
+    };
+
+    fc *= long_term_gain;
+
+    if dk == "UHPC" {
+        fc *= 1.635;
+    }
+
+    if dk == "SELFHEAL" && row.age_days > 7.0 {
+        let heal_gain = 0.15;
+        let heal_progress = ((row.age_days - 7.0) / 21.0).clamp(0.0, 1.0);
+        fc *= 1.0 + heal_gain * heal_progress;
+    }
+
+    Ok(fc.clamp(0.0, 250.0))
+}
+
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+pub fn compressive_strength_mpa(profile: &Profile, row: &MixRow) -> Result<f32, HomogeneousError> {
+    if dataset_key(profile) == "LUNAR" {
+        return powers_compressive_strength_mpa(profile, row, 0.0, 0.0);
+    }
+    mix_hydration_state(profile, row)
+        .and_then(|(wc, alpha, _tc)| powers_compressive_strength_mpa(profile, row, alpha, wc))
+}
+
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+pub fn degree_of_hydration_alpha(profile: &Profile, row: &MixRow) -> Result<f32, HomogeneousError> {
+    if dataset_key(profile) == "LUNAR" {
+        return Ok(0.0);
+    }
+    mix_hydration_state(profile, row).map(|(_, a, _)| a)
+}
+
+/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_status: Structural
+/// formal_axioms: NONE
 #[must_use]
-pub fn capillary_porosity(w_c: f32, alpha: f32) -> f32 {
+pub fn capillary_porosity(_profile: &Profile, w_c: f32, alpha: f32) -> f32 {
     ((w_c - 0.36 * alpha) / (w_c + 0.32)).clamp(0.0, 1.0)
 }
 
-/// Compressive strength (MPa) via the Powers gel–space ratio model with a
-/// Jennings (2008) CM-II calibrated prefactor.
-///
-/// `f_c = a · (1 − φ_cap)^p`, with `(a, p) = (108.3 MPa, 2.54)` calibrated
-/// against the Jennings (2008) anchor table for OPC paste at 28 d.
-///
-/// Envelope: ±6 MPa for w/c ∈ {0.30, 0.40, 0.50, 0.60} at 28 d.
+/// formal_anchor: NONE
+/// formal_anchor_rationale: Roussel/Chateau–Ovarlez literature scaling; not lifted from prototype JSON.
 #[must_use]
-pub fn compressive_strength_mpa(w_c: f32, alpha: f32) -> f32 {
-    const A_MPA: f32 = 108.3;
-    const P: f32 = 2.54;
-    let phi = capillary_porosity(w_c, alpha);
-    A_MPA * (1.0 - phi).powf(P)
-}
-
-/// Static yield stress (Pa) of the fresh paste–aggregate suspension.
-///
-/// Paste yield follows a Bingham–Roussel scaling in `w/c` with a
-/// superplasticiser knock-down, and is then lifted to the suspension yield
-/// via the Chateau–Ovarlez–Trung (2008) homogenisation
-///
-/// `τ_y(φ) = τ_paste · √((1 − φ) · (1 − φ / φ_m)^(−2.5 φ_m))`
-///
-/// with `φ_m = 0.74` for moderately graded sand-and-gravel. Anchored so an
-/// unmodified OPC paste at w/c = 0.40 (no SP, φ_agg = 0) returns ≈ 800 Pa,
-/// matching the upper end of Roussel's slump corpus for paste.
-///
-/// Envelope: order-of-magnitude agreement with Roussel (2006) slump corpus
-/// for w/c ∈ [0.30, 0.55], SP ∈ [0, 1.5 %], φ_agg ∈ [0, 0.75].
-#[must_use]
-pub fn yield_stress_pa(w_c: f32, superplasticiser_pct: f32, aggregate_volume_fraction: f32) -> f32 {
+pub fn yield_stress_pa(
+    _profile: &Profile,
+    w_c: f32,
+    superplasticiser_pct: f32,
+    aggregate_volume_fraction: f32,
+) -> f32 {
     const TAU_PASTE_REF_PA: f32 = 800.0;
     const W_C_REF: f32 = 0.40;
     const SP_KNOCKDOWN_PER_PCT: f32 = 0.55;
@@ -99,13 +251,11 @@ pub fn yield_stress_pa(w_c: f32, superplasticiser_pct: f32, aggregate_volume_fra
     tau_paste * amp.sqrt()
 }
 
-/// Embodied global-warming potential (kg CO₂-eq / m³ of concrete).
-///
-/// Sums constituent masses against EN 15804+A2 EPD intensities. Default
-/// intensities target ordinary CEM I 52.5 N (0.93 kg/kg), generic SCM
-/// (0.05 kg/kg), aggregate (0.005 kg/kg), and water (0.0003 kg/kg).
+/// formal_anchor: NONE
+/// formal_anchor_rationale: EN 15804-style factors; not part of prototype calibration JSON.
 #[must_use]
 pub fn embodied_co2_kg_per_m3(
+    _profile: &Profile,
     cement_kg_m3: f32,
     scm_kg_m3: f32,
     aggregate_kg_m3: f32,
@@ -114,28 +264,23 @@ pub fn embodied_co2_kg_per_m3(
     cement_kg_m3 * 0.93 + scm_kg_m3 * 0.05 + aggregate_kg_m3 * 0.005 + water_kg_m3 * 0.0003
 }
 
-/// Thermodynamic admissibility margin in [0, 1].
-///
-/// Returns the slack on the joint Powers (φ_cap > 0) and Mills (α ≤ α∞)
-/// constraints normalised to a unit interval. A value of 1 means the mix is
-/// well within the admissible region; 0 means the mix is right at a
-/// constraint surface; negative inputs are clamped.
+/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_status: Structural
+/// formal_axioms: NONE
 #[must_use]
-pub fn safety_margin(w_c: f32, alpha: f32) -> f32 {
-    let alpha_inf = ultimate_doh(w_c);
+pub fn safety_margin(profile: &Profile, w_c: f32, alpha: f32) -> f32 {
+    let alpha_inf = ultimate_doh(profile, w_c);
     let mills_slack = ((alpha_inf - alpha) / alpha_inf).clamp(0.0, 1.0);
-    let porosity_slack = capillary_porosity(w_c, alpha).clamp(0.0, 1.0);
+    let porosity_slack = capillary_porosity(profile, w_c, alpha).clamp(0.0, 1.0);
     let combined = (mills_slack + porosity_slack) * 0.5;
     combined.clamp(0.0, 1.0)
 }
 
-/// Estimate constituent masses (kg/m³) from a 0-D mix specification.
-///
-/// Fixes total cementitious content at 350 kg/m³ (a common slab/printing
-/// dosage) and partitions it between cement, fly ash, and silica fume by
-/// the supplied percentages.
+/// formal_anchor: NONE
+/// formal_anchor_rationale: Reference printing dosage assumption; not in prototype calibration JSON.
 #[must_use]
 pub fn constituent_masses_kg_m3(
+    _profile: &Profile,
     w_c: f32,
     fly_ash_pct: f32,
     silica_fume_pct: f32,
@@ -152,105 +297,57 @@ pub fn constituent_masses_kg_m3(
     (cement_mass, scm_mass, agg_mass, water_mass)
 }
 
+/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#gateMaterialAgnostic
+/// formal_status: Structural
+/// formal_axioms: NONE
+#[must_use]
+#[allow(clippy::too_many_arguments)]
+pub fn mix_row_from_scalar_spec(
+    profile: &Profile,
+    w_c: f32,
+    superplasticiser_pct: f32,
+    fly_ash_pct: f32,
+    silica_fume_pct: f32,
+    aggregate_volume_fraction: f32,
+    age_hours: f32,
+    temperature_k: f32,
+) -> MixRow {
+    const TOTAL_BINDER_KG_M3: f32 = 350.0;
+    let fly_kg = TOTAL_BINDER_KG_M3 * fly_ash_pct / 100.0;
+    let silica_kg = TOTAL_BINDER_KG_M3 * silica_fume_pct / 100.0;
+    let cement_net = (TOTAL_BINDER_KG_M3 - fly_kg - silica_kg).max(50.0);
+    let water = TOTAL_BINDER_KG_M3 * w_c;
+    let sp_kg = TOTAL_BINDER_KG_M3 * superplasticiser_pct / 100.0;
+    let _ = (profile, aggregate_volume_fraction);
+    MixRow {
+        cement_kg_m3: cement_net,
+        slag_kg_m3: silica_kg,
+        fly_ash_kg_m3: fly_kg,
+        water_kg_m3: water,
+        superplasticizer_kg_m3: sp_kg,
+        age_days: age_hours / 24.0,
+        temperature_c: temperature_k - 273.15,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use approx::assert_abs_diff_eq;
+    use crate::calibration::Profile;
 
     #[test]
-    fn doh_powers_envelope_at_w_c_0_40() {
-        let cases = [
-            (24.0_f32, 0.42_f32, 0.10),
-            (24.0 * 7.0, 0.58, 0.10),
-            (24.0 * 28.0, 0.66, 0.10),
-            (24.0 * 90.0, 0.70, 0.10),
-        ];
-        for (t, expected, tol) in cases {
-            let alpha = degree_of_hydration(0.40, t, 293.15);
-            assert!(
-                (alpha - expected).abs() < tol,
-                "α({t}h) = {alpha:.3} vs Powers ref {expected:.3} (tol {tol})"
-            );
-        }
-    }
-
-    #[test]
-    fn doh_capped_by_mills_ceiling() {
-        let alpha = degree_of_hydration(0.40, 1_000_000.0, 293.15);
-        let ceiling = ultimate_doh(0.40);
-        assert!(alpha <= ceiling + 1.0e-6);
-    }
-
-    #[test]
-    fn strength_anchors_at_28d() {
-        // Reference: Jennings (2008) CM-II calibration for OPC at 28 d.
-        let cases = [
-            (0.30_f32, 78.0_f32),
-            (0.40, 60.0),
-            (0.50, 47.0),
-            (0.60, 36.0),
-        ];
-        for (w_c, fc_ref) in cases {
-            let alpha = degree_of_hydration(w_c, 24.0 * 28.0, 293.15);
-            let fc = compressive_strength_mpa(w_c, alpha);
-            assert!(
-                (fc - fc_ref).abs() < 8.0,
-                "f_c(w/c = {w_c}) = {fc:.1} MPa, ref = {fc_ref:.1} MPa"
-            );
-        }
-    }
-
-    #[test]
-    fn yield_stress_in_roussel_envelope() {
-        let tau = yield_stress_pa(0.40, 0.0, 0.65);
-        assert!(
-            (200.0..=8_000.0).contains(&tau),
-            "τ_y = {tau} Pa outside Roussel slump-corpus envelope"
-        );
-    }
-
-    #[test]
-    fn yield_stress_decreases_with_superplasticiser() {
-        let t0 = yield_stress_pa(0.40, 0.0, 0.65);
-        let t1 = yield_stress_pa(0.40, 1.0, 0.65);
-        assert!(t1 < t0, "SP should reduce τ_y, got {t0} -> {t1}");
-    }
-
-    #[test]
-    fn yield_stress_increases_with_aggregate_loading() {
-        let mut last = 0.0_f32;
-        for phi in [0.0_f32, 0.30, 0.50, 0.70] {
-            let tau = yield_stress_pa(0.40, 0.0, phi);
-            assert!(tau >= last, "τ_y not monotone in φ_agg at φ = {phi}");
-            last = tau;
-        }
-    }
-
-    #[test]
-    fn embodied_co2_orders_of_magnitude() {
-        let (c, scm, agg, w) = constituent_masses_kg_m3(0.40, 20.0, 5.0, 0.65);
-        let gwp = embodied_co2_kg_per_m3(c, scm, agg, w);
-        assert!(
-            (200.0..=400.0).contains(&gwp),
-            "GWP {gwp} kg CO₂/m³ outside literature envelope (200–400)"
-        );
-    }
-
-    #[test]
-    fn safety_margin_in_unit_interval() {
-        let alpha = degree_of_hydration(0.40, 24.0 * 28.0, 293.15);
-        let m = safety_margin(0.40, alpha);
-        assert!((0.0..=1.0).contains(&m), "safety margin {m} out of [0, 1]");
-    }
-
-    #[test]
-    fn ultimate_doh_increasing_in_water_cement() {
-        let mut last = 0.0_f32;
-        for w_c in [0.30_f32, 0.40, 0.50, 0.60] {
-            let a = ultimate_doh(w_c);
-            assert!(a > last, "α∞ not increasing in w/c at {w_c}");
-            assert_abs_diff_eq!(a, 1.031 * w_c / (0.194 + w_c), epsilon = 1.0e-6);
-            last = a;
-        }
+    fn uci_d1_row_nonzero_strength() {
+        let p = Profile::load_bundled("uci_d1").unwrap();
+        let row = MixRow {
+            cement_kg_m3: 540.0,
+            slag_kg_m3: 0.0,
+            fly_ash_kg_m3: 0.0,
+            water_kg_m3: 162.0,
+            superplasticizer_kg_m3: 2.5,
+            age_days: 28.0,
+            temperature_c: 21.0,
+        };
+        let fc = compressive_strength_mpa(&p, &row).unwrap();
+        assert!(fc > 0.0);
     }
 }

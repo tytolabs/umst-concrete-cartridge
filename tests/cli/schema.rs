@@ -35,3 +35,17 @@ fn schema_result_matches_bundled_file() -> Result<(), Box<dyn Error>> {
     assert_eq!(got, expected);
     Ok(())
 }
+
+#[test]
+fn schema_result_v2_matches_bundled_file() -> Result<(), Box<dyn Error>> {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("schema/result.v2.json");
+    let disk_text = fs::read_to_string(&path)?;
+    let expected: Value = serde_json::from_str(&disk_text)?;
+
+    let mut cmd = Command::cargo_bin("umst")?;
+    let assert = cmd.arg("schema").arg("result-v2").assert().success();
+    let got: Value = serde_json::from_slice(assert.get_output().stdout.as_slice())?;
+
+    assert_eq!(got, expected);
+    Ok(())
+}

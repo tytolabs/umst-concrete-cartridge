@@ -6,6 +6,10 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Set Time Engine.
 /// Computes initial and final setting kinetics (Vicant penetration mapping)
 /// dynamically across the spatial manifold based on local temperature and chemistry.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct SetTimeEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -24,6 +28,10 @@ impl<B: Backend> SetTimeEngine<B> {
     /// * `cement_blaine` - Fineness of cement (typically ~350 m2/kg)
     /// * `cement_c3s` - C3S content fraction (typically ~0.55)
     #[allow(clippy::too_many_arguments)]
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_setting_time(
         wc_ratio: Tensor<B, 4>,
         temperature_c: Tensor<B, 4>,

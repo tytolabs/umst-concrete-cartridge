@@ -5,6 +5,10 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Nanomaterial Engine.
 /// Computes nucleation seeding (C-S-H), pozzolanic acceleration, and pore refinement.
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct NanoEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -17,6 +21,10 @@ impl<B: Backend> NanoEngine<B> {
     /// * `nano_dosage` - Dosage of nanomaterials as % of cement weight [Batch, Depth, Height, Width]
     /// * `nano_ssa` - Specific Surface Area of the nanomaterial in m2/g (e.g. 200 for nano-SiO2)
     /// * `nano_reactivity` - Empirical reactivity multiplier (1.0 for standard nano-silica)
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_enhancements(
         nano_dosage: Tensor<B, 4>,
         nano_ssa: Tensor<B, 4>,

@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 #[test]
 fn predict_pipe_validates_and_matches_ranges() -> Result<(), Box<dyn Error>> {
-    let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("schema/result.v1.json");
+    let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("schema/result.v2.json");
     let schema_text = fs::read_to_string(&schema_path)?;
     let schema_val: Value = serde_json::from_str(&schema_text)?;
     let validator = jsonschema::validator_for(&schema_val)?;
@@ -24,6 +24,17 @@ fn predict_pipe_validates_and_matches_ranges() -> Result<(), Box<dyn Error>> {
 
     let stdout = assert.get_output().stdout.as_slice();
     let parsed: Value = serde_json::from_slice(stdout)?;
+    assert_eq!(
+        parsed["schema_version"].as_str(),
+        Some("result.v2"),
+        "default predict must emit result.v2"
+    );
+    assert!(parsed["warnings"].is_array(), "warnings must be an array");
+    assert_eq!(
+        parsed["calibration_profile"].as_str(),
+        Some("default"),
+        "default global profile"
+    );
     if !validator.is_valid(&parsed) {
         let msg = validator
             .iter_errors(&parsed)
@@ -75,6 +86,35 @@ fn predict_pipe_validates_and_matches_ranges() -> Result<(), Box<dyn Error>> {
         "safety_margin {safety} outside [0, 1]"
     );
 
+    Ok(())
+}
+
+#[test]
+fn predict_v1_still_matches_schema_when_flagged() -> Result<(), Box<dyn Error>> {
+    let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("schema/result.v1.json");
+    let schema_text = fs::read_to_string(&schema_path)?;
+    let schema_val: Value = serde_json::from_str(&schema_text)?;
+    let validator = jsonschema::validator_for(&schema_val)?;
+
+    let mut cmd = Command::cargo_bin("umst")?;
+    let assert = cmd
+        .arg("predict")
+        .arg("--schema-version")
+        .arg("v1")
+        .write_stdin(r#"{"w_c": 0.40, "temperature_k": 293.15}"#)
+        .assert()
+        .success();
+
+    let parsed: Value = serde_json::from_slice(assert.get_output().stdout.as_slice())?;
+    assert_eq!(parsed["schema_version"].as_str(), Some("result.v1"));
+    if !validator.is_valid(&parsed) {
+        let msg = validator
+            .iter_errors(&parsed)
+            .map(|e| e.to_string())
+            .collect::<Vec<_>>()
+            .join("; ");
+        return Err(msg.into());
+    }
     Ok(())
 }
 

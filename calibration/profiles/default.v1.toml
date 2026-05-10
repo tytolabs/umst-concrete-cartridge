@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar,
+# Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
+[meta]
+name = "default"
+schema = "calibration.v1"
+material = "concrete"
+source_repo = "umst-prototype-3"
+
+[provenance]
+dataset_lift_from = "umst-prototype-3/data/calibration/concrete_calibration.json"
+prototype_3_sha256 = "6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1"
+primary_reference = "Prototype DEFAULT row (lifted verbatim)"
+
+[provenance.formal]
+anchor = "lean://umst-formal/Lean/Powers.lean#powers_monotone"
+status = "Mechanised"
+axioms = ["physicalSecondLaw"]
+
+[regime]
+w_c_min = 0.30
+w_c_max = 0.65
+temperature_k_min = 278.0
+temperature_k_max = 313.0
+age_hours_min = 1.0
+age_hours_max = 87600.0
+
+[model]
+kind = "powers_gel_space"
+
+[parameters.powers_gel_space]
+s_intrinsic = 80.0000
+k_slag = 0.6000
+k_fly_ash = 0.4000
+k_ref = 0.5500
+early_boost = 1.0000
+
+[acceptance]
+strength_mae_max = 100.0
+strength_rmse_max = 150.0
+strength_r2_min = -5.0
+formal_anchor = "lean://umst-formal/Lean/OrderStatisticsBand.lean#p25_p75_admissibility"
+formal_status = "Mechanised"
+
+[contract]
+verification_status = "Contract"

@@ -1,0 +1,67 @@
+<!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+-->
+
+# Dataset provenance
+
+Each file was copied verbatim (headers and rows preserved) from `umst-prototype-3/data/concrete/` into this directory with lowercased filenames.
+
+## dataset_d1.csv
+
+- **Prototype path:** `umst-prototype-3/data/concrete/dataset_D1.csv`
+- **Rows (incl. header):** 1031 (1030 mixes)
+- **Primary reference:** I-Cheng Yeh (1998), UCI MLR concrete compressive strength dataset
+- **Columns:** `cement, slag, fly_ash, water, superplasticizer, coarse_agg, fine_agg, age, strength, source, temperature, humidity` (masses kg/m³, age days, strength MPa unless noted otherwise in UCI docs)
+- **Regime:** UCI-Yeh blends; calibration profile `uci_d1`
+- **SHA-256:** `8a378ad045929d4f398acc8261cef0901cd90c2b799f2f6cbfb582adcf55a6d3`
+
+## dataset_d2.csv
+
+- **Prototype path:** `umst-prototype-3/data/concrete/dataset_D2.csv`
+- **Rows (incl. header):** 4892
+- **Source note:** Internal MIT prototype extension / augmentation; reproducibility tied to prototype-3 repository history
+- **Regime:** profile `uci_d2`
+- **SHA-256:** `2eb70e4f347d156054d86992c7425c8289a167cae35058f3e329f92bdec1ce5d`
+
+## dataset_d3.csv
+
+- **Prototype path:** `umst-prototype-3/data/concrete/dataset_D3.csv`
+- **Rows (incl. header):** 2781
+- **Regime:** profile `uci_d3`
+- **SHA-256:** `079004d76e9948f04a7d9745d492d5a209097dfff06d99a0b7c2858864d64a6f`
+
+## dataset_d4.csv
+
+- **Prototype path:** `umst-prototype-3/data/concrete/dataset_D4.csv`
+- **Rows (incl. header):** 7446
+- **Regime:** profile `uci_d4`
+- **SHA-256:** `e0f0bc10fac55cf25144022db2e1e3989cf3dfe107fccb995bbab7380f9a3b20`
+
+## dataset_uhpc.csv
+
+- **Prototype path:** `umst-prototype-3/data/concrete/dataset_uhpc.csv`
+- **Rows (incl. header):** 501
+- **Regime:** profile `uhpc` (Boundary)
+- **SHA-256:** `a3942ba5b6748d4d83786c16d7dced32fc58c660b336c90bc06c055f1c1cca58`
+
+## dataset_highscm.csv
+
+- **Prototype path:** `umst-prototype-3/data/concrete/dataset_highscm.csv`
+- **Rows (incl. header):** 501
+- **Regime:** profile `highscm`
+- **SHA-256:** `7d651fa6d04dcc28e043de389fac71f5158f56b72e0e9e8ba249f20c45d56291`
+
+## dataset_selfheal.csv
+
+- **Prototype path:** `umst-prototype-3/data/concrete/dataset_selfheal.csv`
+- **Rows (incl. header):** 501
+- **Regime:** profile `selfheal` (Boundary)
+- **SHA-256:** `7ad647899db864a1f821edd359bb71c87f7235df79284fb74ba80cd359dd5105`
+
+## dataset_lunar.csv
+
+- **Prototype path:** `umst-prototype-3/data/concrete/dataset_lunar.csv`
+- **Rows (incl. header):** 501
+- **Regime:** profile `lunar` (Boundary)
+- **SHA-256:** `0d8bbd127d963912091d157ea6fb351583958917cd49ab284129c7371f021808`

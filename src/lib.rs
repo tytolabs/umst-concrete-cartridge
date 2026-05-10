@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
+//! UMST differentiable concrete cartridge: calibration profiles, homogeneous routing, coupled tensor engines.
+
+#![allow(clippy::doc_lazy_continuation)]
+
+pub mod calibration;
 pub mod core;
 pub mod homogeneous;
 pub mod physics;

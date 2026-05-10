@@ -7,6 +7,10 @@ use crate::burn_compat::bool_and;
 
 /// Pure tensor implementation of the Creep Engine.
 /// Computes basic and drying creep compliance (Extended Microprestress Solidification theory / fib Model Code 2010).
+/// formal_anchor: NONE
+/// formal_status: Library
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
 pub struct CreepEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -21,6 +25,10 @@ impl<B: Backend> CreepEngine<B> {
     /// * `ambient_rh` - Relative humidity (0.0 to 1.0)
     /// * `t_load_days` - Age at loading (days)
     /// * `t_current_days` - Current age (days)
+    /// formal_anchor: NONE
+    /// formal_status: Library
+    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
     pub fn compute_compliance(
         compressive_strength: Tensor<B, 4>,
         wc_ratio: Tensor<B, 4>,
