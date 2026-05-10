@@ -245,8 +245,8 @@ fn main() -> anyhow::Result<()> {
             println!("| acceptance.strength_r2_min | {:.6} |", x);
         }
         println!(
-            "| provenance.prototype_3_sha256 | {} |",
-            p.provenance.prototype_3_sha256
+            "| provenance.provenance_sha256 | {} |",
+            p.provenance.provenance_sha256
         );
         println!(
             "| contract.verification_status | {} |",

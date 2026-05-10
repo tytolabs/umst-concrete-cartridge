@@ -73,7 +73,7 @@ pub fn ultimate_doh(_profile: &Profile, w_c: f32) -> f32 {
     ultimate_doh_wc(w_c)
 }
 
-/// Effective w/c, degree of hydration, curing temperature (deg C). Mirrors prototype-3 `mix_hydration_state`.
+/// Effective w/c, degree of hydration, curing temperature (deg C). Mirrors prototype-2a `mix_hydration_state`.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Internal homogeneous helper composing calibrated α(t,T,scm) and effective w/c from profile parameters.

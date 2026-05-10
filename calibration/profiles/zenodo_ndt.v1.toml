@@ -6,11 +6,11 @@
 name = "zenodo_ndt"
 schema = "calibration.v1"
 material = "concrete"
-source_repo = "umst-prototype-3"
+source_repo = "umst-prototype-2a"
 
 [provenance]
-dataset_lift_from = "umst-prototype-3/data/calibration/concrete_calibration.json"
-prototype_3_sha256 = "6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1"
+dataset_lift_from = "umst-prototype-2a (Zenodo 18940933) — calibration constants documented in calibration/SCHEMA.md"
+provenance_sha256 = "6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1"
 primary_reference = "Eindhoven University of Technology and TNO. Non-destructive Estimation of Concrete Compressive Strength. Zenodo, 2025."
 zenodo_record = "14921019"
 zenodo_doi = "10.5281/zenodo.14921019"

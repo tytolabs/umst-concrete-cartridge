@@ -30,9 +30,6 @@ Pure functional **`burn`** tensors · **22** coupled modules · calibrated **pro
 
 We ship **one** audited prediction path (`umst_concrete_cartridge::facade`) reused by **`umst`**, PyO3, and MCP/Docker wrappers. Mixed-regime homogeneous routing, optional CSV audit (**`audit.v1`**), deterministic **`result.v2`** JSON with **`calibration_profile`**, **`formal_anchor`**, sorted **`axioms`**, **`physics_pipeline`** summary, and explicit **`warnings`**. Formal statements live in **`umst-formal`**; this crate surfaces traceable **`lean://…`** anchors on the wire.
 
-> [!TIP]
-> **Claim wording.** Where accuracy is cited: **in-regime predictions land within the profile’s `[acceptance]` envelope**; **predictions out of regime surface explicit warnings**; **every prediction returns the calibration profile, the formal anchor URI, the axiom set, and any regime warnings**.
-
 ---
 
 ## Who this repository is for
@@ -62,106 +59,47 @@ Docker / compose stubs live at repo root; MCP stdio harness: **`scripts/mcp_smok
 ## Architecture
 
 ```mermaid
-flowchart LR
-    subgraph SURF [" Four Surfaces  ·  identical wire JSON "]
-        CLI["umst CLI"]
-        Py["Python<br/>(PyO3 / maturin)"]
-        MCP["MCP stdio"]
-        Doc["Docker"]
-    end
+flowchart TD
+    Surfaces["CLI  ·  Python (PyO3)  ·  MCP stdio  ·  Docker"]
+    Facade[["umst_concrete_cartridge :: facade"]]
+    Profile[("calibration profile · TOML")]
+    Regime{{"regime check"}}
+    Predict["Mills hydration → Powers gel-space → safety_margin"]
+    Wire[/"result.v2 / audit.v1<br/>calibration_profile · formal_anchor · axioms · warnings"/]
+    Canon[["umst-canonical · byte-stable JSON"]]
+    Formal["umst-formal · Lean 4<br/>Powers.lean · RegimeSoundness.lean · MeasurementCost.lean"]
+    Axiom(["physicalSecondLaw"])
+    Data["UCI Yeh 1998 · Zenodo 14921019<br/>17,646 measurement rows · CC-BY"]
 
-    subgraph FACADE [" Single source of truth "]
-        F[["umst_concrete_cartridge::facade"]]
-        Canon[["umst-canonical<br/>byte-stable JSON"]]
-    end
-
-    subgraph PROF [" Calibration profiles  ·  TOML  ·  lifted from prototype-3 "]
-        D[("default")]
-        D1[("uci_d1")]
-        Z1[("zenodo_ndt")]
-        Z2[("zenodo_sonreb")]
-        Z3[("zenodo_rh")]
-        UH[("uhpc · Boundary")]
-        SH[("selfheal · Boundary")]
-        HSCM[("highscm")]
-    end
-
-    subgraph PRED [" Predict pipeline "]
-        Regime{{"regime check<br/>(RegimeSoundness.lean)"}}
-        Mills["Mills + Arrhenius<br/>α(t, T, w/c)"]
-        Powers["Powers gel-space<br/>f_c = a (1 - phi_cap)^p"]
-        Safety["safety_margin"]
-    end
-
-    subgraph PHY [" 22 constitutive modules  ·  five-status anchored "]
-        direction TB
-        Mech["Mechanised: hydration · chemo_water · porosity · set_time · strength · thermo · transport"]
-        Emp["Empirical: rheology · printability · creep · shrinkage · freeze_thaw · self_heal · colloidal · nano · itz · polymer"]
-        Lit["Literature: fracture · fiber · packing · sustainability"]
-        None["NONE: cost"]
-    end
-
-    subgraph OUT [" result.v2  ·  audit.v1 "]
-        Wire[/"calibration_profile  ·  formal_anchor lean://...<br/>axioms  ·  warnings  ·  safety_margin  ·  physics_pipeline"/]
-    end
-
-    subgraph FORMAL [" umst-formal  ·  Lean 4 + Mathlib "]
-        LP["Powers.lean#powers_monotone"]
-        LR["RegimeSoundness.lean#warnings_empty_iff_in_regime"]
-        LM["MeasurementCost.lean#zero_info_zero_energy"]
-        Ax(["physicalSecondLaw  ·  single physical axiom"])
-    end
-
-    subgraph DATA [" 17,646 measurement rows  ·  CC-BY 4.0 / public "]
-        UCI[("UCI Yeh 1998<br/>1,030 rows<br/>10.24432/C5PK67")]
-        ZNDT[("Zenodo 14921019<br/>NDT 4,891 rows")]
-        ZSON[("Zenodo 14921019<br/>SonReb 2,780 rows")]
-        ZRH[("Zenodo 14921019<br/>RH 7,445 rows")]
-    end
-
-    CLI --> F
-    Py --> F
-    MCP --> F
-    Doc --> F
-
-    F --> PROF
-    PROF --> Regime
-    Regime -->|in-regime| Mills
+    Surfaces --> Facade
+    Facade --> Profile
+    Profile --> Regime
+    Regime -->|in-regime| Predict
     Regime -.->|out-of-regime| Wire
-    Mills --> Powers
-    Powers --> Safety
-    Powers --> PHY
-    Safety --> Wire
-    PHY --> Wire
+    Predict --> Wire
     Wire --> Canon
-
-    Wire -.->|formal_anchor URI| LP
-    Wire -.->|formal_anchor URI| LR
-    Wire -.->|formal_anchor URI| LM
-    LP --> Ax
-    LR --> Ax
-    LM --> Ax
-
-    PROF -.->|fitted against| DATA
+    Wire -.->|lean:// URI| Formal
+    Formal --> Axiom
+    Profile -.->|fitted against| Data
 
     classDef surf fill:#0a2540,stroke:#5b9bd5,stroke-width:2px,color:#e1f5fe
     classDef facade fill:#0f2a44,stroke:#16e0bd,stroke-width:2px,color:#a7f3d0
     classDef prof fill:#3d2e1a,stroke:#f59e0b,stroke-width:2px,color:#fef3c7
     classDef pred fill:#2d1b69,stroke:#bb86fc,stroke-width:2px,color:#e9d5ff
-    classDef phy fill:#1a3d2e,stroke:#10b981,stroke-width:2px,color:#d1fae5
     classDef out fill:#3d1a3a,stroke:#ec4899,stroke-width:2px,color:#fce7f3
     classDef formal fill:#1f2937,stroke:#a78bfa,stroke-width:2px,color:#e9d5ff
     classDef data fill:#0f3d3d,stroke:#22d3ee,stroke-width:2px,color:#cffafe
 
-    class CLI,Py,MCP,Doc surf
-    class F,Canon facade
-    class D,D1,Z1,Z2,Z3,UH,SH,HSCM prof
-    class Regime,Mills,Powers,Safety pred
-    class Mech,Emp,Lit,None phy
+    class Surfaces surf
+    class Facade,Canon facade
+    class Profile prof
+    class Regime,Predict pred
     class Wire out
-    class LP,LR,LM,Ax formal
-    class UCI,ZNDT,ZSON,ZRH data
+    class Formal,Axiom formal
+    class Data data
 ```
+
+Eight bundled profiles (`default`, `uci_d1`, `zenodo_ndt`, `zenodo_sonreb`, `zenodo_rh`, `uhpc` *(Boundary)*, `selfheal` *(Boundary)*, `highscm`) live under `calibration/profiles/*.v1.toml`. Twenty-two constitutive modules carry one of five formal-status buckets (Mechanised / Structural / Empirical / Literature / NONE) — see [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md). Every wire payload returns the calibration profile, the `formal_anchor` URI, the axiom set, and any regime warnings.
 
 The diagram is the cartridge in one frame. Four surfaces (CLI / Python / MCP / Docker) all funnel into a single `facade` so byte-identical JSON is an architectural guarantee, not a discipline. The active calibration profile gates a regime check anchored in `RegimeSoundness.lean`; in-regime mixes flow through Mills hydration kinetics into the Powers gel-space strength model; out-of-regime mixes return with explicit warnings rather than silent extrapolation. The 22 constitutive modules carry one of five formal-status buckets (Mechanised / Empirical / Literature / NONE / Structural) — each pinned to either a Lean theorem or a published reference. Every wire payload (`result.v2` / `audit.v1`) carries the `formal_anchor` URI back into `umst-formal`, where the chain terminates at the single physical axiom (`physicalSecondLaw`). Profiles are fit against 17 646 rows of CC-BY measurement data — UCI Yeh 1998 plus Zenodo Record 14921019 (TU/e + TNO).
 

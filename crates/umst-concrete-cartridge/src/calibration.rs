@@ -3,7 +3,7 @@
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! Bundled calibration profiles (`calibration/*.toml`): provenance, regime bounds, Powers parameters,
-//! and verification contract metadata lifted from prototype-3 SSOT JSON (see [`calibration/SCHEMA.md`](../../../calibration/SCHEMA.md)).
+//! and verification contract metadata lifted from prototype-2a (Zenodo 18940933) SSOT JSON (see [`calibration/SCHEMA.md`](../../../calibration/SCHEMA.md)).
 
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -102,7 +102,7 @@ pub struct CalibrationMeta {
 pub struct CalibrationProvenance {
     #[serde(default)]
     pub dataset_lift_from: Option<String>,
-    pub prototype_3_sha256: String,
+    pub provenance_sha256: String,
     #[serde(default)]
     pub primary_reference: Option<String>,
     #[serde(default)]

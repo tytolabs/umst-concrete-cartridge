@@ -5,11 +5,11 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # Dataset provenance
 
-CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. Rows were copied verbatim (headers preserved) from `umst-prototype-3/data/concrete/` into this directory with lowercased filenames. Licence and attribution for each corpus are in **`DATA_LICENSE`**.
+CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. Rows were copied verbatim (headers preserved) from `datasets/` into this directory with lowercased filenames. Licence and attribution for each corpus are in **`DATA_LICENSE`**.
 
 ## dataset_d1.csv
 
-- **Prototype path:** `umst-prototype-3/data/concrete/dataset_D1.csv`
+- **Source path:** `datasets/dataset_D1.csv`
 - **Rows (incl. header):** 1031 (1030 mixes)
 - **Primary reference:** I-Cheng Yeh (1998), UCI MLR concrete compressive strength dataset
 - **Columns:** `cement, slag, fly_ash, water, superplasticizer, coarse_agg, fine_agg, age, strength, source, temperature, humidity` (masses kg/m³, age days, strength MPa unless noted otherwise in UCI docs)
@@ -18,7 +18,7 @@ CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. R
 
 ## dataset_d2.csv
 
-- **Prototype path:** `umst-prototype-3/data/concrete/dataset_D2.csv`
+- **Source path:** `datasets/dataset_D2.csv`
 - **Rows (incl. header):** 4892 (4891 mixes)
 - **Primary corpus:** Eindhoven University of Technology and TNO. *Non-destructive Estimation of Concrete Compressive Strength.* Zenodo record **14921019**, DOI **10.5281/zenodo.14921019**, CC-BY 4.0
 - **Subset in this cartridge:** **NDT** — calibration profile **`zenodo_ndt`**
@@ -26,7 +26,7 @@ CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. R
 
 ## dataset_d3.csv
 
-- **Prototype path:** `umst-prototype-3/data/concrete/dataset_D3.csv`
+- **Source path:** `datasets/dataset_D3.csv`
 - **Rows (incl. header):** 2781 (2780 mixes)
 - **Primary corpus:** Zenodo **14921019** (TU/e + TNO), CC-BY 4.0 — same record as `dataset_d2.csv`
 - **Subset in this cartridge:** **SonReb** — calibration profile **`zenodo_sonreb`**
@@ -34,7 +34,7 @@ CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. R
 
 ## dataset_d4.csv
 
-- **Prototype path:** `umst-prototype-3/data/concrete/dataset_D4.csv`
+- **Source path:** `datasets/dataset_D4.csv`
 - **Rows (incl. header):** 7446 (7445 mixes)
 - **Primary corpus:** Zenodo **14921019** (TU/e + TNO), CC-BY 4.0 — same record as `dataset_d2.csv`
 - **Subset in this cartridge:** **RH** — calibration profile **`zenodo_rh`**
@@ -42,21 +42,21 @@ CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. R
 
 ## dataset_uhpc.csv
 
-- **Prototype path:** `umst-prototype-3/data/concrete/dataset_uhpc.csv`
+- **Source path:** `datasets/dataset_uhpc.csv`
 - **Rows (incl. header):** 501
 - **Calibration profile:** `uhpc` (Boundary)
 - **SHA-256:** `a3942ba5b6748d4d83786c16d7dced32fc58c660b336c90bc06c055f1c1cca58`
 
 ## dataset_highscm.csv
 
-- **Prototype path:** `umst-prototype-3/data/concrete/dataset_highscm.csv`
+- **Source path:** `datasets/dataset_highscm.csv`
 - **Rows (incl. header):** 501
 - **Calibration profile:** `highscm`
 - **SHA-256:** `7d651fa6d04dcc28e043de389fac71f5158f56b72e0e9e8ba249f20c45d56291`
 
 ## dataset_selfheal.csv
 
-- **Prototype path:** `umst-prototype-3/data/concrete/dataset_selfheal.csv`
+- **Source path:** `datasets/dataset_selfheal.csv`
 - **Rows (incl. header):** 501
 - **Calibration profile:** `selfheal` (Boundary)
 - **SHA-256:** `7ad647899db864a1f821edd359bb71c87f7235df79284fb74ba80cd359dd5105`

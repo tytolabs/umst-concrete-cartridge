@@ -35,7 +35,7 @@ Keys and sections are sorted for stable diffs.
 | acceptance.strength_mae_max | 100.000000 |
 | acceptance.strength_rmse_max | 150.000000 |
 | acceptance.strength_r2_min | -5.000000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| provenance.provenance_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
 ### `highscm`
@@ -58,7 +58,7 @@ Keys and sections are sorted for stable diffs.
 | acceptance.strength_mae_max | 60.000000 |
 | acceptance.strength_rmse_max | 80.000000 |
 | acceptance.strength_r2_min | -10.000000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| provenance.provenance_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
 ### `selfheal`
@@ -77,7 +77,7 @@ Keys and sections are sorted for stable diffs.
 | powers.k_fly_ash | 0.0780 |
 | powers.k_ref | 0.8870 |
 | powers.early_boost | 1.5090 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| provenance.provenance_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Boundary |
 
 ### `uci_d1`
@@ -99,7 +99,7 @@ Keys and sections are sorted for stable diffs.
 | acceptance.strength_mae_max | 35.000000 |
 | acceptance.strength_rmse_max | 45.000000 |
 | acceptance.strength_r2_min | -5.000000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| provenance.provenance_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
 ### `uhpc`
@@ -118,7 +118,7 @@ Keys and sections are sorted for stable diffs.
 | powers.k_fly_ash | 0.9000 |
 | powers.k_ref | 0.2500 |
 | powers.early_boost | 1.6000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| provenance.provenance_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Boundary |
 
 ### `zenodo_ndt`
@@ -140,7 +140,7 @@ Keys and sections are sorted for stable diffs.
 | acceptance.strength_mae_max | 50.000000 |
 | acceptance.strength_rmse_max | 65.000000 |
 | acceptance.strength_r2_min | -5.000000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| provenance.provenance_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
 ### `zenodo_rh`
@@ -162,7 +162,7 @@ Keys and sections are sorted for stable diffs.
 | acceptance.strength_mae_max | 50.000000 |
 | acceptance.strength_rmse_max | 65.000000 |
 | acceptance.strength_r2_min | -5.000000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| provenance.provenance_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
 ### `zenodo_sonreb`
@@ -184,7 +184,7 @@ Keys and sections are sorted for stable diffs.
 | acceptance.strength_mae_max | 50.000000 |
 | acceptance.strength_rmse_max | 65.000000 |
 | acceptance.strength_r2_min | -5.000000 |
-| provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
+| provenance.provenance_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Contract |
 
 ## Per-dataset headline metrics (CSV artefact)

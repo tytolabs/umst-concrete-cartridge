@@ -732,7 +732,7 @@ pub fn certify_profile_chain(profile: &Profile) -> CertifyChain {
         acceptance_anchor,
         profile_formal_bucket,
         axioms,
-        provenance_sha256: profile.provenance.prototype_3_sha256.clone(),
+        provenance_sha256: profile.provenance.provenance_sha256.clone(),
         zenodo_record: profile.provenance.zenodo_record.clone(),
         zenodo_doi: profile.provenance.zenodo_doi.clone(),
         zenodo_url: profile.provenance.zenodo_url.clone(),
