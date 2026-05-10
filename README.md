@@ -118,27 +118,54 @@ Full equations and units are in [`docs/Constitutive-Equations.md`](docs/Constitu
 umst-concrete-cartridge = "0.1"
 ```
 
-**Use it without writing Rust:**
+### 1. Human Interface (CLI)
 
+**Install the CLI predictor:**
 ```bash
-cargo install umst-concrete-cartridge --features cli
+# From a local clone
+cargo install --path crates/umst-cli
+
+# From git
+cargo install --git https://github.com/tytolabs/umst-concrete-cartridge.git umst-cli
+```
+
+**Run predictions:**
+```bash
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict
-echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile zenodo_ndt predict
-echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict --schema-version v1
 umst profiles list
-umst schema result-v2
 ```
 
-Regenerate **`docs/Calibration.md`** from the deterministic report (`cargo install --features "cli,calibration"`):
-
+Regenerate **`docs/Calibration.md`** from the deterministic report:
 ```bash
-cargo run --quiet --bin calibration_report --manifest-path /path/to/umst-concrete-cartridge/Cargo.toml --features "cli,calibration" > docs/Calibration.md
-# The same command refreshes `results/canonical/table_per_dataset_metrics.csv` (see `results/canonical/README.md`).
-# Dataset scope and row totals: `datasets/PROVENANCE.md` and `docs/SSOT.json`.
+cargo run --quiet -p umst-cli --bin calibration_report > docs/Calibration.md
 ```
+Calibration is delivered as **versioned TOML profiles** (`calibration/profiles/*.v1.toml`) with explicit regime bounds; the CLI selects a profile via **`--profile`** or **`--profile-file`**, and `predict` defaults to **`result.v2`** metadata (profile id, model wire name, Lean `formal_anchor` URI, regime `warnings`).
 
-Calibration is delivered as **versioned TOML profiles** (`calibration/profiles/*.v1.toml`) with explicit regime bounds; the CLI selects a profile via **`--profile`** or **`--profile-file`**, and `predict` defaults to **`result.v2`** metadata (profile id, model wire name, Lean `formal_anchor` URI, regime `warnings`). See [`docs/Calibration.md`](docs/Calibration.md), [`calibration/SCHEMA.md`](calibration/SCHEMA.md), and [`docs/FormalAnchors.md`](docs/FormalAnchors.md).
+### 2. AI Interface (MCP Server)
+
+UMST is the first material science engine natively built for AI agents. The **`umst-mcp`** crate runs a Model Context Protocol server over `stdio` that gives LLMs (like Claude) direct, autonomous access to the differentiable tensor pipeline.
+
+**To connect to Claude Desktop:**
+Add the following to your `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "umst-concrete-engine": {
+      "command": "cargo",
+      "args": [
+        "run", 
+        "--release", 
+        "--manifest-path", 
+        "/absolute/path/to/umst-concrete-cartridge/crates/umst-mcp/Cargo.toml"
+      ]
+    }
+  }
+}
+```
+You can now ask Claude: *"Design a mix that hits 45 MPa in 28 days but uses 15% fly ash to lower embodied carbon."* Claude will autonomously ping the `evaluate_mix` tool, run the 22-module tensor physics engine, and iterate until it solves your constraints.
+
+### 3. Rust API (Library)
 
 ```rust
 use burn_ndarray::NdArrayDevice;
