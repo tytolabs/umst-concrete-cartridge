@@ -5,31 +5,20 @@
 //! Pure CLI core: JSON validation (`MixSpec`), orchestration around the cartridge functor `F`,
 //! and serialization (`ψ`) of [`PhysicalResult`] into the versioned wire JSON contract.
 
-use crate::core::ConcreteCartridge;
-use crate::physics::rheology::RheologyEngine;
-use crate::physics::strength::StrengthEngine;
-use crate::physics::sustainability::SustainabilityEngine;
-use burn::tensor::{backend::Backend, Data, Int, Shape, Tensor};
+use crate::homogeneous;
+use burn::tensor::{Data, Shape, Tensor};
 use burn_ndarray::NdArray;
 use serde::Serialize;
 use serde_json::Value;
 use std::convert::TryFrom;
 use thiserror::Error;
-use umst_manifold::core::tensors::{MixTensor, UnifiedMaterialStateTensor};
-use umst_manifold::core::traits::{IScienceCartridge, PhysicalResult};
+use umst_manifold::core::traits::PhysicalResult;
 
 /// Wire schema tag emitted with every prediction object.
 pub const RESULT_SCHEMA_VERSION: &str = "result.v1";
 
 /// NdArray backend used by the synchronous CLI path.
 pub type CliBackend = NdArray;
-
-type MassBlock4 = (
-    Tensor<CliBackend, 4>,
-    Tensor<CliBackend, 4>,
-    Tensor<CliBackend, 4>,
-    Tensor<CliBackend, 4>,
-);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WaterCementRatio(f32);
@@ -191,69 +180,44 @@ struct PredictionWireV1 {
 /// - `free_energy[:, 1]` — yield stress (Pa)
 /// - `dissipation` — uniform degree of hydration α ∈ [0, 1]
 /// - `cost` — GWP indicator (kg CO₂-eq / m³)
-/// - `safety_margin` — admissibility margin from [`IScienceCartridge::compute_topology`]
+/// - `safety_margin` — admissibility margin in [0, 1]
+///
+/// Dispatches through `crate::homogeneous`, which holds the calibrated 0-D
+/// closed-forms used for single-shot prediction. The full burn-tensor
+/// multi-physics pathway in `crate::physics::*` is reserved for
+/// differentiable training; mixing the two paths in one entry point caused
+/// physically implausible outputs in earlier revisions.
 pub fn predict(spec: &MixSpec) -> Result<PhysicalResult<CliBackend>, CliError> {
     let device = burn_ndarray::NdArrayDevice::default();
-    let cartridge = ConcreteCartridge::<CliBackend>::default();
 
-    let mix = mix_tensor_from_spec(spec, &device)?;
-    let alpha = hydration_degree_from_mix(&mix, spec, &device)?;
-    let alpha_scalar = tensor_mean_scalar(alpha)?;
-
-    let wc_4 = tensor_fill_4d(spec.w_c.value(), &device);
-    let alpha_4 = tensor_fill_4d(alpha_scalar, &device);
-    let air_4 = tensor_fill_4d(0.02_f32, &device);
-    let intrinsic_4 = tensor_fill_4d(2_400_f32, &device);
-
-    let (fc_tensor, _, _) = StrengthEngine::compute_strength_jennings(
-        wc_4.clone(),
-        alpha_4.clone(),
-        air_4,
-        intrinsic_4,
+    let alpha = homogeneous::degree_of_hydration(
+        spec.w_c.value(),
+        spec.target_age_hours,
+        spec.temperature_k.value(),
     );
-    let fc_scalar = tensor_mean_scalar_nd(fc_tensor)?;
-
-    let phi = tensor_fill_4d(spec.aggregate_volume_fraction, &device);
-    let phi_m = tensor_fill_4d(0.74_f32, &device);
-    let d50 = tensor_fill_4d(120e-6_f32, &device);
-    let f_sigma = tensor_fill_4d(
-        1e-3_f32 * (1.0 + spec.superplasticiser_pct * 0.05_f32),
-        &device,
+    let fc = homogeneous::compressive_strength_mpa(spec.w_c.value(), alpha);
+    let tau = homogeneous::yield_stress_pa(
+        spec.w_c.value(),
+        spec.superplasticiser_pct,
+        spec.aggregate_volume_fraction,
     );
-
-    let tau_tensor =
-        RheologyEngine::compute_yield_stress_yodel(phi.clone(), phi_m.clone(), d50, f_sigma);
-    let tau_scalar = tensor_mean_scalar_nd(tau_tensor)?;
-
-    let (mass_cement, mass_scm, mass_agg, mass_water) = masses_from_spec(spec, &device)?;
-    let gwp_tensor = SustainabilityEngine::compute_embodied_carbon(
-        mass_cement.clone(),
-        mass_scm.clone(),
-        mass_agg.clone(),
-        mass_water.clone(),
-        (0.93_f32, 0.05_f32, 0.02_f32, 0.001_f32),
+    let (cement, scm, agg, water) = homogeneous::constituent_masses_kg_m3(
+        spec.w_c.value(),
+        spec.fly_ash_pct,
+        spec.silica_fume_pct,
+        spec.aggregate_volume_fraction,
     );
-    let gwp_scalar = tensor_mean_scalar_nd(gwp_tensor)?;
+    let gwp = homogeneous::embodied_co2_kg_per_m3(cement, scm, agg, water);
+    let margin = homogeneous::safety_margin(spec.w_c.value(), alpha);
 
-    let manifold = minimal_manifold_from_spec(spec, &device)?;
-    let topo = cartridge.compute_topology(&manifold);
-    let safety_scalar = tensor_mean_scalar(topo.safety_margin.clone())?;
-
-    let row_energy = vec![fc_scalar, tau_scalar];
     let free_energy =
-        Tensor::<CliBackend, 2>::from_data(Data::new(row_energy, Shape::new([1, 2])), &device);
-    let dissipation = Tensor::<CliBackend, 2>::from_data(
-        Data::new(vec![alpha_scalar], Shape::new([1, 1])),
-        &device,
-    );
-    let safety_margin = Tensor::<CliBackend, 2>::from_data(
-        Data::new(vec![safety_scalar], Shape::new([1, 1])),
-        &device,
-    );
-    let cost = Tensor::<CliBackend, 2>::from_data(
-        Data::new(vec![gwp_scalar], Shape::new([1, 1])),
-        &device,
-    );
+        Tensor::<CliBackend, 2>::from_data(Data::new(vec![fc, tau], Shape::new([1, 2])), &device);
+    let dissipation =
+        Tensor::<CliBackend, 2>::from_data(Data::new(vec![alpha], Shape::new([1, 1])), &device);
+    let safety_margin =
+        Tensor::<CliBackend, 2>::from_data(Data::new(vec![margin], Shape::new([1, 1])), &device);
+    let cost =
+        Tensor::<CliBackend, 2>::from_data(Data::new(vec![gwp], Shape::new([1, 1])), &device);
 
     Ok(PhysicalResult {
         free_energy,
@@ -306,149 +270,6 @@ pub fn serialize_mix_spec(spec: &MixSpec) -> Result<Value, CliError> {
         target_age_hours: f64::from(spec.target_age_hours),
     };
     serde_json::to_value(wire).map_err(|e| CliError::MixSpec(MixSpecError::Json(e)))
-}
-
-fn tensor_fill_4d(value: f32, device: &<CliBackend as Backend>::Device) -> Tensor<CliBackend, 4> {
-    Tensor::<CliBackend, 4>::full([1, 1, 1, 1], value, device)
-}
-
-fn mix_tensor_from_spec(
-    spec: &MixSpec,
-    device: &<CliBackend as Backend>::Device,
-) -> Result<MixTensor<CliBackend>, CliError> {
-    let w_c = spec.w_c.value();
-    let fly = spec.fly_ash_pct / 100.0_f32;
-    let silica = spec.silica_fume_pct / 100.0_f32;
-    let cementish = (1.0_f32 - fly - silica).max(1e-6_f32);
-    let denom = w_c + cementish + fly + silica;
-
-    let mut row = vec![0.0_f32; 8];
-    row[0] = w_c / denom;
-    row[1] = cementish / denom;
-    row[5] = silica / denom;
-    row[6] = fly / denom;
-
-    let fractions = Tensor::<CliBackend, 2>::from_data(Data::new(row, Shape::new([1, 8])), device);
-    Ok(MixTensor { fractions })
-}
-
-fn hydration_degree_from_mix(
-    mix: &MixTensor<CliBackend>,
-    spec: &MixSpec,
-    device: &<CliBackend as Backend>::Device,
-) -> Result<Tensor<CliBackend, 2>, CliError> {
-    let batch = mix.fractions.dims()[0];
-    let cement = mix.fractions.clone().slice([0..batch, 1..2]);
-    let slag = mix.fractions.clone().slice([0..batch, 5..6]);
-    let fly_ash = mix.fractions.clone().slice([0..batch, 6..7]);
-
-    let binder = cement
-        .clone()
-        .add(slag.clone())
-        .add(fly_ash.clone())
-        .clamp_min(1e-6_f32);
-    let scm_ratio = slag.add(fly_ash).div(binder.clone());
-
-    let alpha_max = scm_ratio.clone().mul_scalar(-0.15_f32).add_scalar(0.95_f32);
-    let k_ref = 0.55_f32;
-
-    let t_ref_k = 293.15_f32;
-    let temp_c = spec.temperature_k.value() - 273.15_f32;
-    let temperature_c_tensor = Tensor::<CliBackend, 2>::full([batch, 1], temp_c, device);
-    let t_k = temperature_c_tensor.add_scalar(273.15_f32);
-    let e_over_r = 5_000.0_f32;
-
-    let inv_t_ref = 1.0_f32 / t_ref_k;
-    let inv_t = t_k.powf_scalar(-1.0_f32);
-    let temp_factor = inv_t
-        .mul_scalar(-1.0_f32)
-        .add_scalar(inv_t_ref)
-        .mul_scalar(e_over_r)
-        .exp();
-
-    let scm_factor = scm_ratio.mul_scalar(-0.4_f32).add_scalar(1.0_f32);
-    let k = temp_factor.mul(scm_factor).mul_scalar(k_ref);
-
-    let age_days =
-        Tensor::<CliBackend, 2>::full([batch, 1], spec.target_age_hours / 24.0_f32, device);
-    let age_sqrt = age_days.sqrt();
-    let decay = k.mul(age_sqrt).mul_scalar(-1.0_f32).exp();
-    let alpha = alpha_max.mul(decay.mul_scalar(-1.0_f32).add_scalar(1.0_f32));
-
-    Ok(alpha.clamp(0.0_f32, 1.0_f32))
-}
-
-fn masses_from_spec(
-    spec: &MixSpec,
-    device: &<CliBackend as Backend>::Device,
-) -> Result<MassBlock4, CliError> {
-    let cement_kg_m3 = 350.0_f32;
-    let water_kg_m3 = cement_kg_m3 * spec.w_c.value();
-    let agg_vol = spec.aggregate_volume_fraction.clamp(0.0_f32, 0.85_f32);
-    let scm_mass = cement_kg_m3 * (spec.fly_ash_pct + spec.silica_fume_pct) / 100.0_f32;
-    let cement_net = (cement_kg_m3 - scm_mass).max(10.0_f32);
-    let agg_kg_m3 = 2_600.0_f32 * agg_vol;
-
-    Ok((
-        tensor_fill_4d(cement_net, device),
-        tensor_fill_4d(scm_mass.max(0.0_f32), device),
-        tensor_fill_4d(agg_kg_m3, device),
-        tensor_fill_4d(water_kg_m3, device),
-    ))
-}
-
-fn minimal_manifold_from_spec(
-    spec: &MixSpec,
-    device: &<CliBackend as Backend>::Device,
-) -> Result<UnifiedMaterialStateTensor<CliBackend>, CliError> {
-    let n = 2_usize;
-    let temp_c = spec.temperature_k.value() - 273.15_f32;
-
-    let coords_data: Vec<i64> = vec![0; n * 5];
-    let coords =
-        Tensor::<CliBackend, 2, Int>::from_data(Data::new(coords_data, Shape::new([n, 5])), device);
-
-    let edges = Tensor::<CliBackend, 2, Int>::from_data(
-        Data::new(vec![0_i64, 1_i64], Shape::new([2, 1])),
-        device,
-    );
-
-    let faces = Tensor::<CliBackend, 2, Int>::from_data(
-        Data::new(vec![0_i64, 0_i64], Shape::new([2, 1])),
-        device,
-    );
-
-    let mut sf = vec![0.0_f32; n * 8];
-    for i in 0..n {
-        let base = i * 8;
-        sf[base + 3] = temp_c;
-        sf[base + 4] = 0.0_f32;
-    }
-    let scalar_features =
-        Tensor::<CliBackend, 2>::from_data(Data::new(sf, Shape::new([n, 8])), device);
-
-    let vector_features = Tensor::<CliBackend, 3>::zeros([n, 1, 3], device);
-    let matrix_features = Tensor::<CliBackend, 4>::zeros([n, 1, 3, 3], device);
-
-    Ok(UnifiedMaterialStateTensor {
-        coords,
-        edges_b1: edges,
-        faces_b2: faces,
-        scalar_features,
-        vector_features,
-        matrix_features,
-        resolution_mm: [1.0_f32, 1.0_f32, 1.0_f32],
-    })
-}
-
-fn tensor_mean_scalar(t: Tensor<CliBackend, 2>) -> Result<f32, CliError> {
-    let m = t.mean();
-    Ok(m.into_scalar())
-}
-
-fn tensor_mean_scalar_nd(t: Tensor<CliBackend, 4>) -> Result<f32, CliError> {
-    let m = t.mean();
-    Ok(m.into_scalar())
 }
 
 fn tensor_element_at(t: Tensor<CliBackend, 2>, row: usize, col: usize) -> Result<f32, CliError> {

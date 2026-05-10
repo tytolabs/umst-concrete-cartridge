@@ -37,6 +37,18 @@ jobs:
       - name: Run tests (library default + optional CLI targets)
         run: cargo test --features cli --verbose
 
+      - name: Verify CLI deps stay out of default tree
+        run: |
+          set -euo pipefail
+          leaks=$(cargo tree --no-default-features -e normal --depth 1 \
+                   | grep -E '(tokio|clap|serde_json|anyhow|thiserror) ' || true)
+          if [ -n "$leaks" ]; then
+            echo "FAIL: optional CLI deps leaked into default build:"
+            echo "$leaks"
+            exit 1
+          fi
+          echo "OK: no async/CLI deps in default tree"
+
   # Advisory jobs: surface quality issues without blocking the merge.
   lint:
     name: clippy + rustfmt (advisory)
