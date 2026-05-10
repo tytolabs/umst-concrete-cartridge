@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`maturin develop`** jobs create a repo-root **`.venv`** (maturin refuses bare system interpreters).
 - **`Dockerfile`** no longer copies **`Cargo.lock`** (lockfile is gitignored — image build resolves deps during **`cargo build`**).
 - **Notebook** workflow also triggers on **`push`** to **`main`** (parity with **`rust.yml`**).
+- **Notebook** CI prepends **`.venv/bin`** to **`PATH`** before **`run_all.sh --strict`** so **`jupyter`** / **`nbconvert`** resolve (venv installs are not on the default PATH).
+- **Docker** workflow builds on every **`main`** push (**`push: false`**); GHCR login + image push remain **version tags (`v*`)** only.
 
 ## [0.2.0] — 2026-05-07
 
