@@ -28,6 +28,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
+      # Human audit: count or list Rust *doc-comment* formal_status buckets only — otherwise
+      # `pub formal_status: String` (e.g. CertifyChain wire JSON) false-positives.
+      #   grep -REn '^[[:space:]]*///[[:space:]]*formal_status:[[:space:]]*[A-Za-z]+' src/ --include='*.rs'
       - name: Formal-anchor hygiene (no boilerplate / retired tokens in Rust sources)
         run: |
           set -euo pipefail
