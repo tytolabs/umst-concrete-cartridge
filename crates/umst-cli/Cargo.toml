@@ -18,7 +18,7 @@ path = "src/lib.rs"
 
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
-umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
+umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "main" }
 burn = { version = "0.13.0", default-features = false }
 burn-ndarray = "0.13.0"
 clap = { version = "4.5", features = ["derive"] }

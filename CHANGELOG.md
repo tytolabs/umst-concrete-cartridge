@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`audit.v1`** schema axioms tightened to enumerated allow-list + **`uniqueItems`** on the **`axioms`** array (matches certification chain vocabulary).
 - Python **`pyproject.toml` optional-dependencies**: standalone **`pandas`** extra removed (**`notebook`** still ships pandas/matplotlib/Jupyter).
 
+### Fixed
+
+- CI / Docker: **`umst-manifold`** git dependency follows branch **`main`** (upstream default renamed from **`master`**).
+- **`maturin develop`** jobs create a repo-root **`.venv`** (maturin refuses bare system interpreters).
+- **`Dockerfile`** no longer copies **`Cargo.lock`** (lockfile is gitignored — image build resolves deps during **`cargo build`**).
+- **Notebook** workflow also triggers on **`push`** to **`main`** (parity with **`rust.yml`**).
+
 ## [0.2.0] — 2026-05-07
 
 ### Added

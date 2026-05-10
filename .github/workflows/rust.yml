@@ -33,7 +33,7 @@ jobs:
           echo "OK: README.md has $lines lines"
 
   # Required job: build the library + run tests.
-  # The Cargo.toml fetches umst-manifold from GitHub, so the manifold
+  # The Cargo.toml fetches umst-manifold from GitHub (`branch = "main"`); the manifold
   # repository must be public before this job goes green.
   build-test:
     name: build & test (ndarray backend)
@@ -117,7 +117,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install maturin
-        run: pip install "maturin>=1.7,<2"
-      - name: "maturin develop (tests extras — Hypothesis bindings smoke)"
-        run: maturin develop --release --manifest-path crates/umst-py/Cargo.toml --extras tests
+      - name: Install umst-py into a venv (maturin develop requires an env)
+        run: |
+          set -euo pipefail
+          python -m venv .venv
+          .venv/bin/pip install -U pip "maturin>=1.7,<2"
+          .venv/bin/maturin develop --release --manifest-path crates/umst-py/Cargo.toml --extras tests

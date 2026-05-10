@@ -4,7 +4,8 @@
 FROM rust:bookworm AS build
 
 WORKDIR /app
-COPY Cargo.toml Cargo.lock ./
+# Cargo.lock is not committed (workspace gitignore); resolve deps during image build.
+COPY Cargo.toml ./
 COPY crates ./crates
 COPY schema ./schema
 COPY calibration ./calibration

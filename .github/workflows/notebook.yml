@@ -4,6 +4,8 @@
 name: Notebook
 
 on:
+  push:
+    branches: ["main"]
   pull_request:
     branches: ["main"]
   schedule:
@@ -26,9 +28,11 @@ jobs:
           python-version: "3.12"
       - name: Build umst CLI (release) + Python extension for notebooks
         run: |
+          set -euo pipefail
           cargo build -p umst-cli --release
-          pip install maturin jupyter nbconvert matplotlib pandas
-          cd crates/umst-py && maturin develop --release
+          python -m venv .venv
+          .venv/bin/pip install -U pip maturin jupyter nbconvert matplotlib pandas
+          .venv/bin/maturin develop --release --manifest-path crates/umst-py/Cargo.toml
       - run: chmod +x notebooks/run_all.sh
       - name: Execute notebooks
         run: PATH="${{ github.workspace }}/target/release:$PATH" ./notebooks/run_all.sh --strict

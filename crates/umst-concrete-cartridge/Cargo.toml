@@ -24,7 +24,7 @@ default = []
 [dependencies]
 burn = { version = "0.13.0", default-features = false }
 burn-ndarray = "0.13.0"
-umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
+umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "main" }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 time = "=0.3.36"
