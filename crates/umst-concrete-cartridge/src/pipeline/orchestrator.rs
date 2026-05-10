@@ -22,6 +22,7 @@ use crate::physics::colloidal::ColloidalEngine;
 use crate::physics::cost::compute_cost;
 use crate::physics::creep::CreepEngine;
 use crate::physics::fracture::FractureEngine;
+use crate::physics::fracture_material::fracture_energy_gc_j_per_m2_from_profile;
 use crate::physics::freeze_thaw::FreezeThawEngine;
 use crate::physics::hydration::compute_hydration_degree;
 use crate::physics::itz::{
@@ -253,8 +254,8 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     let v_itz = Tensor::from_data(Data::new(vec![0.06_f32], Shape::new([1, 1, 1, 1])), &dev);
     let e_eff =
         FractureEngine::<B>::compute_effective_modulus_mt(e_paste, e_agg, e_itz, v_agg, v_itz);
-    let fracture_energy =
-        Tensor::from_data(Data::new(vec![100.0_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let g_f = fracture_energy_gc_j_per_m2_from_profile(profile);
+    let fracture_energy = Tensor::from_data(Data::new(vec![g_f], Shape::new([1, 1, 1, 1])), &dev);
     let k_ic = FractureEngine::<B>::compute_fracture_toughness(e_eff, fracture_energy);
     let k_ic_scalar = min_f32_rank4(k_ic);
     stages.push(PipelineStageRecord::ok("fracture"));

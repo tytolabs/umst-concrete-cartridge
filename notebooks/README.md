@@ -1,15 +1,21 @@
 <!--
 SPDX-License-Identifier: MIT
+Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 -->
 
 # Notebooks
 
-- [`sustainable_mix_audit.ipynb`](sustainable_mix_audit.ipynb) — ten-row corpus (bundled UCI and Zenodo CSV slices plus curated literature-style rows), the **`umst_concrete_cartridge.audit`** Python binding, three matplotlib panels (regime counts, predicted-vs-observed with MAE band, provenance summary), and approved envelope claim wording only.
+Jupyter notebooks for exploratory audits against the bundled UCI and Zenodo CSV slices using the [`umst_concrete_cartridge`](https://github.com/tytolabs/umst-concrete-cartridge) Python bindings.
 
-Headless execution from the repository root:
+| Notebook | Content |
+|----------|--------|
+| [`sustainable_mix_audit.ipynb`](sustainable_mix_audit.ipynb) | Small fixed corpus, `audit` binding, matplotlib panels (regime counts, predicted vs. observed, provenance summary). |
+
+## Run headless (repository root)
 
 ```bash
+cd umst-concrete-cartridge
 ./notebooks/run_all.sh
 ```
 
-Requires **`jupyter`** / **`nbconvert`**, **`matplotlib`**, **`pandas`**, and an editable build of the extension (`cd crates/umst-py && maturin develop`, or **`pip install ./crates/umst-py[notebook]`**). CI installs these dependencies before **`jupyter nbconvert --execute`**. The **`[notebook]`** optional extra matches that dependency set.
+Strict CI-style runs expect `jupyter` / `nbconvert` on `PATH` (see workflow). Dependencies: `matplotlib`, `pandas`, and an editable build of the extension (`pip install './crates/umst-py[notebook]'` or `maturin develop --extras notebook` from `crates/umst-py`).

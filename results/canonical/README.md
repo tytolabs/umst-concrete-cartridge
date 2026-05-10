@@ -5,37 +5,32 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # Canonical headline metrics (`table_per_dataset_metrics.csv`)
 
-This directory holds a **deterministic**, cartridge-native CSV of compressive-strength residuals
-versus the mirrored datasets under [`datasets/`](../datasets). Authoritative dataset row counts,
-file digests, and bibliographic citations are documented in **[`datasets/PROVENANCE.md`](../datasets/PROVENANCE.md)**.
+Deterministic CSV of compressive-strength residuals for bundled calibration profiles against the dataset mirrors under [`datasets/`](../../datasets). Authoritative row counts, file digests, and citations: [`datasets/PROVENANCE.md`](../../datasets/PROVENANCE.md).
 
 ## Columns
 
 | Column | Meaning |
 |--------|---------|
-| `profile_id` | Bundled calibration bundle id (`calibration/profiles/*.v1.toml`). |
-| `dataset_csv` | CSV filename evaluated (same stem as shipped under `datasets/`). |
-| `n_rows` | Number of evaluated mix rows with valid predictions. |
-| `mae` | Mean absolute error \(\mathrm{MPa}\) vs recorded strength (column index 8). |
-| `rmse` | Root mean square error \(\mathrm{MPa}\). |
-| `r2` | Coefficient of determination \(R^2\) on the CSV slice (ordinary least-squares definition). |
-| `max_abs_error` | Largest absolute residual \(\mathrm{MPa}\). |
-| `verification_status` | `Contract` profiles carry asserted `[acceptance]` gates via `tests/calibration/dataset_metrics.rs`; `Boundary` profiles omit those assertions. |
+| `profile_id` | Bundled calibration id (`calibration/profiles/*.v1.toml`). |
+| `dataset_csv` | Evaluated CSV filename (same stem as under `datasets/`). |
+| `n_rows` | Rows with valid predictions. |
+| `mae` | Mean absolute error (MPa) vs recorded strength (column index 8). |
+| `rmse` | Root mean square error (MPa). |
+| `r2` | Coefficient of determination \(R^2\) on the slice. |
+| `max_abs_error` | Largest absolute residual (MPa). |
+| `verification_status` | `Contract` profiles participate in `[acceptance]` gates in `tests/calibration/dataset_metrics.rs`; `Boundary` profiles omit those assertions. |
 
 ## Regeneration
 
-Run (from the cartridge repository root):
+From the cartridge repository root:
 
 ```bash
-cargo run -q --bin calibration_report --features "cli,calibration" > docs/Calibration.md
+cd umst-concrete-cartridge
+cargo run -p umst-cli -q --bin calibration_report > docs/Calibration.md
 ```
 
-The binary writes **both** Markdown (stdout) **and** this CSV/README pair.
+The binary writes Markdown to **stdout** and refreshes this directory (`table_per_dataset_metrics.csv` and this file).
 
 ## Manuscript alignment
 
-Aggregate row counts cited in manuscripts or ancillary materials should reconcile with
-[`datasets/PROVENANCE.md`](../datasets/PROVENANCE.md) and **`docs/SSOT.json`** in this crate.
-Totals may differ when an external excerpt omits subsets of these CSV mirrors—the manifest here
-describes exactly what ships in **`datasets/*.csv`**.
-
+Aggregate counts in papers should reconcile with [`datasets/PROVENANCE.md`](../../datasets/PROVENANCE.md) and [`docs/SSOT.json`](../../docs/SSOT.json). External excerpts may subset rows; shipped `datasets/*.csv` define the canonical scope.

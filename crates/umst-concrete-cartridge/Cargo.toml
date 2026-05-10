@@ -20,14 +20,17 @@ categories = ["science", "mathematics", "simulation"]
 
 [features]
 default = []
+# Mirrors `umst-manifold`'s `solver-experimental`: AT2 phase-field (`PhaseFieldFractureSolver`) + THMC step stub.
+# With this **off** (default), `ConcreteCartridge::compute_topology` keeps the heat-graph Laplacian path only.
+solver-experimental = ["umst-manifold/solver-experimental"]
 
 [dependencies]
-burn = { version = "0.13.0", default-features = false }
+burn = { version = "0.13.0", default-features = false, features = ["autodiff", "train"] }
 burn-ndarray = "0.13.0"
 umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "main" }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
-time = "=0.3.36"
+time = "=0.3.40"
 bincode = "=2.0.0-rc.3"
 rand = "0.8"
 tracing = "0.1"
@@ -58,3 +61,11 @@ path = "tests/realism/adversarial_physics.rs"
 [[example]]
 name = "hydration_simulation"
 path = "examples/hydration_simulation.rs"
+
+[[example]]
+name = "optimize_rc_beam"
+path = "examples/optimize_rc_beam.rs"
+# Phase 4 topology optimisation + phase-field fracture + Newmark mechanics
+# all live behind solver-experimental in `umst-manifold`. Default builds
+# do not compile this example.
+required-features = ["solver-experimental"]

@@ -21,3 +21,7 @@ authors = [
     "Santosh Prabhu Shenbagamoorthy",
 ]
 repository = "https://github.com/tytolabs/umst-concrete-cartridge"
+
+# Use sibling checkout when developing in MaOS-Workspace (keeps `PhysicalResult` in sync with cartridge).
+[patch."https://github.com/tytolabs/umst-manifold.git"]
+umst-manifold = { path = "../umst-manifold" }

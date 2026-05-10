@@ -22,6 +22,12 @@ mod burn_compat;
 
 /// formal_anchor: NONE
 /// formal_status: NONE
+/// formal_anchor_rationale: Re-exports manifold façade symbols for ergonomics only.
+pub use core::{
+    apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, MixTensor, PhysicalResult,
+};
+/// formal_anchor: NONE
+/// formal_status: NONE
 /// formal_anchor_rationale: Stable import path for MCP/CLI integration tests.
 pub use pipeline::run_full_physics_pipeline;
 /// formal_anchor: NONE
@@ -46,7 +52,3 @@ pub use pipeline::PipelineStageStatus;
 /// formal_form: "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape."
 /// formal_anchor_rationale: Wire consumers pin report JSON against this version field.
 pub use pipeline::PHYSICS_PIPELINE_SCHEMA_VERSION;
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Re-export manifold façade symbols for ergonomics only.
-pub use umst_manifold::core::{IScienceCartridge, MixTensor, PhysicalResult};

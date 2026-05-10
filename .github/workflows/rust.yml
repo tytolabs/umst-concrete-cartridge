@@ -40,8 +40,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      # Pin to match umst-manifold CI / rust-toolchain.toml (transitive graph for --all-features).
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.88"
+          components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+
+      - name: cargo fmt --check
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets --all-features --verbose -- -D warnings
 
       # Human audit: count or list Rust *doc-comment* formal_status buckets only — otherwise
       # `pub formal_status: String` (e.g. CertifyChain wire JSON) false-positives.
@@ -91,28 +101,14 @@ jobs:
           fi
           echo "OK: core cartridge default tree excludes pyo3/CLI/async/transport layers"
 
-  # Advisory jobs: surface quality issues without blocking the merge.
-  lint:
-    name: clippy + rustfmt (advisory)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - name: rustfmt
-        run: cargo fmt --all -- --check
-      - name: clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-
   python-bindings-smoke:
     name: maturin develop (umst-py)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.88"
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:

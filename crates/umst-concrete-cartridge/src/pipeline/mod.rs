@@ -17,7 +17,9 @@ pub use orchestrator::run_full_physics_pipeline;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Policy map from rich report to manifold `PhysicalResult`.
-pub use physical_summary::physical_result_from_report;
+pub use physical_summary::{
+    nominal_mix_tensor_for_topology, physical_result_from_report, topology_pipeline_headlines,
+};
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-export pipeline wire types for CLI/MCP consumers.
