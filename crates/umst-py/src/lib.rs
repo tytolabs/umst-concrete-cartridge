@@ -5,10 +5,11 @@
 
 //! PyO3 extension: `predict`, `audit`, `certify`, and SSOT schema snippets (transport only).
 
+use csv::WriterBuilder;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyModule};
-use serde_json::Value;
+use pyo3::types::{PyDict, PyIterator, PyList, PyModule};
+use serde_json::{Map, Value};
 use umst_cli::audit::audit_csv_buf;
 use umst_cli::canonical::canonical_json_bytes;
 use umst_cli::cli::{
@@ -54,6 +55,63 @@ fn value_to_py_dict(py: Python<'_>, v: &Value) -> PyResult<Py<PyDict>> {
     Ok(dict.unbind())
 }
 
+/// Column order aligned with `datasets/dataset_d1.csv` (audit CSV contract).
+const AUDIT_CSV_HEADER: &[&str] = &[
+    "cement",
+    "slag",
+    "fly_ash",
+    "water",
+    "superplasticizer",
+    "coarse_agg",
+    "fine_agg",
+    "age",
+    "strength",
+    "source",
+    "temperature",
+    "humidity",
+];
+
+fn json_value_to_csv_cell(v: &Value) -> String {
+    match v {
+        Value::Null => String::new(),
+        Value::Bool(b) => b.to_string(),
+        Value::Number(n) => n.to_string(),
+        Value::String(s) => s.clone(),
+        Value::Array(_) | Value::Object(_) => v.to_string(),
+    }
+}
+
+fn dict_row_to_audit_record(obj: &Map<String, Value>) -> Vec<String> {
+    AUDIT_CSV_HEADER
+        .iter()
+        .map(|h| obj.get(*h).map(json_value_to_csv_cell).unwrap_or_default())
+        .collect()
+}
+
+fn rows_to_audit_csv(py: Python<'_>, rows: &Bound<'_, PyAny>) -> PyResult<String> {
+    let iter = PyIterator::from_bound_object(rows)?;
+    let mut wtr = WriterBuilder::new().flexible(true).from_writer(Vec::new());
+    wtr.write_record(AUDIT_CSV_HEADER)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    for item_result in iter {
+        let item = item_result?;
+        let s = json_dumps(py, &item)?;
+        let v: Value =
+            serde_json::from_str(s.trim()).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        let obj = v.as_object().ok_or_else(|| {
+            PyValueError::new_err("audit_rows: each row must be a JSON object (dict)")
+        })?;
+        wtr.write_record(dict_row_to_audit_record(obj))
+            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    }
+    wtr.flush()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let buf = wtr
+        .into_inner()
+        .map_err(|e| PyValueError::new_err(format!("{e}")))?;
+    String::from_utf8(buf).map_err(|e| PyValueError::new_err(e.to_string()))
+}
+
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Python transport wrapper over **[`predict_with_options`]**; anchored on facade predict path.
@@ -84,6 +142,26 @@ pub fn predict(
     let out =
         serialize_prediction(&bundle, wire).map_err(|e| PyValueError::new_err(e.to_string()))?;
     value_to_py_dict(py, &out)
+}
+
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Encodes iterable of row dicts into dataset-style CSV then reuses **`audit_csv_buf`** (aligned with **`audit`** string path).
+#[pyfunction]
+#[pyo3(signature = (rows, *, profile="default", limit=None))]
+pub fn audit_rows(
+    py: Python<'_>,
+    rows: Bound<'_, PyAny>,
+    profile: &str,
+    limit: Option<usize>,
+) -> PyResult<Py<PyDict>> {
+    let csv_text = rows_to_audit_csv(py, &rows)?;
+    let profile = profile.to_string();
+    let prof = umst_concrete_cartridge::calibration::Profile::load_bundled(&profile)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let v =
+        audit_csv_buf(&prof, &csv_text, limit).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    value_to_py_dict(py, &v)
 }
 
 /// formal_anchor: NONE
@@ -158,8 +236,7 @@ pub fn canonical_json<'py>(
 ) -> PyResult<Bound<'py, pyo3::types::PyBytes>> {
     let s = json_dumps(py, &obj)?;
     let v: Value = serde_json::from_str(&s).map_err(|e| PyValueError::new_err(e.to_string()))?;
-    let bytes =
-        canonical_json_bytes(&v).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let bytes = canonical_json_bytes(&v).map_err(|e| PyValueError::new_err(e.to_string()))?;
     Ok(pyo3::types::PyBytes::new_bound(py, &bytes))
 }
 
@@ -170,6 +247,7 @@ pub fn canonical_json<'py>(
 fn _umst_concrete_cartridge(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(predict, m)?)?;
     m.add_function(wrap_pyfunction!(audit, m)?)?;
+    m.add_function(wrap_pyfunction!(audit_rows, m)?)?;
     m.add_function(wrap_pyfunction!(certify, m)?)?;
     m.add_function(wrap_pyfunction!(schema, m)?)?;
     m.add_function(wrap_pyfunction!(bundled_profile_ids, m)?)?;

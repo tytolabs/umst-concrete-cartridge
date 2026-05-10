@@ -20,7 +20,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Structural** | 33 |
 | **Empirical** | 27 |
 | **Literature** | 19 |
-| **NONE** | 86 |
+| **NONE** | 87 |
 
 ## Mechanised
 
@@ -75,21 +75,21 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `FacadeError` | `crates/umst-concrete-cartridge/src/facade/mod.rs:218` | `STRUCTURAL` | Binary-boundary error aggregation for facade calls (no vendor IO). |
 | `HomogeneousCompareWire` | `crates/umst-concrete-cartridge/src/facade/mod.rs:273` | `STRUCTURAL` | Homogeneous sidecar scalars for optional regression diff (serde-friendly). |
 | `PredictBundle` | `crates/umst-concrete-cartridge/src/facade/mod.rs:295` | `STRUCTURAL` | Bundle of physical tensors plus calibration metadata returned by [`predict`] / [`predict_with_options`]. |
-| `predict` | `crates/umst-concrete-cartridge/src/facade/mod.rs:344` | `STRUCTURAL` | Natural transformation φ ∘ F ∘ ψ over the cartridge functor (facade orchestration entry). |
-| `predict_from_mix_row` | `crates/umst-concrete-cartridge/src/facade/mod.rs:437` | `STRUCTURAL` | Tensor prediction from dataset-style [`homog::MixRow`] masses; regime gates use binder-normalised SCM splits (slag routed through the silica regime channel). |
-| `PreparedAuditRow` | `crates/umst-concrete-cartridge/src/facade/mod.rs:528` | `STRUCTURAL` | One CSV row wired for corpus audit alongside aggregate packing fraction derived in CLI from coarse/fine masses (ρ=2600 kg/m³, same surrogate as homogeneous layout). |
-| `audit_build_report_v1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:597` | `STRUCTURAL` | Deterministic corpus audit projection over prepared rows (tensor strength channel). |
-| `CertifyChain` | `crates/umst-concrete-cartridge/src/facade/mod.rs:669` | `STRUCTURAL` | JSON payload schema for `umst certify` output (profile, anchors, mapped formal bucket). |
-| `certify_profile_chain` | `crates/umst-concrete-cartridge/src/facade/mod.rs:694` | `STRUCTURAL` | Builds the certify view including wire `formal_status` mapped from profile metadata. |
-| `schema_mix_v1_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:729` | `STRUCTURAL` | SSOT `include_str!` of repo-root schema for CLI/MCP/Python. |
-| `schema_result_v1_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:738` | `STRUCTURAL` | SSOT `include_str!` of repo-root schema for CLI/MCP/Python. |
-| `schema_result_v2_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:747` | `STRUCTURAL` | SSOT `include_str!` of repo-root schema for CLI/MCP/Python. |
-| `schema_audit_v1_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:756` | `STRUCTURAL` | SSOT `include_str!` of repo-root schema for CLI `umst audit`. |
+| `predict` | `crates/umst-concrete-cartridge/src/facade/mod.rs:357` | `STRUCTURAL` | Natural transformation φ ∘ F ∘ ψ over the cartridge functor (facade orchestration entry). |
+| `predict_from_mix_row` | `crates/umst-concrete-cartridge/src/facade/mod.rs:451` | `STRUCTURAL` | Tensor prediction from dataset-style [`homog::MixRow`] masses; regime gates use binder-normalised SCM splits (slag routed through the silica regime channel). |
+| `PreparedAuditRow` | `crates/umst-concrete-cartridge/src/facade/mod.rs:543` | `STRUCTURAL` | One CSV row wired for corpus audit alongside aggregate packing fraction derived in CLI from coarse/fine masses (ρ=2600 kg/m³, same surrogate as homogeneous layout). |
+| `audit_build_report_v1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:612` | `STRUCTURAL` | Deterministic corpus audit projection over prepared rows (tensor strength channel). |
+| `CertifyChain` | `crates/umst-concrete-cartridge/src/facade/mod.rs:684` | `STRUCTURAL` | JSON payload schema for `umst certify` output (profile, anchors, mapped formal bucket). |
+| `certify_profile_chain` | `crates/umst-concrete-cartridge/src/facade/mod.rs:709` | `STRUCTURAL` | Builds the certify view including wire `formal_status` mapped from profile metadata. |
+| `schema_mix_v1_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:744` | `STRUCTURAL` | SSOT `include_str!` of repo-root schema for CLI/MCP/Python. |
+| `schema_result_v1_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:753` | `STRUCTURAL` | SSOT `include_str!` of repo-root schema for CLI/MCP/Python. |
+| `schema_result_v2_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:762` | `STRUCTURAL` | SSOT `include_str!` of repo-root schema for CLI/MCP/Python. |
+| `schema_audit_v1_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:771` | `STRUCTURAL` | SSOT `include_str!` of repo-root schema for CLI `umst audit`. |
 | `MixRow` | `crates/umst-concrete-cartridge/src/homogeneous.rs:14` | `STRUCTURAL` | kg/m³ tagged scalars; structural carrier of mix design components for homogeneous routing. |
 | `mix_row_from_scalar_spec` | `crates/umst-concrete-cartridge/src/homogeneous.rs:289` | `STRUCTURAL` | Deterministic projection of `MixSpec` scalar inputs into `MixRow` mass fractions. |
-| `predict` | `crates/umst-py/src/lib.rs:57` | `STRUCTURAL` | Python transport wrapper over **[`predict_with_options`]**; anchored on facade predict path. |
-| `certify` | `crates/umst-py/src/lib.rs:108` | `STRUCTURAL` | Dict view of **[`certify_profile_json`]**; structural mirror of CLI `umst certify`. |
-| `schema` | `crates/umst-py/src/lib.rs:120` | `STRUCTURAL` | SSOT schema text from facade `include_str!` for notebooks and packaging checks. |
+| `predict` | `crates/umst-py/src/lib.rs:115` | `STRUCTURAL` | Python transport wrapper over **[`predict_with_options`]**; anchored on facade predict path. |
+| `certify` | `crates/umst-py/src/lib.rs:186` | `STRUCTURAL` | Dict view of **[`certify_profile_json`]**; structural mirror of CLI `umst certify`. |
+| `schema` | `crates/umst-py/src/lib.rs:198` | `STRUCTURAL` | SSOT schema text from facade `include_str!` for notebooks and packaging checks. |
 
 ## Empirical
 
@@ -131,7 +131,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `RESULT_SCHEMA_VERSION_V2` | `crates/umst-cli/src/cli.rs:32` | `literature://wire-schema-result-v2` | "UMST concrete cartridge JSON wire schema tag (`result.v2`)" \| "`result.v2` — version tag for current prediction JSON envelope" |
 | `RESULT_SCHEMA_VERSION_V1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:23` | `literature://wire-schema-result-v1` | "UMST concrete cartridge JSON wire schema tag (`result.v1`)" \| "`result.v1` — version tag for deprecated prediction JSON envelope" |
 | `RESULT_SCHEMA_VERSION_V2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:29` | `literature://wire-schema-result-v2` | "UMST concrete cartridge JSON wire schema tag (`result.v2`)" \| "`result.v2` — version tag for current prediction JSON envelope" |
-| `AUDIT_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/facade/mod.rs:521` | `literature://wire-schema-audit-v1` | "UMST concrete cartridge JSON wire schema tag (`audit.v1`)" \| "`audit.v1` — batch CSV audit envelope with tensor predictions vs optional CSV strength" |
+| `AUDIT_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/facade/mod.rs:536` | `literature://wire-schema-audit-v1` | "UMST concrete cartridge JSON wire schema tag (`audit.v1`)" \| "`audit.v1` — batch CSV audit envelope with tensor predictions vs optional CSV strength" |
 | `ultimate_doh_wc` | `crates/umst-concrete-cartridge/src/formulas.rs:13` | `literature://Mills-1966-gel-stiffness-closure` | "Mills (1966); OPC gel stiffness / ultimate hydration cap closure used in routing" \| "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)" |
 | `ultimate_doh` | `crates/umst-concrete-cartridge/src/homogeneous.rs:67` | `literature://Mills-1966-gel-stiffness-closure` | "Mills (1966); α_inf = 1.031 w/c / (0.194 + w/c)" \| "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)" |
 | `embodied_co2_kg_per_m3` | `crates/umst-concrete-cartridge/src/homogeneous.rs:239` | `literature://EN-15804+A2-indicative-EPD-intensities` | "EN 15804+A2 (2019) environmental product declarations — indicative cradle-to-gate CO₂e intensities per constituent class" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3); inline coefficients match bundled EPD intensity convention" |
@@ -179,18 +179,18 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `value` | `crates/umst-concrete-cartridge/src/facade/mod.rs:97` | `NONE` | Trivial accessor. |
 | `MixSpecError` | `crates/umst-concrete-cartridge/src/facade/mod.rs:190` | `NONE` | Mix-spec rejection causes without JSON parse errors (handled at transport boundary). |
 | `PredictOptions` | `crates/umst-concrete-cartridge/src/facade/mod.rs:285` | `NONE` | Behavioral flags only — no Lean witness. |
-| `predict_with_options` | `crates/umst-concrete-cartridge/src/facade/mod.rs:351` | `NONE` | Feature flag glue for MCP/CLI; no standalone formal claim. |
-| `AuditSummaryV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:539` | `NONE` | JSON summary stats for auditors; aggregates row-level residuals only. |
-| `AuditReportV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:550` | `NONE` | Top-level serde envelope for CLI/MCP corpus audit tooling. |
-| `AuditRowInputV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:564` | `NONE` | Normalised mix scalars carried from the CSV row for audit consumers (`audit.v1` row `input`). |
-| `AuditRowWireV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:579` | `NONE` | One audited CSV row projection with tensor headline strength. |
-| `tensor_element_at` | `crates/umst-concrete-cartridge/src/facade/mod.rs:765` | `NONE` | Internal tensor scalar read for wire projection; index contract from pipeline layout. |
-| `PredictionWireV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:781` | `NONE` | Serde wire projection for `result.v1` scalars; versioning tagged in `schema_version`. |
-| `PredictionWireV2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:796` | `NONE` | Serde wire projection for `result.v2` scalars; `physics_pipeline` merged at JSON boundary. |
-| `prediction_wire_v1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:813` | `NONE` | Pure wire projection; transport encoding is caller-owned. |
-| `prediction_wire_v2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:835` | `NONE` | Pure wire projection; nested objects merged by CLI/MCP `serde_json`. |
-| `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/facade/mod.rs:861` | `NONE` | Round-trip mix spec view for CLI `mix print` / MCP. |
-| `mix_spec_wire_out` | `crates/umst-concrete-cartridge/src/facade/mod.rs:874` | `NONE` | Serialize-friendly mix view without JSON crate in core. |
+| `predict_with_options` | `crates/umst-concrete-cartridge/src/facade/mod.rs:364` | `NONE` | Feature flag glue for MCP/CLI; no standalone formal claim. |
+| `AuditSummaryV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:554` | `NONE` | JSON summary stats for auditors; aggregates row-level residuals only. |
+| `AuditReportV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:565` | `NONE` | Top-level serde envelope for CLI/MCP corpus audit tooling. |
+| `AuditRowInputV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:579` | `NONE` | Normalised mix scalars carried from the CSV row for audit consumers (`audit.v1` row `input`). |
+| `AuditRowWireV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:594` | `NONE` | One audited CSV row projection with tensor headline strength. |
+| `tensor_element_at` | `crates/umst-concrete-cartridge/src/facade/mod.rs:780` | `NONE` | Internal tensor scalar read for wire projection; index contract from pipeline layout. |
+| `PredictionWireV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:796` | `NONE` | Serde wire projection for `result.v1` scalars; versioning tagged in `schema_version`. |
+| `PredictionWireV2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:811` | `NONE` | Serde wire projection for `result.v2` scalars; `physics_pipeline` merged at JSON boundary. |
+| `prediction_wire_v1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:829` | `NONE` | Pure wire projection; transport encoding is caller-owned. |
+| `prediction_wire_v2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:851` | `NONE` | Pure wire projection; nested objects merged by CLI/MCP `serde_json`. |
+| `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/facade/mod.rs:878` | `NONE` | Round-trip mix spec view for CLI `mix print` / MCP. |
+| `mix_spec_wire_out` | `crates/umst-concrete-cartridge/src/facade/mod.rs:891` | `NONE` | Serialize-friendly mix view without JSON crate in core. |
 | `HomogeneousError` | `crates/umst-concrete-cartridge/src/homogeneous.rs:28` | `NONE` | Dispatch error: Jennings-not-yet, invalid mix; no formal claim. |
 | `mix_hydration_state` | `crates/umst-concrete-cartridge/src/homogeneous.rs:76` | `NONE` | Internal homogeneous helper composing calibrated α(t,T,scm) and effective w/c from profile parameters. |
 | `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/lib.rs:23` | `NONE` | Stable import path for MCP/CLI integration tests. |
@@ -234,7 +234,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `fail` | `crates/umst-concrete-cartridge/src/pipeline/report.rs:67` | `NONE` | Propagates panics-avoiding error strings for observability. |
 | `PhysicsPipelineSummary` | `crates/umst-concrete-cartridge/src/pipeline/report.rs:79` | `NONE` | Human/tooling digest; not a substitute for full tensor fields. |
 | `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/pipeline/report.rs:103` | `NONE` | Cartridge-local rich JSON envelope parallel to manifold tensors. |
-| `audit` | `crates/umst-py/src/lib.rs:89` | `NONE` | Python transport over CLI audit glue; no extra physical claim beyond CSV→facade audit. |
-| `bundled_profile_ids` | `crates/umst-py/src/lib.rs:139` | `NONE` | Bundled id manifest for packaging smoke tests. |
-| `canonical_json` | `crates/umst-py/src/lib.rs:151` | `NONE` | Byte-stable JSON for golden tests; matches **`umst-canonical`** binary. |
+| `audit_rows` | `crates/umst-py/src/lib.rs:147` | `NONE` | Encodes iterable of row dicts into dataset-style CSV then reuses **`audit_csv_buf`** (aligned with **`audit`** string path). |
+| `audit` | `crates/umst-py/src/lib.rs:167` | `NONE` | Python transport over CLI audit glue; no extra physical claim beyond CSV→facade audit. |
+| `bundled_profile_ids` | `crates/umst-py/src/lib.rs:217` | `NONE` | Bundled id manifest for packaging smoke tests. |
+| `canonical_json` | `crates/umst-py/src/lib.rs:229` | `NONE` | Byte-stable JSON for golden tests; matches **`umst-canonical`** binary. |
 

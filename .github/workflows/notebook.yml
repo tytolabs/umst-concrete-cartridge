@@ -31,4 +31,4 @@ jobs:
           cd crates/umst-py && maturin develop --release
       - run: chmod +x notebooks/run_all.sh
       - name: Execute notebooks
-        run: PATH="${{ github.workspace }}/target/release:$PATH" ./notebooks/run_all.sh
+        run: PATH="${{ github.workspace }}/target/release:$PATH" ./notebooks/run_all.sh --strict

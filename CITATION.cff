@@ -16,6 +16,6 @@ keywords:
   - thermodynamics
   - constitutive
   - burn
-version: 0.2.0
-date-released: 2026-05-08
+version: 0.2.1
+date-released: 2026-05-10
 url: "https://github.com/tytolabs/umst-concrete-cartridge"

@@ -7,7 +7,7 @@ build-backend = "maturin"
 
 [project]
 name = "umst-concrete-cartridge"
-version = "0.2.0"
+version = "0.2.1"
 description = "Python bindings for the UMST concrete cartridge (predict, CSV audit, certify, SSOT schemas)."
 readme = "../../README.md"
 license = "MIT"
@@ -21,8 +21,8 @@ authors = [
 Repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 
 [project.optional-dependencies]
-pandas = ["pandas>=2.0"]
 notebook = ["notebook>=7", "jupyterlab>=4", "matplotlib>=3.7", "pandas>=2.0"]
+tests = ["hypothesis>=6,<7"]
 
 [tool.maturin]
 python-source = "python"

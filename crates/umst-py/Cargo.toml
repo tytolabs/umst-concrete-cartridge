@@ -20,6 +20,7 @@ umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
 umst-cli = { path = "../umst-cli" }
 pyo3 = { version = "0.22", features = ["extension-module", "abi3-py310"] }
 serde_json = "1.0"
+csv = "1.4"
 
 [build-dependencies]
 pyo3-build-config = "0.22"

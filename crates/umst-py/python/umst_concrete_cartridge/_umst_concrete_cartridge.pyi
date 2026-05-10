@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Manual stubs for `_umst_concrete_cartridge` native module."""
 
-from typing import Any, List, Optional
+from typing import Any, Iterable, List, Optional
 
 def predict(
     spec: Any,
@@ -10,6 +10,12 @@ def predict(
     schema_version: str = ...,
 ) -> dict[str, Any]: ...
 def audit(profile: str, csv_text: str, limit: Optional[int] = ...) -> dict[str, Any]: ...
+def audit_rows(
+    rows: Iterable[dict[str, Any]],
+    *,
+    profile: str = ...,
+    limit: Optional[int] = ...,
+) -> dict[str, Any]: ...
 def certify(profile: str) -> dict[str, Any]: ...
 def schema(kind: str) -> str: ...
 def bundled_profile_ids() -> List[str]: ...

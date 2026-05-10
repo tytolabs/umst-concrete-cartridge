@@ -301,6 +301,8 @@ pub struct PredictBundle {
     pub calibration_profile: String,
     pub calibration_model: String,
     pub formal_anchor: String,
+    /// Sorted axiom identifiers from `[provenance.formal]` (same lineage as certify / audit envelopes).
+    pub axioms: Vec<String>,
     /// Staged tensor-physics capsule serialized as `physics_pipeline` on `result.v2`.
     pub physics_pipeline: PhysicsPipelineReport,
     /// Present only when [`PredictOptions::compare_homogeneous`] is enabled.
@@ -339,6 +341,17 @@ fn wire_formal_status(profile: &Profile) -> String {
         Some("Boundary") | None => "NONE".to_string(),
         Some(_) => "NONE".to_string(),
     }
+}
+
+fn profile_axioms_for_wire(profile: &Profile) -> Vec<String> {
+    let mut axioms: Vec<String> = profile
+        .provenance
+        .formal
+        .as_ref()
+        .map(|f| f.axioms.clone())
+        .unwrap_or_default();
+    axioms.sort();
+    axioms
 }
 
 /// formal_anchor: STRUCTURAL
@@ -429,6 +442,7 @@ pub fn predict_with_options(
         calibration_profile: profile.bundle_id.clone(),
         calibration_model: model_kind_wire(profile),
         formal_anchor: profile_formal_anchor_uri(profile),
+        axioms: profile_axioms_for_wire(profile),
         physics_pipeline,
         homogeneous_compare,
     })
@@ -513,6 +527,7 @@ pub fn predict_from_mix_row(
         calibration_profile: profile.bundle_id.clone(),
         calibration_model: model_kind_wire(profile),
         formal_anchor: profile_formal_anchor_uri(profile),
+        axioms: profile_axioms_for_wire(profile),
         physics_pipeline,
         homogeneous_compare,
     })
@@ -806,6 +821,7 @@ pub struct PredictionWireV2 {
     pub calibration_profile: String,
     pub calibration_model: String,
     pub formal_anchor: String,
+    pub axioms: Vec<String>,
     pub warnings: Vec<String>,
     pub schema_version: &'static str,
 }
@@ -852,6 +868,7 @@ pub fn prediction_wire_v2(bundle: &PredictBundle) -> Result<PredictionWireV2, Fa
         calibration_profile: bundle.calibration_profile.clone(),
         calibration_model: bundle.calibration_model.clone(),
         formal_anchor: bundle.formal_anchor.clone(),
+        axioms: bundle.axioms.clone(),
         warnings: bundle.warnings.clone(),
         schema_version: RESULT_SCHEMA_VERSION_V2,
     })

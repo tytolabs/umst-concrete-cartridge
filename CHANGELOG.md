@@ -10,6 +10,21 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] — 2026-05-10
+
+### Added
+
+- **`result.v2` `axioms`**: sorted axiom identifiers on every prediction wire payload; JSON Schema **`schema/result.v2.json`** allowlists the Lean-facing closure alongside **`audit.v1`**.
+- **`audit_rows`** (Rust PyO3) and **`audit_dataframe`** (optional pandas via **`[notebook]`** extra): helpers for programmatic CSV audit without hand-serialisation.
+- **`tests`** Python extra (**`hypothesis>=6,<7`**) plus **`tests/test_property_determinism.py`** exercising CLI vs Python **`canonical_json`** parity across bundled profiles (bounded random mix scalars).
+- **`docs/WireSchemas.md`** and **`docs/FormalProvenance.md`**: SSOT/schema status table and **`formal_anchor`** → **`umst-formal`** workflow.
+- **`notebooks/run_all.sh --strict`** for CI/notebook pipelines; audited notebook corpus with refreshed provenance (**UCI D1** + **Zenodo 14921019** rows).
+
+### Changed
+
+- **`audit.v1`** schema axioms tightened to enumerated allow-list + **`uniqueItems`** on the **`axioms`** array (matches certification chain vocabulary).
+- Python **`pyproject.toml` optional-dependencies**: standalone **`pandas`** extra removed (**`notebook`** still ships pandas/matplotlib/Jupyter).
+
 ## [0.2.0] — 2026-05-07
 
 ### Added

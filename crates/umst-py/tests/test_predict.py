@@ -92,7 +92,7 @@ class TestPredictSmoke(unittest.TestCase):
         from umst_concrete_cartridge import canonical_json, predict  # pylint: disable=import-outside-toplevel
 
         spec = json.loads(mix_json)
-        py_canon = canonical_json(predict(spec, profile="uci_d1"))
+        py_canon = bytes(canonical_json(predict(spec, profile="uci_d1")))
         self.assertEqual(cli_canon, py_canon)
 
     def test_canonical_matches_cli_binary_when_available(self):

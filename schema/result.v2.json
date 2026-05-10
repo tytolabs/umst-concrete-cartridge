@@ -13,6 +13,7 @@
     "calibration_profile",
     "calibration_model",
     "formal_anchor",
+    "axioms",
     "warnings",
     "schema_version"
   ],
@@ -52,6 +53,20 @@
     "formal_anchor": {
       "type": "string",
       "description": "Primary Lean formal anchor URI for the active profile"
+    },
+    "axioms": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "physicalSecondLaw",
+          "Classical.choice",
+          "propext",
+          "Quot.sound"
+        ]
+      },
+      "description": "Subset of axioms depended on by the active profile (Lean closure allowlist)"
     },
     "warnings": {
       "type": "array",

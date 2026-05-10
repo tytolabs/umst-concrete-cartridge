@@ -65,6 +65,17 @@ fn acceptance_8_predict_uci_d1_populates_v2_contract_fields() -> Result<(), Box<
         anchor.starts_with("lean://"),
         "formal_anchor should be a Lean URI, got {anchor:?}"
     );
+    let axioms = v["axioms"].as_array().ok_or("axioms must be array")?;
+    assert!(
+        axioms.iter().all(|a| a.as_str().is_some()),
+        "axioms must be strings"
+    );
+    assert!(
+        axioms
+            .iter()
+            .any(|a| a.as_str() == Some("physicalSecondLaw")),
+        "uci_d1 axioms should include physicalSecondLaw: {axioms:?}"
+    );
     Ok(())
 }
 

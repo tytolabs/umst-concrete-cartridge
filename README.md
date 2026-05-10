@@ -1,71 +1,221 @@
-<!--
-SPDX-License-Identifier: MIT
-Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
--->
+SPDX-License-Identifier: MIT  
+Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO.
 
 <div align="center">
 
 # UMST Concrete Cartridge
 
-### Differentiable constitutive engine for cementitious materials
+### Differentiable constitutive engine for cementitious materials — CLI, Python, MCP, Docker
 
-[![CI](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
+[![CI — Rust](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
+[![Notebook](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml)
+[![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 [![Rust 2021](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
+[![Python 3.10+](https://img.shields.io/badge/python-≥3.10-blue.svg)](https://www.python.org/)
+[![JOSS submission](https://img.shields.io/badge/JOSS-submission%20planned-lightgrey.svg)](https://github.com/tytolabs/umst-concrete-cartridge)
 
-**Pure functional `burn` tensors  ·  22 coupled constitutive modules  ·  Roussel printability constraints  ·  Jennings CM-II hydration**
+Pure functional **`burn`** tensors · **22** coupled modules · calibrated **profiles** · mechanised lemmas where noted in [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md)
 
-*The first scientific cartridge for the [UMST manifold](https://github.com/tytolabs/umst-manifold). Maps topological scalar features on the manifold's 1-skeleton into the constitutive behaviour of cementitious materials, end-to-end differentiable with respect to mix design.*
+*bundled calibration rows (**17 646** total rows per [`docs/SSOT.json`](docs/SSOT.json)) · **26** Rust symbols tracked as **`Mechanised`** ([`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md))*
+
+*The scientific cartridge for the [UMST manifold](https://github.com/tytolabs/umst-manifold): mix-design scalars in, constitutive tensor bundle out.*
 
 </div>
 
-<br>
+---
 
-| | |
-|:---:|:---|
-| **Coupled multi-physics** | 22 constitutive modules across hydration, rheology, fracture, durability, sustainability |
-| **Fully differentiable** | End-to-end gradients with respect to mix proportions via `burn` |
-| **Edge-based dispatch** | Operates on the manifold's $B_1$ edge tensor — conservation by construction |
-| **Cited models, not folklore** | Each module references its source equation (see [Constitutive-Equations.md](docs/Constitutive-Equations.md)) |
+## Manifesto
+
+We ship **one** audited prediction path (`umst_concrete_cartridge::facade`) reused by **`umst`**, PyO3, and MCP/Docker wrappers. Mixed-regime homogeneous routing, optional CSV audit (**`audit.v1`**), deterministic **`result.v2`** JSON with **`calibration_profile`**, **`formal_anchor`**, sorted **`axioms`**, **`physics_pipeline`** summary, and explicit **`warnings`**. Formal statements live in **`umst-formal`**; this crate surfaces traceable **`lean://…`** anchors on the wire.
+
+> [!TIP]
+> **Claim wording.** Where accuracy is cited: **in-regime predictions land within the profile’s `[acceptance]` envelope**; **predictions out of regime surface explicit warnings**; **every prediction returns the calibration profile, the formal anchor URI, the axiom set, and any regime warnings**.
+
+---
+
+## Who this repository is for
+
+### Engineers integrating mix design tooling
+
+Prefer **`umst predict`** stdin JSON or MCP **`umst_predict`** — same façade as Rust with stable **`canonical_json`** / **`umst-canonical`** semantics for agent-safe byte equality checks.
+
+### Researchers reproducing calibrated envelopes
+
+Eight bundled **`calibration/profiles/*.v1.toml`** packs reference copy-of-record CSVs under **`datasets/`** (see **Dataset provenance** below).
+
+### Teams running notebooks and dashboards
+
+Install **`pip install ./crates/umst-py`** with **`[notebook]`** (`pandas`, `matplotlib`, Jupyter) for **`audit_dataframe`** exploration; regenerate outputs with **`./notebooks/run_all.sh`** ( **`--strict`** in CI — requires `jupyter` on `PATH` ).
+
+### ML / optimisation loops
+
+Expose gradients downstream of façade predictions only where numeric stability allows; façade errors such as **`OutsideAllRegimes`** become explicit skips in property tests (see **`crates/umst-py/tests/test_property_determinism.py`**).
+
+### Operators packaging containers
+
+Docker / compose stubs live at repo root; MCP stdio harness: **`scripts/mcp_smoke.py`**.
 
 ---
 
 ## Architecture
 
-The cartridge implements `umst_manifold::core::IScienceCartridge`. It receives a `MixTensor` of mix-design scalars and returns a `PhysicalResult` of constitutive outputs, with all intermediate state living on the manifold's edges so that mass and energy flux are conservatively transported.
-
 ```mermaid
 flowchart LR
-    S[MixTensor]
-    Nano[Nano / Colloidal]
-    Chem[Chemo-Water]
-    Rheo[Rheology]
-    Thermo[Thermodynamics]
-    Print[Printability]
-    Strength[Strength / Jennings CM-II]
-    Frac[Fracture / Durability]
+  subgraph core ["umst_concrete_cartridge"]
+    F[facade predict bundle]
+  end
+  subgraph bindings ["transport"]
+    CLI["umst CLI"]
+    Py[umst_py bindings]
+    MCP[umst_mcp]
+    Doc[Docker image]
+  end
+  F --> CLI
+  F --> Py
+  CLI --> MCP
+  CLI --> Doc
+```
 
-    S --> Nano
-    S --> Chem
-    Nano --> Rheo
-    Chem --> Thermo
-    Chem --> Strength
-    Rheo --> Print
-    Thermo --> Strength
-    Strength --> Frac
+| Surface | Entry | Notes |
+|---------|-------|-------|
+| Rust library | `crates/umst-concrete-cartridge` | Serde façade; **no** `serde_json` / `tokio` / `clap` inside the core default tree (`cargo tree` hygiene in CI). |
+| CLI | `umst` binary | **`predict`**, **`audit`**, **`certify`**, **`profiles`**, **`umst-canonical`**. |
+| Python | **`maturin develop`** (`crates/umst-py`) | **`predict`**, **`audit`**, **`audit_rows`**, **`audit_dataframe`**, **`certify`**, **`canonical_json`**, **`bundled_profile_ids()`**; **`[notebook]`**, **`[tests]`** extras. |
+| MCP · Docker | `umst-mcp` + Dockerfile | **`umst_predict`**, **`umst_audit`**, **`umst_profiles`**, **`umst_certify`**. |
 
-    classDef domain fill:#1a1a2e,stroke:#e94560,stroke-width:2px,color:#fff
-    classDef prop fill:#16213e,stroke:#0f3460,stroke-width:2px,color:#fff
-    class S,Print,Strength,Frac domain
-    class Nano,Chem,Rheo,Thermo prop
+> [!NOTE]
+> Canonical JSON (**sorted keys**, Ryū float literals): run **`umst predict`**, pipe stdout into **`target/$PROFILE/umst-canonical`**, and compare to **`bytes(canonical_json(predict(...)))`** (see **`scripts/check_predict_determinism.py`** — same mix must yield identical byte payloads for **`uci_d1`** and **`zenodo_ndt`** on your platform).
+
+---
+
+## Quickstart snippets (captured **`result.v2` / `audit.v1`**)
+
+CLI prediction (**`uci_d1`**, captured from a local **`cargo build -p umst-cli`** run, mix `{"w_c":0.4,"temperature_k":293.15}`):
+
+```json
+{
+  "schema_version": "result.v2",
+  "calibration_profile": "uci_d1",
+  "calibration_model": "powers_gel_space",
+  "axioms": ["physicalSecondLaw"],
+  "formal_anchor": "lean://umst-formal/Lean/Powers.lean#powers_monotone",
+  "compressive_strength_mpa": 68.07142639160156,
+  "degree_of_hydration": 0.8982649445533752,
+  "warnings": [],
+  "physics_pipeline": {
+    "schema_version": "physics_pipeline.v1",
+    "summary": {
+      "hydration_alpha": 0.8982649445533752,
+      "effective_water_cement_ratio": 0.4000000059604645,
+      "strength_jennings_mpa": 68.07142639160156
+    }
+  }
+}
+```
+
+Zenodo-aligned profile (**`zenodo_ndt`**, same mix):
+
+```json
+{
+  "schema_version": "result.v2",
+  "calibration_profile": "zenodo_ndt",
+  "axioms": ["physicalSecondLaw"],
+  "formal_anchor": "lean://umst-formal/Lean/Powers.lean#powers_monotone",
+  "compressive_strength_mpa": 43.61223220825195,
+  "warnings": []
+}
+```
+
+CSV audit (**`uci_d1`**, first **`dataset_d1.csv`** header + row piped into **`umst audit`**):
+
+```json
+{
+  "schema_version": "audit.v1",
+  "calibration_profile": "uci_d1",
+  "axioms": ["physicalSecondLaw"],
+  "rows": [
+    {
+      "row_index": 0,
+      "profile_used": "uci_d1",
+      "predicted_strength_mpa": 147.1542510986328,
+      "observed_strength_mpa": 79.98611450195312
+    }
+  ],
+  "summary": {
+    "row_count": 1,
+    "rows_with_observations": 1
+  }
+}
+```
+
+### Minimal commands
+
+```bash
+cargo install --path crates/umst-cli
+echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict
+head -n2 datasets/dataset_d1.csv | umst --profile uci_d1 audit
+```
+
+Python (extension built via **`maturin develop --extras notebook`**):
+
+```python
+from umst_concrete_cartridge import predict, canonical_json
+
+out = predict({"w_c": 0.4, "temperature_k": 293.15}, profile="uci_d1")
+assert out["schema_version"] == "result.v2"
 ```
 
 ---
 
-## Development / CI parity
+## Bundled calibration profiles
 
-Run the same Rust checks as [`.github/workflows/rust.yml`](.github/workflows/rust.yml):
+| Id | Corpus / intent |
+|----|----------------|
+| **`default`** | Same routing as uplifted homogeneous default bundle. |
+| **`uci_d1`** | **[UCI ML concrete](https://doi.org/10.24432/C5PK67)** (**`datasets/dataset_d1.csv`**). |
+| **`zenodo_ndt`**, **`zenodo_sonreb`**, **`zenodo_rh`** | TU/e + TNO reproducibility artefacts (**Zenodo record [14921019](https://zenodo.org/records/14921019)**, CC-BY 4.0; file names **`dataset_d2.csv`**, … unchanged). |
+| **`uhpc`**, **`selfheal`** | Boundary **`verification_status`** profiles — headline `[acceptance]` gates omitted by design (see **`tests/calibration/dataset_metrics.rs`** skips). |
+| **`highscm`** | High SCM fraction regime CSV **`dataset_highscm.csv`**. |
+
+---
+
+## Dataset provenance (row splits)
+
+| Source | Rows (copy-of-record) | Citation |
+|--------|-----------------------|----------|
+| **UCI** | **`dataset_d1.csv`** (1 030 mix rows + header) | **`10.24432/C5PK67`** |
+| **Zenodo 14921019** | **`dataset_d2.csv`**, **`dataset_d3.csv`**, **`dataset_d4.csv`** | TU/e + TNO; **CC-BY 4.0** |
+| Others | **`dataset_highscm.csv`**, **`dataset_selfheal.csv`**, … | Listed per profile **`[provenance]`** |
+
+---
+
+## Formal layer & schemas
+
+Formal anchors **`lean://umst-formal/…`** point at mechanised lemmas in the companion **`umst-formal`** repository ([**github.com/tytolabs/umst-formal**](https://github.com/tytolabs/umst-formal)). Bucket counts (**26 Mechanised / 33 Structural / …**) are regenerated into [**`docs/PROOF-STATUS.md`**](docs/PROOF-STATUS.md).
+
+Human guides:
+
+- **[`docs/FormalProvenance.md`](docs/FormalProvenance.md)** — from URI to **`Lean/*.lean`**
+- **[`docs/WireSchemas.md`](docs/WireSchemas.md)** — **`mix.v1`**, **`result.v{1,2}`**, **`audit.v1`**, embedded **`physics_pipeline.v1`**
+
+---
+
+## Coupled physics modules (22)
+
+| Module lanes | Highlights |
+|----------------|-------------|
+| Hydration & chemistry | Jennings CM-II, Powers–Brownyard pathways |
+| Microstructure | Nano C-S-H, colloidal DLVO/YODEL, packing, ITZ |
+| Rheology & printability | Château–Ovarlez–Trung, Roussel buildability |
+| Durability | Transport, chloride diffusivity, freeze–thaw, shrinkage, creep |
+
+Full equations → [**`docs/Constitutive-Equations.md`**](docs/Constitutive-Equations.md) · benchmarks → [**`docs/Validation.md`**](docs/Validation.md).
+
+---
+
+## Development parity (Rust CI mirrors)
 
 ```bash
 cargo fmt --all -- --check
@@ -74,189 +224,31 @@ cargo build --workspace --verbose
 cargo test --workspace --verbose
 ```
 
-Bulk **`predict`** and MCP **`umst_predict`** / **`umst_audit`** delegate to **`umst_concrete_cartridge::facade`** (tensor pipeline + certify/audit wire). Mix column layout lives in [`crates/umst-concrete-cartridge/src/mix_layout.rs`](crates/umst-concrete-cartridge/src/mix_layout.rs); honesty / proof buckets in [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md).
+Hypothesis determinism (**requires** **`pip install -e 'crates/umst-py[tests]'`** or **`maturin develop --extras tests`**):
 
----
-
-## Surfaces
-
-| Surface | Entry | Notes |
-|--------|-------|------|
-| Rust library | `crates/umst-concrete-cartridge` | serde-only façade under `umst_concrete_cartridge::facade` (**no `serde_json` / `tokio` / `clap`** in-tree) |
-| CLI | **`umst`** binary (`crates/umst-cli`) | `predict`, `audit`, `certify`, `profiles`, deterministic **`umst-canonical`** JSON (sorted keys + Ryū literals) |
-| Python | **`maturin develop`** inside `crates/umst-py` | `predict(spec, *, profile="default", schema_version="v2")`, `audit` / `certify`, `canonical_json`; parity with `umst predict` → `umst-canonical` enforced in tests and **`scripts/check_predict_determinism.py`** / acceptance step **[7]** |
-| MCP · Docker | `umst-mcp` + `Dockerfile` / `docker-compose.yml` | **`umst_predict`**, **`umst_audit`**, **`umst_profiles`**, **`umst_certify`** over stdio JSON-RPC |
-
-Canonical JSON acceptance: **`target/$PROFILE/umst-canonical`** reads one JSON blob from stdin and prints compact deterministic bytes (**sorted object keys recursively**, finite floats only).
-
-### Claim wording (claims / positioning)
-
-Where we describe accuracy against calibration envelopes:
-
-- *in-regime predictions land within the profile’s [acceptance] envelope*
-- *predictions out of regime surface explicit warnings*
-- *every prediction returns the calibration profile, the formal anchor URI, the axiom set, and any regime warnings*
-
-## Constitutive modules
-
-Twenty-two modules, each implemented as a pure tensor function. Citations refer to the canonical published model.
-
-| Module | Phenomenon | Canonical reference |
-|--------|------------|---------------------|
-| `hydration` | Cement hydration kinetics | Jennings CM-II (Jennings 2008) |
-| `chemo_water` | Water binding & internal RH | Powers & Brownyard 1948 |
-| `colloidal` | Particle interactions | DLVO theory, Flatt & Bowen 2007 |
-| `nano` | Nanoscale C-S-H structure | Pellenq et al. 2009 |
-| `rheology` | Yield stress & viscosity | Chateau–Ovarlez–Trung 2008; YODEL |
-| `set_time` | Initial / final set | Wadsö 2003; ASTM C191 |
-| `printability` | Buildability & extrudability | Roussel 2018 |
-| `strength` | Compressive strength evolution | Jennings CM-II |
-| `fracture` | Fracture toughness $K_{Ic}$ | Ulm & Coussy micromechanics |
-| `creep` | Long-term compliance | Bažant B4 |
-| `shrinkage` | Autogenous + drying shrinkage | Bažant–Baweja |
-| `freeze_thaw` | Freeze-thaw degradation | Powers 1949 |
-| `transport` | Ionic & moisture transport | Tang & Nilsson |
-| `porosity` | Pore structure evolution | Powers–Brownyard porosity model |
-| `itz` | Interfacial transition zone | Scrivener et al. 2004 |
-| `packing` | Aggregate packing | Modified Andreasen–Andersen |
-| `fiber` | Fibre reinforcement | Naaman composite micromechanics |
-| `polymer` | Polymer modification | Su–Bijen latex models |
-| `self_heal` | Autogenous self-healing | Edvardsen 1999 |
-| `thermo` | Heat of hydration | Schindler & Folliard |
-| `sustainability` | Embodied $\mathrm{CO_2}$ | EN 15804 / EPD inventory |
-| `cost` | Mix cost gradient | Multi-objective auxiliary |
-
-Full equations and units are in [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md). Validation against published experimental data is in [`docs/Validation.md`](docs/Validation.md).
-
----
-
-## Quickstart
-
-```toml
-[dependencies]
-umst-concrete-cartridge = "0.2"
-```
-
-### 1. Human Interface (CLI)
-
-**Install the CLI predictor:**
 ```bash
-# From a local clone
-cargo install --path crates/umst-cli
-
-# From git
-cargo install --git https://github.com/tytolabs/umst-concrete-cartridge.git umst-cli
+python3 -m unittest discover -s crates/umst-py/tests -p 'test_property_determinism.py' -v
 ```
-
-**Run predictions:**
-```bash
-echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict
-echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict
-umst profiles list
-```
-
-Regenerate **`docs/Calibration.md`** from the deterministic report:
-```bash
-cargo run --quiet -p umst-cli --bin calibration_report > docs/Calibration.md
-```
-Calibration is delivered as **versioned TOML profiles** (`calibration/profiles/*.v1.toml`) with explicit regime bounds; the CLI selects a profile via **`--profile`** or **`--profile-file`**, and `predict` defaults to **`result.v2`** metadata (profile id, model wire name, Lean `formal_anchor` URI, regime `warnings`).
-
-### 2. AI Interface (MCP Server)
-
-UMST is the first material science engine natively built for AI agents. The **`umst-mcp`** crate runs a Model Context Protocol server over `stdio` that gives LLMs (like Claude) direct, autonomous access to the differentiable tensor pipeline.
-
-**To connect to Claude Desktop:**
-Add the following to your `claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "umst-concrete-engine": {
-      "command": "cargo",
-      "args": [
-        "run", 
-        "--release", 
-        "--manifest-path", 
-        "/absolute/path/to/umst-concrete-cartridge/crates/umst-mcp/Cargo.toml"
-      ]
-    }
-  }
-}
-```
-You can now ask Claude: *"Design a mix that hits 45 MPa in 28 days but uses 15% fly ash to lower embodied carbon."* Claude will autonomously ping the `evaluate_mix` tool, run the 22-module tensor physics engine, and iterate until it solves your constraints.
-
-### 3. Rust API (Library)
-
-```rust
-use burn_ndarray::NdArrayDevice;
-use burn_ndarray::NdArray;
-use umst_concrete_cartridge::calibration::Profile;
-use umst_concrete_cartridge::core::ConcreteCartridge;
-use umst_concrete_cartridge::homogeneous::MixRow;
-use umst_concrete_cartridge::mix_layout::{fractions_from_mix_row, mix_tensor_from_layout};
-use umst_manifold::core::IScienceCartridge;
-
-type B = NdArray<f32>;
-
-let profile = Profile::load_bundled("uci_d1").expect("uci_d1");
-let row = MixRow {
-    cement_kg_m3: 350.0,
-    water_kg_m3: 140.0,
-    slag_kg_m3: 0.0,
-    fly_ash_kg_m3: 0.0,
-    superplasticizer_kg_m3: 5.25,
-    age_days: 28.0,
-    temperature_c: 23.0,
-};
-let fractions = fractions_from_mix_row(&row, 0.65);
-let device = NdArrayDevice::default();
-let mix = mix_tensor_from_layout::<B>(&fractions, &device);
-
-let cartridge = ConcreteCartridge::<B>::with_profile(profile);
-let tensors = cartridge.compute_all(&mix);
-println!("Manifold tensor summary preview: {:?}", tensors.free_energy.into_data());
-```
-
-See [`mix_layout.rs`](src/mix_layout.rs) for the `[Batch, 16]` feature map and [`pipeline/`](src/pipeline/) for the staged engine manifest.
-
-A worked end-to-end example reproducing a Powers DoH curve is in [`examples/hydration_simulation.rs`](examples/hydration_simulation.rs).
 
 ---
 
-## Validation status
+## Roadmap (conservative **`v0.3`**)
 
-| Module | Validation dataset | Status |
-|--------|--------------------|--------|
-| `hydration` | Powers 1948 OPC isothermal calorimetry | reproduced within ±5 % MAE on $w/c \in [0.3, 0.6]$ |
-| `rheology` | Roussel 2006 slump-test corpus | reproduced within ±10 % yield stress |
-| `strength` | Jennings 2008 CM-II validation set | reproduced within ±3 MPa at 28 d |
-| `freeze_thaw` | ASTM C666 round-robin | reproduced trend; absolute error pending |
-| Other modules | — | implemented, validation in progress |
-
-See [`docs/Validation.md`](docs/Validation.md) for figures and reproduction scripts.
+- Tighter regime routing diagnostics on multi-profile overlays.
+- Optional WASM façade experiments (blocked on backend choice).
+- Continued **`umst-formal`** parity as new lemmas land.
 
 ---
 
-## How this fits the UMST programme
+## Citation
 
-| Repository | Role |
-|------------|------|
-| [`umst-formal`](https://github.com/tytolabs/umst-formal) | Companion formal proofs in Lean 4, Coq, and Agda |
-| [`umst-manifold`](https://github.com/tytolabs/umst-manifold) | Substrate: the differentiable spatiotemporal manifold |
-| **`umst-concrete-cartridge`** *(here)* | Domain cartridge for cementitious materials |
-
-To author a new domain cartridge, implement the [`IScienceCartridge`](https://github.com/tytolabs/umst-manifold/blob/master/src/core/traits.rs) trait and consume `umst_manifold` directly.
-
----
-
-## Citing this work
-
-Please cite using the GitHub URL or the [CITATION.cff](CITATION.cff) file until a formal DOI deposit is generated for the v0.1.0 release.
+Prefer **[`CITATION.cff`](CITATION.cff)** for GitHub/Git-Zenodo bots.
 
 ```bibtex
 @software{umst_concrete_2026,
   author       = {Shyamsundar, Santhosh and Shenbagamoorthy, Santosh Prabhu},
-  title        = {UMST Concrete Cartridge: a differentiable
-                  constitutive engine for cementitious materials},
+  title        = {UMST Concrete Cartridge: a differentiable constitutive
+                  engine for cementitious materials},
   year         = 2026,
   url          = {https://github.com/tytolabs/umst-concrete-cartridge}
 }
@@ -264,24 +256,16 @@ Please cite using the GitHub URL or the [CITATION.cff](CITATION.cff) file until 
 
 ---
 
-## Authors
+## Authors · governance
 
-**Santhosh Shyamsundar** — Studio TYTO; IAAC Barcelona · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)
-**Santosh Prabhu Shenbagamoorthy** — Studio TYTO; IAAC Barcelona · [santosh@tyto.studio](mailto:santosh@tyto.studio)
+**Santhosh Shyamsundar** — Studio TYTO; IAAC · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)  
+**Santosh Prabhu Shenbagamoorthy** — Studio TYTO · [santosh@tyto.studio](mailto:santosh@tyto.studio)
 
-## Contributing
-
-Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) before submitting.
-
-## Security
-
-To report a security issue, see [SECURITY.md](SECURITY.md). Do **not** open public issues for vulnerabilities.
-
-## License
-
-Released under the [MIT License](LICENSE) · © 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO.
+Issues and PRs: [**`CONTRIBUTING.md`**](CONTRIBUTING.md) · [**`CODE_OF_CONDUCT.md`**](CODE_OF_CONDUCT.md) · security contact via [**`SECURITY.md`**](SECURITY.md) (**do not** file public security issues).
 
 ---
+
+Released under [**MIT**](LICENSE).
 
 <div align="center">
 <sub><a href="https://github.com/tytolabs">github.com/tytolabs</a></sub>

@@ -4,6 +4,7 @@ Cargo.lock
 
 .env
 .env.local
+.venv/
 
 .DS_Store
 Thumbs.db

@@ -29,8 +29,15 @@
     },
     "axioms": {
       "type": "array",
+      "uniqueItems": true,
       "items": {
-        "type": "string"
+        "type": "string",
+        "enum": [
+          "physicalSecondLaw",
+          "Classical.choice",
+          "propext",
+          "Quot.sound"
+        ]
       }
     },
     "summary": {
