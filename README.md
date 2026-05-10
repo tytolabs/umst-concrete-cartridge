@@ -103,6 +103,15 @@ Full equations and units are in [`docs/Constitutive-Equations.md`](docs/Constitu
 umst-concrete-cartridge = "0.1"
 ```
 
+**Use it without writing Rust:**
+
+```bash
+cargo install umst-concrete-cartridge --features cli
+echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict
+```
+
+More options: [docs/CLI.md](docs/CLI.md).
+
 ```rust
 use umst_concrete_cartridge::core::ConcreteCartridge;
 use umst_manifold::core::{IScienceCartridge, MixTensor};

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schema/mix.v1.json",
+  "title": "UMST Concrete MixSpec v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["w_c", "temperature_k"],
+  "properties": {
+    "w_c": {
+      "type": "number",
+      "minimum": 0.2,
+      "maximum": 0.8,
+      "description": "Water-to-cement ratio by mass"
+    },
+    "temperature_k": {
+      "type": "number",
+      "minimum": 273.0,
+      "maximum": 353.0,
+      "description": "Isothermal curing temperature (Kelvin)"
+    },
+    "superplasticiser_pct": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 5.0,
+      "description": "Superplasticiser dosage (% by mass of binder)"
+    },
+    "silica_fume_pct": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 15.0,
+      "description": "Silica fume replacement (% by mass of binder)"
+    },
+    "fly_ash_pct": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 60.0,
+      "description": "Fly ash replacement (% by mass of binder)"
+    },
+    "aggregate_volume_fraction": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 0.85,
+      "description": "Volume fraction of aggregates in solids"
+    },
+    "target_age_hours": {
+      "type": "number",
+      "minimum": 1.0,
+      "maximum": 87600.0,
+      "default": 672.0,
+      "description": "Equivalent curing age for hydration kinetics (hours)"
+    },
+    "topology": {
+      "type": ["object", "null"],
+      "description": "Reserved for future cellular-sheaf / topology payloads"
+    }
+  }
+}

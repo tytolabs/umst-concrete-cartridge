@@ -4,6 +4,9 @@
 pub mod core;
 pub mod physics;
 
+#[cfg(feature = "cli")]
+pub mod cli;
+
 mod burn_compat;
 
 // Expose the core cartridge interface

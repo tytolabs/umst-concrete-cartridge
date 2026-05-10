@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schema/result.v1.json",
+  "title": "UMST Concrete PredictionResult v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "compressive_strength_mpa",
+    "yield_stress_pa",
+    "degree_of_hydration",
+    "gwp_kg_co2_eq_per_m3",
+    "safety_margin",
+    "schema_version"
+  ],
+  "properties": {
+    "compressive_strength_mpa": {
+      "type": "number",
+      "description": "Predicted compressive strength (MPa)"
+    },
+    "yield_stress_pa": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Predicted static yield stress (Pa)"
+    },
+    "degree_of_hydration": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Degree of hydration alpha (dimensionless)"
+    },
+    "gwp_kg_co2_eq_per_m3": {
+      "type": "number",
+      "description": "Embodied GWP indicator (kg CO2-eq per m3 concrete)"
+    },
+    "safety_margin": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Non-negative admissibility margin from topology pass"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "result.v1"
+    }
+  }
+}
