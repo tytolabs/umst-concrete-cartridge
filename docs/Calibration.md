@@ -7,13 +7,13 @@ Keys and sections are sorted for stable diffs.
 
 - `default`: `867ff48353f12368f47c12873d3b2c46a966131aed5f591aca3e78a9d4fcd0fd`
 - `highscm`: `40f2881be897de005831c8c1b4111c528cbe0d0f51b8f96fb07dbfaa1d7473f6`
-- `lunar`: `6dcbc6a9ebf3a1c6c544d4aecdabb46ddc46ca05cc58b7b780e71e570633fd18`
-- `selfheal`: `c9c13b95c64282d5d380edc7c9e73d6565d09da2893812161e1f1de3ddb78e31`
+- `lunar`: `2eecf2375f4d798b59b8bd7e7d575f612744acddaddfd2093444b5335534b4c2`
+- `selfheal`: `7a2297514563e382a1f13cdd95d0446382abf78b9bb464e98719b05661197a2d`
 - `uci_d1`: `da098f9b023684f18f923704fcca11d12119167a4bbf255f41c2eace931d8022`
 - `uci_d2`: `bf6407232b456414afd8ddaf70e3b45a7d960b0fff6314918fd1055e6b4c624c`
 - `uci_d3`: `35f8136432bbb83c52d154415f92846ca3413cf1167212c10b23acc9ead1ae7c`
 - `uci_d4`: `4e5e8f444aee2961a82303a79b29827f8b1d58594ce69841220a77c18380bffa`
-- `uhpc`: `7d077e3fb3608dcf8c45b59605fed5efdfa3ab0dc640a6364ed52111747af357`
+- `uhpc`: `74da242763870501829dbfc6916434f32f78ba27b2e9b0923f73423d64f3f9d6`
 
 ## Parsed profile summaries
 
@@ -78,9 +78,6 @@ Keys and sections are sorted for stable diffs.
 | powers.k_fly_ash | 0.1000 |
 | powers.k_ref | 0.7000 |
 | powers.early_boost | 1.0000 |
-| acceptance.strength_mae_max | 90.000000 |
-| acceptance.strength_rmse_max | 120.000000 |
-| acceptance.strength_r2_min | -17.500000 |
 | provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Boundary |
 
@@ -100,9 +97,6 @@ Keys and sections are sorted for stable diffs.
 | powers.k_fly_ash | 0.0780 |
 | powers.k_ref | 0.8870 |
 | powers.early_boost | 1.5090 |
-| acceptance.strength_mae_max | 90.000000 |
-| acceptance.strength_rmse_max | 120.000000 |
-| acceptance.strength_r2_min | -10.000000 |
 | provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Boundary |
 
@@ -210,9 +204,6 @@ Keys and sections are sorted for stable diffs.
 | powers.k_fly_ash | 0.9000 |
 | powers.k_ref | 0.2500 |
 | powers.early_boost | 1.6000 |
-| acceptance.strength_mae_max | 100.000000 |
-| acceptance.strength_rmse_max | 120.000000 |
-| acceptance.strength_r2_min | -10.000000 |
 | provenance.prototype_3_sha256 | 6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1 |
 | contract.verification_status | Boundary |
 

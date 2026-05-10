@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Santhosh Shyamsundar,
 # Santosh Prabhu Shenbagamoorthy — Studio TYTO
+#
+# Synthetic / regime-test material from prototype-3 (geopolymer-style stub).
+# Not subject to headline CSV strength metrics — see tests/calibration/regime_warnings.rs.
 
 [meta]
 name = "lunar"
@@ -36,13 +39,6 @@ k_slag = 0.1000
 k_fly_ash = 0.1000
 k_ref = 0.7000
 early_boost = 1.0000
-
-[acceptance]
-strength_mae_max = 90.0
-strength_rmse_max = 120.0
-strength_r2_min = -17.5
-formal_anchor = "lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration"
-formal_status = "Mechanised"
 
 [contract]
 verification_status = "Boundary"

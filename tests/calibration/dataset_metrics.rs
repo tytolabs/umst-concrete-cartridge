@@ -4,6 +4,10 @@
 
 #![cfg(feature = "cli")]
 
+//! Headline CSV strength gates apply only to **`[contract].verification_status = "Contract"`** profiles.
+//! **Boundary** bundles omit `[acceptance]` (or carry indicative bounds only) and are skipped —
+//! see `calibration/SCHEMA.md` and prototype Contract / Boundary doctrine.
+
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::path::PathBuf;
@@ -27,8 +31,15 @@ fn csv_row_to_mix(r: &csv::StringRecord) -> Result<MixRow, Box<dyn Error>> {
     })
 }
 
-fn metrics(profile_id: &str, csv_name: &str) -> Result<(f64, f64, f64, f64), Box<dyn Error>> {
+fn metrics(profile_id: &str, csv_name: &str) -> Result<(), Box<dyn Error>> {
     let p = Profile::load_bundled(profile_id)?;
+    if p.contract.verification_status == "Boundary" {
+        eprintln!(
+            "dataset_metrics: skip `{profile_id}` ([contract].verification_status = Boundary — no headline CSV acceptance)"
+        );
+        return Ok(());
+    }
+
     let mut rdr = csv::Reader::from_path(datasets_dir().join(csv_name))?;
     let records: Vec<_> = rdr.records().filter_map(|x| x.ok()).collect();
     let mut sum_abs = 0.0_f64;
@@ -83,7 +94,7 @@ fn metrics(profile_id: &str, csv_name: &str) -> Result<(f64, f64, f64, f64), Box
     );
     assert!(r2 >= r2_min, "{profile_id} R2 {r2} below bound {r2_min}");
 
-    Ok((mae, rmse, r2, max_err))
+    Ok(())
 }
 
 #[test]

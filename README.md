@@ -108,7 +108,7 @@ umst-concrete-cartridge = "0.1"
 ```bash
 cargo install umst-concrete-cartridge --features cli
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict
-echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict --profile uci_d1
+echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst predict --schema-version v1
 umst profiles list
 umst schema result-v2

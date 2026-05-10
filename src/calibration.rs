@@ -142,7 +142,7 @@ pub struct CalibrationModelSection {
 /// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#p25_p75_admissibility
 /// formal_status: Mechanised
 /// formal_axioms: NONE
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct AcceptanceBlock {
     pub strength_mae_max: Option<f64>,
     pub strength_rmse_max: Option<f64>,
@@ -396,6 +396,7 @@ pub(crate) struct TomlCalibration {
     regime: RegimeBounds,
     model: CalibrationModelSection,
     parameters: ParametersSection,
+    #[serde(default)]
     acceptance: AcceptanceBlock,
     contract: ContractBlock,
 }

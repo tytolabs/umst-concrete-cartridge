@@ -17,8 +17,8 @@ This directory holds versioned calibration profiles consumed by `umst-concrete-c
 | `[regime]` | `w_c_min`/`max`, `temperature_k_min`/`max`, `age_hours_min`/`max`, optional `fly_ash_pct_max`, `silica_fume_pct_max`, `slag_pct_max`, `scm_sum_min_pct`, `silica_fume_pct_max_special` |
 | `[model]` | `kind` = `powers_gel_space` or `jennings_gel_space` |
 | `[parameters.powers_gel_space]` | `s_intrinsic`, `k_slag`, `k_fly_ash`, `k_ref`, `early_boost` (four decimal places; lifted from prototype-3 JSON) |
-| `[acceptance]` | Optional `strength_mae_max`, `strength_rmse_max`, `strength_r2_min`, `strength_max_err_max`, formal anchor fields tying metrics to lemmas |
-| `[contract]` | `verification_status` = `Contract` or `Boundary` (see prototype `PROTOTYPE3_PLAN.md` and `umst-formal/PROOF-STATUS.md`) |
+| `[acceptance]` | **Contract** profiles only: `strength_mae_max`, `strength_rmse_max`, `strength_r2_min`, optional `strength_max_err_max`, formal anchor fields. **Omit this section** for **`[contract].verification_status = "Boundary"`** bundles — headline CSV metrics do not apply; regime / CLI behaviour may still use the profile. |
+| `[contract]` | `verification_status` = `Contract` (headline dataset acceptance applies) or `Boundary` (out-of-model-scope; no widened metric hacks) |
 
 Formal status vocabulary is aligned with [`umst-formal/PROOF-STATUS.md`](../../umst-formal/PROOF-STATUS.md): **Mechanised** (proved in Lean/Coq/Agda), **Structural** (Rust type/state discipline mirroring Kleisli/gate scaffolding), **Boundary** (limited reference corpus; honest scope), **NONE** (no mechanised claim).
 

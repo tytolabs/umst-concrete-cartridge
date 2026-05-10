@@ -22,8 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional **`sha2`** dependency (behind `calibration` feature) for deterministic profile file digests in the report binary.
 
 ### Changed
-- **`thiserror`** is a normal dependency (calibration/homogeneous errors are not CLI-gated).
-
+- **Boundary calibration profiles** (`lunar`, `uhpc`, `selfheal`) no longer carry `[acceptance]` headline metrics; `tests/calibration/dataset_metrics.rs` skips any profile with `verification_status = "Boundary"`. UHPC TOML documents that Powers gel-space is the wrong model class for dense UHPC microstructure.
+- New integration tests [`tests/cli/public_contract.rs`](tests/cli/public_contract.rs) lock in live-binary acceptance checks 7–10 (`profiles list`, `predict` v2 fields, temperature regime `warnings`, `certify` JSON).
 ## [0.1.0] — 2026-05-07
 
 ### Added

@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Santhosh Shyamsundar,
 # Santosh Prabhu Shenbagamoorthy — Studio TYTO
+#
+# UHPC microstructure (densified silica fume, very low w/c, dense ITZ) lies outside Powers gel-space.
+# Headline CSV strength metrics are excluded here until a Jennings refit or a future
+# `uhpc_micromechanics` (or equivalent) model class is calibrated — Powers alone cannot fit UHPC strength.
 
 [meta]
 name = "uhpc"
@@ -37,13 +41,6 @@ k_slag = 1.2000
 k_fly_ash = 0.9000
 k_ref = 0.2500
 early_boost = 1.6000
-
-[acceptance]
-strength_mae_max = 100.0
-strength_rmse_max = 120.0
-strength_r2_min = -10.0
-formal_anchor = "lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration"
-formal_status = "Mechanised"
 
 [contract]
 verification_status = "Boundary"

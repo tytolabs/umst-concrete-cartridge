@@ -29,11 +29,12 @@ fn all_profiles_parse_and_bounds_positive() -> Result<(), Box<dyn Error>> {
             id
         );
         assert!(p.powers.s_intrinsic > 0.0, "{} s_intrinsic", id);
-        assert!(
-            p.acceptance.strength_mae_max.is_some(),
-            "{} missing strength_mae_max",
-            id
-        );
+        if p.contract.verification_status == "Contract" {
+            assert!(
+                p.acceptance.strength_mae_max.is_some(),
+                "{id} Contract profile missing strength_mae_max",
+            );
+        }
     }
     Ok(())
 }

@@ -89,6 +89,11 @@ path = "tests/cli/schema.rs"
 required-features = ["cli"]
 
 [[test]]
+name = "cli_public_contract"
+path = "tests/cli/public_contract.rs"
+required-features = ["cli"]
+
+[[test]]
 name = "formal_anchors"
 path = "tests/formal_anchors.rs"
 

@@ -25,7 +25,7 @@ When neither flag pins a profile beyond the implicit default, the CLI prints one
 ```bash
 echo '{"w_c": 0.40, "temperature_k": 293.15}' | umst predict
 echo '{"w_c": 0.40, "temperature_k": 293.15}' | umst predict --schema-version v1
-echo '{"w_c": 0.40, "temperature_k": 293.15}' | umst predict --profile uci_d1
+echo '{"w_c": 0.40, "temperature_k": 293.15}' | umst --profile uci_d1 predict
 
 umst optimize --target compressive_strength_mpa=45 --steps 32 --input mix.json
 

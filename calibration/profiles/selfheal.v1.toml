@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Santhosh Shyamsundar,
 # Santosh Prabhu Shenbagamoorthy — Studio TYTO
+#
+# Self-healing specialty path (Boundary). No headline CSV strength acceptance —
+# regime and homogeneous branches may still be exercised in integration tests.
 
 [meta]
 name = "selfheal"
@@ -36,13 +39,6 @@ k_slag = 0.8660
 k_fly_ash = 0.0780
 k_ref = 0.8870
 early_boost = 1.5090
-
-[acceptance]
-strength_mae_max = 90.0
-strength_rmse_max = 120.0
-strength_r2_min = -10.0
-formal_anchor = "lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration"
-formal_status = "Mechanised"
 
 [contract]
 verification_status = "Boundary"
