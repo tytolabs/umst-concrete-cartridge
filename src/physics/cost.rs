@@ -11,8 +11,7 @@ use umst_manifold::core::tensors::MixTensor;
 /// with respect to the input mix fractions allows the agent to naturally step towards cheaper mixes.
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_axioms: NONE
-/// formal_anchor_rationale: Auxiliary economic objective (mass-linear dot product); no mechanised thermodynamic witness on this surrogate alone.
+/// formal_anchor_rationale: Auxiliary objective; linear cost vector, no physical claim.
 pub fn compute_cost<B: Backend>(mix: &MixTensor<B>, unit_cost_factors: Tensor<B, 2>) -> Tensor<B, 2> {
     // Assumes mix.fractions and unit_cost_factors are [Batch, Features]
     // Computes the dot product per batch item (sum over the features dimension)

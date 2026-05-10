@@ -28,6 +28,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
+      - name: Formal-anchor hygiene (no boilerplate / retired tokens in Rust sources)
+        run: |
+          set -euo pipefail
+          ! grep -REn 'Differentiable training' src/ --include='*.rs'
+          ! grep -REn 'formal_status:[[:space:]]*Library' src/ --include='*.rs'
+          ! grep -REn 'formal_status:[[:space:]]*Option' src/ --include='*.rs'
+          ! grep -REn 'formal_status:[[:space:]]*Boundary' src/ --include='*.rs'
+
       - name: Build (default features)
         run: cargo build --verbose
 

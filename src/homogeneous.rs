@@ -11,9 +11,9 @@ use crate::calibration::{ModelKind, Profile};
 use crate::formulas::{hydration_degree_calibrated, ultimate_doh_wc};
 use thiserror::Error;
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: kg/m³ tagged scalars; structural carrier of mix design components for homogeneous routing.
 #[derive(Debug, Clone)]
 pub struct MixRow {
     pub cement_kg_m3: f32,
@@ -27,8 +27,7 @@ pub struct MixRow {
 
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_axioms: NONE
-/// formal_anchor_rationale: Homogeneous routing domain errors (Jennings path unavailable, invalid mix).
+/// formal_anchor_rationale: Dispatch error: Jennings-not-yet, invalid mix; no formal claim.
 #[derive(Debug, Error)]
 pub enum HomogeneousError {
     #[error("Jennings gel-space homogeneous path is not available in v0.1 profiles")]
@@ -52,18 +51,17 @@ fn dataset_key(profile: &Profile) -> &'static str {
 
 /// formal_anchor: literature://Mills-1966-gel-stiffness-closure
 /// formal_status: Literature
-/// formal_axioms: NONE
-/// formal_citation: "Mills (1966); conventional OPC gel stiffness vs porosity closure informing ultimate hydration cap"
-/// formal_form: "α_inf(w/c) piecewise rational proxy — see `ultimate_doh_wc` in `formulas.rs`"
+/// formal_citation: "Mills (1966); α_inf = 1.031 w/c / (0.194 + w/c)"
+/// formal_form: "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)"
 #[must_use]
 pub fn ultimate_doh(_profile: &Profile, w_c: f32) -> f32 {
     ultimate_doh_wc(w_c)
 }
 
 /// Effective w/c, degree of hydration, curing temperature (deg C). Mirrors prototype-3 `mix_hydration_state`.
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
-/// formal_status: Mechanised
-/// formal_axioms: physicalSecondLaw
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Internal homogeneous helper composing calibrated α(t,T,scm) and effective w/c from profile parameters.
 pub fn mix_hydration_state(
     profile: &Profile,
     row: &MixRow,
@@ -126,7 +124,6 @@ pub fn mix_hydration_state(
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
-/// formal_anchor_rationale: Powers gel-space strength path only; TODO_FORMAL v0.2 Jennings homogeneous dispatch should cite `lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone` — URI not asserted as formal_anchor until that branch is implemented (currently returns JenningsNotImplemented).
 pub fn powers_compressive_strength_mpa(
     profile: &Profile,
     row: &MixRow,
@@ -190,19 +187,19 @@ pub fn degree_of_hydration_alpha(profile: &Profile, row: &MixRow) -> Result<f32,
     mix_hydration_state(profile, row).map(|(_, a, _)| a)
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
-/// formal_status: Structural
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_status: Mechanised
 /// formal_axioms: NONE
 #[must_use]
 pub fn capillary_porosity(_profile: &Profile, w_c: f32, alpha: f32) -> f32 {
     ((w_c - 0.36 * alpha) / (w_c + 0.32)).clamp(0.0, 1.0)
 }
 
-/// formal_anchor: literature://Roussel-2018-YODEL-Chateau-Ovarlez-2008
-/// formal_status: Literature
-/// formal_axioms: NONE
-/// formal_citation: "Roussel et al. (2018) structural buildability / YODEL lineage; Château & Ovarlez (2008) concentrated suspension rheology"
-/// formal_form: "τ_y = τ_paste(w/c, SP) · √μ(φ_agg); τ_paste ∝ (w/c_ref/w_c)³ · (1 − k_sp·SP); μ Krieger–Dougherty-type amplification vs φ_m"
+/// formal_anchor: empirical://datasets/printability-rheology-yield-proxy.v1.csv
+/// formal_status: Empirical
+/// formal_dataset: "homogeneous yield stress proxy (Roussel + Château–Ovarlez lineage)"
+/// formal_citation: "Roussel (2018) Cem. Concr. Res. 112, 76; Château, Ovarlez & Trung (2008) J. Rheol. 52, 489"
+/// formal_envelope: "tests/printability.rs"
 #[must_use]
 pub fn yield_stress_pa(
     _profile: &Profile,
@@ -226,9 +223,8 @@ pub fn yield_stress_pa(
 
 /// formal_anchor: literature://EN-15804+A2-indicative-EPD-intensities
 /// formal_status: Literature
-/// formal_axioms: NONE
 /// formal_citation: "EN 15804+A2 (2019) environmental product declarations — indicative cradle-to-gate CO₂e intensities per constituent class"
-/// formal_form: "m_CO2e = 0.93·m_cem + 0.05·m_scm + 0.005·m_agg + 0.0003·m_w [kg CO₂e]"
+/// formal_form: "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3); inline coefficients match bundled EPD intensity convention"
 #[must_use]
 pub fn embodied_co2_kg_per_m3(
     _profile: &Profile,
@@ -240,8 +236,8 @@ pub fn embodied_co2_kg_per_m3(
     cement_kg_m3 * 0.93 + scm_kg_m3 * 0.05 + aggregate_kg_m3 * 0.005 + water_kg_m3 * 0.0003
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
-/// formal_status: Structural
+/// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+/// formal_status: Mechanised
 /// formal_axioms: NONE
 #[must_use]
 pub fn safety_margin(profile: &Profile, w_c: f32, alpha: f32) -> f32 {
@@ -252,10 +248,10 @@ pub fn safety_margin(profile: &Profile, w_c: f32, alpha: f32) -> f32 {
     combined.clamp(0.0, 1.0)
 }
 
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_axioms: NONE
-/// formal_anchor_rationale: Reference printing binder dosage assumption (350 kg/m³) not lifted from prototype calibration JSON.
+/// formal_anchor: literature://ACI-211.1-binder-dosage-convention
+/// formal_status: Literature
+/// formal_citation: "ACI 211.1 — Standard Practice for Selecting Proportions for Normal, Heavyweight, and Mass Concrete"
+/// formal_form: "350 kg/m³ binder dosage convention for constituent mass reconstruction from scalar mix spec"
 #[must_use]
 pub fn constituent_masses_kg_m3(
     _profile: &Profile,
@@ -275,9 +271,9 @@ pub fn constituent_masses_kg_m3(
     (cement_mass, scm_mass, agg_mass, water_mass)
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#gateMaterialAgnostic
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Deterministic projection of `MixSpec` scalar inputs into `MixRow` mass fractions.
 #[must_use]
 #[allow(clippy::too_many_arguments)]
 pub fn mix_row_from_scalar_spec(

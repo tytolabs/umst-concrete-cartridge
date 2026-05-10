@@ -12,9 +12,9 @@ use std::fs;
 use std::path::Path;
 use thiserror::Error;
 
-/// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#KleisliArrow
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Ordered manifest of bundled profile ids for `include_str!` routing.
 ///
 /// Ordered names of bundled [`Profile`] artefacts embedded via [`include_str!`].
 pub const BUNDLED_PROFILE_IDS: &[&str] = &[
@@ -28,9 +28,9 @@ pub const BUNDLED_PROFILE_IDS: &[&str] = &[
     "selfheal",
 ];
 
-/// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#kleisliComposeWellTypedN
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Exhaustive serde enum over calibrated homogeneous model kinds.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ModelKind {
@@ -64,9 +64,9 @@ pub struct FormalBlock {
     pub rationale: Option<String>,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy
-/// formal_status: Boundary
-/// formal_axioms: NONE
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Serde lift of TOML `[provenance.formal]`; `status` string is file metadata (may include Boundary scope), not a Rust `formal_status` bucket.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ProvenanceFormal {
     pub anchor: String,
@@ -167,8 +167,8 @@ pub struct AcceptanceBlock {
     pub strength_max_err_max: Option<f64>,
     #[serde(default)]
     pub formal_anchor: Option<String>,
-    #[serde(default)]
-    pub formal_status: Option<String>,
+    #[serde(default, rename = "formal_status")]
+    pub acceptance_bucket: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -180,9 +180,9 @@ pub struct ContractBlock {
     pub verification_status: String,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#gateMaterialAgnostic
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Parsed TOML aggregate routed by `bundle_id`; field invariants delegated to nested serde structs.
 ///
 /// Calibration profile: parsed TOML plus bundle id used for homogeneous routing branches.
 #[derive(Debug, Clone)]
@@ -197,9 +197,9 @@ pub struct Profile {
     pub contract: ContractBlock,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Named-field regime violation records for CLI warning strings.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegimeViolation {
     pub field: &'static str,
@@ -221,17 +221,17 @@ pub enum CalibrationError {
 }
 
 impl Profile {
-    /// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#kleisliCompose
+    /// formal_anchor: STRUCTURAL
     /// formal_status: Structural
-    /// formal_axioms: NONE
+    /// formal_anchor_rationale: Bundled `include_str!` loader with normalized bundle id validation.
     pub fn load_bundled(name: &str) -> Result<Self, CalibrationError> {
         let txt = bundled_toml_source(name)?;
         Self::parse_toml(bundle_id_normalized(name)?, txt)
     }
 
-    /// formal_anchor: lean://umst-formal/Lean/LandauerLaw.lean#ErasureProcess
-    /// formal_status: Boundary
-    /// formal_axioms: physicalSecondLaw
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Filesystem path IO for non-bundled TOML; parse errors surface as CalibrationError.
     pub fn load_from_path(bundle_id: &str, path: &Path) -> Result<Self, CalibrationError> {
         let txt = fs::read_to_string(path)?;
         Self::parse_toml(bundle_id.trim().to_ascii_lowercase(), &txt)
@@ -431,9 +431,9 @@ impl fmt::Display for RegimeViolation {
     }
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#KleisliArrow
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Static HashMap of tab-separated CLI profile blurbs (human-readable only).
 #[must_use]
 pub fn profile_descriptions() -> HashMap<&'static str, &'static str> {
     let mut m = HashMap::new();

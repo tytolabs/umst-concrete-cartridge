@@ -17,5 +17,7 @@ pub mod cli;
 
 mod burn_compat;
 
-// Expose the core cartridge interface
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-export; classification follows the underlying symbol.
 pub use umst_manifold::core::{IScienceCartridge, MixTensor, PhysicalResult};

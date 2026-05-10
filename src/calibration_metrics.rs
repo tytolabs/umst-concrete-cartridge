@@ -4,11 +4,9 @@
 //! Shared regression metrics for headline CSV calibration — used by [`tests/calibration/dataset_metrics`]
 //! and the `calibration_report` binary so MAE / RMSE / R² definitions cannot drift.
 
-/// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration
-/// formal_status: Mechanised
-/// formal_axioms: NONE
-///
-/// Ordinary least-squares aggregates over paired model predictions `ŷᵢ` and observations `yᵢ`.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Ordinary least-squares aggregates over paired CSV predictions; QA helper without Lean witness on this surface.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RegressionMetrics {
     pub n: usize,
@@ -18,9 +16,9 @@ pub struct RegressionMetrics {
     pub max_abs_error: f64,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration
-/// formal_status: Mechanised
-/// formal_axioms: NONE
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Same as `RegressionMetrics`; computes MAE/RMSE/R² slices for calibration reports.
 ///
 /// # Panics
 /// Panics if `predicted.len() != observed.len()` or either slice is empty.

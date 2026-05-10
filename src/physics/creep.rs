@@ -11,7 +11,7 @@ use crate::burn_compat::bool_and;
 /// formal_status: Empirical
 /// formal_axioms: NONE
 /// formal_dataset: "uci_concrete_yeh_1998"
-/// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
+/// formal_citation: "Bažant et al. (2015) Mater. Struct. 48, 753 (RILEM B4)"
 /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); RILEM B4 creep pathway exercised under tests/creep.rs + adversarial harness"
 pub struct CreepEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
@@ -31,7 +31,7 @@ impl<B: Backend> CreepEngine<B> {
     /// formal_status: Empirical
     /// formal_axioms: NONE
     /// formal_dataset: "uci_concrete_yeh_1998"
-    /// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
+    /// formal_citation: "Bažant et al. (2015) Mater. Struct. 48, 753 (RILEM B4)"
     /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); RILEM B4 creep pathway exercised under tests/creep.rs + adversarial harness"
     pub fn compute_compliance(
         compressive_strength: Tensor<B, 4>,

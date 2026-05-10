@@ -6,12 +6,9 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Transport Engine.
 /// Models capillary porosity, tortuosity, and chloride diffusivity
 /// across the material manifold.
-/// formal_anchor: empirical://datasets/dataset_d1.csv
-/// formal_status: Empirical
-/// formal_axioms: NONE
-/// formal_dataset: "uci_concrete_yeh_1998"
-/// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
-/// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); porosity pathway exercised under tests/realism/adversarial_physics.rs"
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Tensor facade grouping porosity and chloride diffusivity kernels documented on methods.
 pub struct TransportEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -24,12 +21,9 @@ impl<B: Backend> TransportEngine<B> {
     /// # Arguments
     /// * `wc_ratio` - Water/Cement ratio tensor [Batch, Depth, Height, Width]
     /// * `degree_hydration` (alpha) - Degree of hydration [Batch, Depth, Height, Width]
-    /// formal_anchor: empirical://datasets/dataset_d1.csv
-    /// formal_status: Empirical
+    /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+    /// formal_status: Mechanised
     /// formal_axioms: NONE
-    /// formal_dataset: "uci_concrete_yeh_1998"
-    /// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
-    /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); φ_c pathway under tests/realism/adversarial_physics.rs"
     pub fn compute_capillary_porosity(
         wc_ratio: Tensor<B, 4>,
         degree_hydration: Tensor<B, 4>,

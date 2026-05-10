@@ -4,52 +4,67 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # Formal anchors (`src/`)
 
-Every **`pub`** function, struct, enum, trait, and associated `pub fn` in `src/**/*.rs` carries a formal documentation block enforced by **`cargo test --test formal_anchors`**.
+Every **`pub`** function, struct, enum, trait, type alias, constant, and selected re-exports in `src/**/*.rs` carries a formal documentation block enforced by **`cargo test --test formal_anchors`**.
 
-Rolling **`formal_status`** histogram: see [`docs/PROOF-STATUS.md`](PROOF-STATUS.md) (regenerated from `tests/proof_status_doc.rs`).
+## Bucket-count summary
 
-## Status vocabulary
+Precise per-symbol counts and tables are regenerated into [`docs/PROOF-STATUS.md`](PROOF-STATUS.md) from `tests/proof_status_doc.rs`. Consult that file for the current ledger.
 
-| Status | `formal_anchor` scheme | Required companion lines |
-|--------|------------------------|---------------------------|
-| **Mechanised** | `lean://umst-formal/Lean/...#lemma` | — |
-| **Structural** | `lean://...` | wire/schema witnesses (schema versions, Kleisli arrows, gate naturality, …) |
-| **Boundary** | `lean://...` | explicit scope limits on serde structs lifted from TOML (`ProvenanceFormal`) |
-| **Empirical** | `empirical://datasets/<file>.csv` | `formal_dataset`, `formal_citation`, **`formal_envelope`** quoting existing **`[acceptance]`** bounds or an explicit Boundary/adversarial test path — never invented tolerances |
-| **Literature** | `literature://<slug>` | `formal_citation`, **`formal_form`** (closed-form or tensor-graph summary) |
-| **NONE** | `NONE` | **`formal_anchor_rationale`** (IO boundary, trivial accessor, auxiliary objective, placeholder dispatcher, …) |
+## Five-status taxonomy
 
-Retired: **`Library`** as a catch-all — replaced by **NONE**, **Empirical**, or **Literature** per symbol.
+The cartridge classifies each public Rust symbol into exactly one of five buckets:
+
+- **Mechanised** — a cited lemma in `umst-formal/Lean/` (`lean://umst-formal/Lean/<File>.lean#<lemma>`) witnesses the documented property; `formal_axioms` is **`NONE`** or **`physicalSecondLaw`** only.
+
+- **Structural** — the guarantee is carried by Rust’s type system (`formal_anchor: STRUCTURAL`): type-state, exhaustive pattern matching, newtype invariants, serde routing, or functor-shaped CLI orchestration (`formal_anchor_rationale` names which feature).
+
+- **Empirical** — curve fits or calibrated closures tied to bundled CSV / profile data (`empirical://datasets/<csv>.csv`); requires **`formal_dataset`**, **`formal_citation`**, and **`formal_envelope`** (profile **`[acceptance]`** path or an explicit regression test).
+
+- **Literature** — direct transcription of a published equation or convention (`literature://<author-year-shortform>`); requires **`formal_citation`** and **`formal_form`** (one-line LaTeX-like statement).
+
+- **NONE** — true non-claims: IO boundaries, glue, trivial accessors, auxiliary objectives (`formal_anchor: NONE` + **`formal_anchor_rationale`**). Rationales must **not** contain the boilerplate substrings “Differentiable training” or “training pathway”.
+
+**Retired:** **`Library`** (over-broad bucket) and using **`Boundary`** as a Rust `formal_status` — **`Boundary`** remains a **`verification_status`** field inside calibration profile TOML only.
+
+## Required doc grammar (by status)
+
+| Status | `formal_anchor` | Required lines |
+|--------|-----------------|----------------|
+| Mechanised | `lean://umst-formal/Lean/...#lemma` | `formal_axioms` ∈ {`NONE`, `physicalSecondLaw`} |
+| Structural | `STRUCTURAL` | `formal_anchor_rationale` |
+| Empirical | `empirical://datasets/<file>.csv` | `formal_dataset`, `formal_citation`, `formal_envelope` |
+| Literature | `literature://<slug>` | `formal_citation`, `formal_form` |
+| NONE | `NONE` | `formal_anchor_rationale` (forbidden boilerplate substrings above) |
 
 ## Representative classified symbols
 
-| Symbol | Kind | Location | Status | Anchor | Dataset / citation / envelope (abbrev.) |
-|--------|------|----------|--------|--------|-------------------------------------------|
-| `ChemoWaterEngine` | struct | `physics/chemo_water.rs` | Mechanised | `Powers.lean#PowersState` | — |
-| `ThermoEngine::compute_heat_rate` | fn | `physics/thermo.rs` | Mechanised | `Helmholtz.lean#ψAntitoneHelmholtz` | — |
-| `TransportEngine::compute_chloride_diffusivity` | fn | `physics/transport.rs` | Mechanised | `MeasurementCost.lean#zero_info_zero_energy` | — |
-| `any_bundled_profile_covers_scalars` | fn | `calibration.rs` | Mechanised | `RegimeSoundness.lean#warnings_empty_iff_in_regime` | — |
-| `ColloidalEngine` | struct | `physics/colloidal.rs` | Empirical | `empirical://datasets/dataset_d1.csv` | `uci_concrete_yeh_1998`; envelope cites **`uci_d1`** `[acceptance]` + adversarial harness |
-| `FiberEngine` | struct | `physics/fiber.rs` | Empirical | `dataset_uhpc.csv` | Boundary **`uhpc`** envelope + adversarial / CSV pairing |
-| `compute_packing_density` | fn | `physics/packing.rs` | Literature | `literature://Andreasen-Andersen-1930-Fuller-curve` | Andreasen & Andersen (1930); parabolic CPM proxy form |
-| `yield_stress_pa` | fn | `homogeneous.rs` | Literature | Roussel / Château–Ovarlez rheology closure | explicit tensor-free formula line |
-| `compute_cost` | fn | `physics/cost.rs` | NONE | — | auxiliary economic dot-product rationale |
+| Symbol | Kind | Location | Status | Anchor / note |
+|--------|------|----------|--------|----------------|
+| `ChemoWaterEngine` | struct | `physics/chemo_water.rs` | Mechanised | `Powers.lean#PowersState` |
+| `ThermoEngine::compute_heat_rate` | fn | `physics/thermo.rs` | Mechanised | `Helmholtz.lean#ψAntitoneHelmholtz` |
+| `TransportEngine::compute_chloride_diffusivity` | fn | `physics/transport.rs` | Mechanised | `MeasurementCost.lean#zero_info_zero_energy` |
+| `any_bundled_profile_covers_scalars` | fn | `calibration.rs` | Mechanised | `RegimeSoundness.lean#warnings_empty_iff_in_regime` |
+| `predict` | fn | `cli/mod.rs` | Structural | Natural transformation φ ∘ F ∘ ψ |
+| `ColloidalEngine` | struct | `physics/colloidal.rs` | Empirical | DLVO envelope + dataset citation |
+| `FiberEngine` | struct | `physics/fiber.rs` | Literature | Naaman (2006) pullout / bridging form |
+| `compute_packing_density` | fn | `physics/packing.rs` | Literature | Andreasen & Andersen (1930) grading form |
+| `yield_stress_pa` | fn | `homogeneous.rs` | Empirical | Roussel + Château–Ovarlez; `tests/printability.rs` |
+| `compute_cost` | fn | `physics/cost.rs` | NONE | Auxiliary objective rationale |
 
-Full inventory: browse `src/**/*.rs` doc comments; CI fails on any missing or malformed block.
+Full inventory: [`docs/PROOF-STATUS.md`](PROOF-STATUS.md) (sorted, regenerated).
 
 ### Future formal links (cross-repo / deferred)
 
 - **Adjoint / terminal gradient:** `lean://umst-formal/Lean/Adjoint.lean#adjoint_recovers_gradient` — belongs with **`umst-manifold`** adjoint sensitivities, not TOML serde structs.
 - **DEC / graph Laplacian:** `lean://umst-formal/Lean/DEC.lean#laplacian_row_sum_zero` — target manifold **`physics::laplacian`** once anchor-audited.
-- **Jennings monotone strength:** `lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone` — pending **`JenningsGelSpace`** homogeneous branch (**TODO_FORMAL** on `powers_compressive_strength_mpa`).
+- **Jennings homogeneous branch:** `lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone` — tensor **`physics/hydration.rs`** already cites this lemma; homogeneous Powers dispatch still returns `JenningsNotImplemented` until the Jennings profile path lands.
 
-### Empirical modules with plausible Mechanised successors
+### Empirical modules with highest-leverage Mechanised candidates (v0.2)
 
-| Empirical surface | Candidate Lean witness (future `umst-formal` work) |
-|-------------------|-----------------------------------------------------|
-| DLVO / colloidal stability | Gate-layer admissibility lemmas on interaction potentials (spec TBD) |
-| Rheology / printability (Roussel) | Order-statistics or regime envelopes tying yield stress to measurement bands |
-| Transport porosity / chloride | `MeasurementCost` / mass-balance portfolio already partially linked |
-| Creep / shrinkage / fracture empirical closures | Stress-path **Structural** interfaces — dedicated lemmas not yet exported |
+| Empirical module / surface | Rationale for a future flip |
+|----------------------------|----------------------------|
+| **DLVO / `colloidal`** | Interaction-potential admissibility lemmas on the gate layer (spec TBD). |
+| **Bažant B4 creep / `creep`** | Dedicated viscoelastic compliance bounds once a lemma corpus exists. |
+| **Roussel printability / `printability`** | Tie yield/buildability constraints to measurement-band or regime-soundness lemmas. |
 
-*Total **`pub`** symbols remain lint-covered; this document is policy + highlights — not a second SSOT.*
+*Policy + highlights only — `PROOF-STATUS.md` and `src/**/*.rs` comments remain the SSOT for counts and per-symbol lines.*

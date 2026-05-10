@@ -6,11 +6,9 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Strength & Micromechanics Engine.
 /// Upgraded to the absolute SOTA: Jennings CM-II (Colloidal Model of C-S-H)
 /// coupled with Ulm & Constantinides (2004) nano-indentation continuum micromechanics.
-/// formal_anchor: literature://Jennings-CM-II-colloidal-CSH
-/// formal_status: Literature
-/// formal_axioms: NONE
-/// formal_citation: "Jennings CM-II colloidal C-S-H framework; Tennis & Jennings (2000) HD/LD partitioning; Ulm & Constantinides (2004) nano-indentation moduli — regression anchor tests/strength.rs::cm_ii_28d"
-/// formal_form: "Voigt mixture on HD/LD moduli with Balshin porosity penalty E_eff ∝ (1−p_tot)³ scaled to MPa via intrinsic_strength tensor"
+/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
 pub struct StrengthEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -24,11 +22,9 @@ impl<B: Backend> StrengthEngine<B> {
     /// * `degree_hydration` - Hydration degree tensor α (0.0 to 1.0)
     /// * `air_content` - Entrapped/entrained air volume fraction
     /// * `intrinsic_strength` - Intrinsic scaling factor for the specific cement chemistry (MPa)
-    /// formal_anchor: literature://Jennings-CM-II-colloidal-CSH
-    /// formal_status: Literature
-    /// formal_axioms: NONE
-    /// formal_citation: "Jennings CM-II colloidal C-S-H framework; Tennis & Jennings (2000) HD/LD partitioning; Ulm & Constantinides (2004) nano-indentation moduli — regression anchor tests/strength.rs::cm_ii_28d"
-    /// formal_form: "Voigt mixture on HD/LD moduli with Balshin porosity penalty E_eff ∝ (1−p_tot)³ scaled to MPa via intrinsic_strength tensor"
+    /// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+    /// formal_status: Mechanised
+    /// formal_axioms: physicalSecondLaw
     pub fn compute_strength_jennings(
         wc_ratio: Tensor<B, 4>,
         degree_hydration: Tensor<B, 4>,

@@ -22,13 +22,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional **`sha2`** dependency (behind `calibration` feature) for deterministic profile file digests in the report binary.
 
 ### Changed
-- Formal-anchor lint now distinguishes five primary **`formal_status`** buckets (**Mechanised**, **Structural**, **Empirical**, **Literature**, **NONE**) plus **Boundary** where TOML lifts declare explicit scope limits. The boilerplate “Differentiable training pathway…” rationale has been removed and replaced with per-symbol classifications: fourteen constitutive surfaces formerly lumped under **`NONE`/`Library`** are **Empirical** or **Literature**, and tensor pathways (**chemo-water**, **set-time**, **thermo** heat rate, **chloride diffusivity**) plus **`any_bundled_profile_covers_scalars`** document **`Mechanised`** anchors against `umst-formal` (**`PowersState`**, **`ψAntitoneHelmholtz`**, **`zero_info_zero_energy`**, **`warnings_empty_iff_in_regime`**). **`umst certify`** JSON now includes optional **`formal_status`** from profile provenance / acceptance metadata (alongside existing Zenodo provenance fields when present).
+- Formal-anchor lint extended to a five-status grammar (**`Mechanised`**, **`Structural`**, **`Empirical`**, **`Literature`**, **`NONE`**). The placeholder **`Library`** status and the boilerplate “Differentiable training pathway…” rationale are removed; every public symbol carries a precise per-symbol classification (see [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md)).
+- Four tensor pathways flipped to **`Mechanised`** against `umst-formal@8a6b372`: **`chemo_water`**, **`set_time`**, **`thermo`**, **`transport`** (chloride diffusivity → `MeasurementCost.lean#zero_info_zero_energy`).
+- Ten modules reclassified to **`Empirical`**: **`colloidal`**, **`creep`**, **`freeze_thaw`**, **`itz`**, **`nano`**, **`polymer`**, **`printability`**, **`rheology`**, **`self_heal`**, **`shrinkage`**.
+- Four modules reclassified to **`Literature`**: **`fiber`**, **`fracture`**, **`packing`**, **`sustainability`** (plus wire-schema version constants and Mills / ACI / EN closures as cited).
+- **`cost`** remains **`NONE`** with an explicit auxiliary-objective rationale.
 - Renamed profiles `uci_d2` / `uci_d3` / `uci_d4` → **`zenodo_ndt`** / **`zenodo_sonreb`** / **`zenodo_rh`** to match the IROS Paper 2 reproducibility manifest (TU/e + TNO, Zenodo Record **14921019**, CC-BY 4.0). `[provenance]` blocks carry the full attribution; on-disk CSV filenames stay `dataset_d2.csv`, ….
-- **`Profile::regime_check_scalars`** now documents a mechanised anchor to **`RegimeSoundness.warnings_empty_iff_in_regime`** (`umst-formal`). Other calibration-layer structs keep explicit **`NONE`** anchors where the witness lives in another crate or awaits a future homogeneous Jennings branch — see **`docs/FormalAnchors.md`** (“Future formal links”) and the **`TODO_FORMAL`** note on **`powers_compressive_strength_mpa`**.
-- **`umst certify`** JSON includes optional **`zenodo_record`** / **`zenodo_doi`** / **`zenodo_url`** / **`license`** / **`subset`** when present on the profile.
+- **`Profile::regime_check_scalars`** documents a mechanised anchor to **`RegimeSoundness.warnings_empty_iff_in_regime`** (`umst-formal`).
+- **`umst certify`** JSON includes a string **`formal_status`** (one of the five buckets) plus optional **`zenodo_record`** / **`zenodo_doi`** / **`zenodo_url`** / **`license`** / **`subset`** when present on the profile.
 - **`docs/SSOT.json`** uses **`total_data_rows`** (= **17646**) as the summed row-count field name.
-- **Boundary calibration profiles** (`uhpc`, `selfheal`) no longer carry `[acceptance]` headline metrics; `tests/calibration/dataset_metrics.rs` skips any profile with `verification_status = "Boundary"`. UHPC TOML documents that Powers gel-space is the wrong model class for dense UHPC microstructure.
-- New integration tests [`tests/cli/public_contract.rs`](tests/cli/public_contract.rs) lock in live-binary acceptance checks 7–10 (`profiles list`, `predict` v2 fields, temperature regime `warnings`, `certify` JSON).
+- **Boundary calibration profiles** (`uhpc`, `selfheal`) omit `[acceptance]` headline metrics; `tests/calibration/dataset_metrics.rs` skips any profile with `verification_status = "Boundary"`.
+- Integration tests [`tests/cli/public_contract.rs`](tests/cli/public_contract.rs) lock in live-binary acceptance checks 7–10 (`profiles list`, `predict` v2 fields, temperature regime `warnings`, `certify` JSON).
+
+### Fixed
+- Lint hygiene: doc-line parsing no longer false-matches **`Option<…>`** as **`formal_status: Option`** (pattern requires a whitelisted single-token status).
+- Lint hygiene: **`Boundary`** is rejected as a Rust **`formal_status`** — it remains a **`verification_status`** field in calibration TOML only; **`umst certify`** maps unknown/boundary metadata to wire **`NONE`** when needed.
 
 ### Removed
 - **`lunar`** bundled calibration profile and **`datasets/dataset_lunar.csv`**. No real lunar concrete corpus exists at the v0.1 horizon; shipping a synthetic placeholder violated the measurement-or-derivation provenance rule.

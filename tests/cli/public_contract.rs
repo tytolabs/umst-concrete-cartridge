@@ -104,5 +104,15 @@ fn acceptance_10_certify_emits_chain_json() -> Result<(), Box<dyn Error>> {
     assert!(v["model_anchor"].is_string());
     assert!(v["acceptance_anchor"].is_string());
     assert!(v["axioms"].is_array());
+    let formal_status = v["formal_status"]
+        .as_str()
+        .ok_or("formal_status must be a string")?;
+    assert!(
+        matches!(
+            formal_status,
+            "Mechanised" | "Structural" | "Empirical" | "Literature" | "NONE"
+        ),
+        "unexpected formal_status: {formal_status:?}"
+    );
     Ok(())
 }

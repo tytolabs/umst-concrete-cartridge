@@ -12,7 +12,7 @@ use burn::tensor::{backend::Backend, Tensor};
 /// formal_status: Empirical
 /// formal_axioms: NONE
 /// formal_dataset: "uci_concrete_yeh_1998"
-/// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
+/// formal_citation: "Scrivener et al. (2004) Interface Sci. 12, 411"
 /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); ITZ thickness/porosity pathway exercised under tests/realism/adversarial_physics.rs"
 pub fn compute_itz_thickness_microns<B: Backend>(
     max_aggregate_size_mm: Tensor<B, 2>,
@@ -26,7 +26,7 @@ pub fn compute_itz_thickness_microns<B: Backend>(
 /// formal_status: Empirical
 /// formal_axioms: NONE
 /// formal_dataset: "uci_concrete_yeh_1998"
-/// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
+/// formal_citation: "Scrivener et al. (2004) Interface Sci. 12, 411"
 /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); ITZ thickness/porosity pathway exercised under tests/realism/adversarial_physics.rs"
 pub fn compute_itz_porosity<B: Backend>(wc_ratio: Tensor<B, 2>) -> Tensor<B, 2> {
     // ITZ porosity is typically 1.5x - 2x bulk paste porosity
@@ -41,7 +41,7 @@ pub fn compute_itz_porosity<B: Backend>(wc_ratio: Tensor<B, 2>) -> Tensor<B, 2> 
 /// formal_status: Empirical
 /// formal_axioms: NONE
 /// formal_dataset: "uci_concrete_yeh_1998"
-/// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
+/// formal_citation: "Scrivener et al. (2004) Interface Sci. 12, 411"
 /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); ITZ thickness/porosity pathway exercised under tests/realism/adversarial_physics.rs"
 pub fn compute_itz_percolation_factor<B: Backend>(itz_vol_frac: Tensor<B, 2>) -> Tensor<B, 2> {
     // Percolation threshold approx 20%-30% ITZ volume

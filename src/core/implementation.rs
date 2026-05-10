@@ -10,7 +10,6 @@ use umst_manifold::core::traits::{IScienceCartridge, PhysicalResult};
 /// into physical constitutive states by routing through the core engines.
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_axioms: NONE
 /// formal_anchor_rationale: Placeholder cartridge dispatcher; full MixTensor → engines mapping still pending — see manifold orchestration layer.
 pub struct ConcreteCartridge<B: Backend> {
     _backend: std::marker::PhantomData<B>,
@@ -19,7 +18,6 @@ pub struct ConcreteCartridge<B: Backend> {
 impl<B: Backend> ConcreteCartridge<B> {
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_axioms: NONE
     /// formal_anchor_rationale: Default constructor for placeholder dispatcher only.
     pub fn new() -> Self {
         Self {

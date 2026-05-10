@@ -9,7 +9,7 @@ use burn::tensor::{backend::Backend, Tensor};
 /// formal_status: Empirical
 /// formal_axioms: NONE
 /// formal_dataset: "prototype_selfheal_boundary"
-/// formal_citation: "Bundled selfheal Boundary specialty profile; paired CSV dataset_selfheal.csv"
+/// formal_citation: "Edvardsen (1999) ACI Mater. J. 96, 448"
 /// formal_envelope: "Boundary profile (no [acceptance] strength gate); paired CSV still listed in dataset_metrics skip — healing kinetics exercised under tests/realism/adversarial_physics.rs"
 pub struct SelfHealEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
@@ -22,7 +22,7 @@ impl<B: Backend> SelfHealEngine<B> {
     /// formal_status: Empirical
     /// formal_axioms: NONE
     /// formal_dataset: "prototype_selfheal_boundary"
-    /// formal_citation: "Bundled selfheal Boundary specialty profile; paired CSV dataset_selfheal.csv"
+    /// formal_citation: "Edvardsen (1999) ACI Mater. J. 96, 448"
     /// formal_envelope: "Boundary profile (no [acceptance] strength gate); paired CSV still listed in dataset_metrics skip — healing kinetics exercised under tests/realism/adversarial_physics.rs"
     pub fn compute_healing_potential(
         degree_hydration: Tensor<B, 4>,

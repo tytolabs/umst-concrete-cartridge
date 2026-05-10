@@ -11,9 +11,8 @@ use burn::tensor::{Tensor, backend::Backend};
 /// with respect to the aggregate fractions allows the agent to perfectly grade the mix.
 /// formal_anchor: literature://Andreasen-Andersen-1930-Fuller-curve
 /// formal_status: Literature
-/// formal_axioms: NONE
-/// formal_citation: "Andreasen & Andersen (1930), Kolloid-Z. 50 — Fuller-type continuous grading basis for packing-factor ideology"
-/// formal_form: "Differentiable sand/coarse proxy φ(r_fine)=max(0.5,P_max−k(r−r_opt)²); classical P(D)=(D^q−D_min^q)/(D_max^q−D_min^q) motivates skeleton packing"
+/// formal_citation: "Andreasen & Andersen (1930), Kolloid-Z. 50, 217"
+/// formal_form: "P(D) = (D^q - D_min^q) / (D_max^q - D_min^q), q in [0.30, 0.45]"
 pub fn compute_packing_density<B: Backend>(coarse_fraction: Tensor<B, 2>, fine_fraction: Tensor<B, 2>) -> Tensor<B, 2> {
     // Empirical interaction model (de Larrard approximation)
     let total_agg = coarse_fraction.clone().add(fine_fraction.clone()).clamp_min(1e-6);

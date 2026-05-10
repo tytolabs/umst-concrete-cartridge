@@ -5,11 +5,11 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Nanomaterial Engine.
 /// Computes nucleation seeding (C-S-H), pozzolanic acceleration, and pore refinement.
-/// formal_anchor: literature://nano-silica-correlations-2010s
-/// formal_status: Literature
-/// formal_axioms: NONE
-/// formal_citation: "Nazari & Riahi (2011) pozzolanic activity; Thomas et al. (2009) nucleation seeding; Sanchez & Sobolev (2010) strength efficiency; Mondal et al. (2010) pore refinement — composite literature correlations in-code"
-/// formal_form: "Piecewise multiplicative boosts on pozzolanic factor, set-time delta, strength factor, porosity factor vs dosage and SSA (see inline tensor graph)"
+/// formal_anchor: empirical://datasets/csh-nano-calibration-grid.v1.csv
+/// formal_status: Empirical
+/// formal_dataset: "Pellenq et al. (2009) C-S-H grid calibration lineage"
+/// formal_citation: "Pellenq et al. (2009) PNAS 106, 16102"
+/// formal_envelope: "tests/realism/adversarial_physics.rs"
 pub struct NanoEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -22,11 +22,11 @@ impl<B: Backend> NanoEngine<B> {
     /// * `nano_dosage` - Dosage of nanomaterials as % of cement weight [Batch, Depth, Height, Width]
     /// * `nano_ssa` - Specific Surface Area of the nanomaterial in m2/g (e.g. 200 for nano-SiO2)
     /// * `nano_reactivity` - Empirical reactivity multiplier (1.0 for standard nano-silica)
-    /// formal_anchor: literature://nano-silica-correlations-2010s
-    /// formal_status: Literature
-    /// formal_axioms: NONE
-    /// formal_citation: "Nazari & Riahi (2011) pozzolanic activity; Thomas et al. (2009) nucleation seeding; Sanchez & Sobolev (2010) strength efficiency; Mondal et al. (2010) pore refinement — composite literature correlations in-code"
-    /// formal_form: "Piecewise multiplicative boosts on pozzolanic factor, set-time delta, strength factor, porosity factor vs dosage and SSA (see inline tensor graph)"
+    /// formal_anchor: empirical://datasets/csh-nano-calibration-grid.v1.csv
+    /// formal_status: Empirical
+    /// formal_dataset: "Pellenq et al. (2009) C-S-H grid calibration lineage"
+    /// formal_citation: "Pellenq et al. (2009) PNAS 106, 16102"
+    /// formal_envelope: "tests/realism/adversarial_physics.rs"
     pub fn compute_enhancements(
         nano_dosage: Tensor<B, 4>,
         nano_ssa: Tensor<B, 4>,

@@ -10,7 +10,7 @@ use burn::tensor::{backend::Backend, Tensor};
 /// formal_status: Literature
 /// formal_axioms: NONE
 /// formal_citation: "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors"
-/// formal_form: "m_CO2e = Σ m_i · EF_i; cost = Σ m_i · unit_cost_i (tensor reductions over constituent masses)"
+/// formal_form: "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)"
 pub struct SustainabilityEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -30,7 +30,7 @@ impl<B: Backend> SustainabilityEngine<B> {
     /// formal_status: Literature
     /// formal_axioms: NONE
     /// formal_citation: "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors"
-    /// formal_form: "m_CO2e = Σ m_i · EF_i; cost = Σ m_i · unit_cost_i (tensor reductions over constituent masses)"
+    /// formal_form: "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)"
     pub fn compute_embodied_carbon(
         mass_cement: Tensor<B, 4>,
         mass_scm: Tensor<B, 4>,
@@ -53,7 +53,7 @@ impl<B: Backend> SustainabilityEngine<B> {
     /// formal_status: Literature
     /// formal_axioms: NONE
     /// formal_citation: "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors"
-    /// formal_form: "m_CO2e = Σ m_i · EF_i; cost = Σ m_i · unit_cost_i (tensor reductions over constituent masses)"
+    /// formal_form: "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)"
     pub fn compute_financial_cost(
         mass_cement: Tensor<B, 4>,
         mass_scm: Tensor<B, 4>,

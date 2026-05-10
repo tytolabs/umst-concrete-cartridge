@@ -5,12 +5,10 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Fiber Reinforcement Engine.
 /// Computes multiscale micromechanical pullout, debonding, and macroscopic crack bridging.
-/// formal_anchor: empirical://datasets/dataset_uhpc.csv
-/// formal_status: Empirical
-/// formal_axioms: NONE
-/// formal_dataset: "prototype_uhpc_boundary"
-/// formal_citation: "Bundled uhpc specialty profile (prototype lift); paired CSV dataset_uhpc.csv"
-/// formal_envelope: "Profile uhpc is Boundary (no [acceptance] strength gate in TOML); fiber micromechanics exercised vs dataset_uhpc.csv rows where metrics apply + tests/realism/adversarial_physics.rs"
+/// formal_anchor: literature://Naaman-2006-ACI-SP235-pullout
+/// formal_status: Literature
+/// formal_citation: "Naaman (2006) ACI SP-235 — fiber pullout and crack-bridging micromechanics"
+/// formal_form: "V_{f,crit} = σ_cu / (η_l η_o τ_b l_f / d_f)"
 pub struct FiberEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -24,12 +22,10 @@ impl<B: Backend> FiberEngine<B> {
     /// * `fiber_aspect_ratio` (L/d) - Aspect ratio of the fibers [Batch, Depth, Height, Width]
     /// * `fiber_tensile_strength` - Ultimate tensile strength of the fiber (MPa)
     /// * `matrix_strength` - Surrounding cementitious matrix compressive strength (MPa)
-    /// formal_anchor: empirical://datasets/dataset_uhpc.csv
-    /// formal_status: Empirical
-    /// formal_axioms: NONE
-    /// formal_dataset: "prototype_uhpc_boundary"
-    /// formal_citation: "Bundled uhpc specialty profile (prototype lift); paired CSV dataset_uhpc.csv"
-    /// formal_envelope: "Profile uhpc is Boundary (no [acceptance] strength gate in TOML); fiber micromechanics exercised vs dataset_uhpc.csv rows where metrics apply + tests/realism/adversarial_physics.rs"
+    /// formal_anchor: literature://Naaman-2006-ACI-SP235-pullout
+    /// formal_status: Literature
+    /// formal_citation: "Naaman (2006) ACI SP-235 — fiber pullout and crack-bridging micromechanics"
+    /// formal_form: "V_{f,crit} = σ_cu / (η_l η_o τ_b l_f / d_f)"
     pub fn compute_micromechanics(
         fiber_vol_fraction: Tensor<B, 4>,
         fiber_aspect_ratio: Tensor<B, 4>,

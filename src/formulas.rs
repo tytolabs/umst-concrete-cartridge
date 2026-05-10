@@ -12,7 +12,6 @@
 
 /// formal_anchor: literature://Mills-1966-gel-stiffness-closure
 /// formal_status: Literature
-/// formal_axioms: NONE
 /// formal_citation: "Mills (1966); OPC gel stiffness / ultimate hydration cap closure used in routing"
 /// formal_form: "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)"
 ///
@@ -22,9 +21,11 @@ pub fn ultimate_doh_wc(w_c: f32) -> f32 {
     1.031 * w_c / (0.194 + w_c)
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
-/// formal_status: Mechanised
-/// formal_axioms: physicalSecondLaw
+/// formal_anchor: empirical://datasets/hydration-kinetics-calibration-grid.v1.csv
+/// formal_status: Empirical
+/// formal_dataset: "profile-scaled k_ref hydration grid"
+/// formal_citation: "Mills (1966) ultimate cap with stretched-exponential √t kinetics and Arrhenius temperature factor (calibrated multipliers from profile TOML)"
+/// formal_envelope: "tests/hydration.rs::powers_doh_envelope"
 ///
 /// Calibrated hydration degree α(t) with Arrhenius temperature factor and SCM slowdown.
 /// `k_ref_multiplier` folds dataset-specific `k_ref` scaling from the active profile.

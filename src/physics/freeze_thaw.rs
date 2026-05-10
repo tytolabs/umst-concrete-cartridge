@@ -11,7 +11,7 @@ use crate::burn_compat::bool_and;
 /// formal_status: Empirical
 /// formal_axioms: NONE
 /// formal_dataset: "uci_concrete_yeh_1998"
-/// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
+/// formal_citation: "Powers (1949) Highw. Res. Board Proc. 29, 184 (spacing factor)"
 /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); freeze–thaw durability pathway exercised under tests/freeze_thaw.rs + adversarial harness"
 pub struct FreezeThawEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
@@ -30,7 +30,7 @@ impl<B: Backend> FreezeThawEngine<B> {
     /// formal_status: Empirical
     /// formal_axioms: NONE
     /// formal_dataset: "uci_concrete_yeh_1998"
-    /// formal_citation: "Yeh (1998), UCI ML Repository, doi:10.24432/C5PK67"
+    /// formal_citation: "Powers (1949) Highw. Res. Board Proc. 29, 184 (spacing factor)"
     /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); freeze–thaw durability pathway exercised under tests/freeze_thaw.rs + adversarial harness"
     pub fn compute_durability(
         air_fraction: Tensor<B, 4>,

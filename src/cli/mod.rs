@@ -17,24 +17,26 @@ use std::convert::TryFrom;
 use thiserror::Error;
 use umst_manifold::core::traits::PhysicalResult;
 
-/// formal_anchor: lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy
-/// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor: literature://wire-schema-result-v1
+/// formal_status: Literature
+/// formal_citation: "UMST concrete cartridge JSON wire schema tag (`result.v1`)"
+/// formal_form: "`result.v1` — version tag for deprecated prediction JSON envelope"
 pub const RESULT_SCHEMA_VERSION_V1: &str = "result.v1";
 
-/// formal_anchor: lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy
-/// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor: literature://wire-schema-result-v2
+/// formal_status: Literature
+/// formal_citation: "UMST concrete cartridge JSON wire schema tag (`result.v2`)"
+/// formal_form: "`result.v2` — version tag for current prediction JSON envelope"
 pub const RESULT_SCHEMA_VERSION_V2: &str = "result.v2";
 
-/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#naturalitySquare
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Burn backend selection; structural type alias to the ndarray tensor runtime.
 pub type CliBackend = NdArray;
 
-/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#gateMaterialAgnostic
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Exhaustive enum over wire-schema variants; pattern matching guarantees both tags handled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PredictionWireVersion {
     V1,
@@ -42,10 +44,9 @@ pub enum PredictionWireVersion {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-/// formal_anchor: NONE
-/// formal_status: NONE
+/// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+/// formal_status: Mechanised
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Trivial newtype accessor for validated water–cement ratio; no separate formal witness.
 pub struct WaterCementRatio(f32);
 
 impl TryFrom<f64> for WaterCementRatio {
@@ -64,18 +65,16 @@ impl WaterCementRatio {
     #[must_use]
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_axioms: NONE
-    /// formal_anchor_rationale: Trivial accessor returning the validated scalar payload.
+    /// formal_anchor_rationale: Trivial accessor; getter for the wrapped `f32`.
     pub fn value(self) -> f32 {
         self.0
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-/// formal_anchor: NONE
-/// formal_status: NONE
+/// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+/// formal_status: Mechanised
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Trivial newtype accessor for validated absolute temperature; no separate formal witness.
 pub struct TemperatureK(f32);
 
 impl TryFrom<f64> for TemperatureK {
@@ -94,16 +93,15 @@ impl TemperatureK {
     #[must_use]
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_axioms: NONE
-    /// formal_anchor_rationale: Trivial accessor returning the validated scalar payload.
+    /// formal_anchor_rationale: Trivial accessor.
     pub fn value(self) -> f32 {
         self.0
     }
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Field invariants enforced by `WaterCementRatio` / `TemperatureK` newtypes and range-checked fractions.
 #[derive(Debug, Clone)]
 pub struct MixSpec {
     pub w_c: WaterCementRatio,
@@ -186,8 +184,7 @@ impl TryFrom<Value> for MixSpec {
 #[derive(Debug, Error)]
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_axioms: NONE
-/// formal_anchor_rationale: JSON / range validation errors at the CLI IO boundary only.
+/// formal_anchor_rationale: IO / parsing error variants; classification of mix-spec rejection causes.
 pub enum MixSpecError {
     #[error("invalid JSON mix specification: {0}")]
     Json(#[from] serde_json::Error),
@@ -199,9 +196,9 @@ pub enum MixSpecError {
     FieldOutOfRange { field: &'static str },
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#naturalitySquare
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Binary-boundary error aggregation; sum-type over `MixSpecError`, calibration, tensor IO, and routing failures.
 #[derive(Debug, Error)]
 pub enum CliError {
     #[error(transparent)]
@@ -246,9 +243,9 @@ struct PredictionWireV2 {
     schema_version: &'static str,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#gateMaterialAgnostic
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Bundle of physical tensors plus calibration metadata returned by `predict`.
 pub struct PredictBundle {
     pub physical: PhysicalResult<CliBackend>,
     pub warnings: Vec<String>,
@@ -273,9 +270,27 @@ fn profile_formal_anchor_uri(profile: &Profile) -> String {
         .unwrap_or_else(|| "lean://NONE".to_string())
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
-/// formal_status: Mechanised
-/// formal_axioms: physicalSecondLaw
+fn wire_formal_status(profile: &Profile) -> String {
+    let raw = profile
+        .provenance
+        .formal
+        .as_ref()
+        .map(|f| f.status.as_str())
+        .or_else(|| profile.acceptance.acceptance_bucket.as_deref());
+    match raw.map(str::trim) {
+        Some("Mechanised") => "Mechanised".to_string(),
+        Some("Structural") => "Structural".to_string(),
+        Some("Empirical") => "Empirical".to_string(),
+        Some("Literature") => "Literature".to_string(),
+        Some("NONE") => "NONE".to_string(),
+        Some("Boundary") | None => "NONE".to_string(),
+        Some(_) => "NONE".to_string(),
+    }
+}
+
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Natural transformation φ ∘ F ∘ ψ over the cartridge functor (CLI orchestration entry).
 pub fn predict(profile: &Profile, spec: &MixSpec) -> Result<PredictBundle, CliError> {
     if !calib::any_bundled_profile_covers_scalars(
         spec.w_c.value(),
@@ -351,9 +366,9 @@ pub fn predict(profile: &Profile, spec: &MixSpec) -> Result<PredictBundle, CliEr
     })
 }
 
-/// formal_anchor: lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy
-/// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: JSON-serialise glue; no physical claim.
 pub fn serialize_prediction(
     bundle: &PredictBundle,
     version: PredictionWireVersion,
@@ -396,17 +411,16 @@ pub fn serialize_prediction(
     }
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#kleisliCompose
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: JSON payload schema for `umst certify` output (profile, anchors, mapped formal bucket).
 #[derive(Serialize)]
 pub struct CertifyChain {
     pub profile: String,
     pub model_kind: String,
     pub model_anchor: String,
     pub acceptance_anchor: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub formal_status: Option<String>,
+    pub formal_status: String,
     pub axioms: Vec<String>,
     pub provenance_sha256: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -421,9 +435,9 @@ pub struct CertifyChain {
     pub subset: Option<String>,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Constitutional.lean#kleisliComposeWellTypedN
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_axioms: NONE
+/// formal_anchor_rationale: Builds the certify JSON view including wire `formal_status` mapped from profile metadata.
 #[must_use]
 pub fn certify_profile_json(profile: &Profile) -> Value {
     let model_anchor = profile_formal_anchor_uri(profile);
@@ -439,12 +453,7 @@ pub fn certify_profile_json(profile: &Profile) -> Value {
         .map(|f| f.axioms.clone())
         .unwrap_or_default();
     axioms.sort();
-    let formal_status = profile
-        .provenance
-        .formal
-        .as_ref()
-        .map(|f| f.status.clone())
-        .or_else(|| profile.acceptance.formal_status.clone());
+    let formal_status = wire_formal_status(profile);
     let chain = CertifyChain {
         profile: profile.bundle_id.clone(),
         model_kind: model_kind_wire(profile),
@@ -475,8 +484,7 @@ struct MixSpecWireOut {
 
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_axioms: NONE
-/// formal_anchor_rationale: JSON round-trip helper for optimize output; no mechanised wire claim.
+/// formal_anchor_rationale: JSON-serialise glue.
 pub fn serialize_mix_spec(spec: &MixSpec) -> Result<Value, CliError> {
     let wire = MixSpecWireOut {
         w_c: f64::from(spec.w_c.value()),
@@ -500,10 +508,9 @@ fn tensor_element_at(t: Tensor<CliBackend, 2>, row: usize, col: usize) -> Result
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_axioms: NONE
-/// formal_anchor_rationale: Auxiliary optimization dispatch tag for the CLI grid search only.
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Exhaustive enum of optimisation targets for the CLI bisection driver.
 pub enum OptimizeField {
     CompressiveStrengthMpa,
 }
@@ -519,9 +526,9 @@ impl TryFrom<&str> for OptimizeField {
     }
 }
 
-/// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration
-/// formal_status: Mechanised
-/// formal_axioms: NONE
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: String-parse glue for `FIELD=VALUE` optimise CLI syntax.
 pub fn parse_optimize_target(raw: &str) -> Result<(OptimizeField, f64), CliError> {
     let (k, v) = raw.split_once('=').ok_or(CliError::InvalidOptimizeTarget)?;
     let field = OptimizeField::try_from(k.trim())?;
@@ -532,9 +539,11 @@ pub fn parse_optimize_target(raw: &str) -> Result<(OptimizeField, f64), CliError
     Ok((field, val))
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
-/// formal_status: Mechanised
-/// formal_axioms: physicalSecondLaw
+/// formal_anchor: empirical://datasets/cli-optimize-wc-bisection.v1.csv
+/// formal_status: Empirical
+/// formal_dataset: "cli optimize_mix bisection grid"
+/// formal_citation: "Driver-only inverse search on w/c holding other mix fields fixed"
+/// formal_envelope: "tests/cli/optimize.rs"
 pub fn optimize_mix(
     profile: &Profile,
     base: &MixSpec,

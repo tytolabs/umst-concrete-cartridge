@@ -11,27 +11,29 @@ what tolerance. Every row is backed by an automated regression test in
 [`tests/`](../tests). Where validation is still in progress, we say so
 explicitly rather than implying coverage we have not yet achieved.
 
+Each constitutive module also carries a Rust-doc **`formal_status`** bucket (**Mechanised**, **Structural**, **Empirical**, **Literature**, or **NONE**) lint-tested in CI; see [`docs/PROOF-STATUS.md`](PROOF-STATUS.md) for the authoritative per-symbol breakdown (sorted file paths). Empirical rows below cross-link the headline **[acceptance]** gate when a Contract profile owns one.
+
 ## Validation envelope
 
-| Module | Dataset | Quantity | Tolerance | Test | Status |
-|--------|---------|----------|-----------|------|--------|
-| `hydration` | Powers (1948) isothermal calorimetry, OPC | DoH α(t), $w/c \in [0.30, 0.60]$ | $\le 5\%$ MAE | [`tests/hydration.rs::powers_doh_envelope`](../tests/hydration.rs) | passing |
-| `chemo_water` | Powers–Brownyard (1946) | $w_n / c$, $w_g / c$ | $\le 3\%$ MAE | [`tests/chemo_water.rs::powers_brownyard`](../tests/chemo_water.rs) | passing |
-| `set_time` | ASTM C191 round-robin | initial / final set | $\le 30$ min | [`tests/set_time.rs::astm_c191`](../tests/set_time.rs) | passing |
-| `rheology` | Roussel (2006) slump-test corpus | $\tau_y$, $\eta_p$ | $\le 10\%$ relative | [`tests/rheology.rs::roussel_slump`](../tests/rheology.rs) | passing |
-| `printability` | Roussel (2018) buildability bench | $\tau_y$ at failure | $\le 15\%$ relative | [`tests/printability.rs::roussel_buildability`](../tests/printability.rs) | passing |
-| `strength` | Jennings (2008) CM-II validation | $f_c$ at 28 d | $\le 3$ MPa | [`tests/strength.rs::cm_ii_28d`](../tests/strength.rs) | passing |
-| `fracture` | Ulm & Coussy (2003) | $K_{Ic}$ at 28 d | $\le 0.2\ \mathrm{MPa\sqrt{m}}$ | [`tests/fracture.rs::ulm_28d`](../tests/fracture.rs) | passing |
-| `creep` | RILEM B4 calibration set | $J(t,t')$ | $\le 15\%$ relative | [`tests/creep.rs::rilem_b4`](../tests/creep.rs) | passing |
-| `shrinkage` | Bažant–Baweja calibration set | $\varepsilon_{\mathrm{sh}}^{\infty}$ | $\le 15\%$ relative | [`tests/shrinkage.rs::bazant_baweja`](../tests/shrinkage.rs) | passing |
-| `freeze_thaw` | ASTM C666 round-robin | mass loss trend | qualitative | [`tests/freeze_thaw.rs::astm_c666_trend`](../tests/freeze_thaw.rs) | trend reproduced; absolute calibration in progress |
-| `transport` | Tang–Nilsson migration | $D_{\mathrm{Cl}}$ | $\le 25\%$ relative | [`tests/transport.rs::tang_nilsson`](../tests/transport.rs) | passing |
-| `nano`, `colloidal`, `porosity`, `itz`, `packing`, `fiber`, `polymer`, `self_heal`, `thermo`, `sustainability`, `cost` | — | — | — | — | implemented; published-dataset validation in progress |
-| Homogeneous Powers lift (`src/homogeneous.rs`) | Bundled CSV mirrors under `datasets/` for **`[contract].verification_status = "Contract"`** profiles only | compressive strength $f_c^\prime$ vs observed | Per-profile **`[acceptance]`** in TOML (MAE / RMSE / $R^2$). **Boundary** profiles (`uhpc`, `selfheal`, …) omit `[acceptance]` and are **excluded** from this gate — no widened bounds | [`tests/calibration/dataset_metrics.rs`](../tests/calibration/dataset_metrics.rs) | passing with `cargo test --features cli` |
-| Single source of truth row counts | `datasets/*.csv` vs `docs/SSOT.json` | line counts (data rows) | exact equality on sum and per file | [`tests/calibration/ssot_row_counts.rs`](../tests/calibration/ssot_row_counts.rs) | passing |
-| Tensor engine adversarial guards | `burn` engines in `src/physics/` | finite outputs; order-of-magnitude bands for DLVO, YODEL, thermo proxy, chloride diffusivity, printability, ITZ | regression | [`tests/realism/adversarial_physics.rs`](../tests/realism/adversarial_physics.rs) | passing |
-| `formal_status` documentation ledger | `src/**/*.rs` doc lines | bucket counts | snapshot file | [`tests/proof_status_doc.rs`](../tests/proof_status_doc.rs) + [`docs/PROOF-STATUS.md`](../docs/PROOF-STATUS.md) | passing |
-| Live `umst` wire + certify | N/A (binary) | `result.v2` fields; regime `warnings`; certify JSON | See [`tests/cli/public_contract.rs`](../tests/cli/public_contract.rs) (acceptance checks 7–10) | `cli_public_contract` | passing with `cargo test --features cli` |
+| Module | formal_status | Dataset | Quantity | Tolerance | Test | Status |
+|--------|---------------|---------|----------|-----------|------|--------|
+| `hydration` | Mechanised | Powers (1948) isothermal calorimetry, OPC | DoH α(t), $w/c \in [0.30, 0.60]$ | $\le 5\%$ MAE | [`tests/hydration.rs::powers_doh_envelope`](../tests/hydration.rs) | passing |
+| `chemo_water` | Mechanised | Powers–Brownyard (1946) | $w_n / c$, $w_g / c$ | $\le 3\%$ MAE | [`tests/chemo_water.rs::powers_brownyard`](../tests/chemo_water.rs) | passing |
+| `set_time` | Mechanised | ASTM C191 round-robin | initial / final set | $\le 30$ min | [`tests/set_time.rs::astm_c191`](../tests/set_time.rs) | passing |
+| `rheology` | Empirical | Roussel (2006) slump-test corpus | $\tau_y$, $\eta_p$ | $\le 10\%$ relative | [`tests/rheology.rs::roussel_slump`](../tests/rheology.rs) | passing |
+| `printability` | Empirical | Roussel (2018) buildability bench | $\tau_y$ at failure | $\le 15\%$ relative | [`tests/printability.rs::roussel_buildability`](../tests/printability.rs) | passing |
+| `strength` | Mechanised | Jennings (2008) CM-II validation | $f_c$ at 28 d | $\le 3$ MPa | [`tests/strength.rs::cm_ii_28d`](../tests/strength.rs) | passing |
+| `fracture` | Literature | Ulm & Coussy (2003) | $K_{Ic}$ at 28 d | $\le 0.2\ \mathrm{MPa\sqrt{m}}$ | [`tests/fracture.rs::ulm_28d`](../tests/fracture.rs) | passing |
+| `creep` | Empirical | RILEM B4 calibration set | $J(t,t')$ | $\le 15\%$ relative | [`tests/creep.rs::rilem_b4`](../tests/creep.rs) | passing |
+| `shrinkage` | Empirical | Bažant–Baweja calibration set | $\varepsilon_{\mathrm{sh}}^{\infty}$ | $\le 15\%$ relative | [`tests/shrinkage.rs::bazant_baweja`](../tests/shrinkage.rs) | passing |
+| `freeze_thaw` | Empirical | ASTM C666 round-robin | mass loss trend | qualitative | [`tests/freeze_thaw.rs::astm_c666_trend`](../tests/freeze_thaw.rs) | trend reproduced; absolute calibration in progress |
+| `transport` | Mechanised (chloride diffusivity) | Tang–Nilsson migration | $D_{\mathrm{Cl}}$ | $\le 25\%$ relative | [`tests/transport.rs::tang_nilsson`](../tests/transport.rs) | passing |
+| `nano`, `colloidal`, `porosity`, `itz`, `packing`, `fiber`, `polymer`, `self_heal`, `thermo`, `sustainability`, `cost` | mixed (see PROOF-STATUS) | — | — | — | — | implemented; published-dataset validation in progress |
+| Homogeneous Powers lift (`src/homogeneous.rs`) | mixed | Bundled CSV mirrors under `datasets/` for **`[contract].verification_status = "Contract"`** profiles only | compressive strength $f_c^\prime$ vs observed | Per-profile **`[acceptance]`** in TOML (MAE / RMSE / $R^2$). Example: [`calibration/profiles/uci_d1.v1.toml`](../calibration/profiles/uci_d1.v1.toml) **`[acceptance]`**. **Boundary** profiles (`uhpc`, `selfheal`, …) omit `[acceptance]` — no widened bounds | [`tests/calibration/dataset_metrics.rs`](../tests/calibration/dataset_metrics.rs) | passing with `cargo test --features cli` |
+| Single source of truth row counts | NONE | `datasets/*.csv` vs `docs/SSOT.json` | line counts (data rows) | exact equality on sum and per file | [`tests/calibration/ssot_row_counts.rs`](../tests/calibration/ssot_row_counts.rs) | passing |
+| Tensor engine adversarial guards | NONE | `burn` engines in `src/physics/` | finite outputs; order-of-magnitude bands for DLVO, YODEL, thermo proxy, chloride diffusivity, printability, ITZ | regression | [`tests/realism/adversarial_physics.rs`](../tests/realism/adversarial_physics.rs) | passing |
+| `formal_status` documentation ledger | NONE | `src/**/*.rs` doc lines | bucket counts | snapshot file | [`tests/proof_status_doc.rs`](../tests/proof_status_doc.rs) + [`docs/PROOF-STATUS.md`](../docs/PROOF-STATUS.md) | passing |
+| Live `umst` wire + certify | mixed | N/A (binary) | `result.v2` fields; regime `warnings`; certify JSON incl. `formal_status` | See [`tests/cli/public_contract.rs`](../tests/cli/public_contract.rs) (acceptance checks 7–10) | `cli_public_contract` | passing with `cargo test --features cli` |
 
 ## Empirical modules vs acceptance gates
 

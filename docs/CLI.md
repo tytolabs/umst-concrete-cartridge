@@ -50,3 +50,13 @@ Wire contracts live under **`schema/`**:
 - **`mix.v1.json`** — mix JSON unchanged; profile stays on the CLI / library, **not** in the JSON.
 - **`result.v2.json`** — default **`umst predict`** output (warnings + calibration provenance fields).
 - **`result.v1.json`** — **`--schema-version v1`** only; documented as deprecated for one minor release cycle.
+
+## `umst certify` JSON
+
+`umst certify <profile>` prints a single JSON object including a wire **`formal_status`** string: one of **`Mechanised`**, **`Structural`**, **`Empirical`**, **`Literature`**, or **`NONE`**. Profile TOML may carry **`verification_status = "Boundary"`** or legacy tokens; those are **not** emitted as Rust `formal_status` — they map to **`NONE`** on the wire unless provenance/acceptance explicitly sets one of the five buckets.
+
+Example (truncated):
+
+```json
+{"profile":"uci_d1","formal_status":"Mechanised","model_kind":"powers_gel_space", "...":"..."}
+```

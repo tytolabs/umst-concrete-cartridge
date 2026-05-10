@@ -9,7 +9,7 @@ use burn::tensor::{backend::Backend, Tensor};
 /// formal_status: Empirical
 /// formal_axioms: NONE
 /// formal_dataset: "prototype_highscm_contract"
-/// formal_citation: "Bundled highscm Contract profile; paired CSV dataset_highscm.csv"
+/// formal_citation: "Su, van Breugel & Bijen (1991) Cem. Concr. Res. 21"
 /// formal_envelope: "Headline compressive strength vs dataset_highscm.csv: MAE ≤ 60 MPa, RMSE ≤ 80 MPa, R² ≥ −10 ([acceptance] highscm.v1.toml); polymer modifiers exercised under tests/realism/adversarial_physics.rs"
 pub struct PolymerEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
@@ -29,7 +29,7 @@ impl<B: Backend> PolymerEngine<B> {
     /// formal_status: Empirical
     /// formal_axioms: NONE
     /// formal_dataset: "prototype_highscm_contract"
-    /// formal_citation: "Bundled highscm Contract profile; paired CSV dataset_highscm.csv"
+    /// formal_citation: "Su, van Breugel & Bijen (1991) Cem. Concr. Res. 21"
     /// formal_envelope: "Headline compressive strength vs dataset_highscm.csv: MAE ≤ 60 MPa, RMSE ≤ 80 MPa, R² ≥ −10 ([acceptance] highscm.v1.toml); polymer modifiers exercised under tests/realism/adversarial_physics.rs"
     pub fn compute_modifiers(
         pc_ratio: Tensor<B, 4>,
