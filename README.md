@@ -43,7 +43,7 @@ Eight bundled **`calibration/profiles/*.v1.toml`** packs reference copy-of-recor
 
 ### Teams running notebooks and dashboards
 
-Install **`pip install ./crates/umst-py`** with **`[notebook]`** (`pandas`, `matplotlib`, Jupyter) for **`audit_dataframe`** exploration; regenerate outputs with **`./notebooks/run_all.sh`** ( **`--strict`** in CI — requires `jupyter` on `PATH` ).
+Install the bindings with **`pip install ./crates/umst-py[notebook]`** (pulls in **`pandas`**, **`matplotlib`**, and Jupyter) for **`audit_dataframe`** exploration; regenerate outputs with **`./notebooks/run_all.sh`** (**`--strict`** in CI requires **`jupyter`** on **`PATH`**).
 
 ### ML / optimisation loops
 
@@ -98,9 +98,7 @@ flowchart TD
     class Data data
 ```
 
-Eight bundled profiles (`default`, `uci_d1`, `zenodo_ndt`, `zenodo_sonreb`, `zenodo_rh`, `uhpc` *(Boundary)*, `selfheal` *(Boundary)*, `highscm`) live under `calibration/profiles/*.v1.toml`. Twenty-two constitutive modules carry one of five formal-status buckets (Mechanised / Structural / Empirical / Literature / NONE) — see [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md). Every wire payload returns the calibration profile, the `formal_anchor` URI, the axiom set, and any regime warnings.
-
-The diagram is the cartridge in one frame. Four surfaces (CLI / Python / MCP / Docker) all funnel into a single `facade` so byte-identical JSON is an architectural guarantee, not a discipline. The active calibration profile gates a regime check anchored in `RegimeSoundness.lean`; in-regime mixes flow through Mills hydration kinetics into the Powers gel-space strength model; out-of-regime mixes return with explicit warnings rather than silent extrapolation. The 22 constitutive modules carry one of five formal-status buckets (Mechanised / Empirical / Literature / NONE / Structural) — each pinned to either a Lean theorem or a published reference. Every wire payload (`result.v2` / `audit.v1`) carries the `formal_anchor` URI back into `umst-formal`, where the chain terminates at the single physical axiom (`physicalSecondLaw`). Profiles are fit against 17 646 rows of CC-BY measurement data — UCI Yeh 1998 plus Zenodo Record 14921019 (TU/e + TNO).
+The diagram summarises the cartridge in one view. Four surfaces (CLI / Python / MCP / Docker) share a single **`facade`**, so identical mixes yield byte-identical JSON by design, not only by convention. The active calibration profile drives a regime check tied to **`RegimeSoundness.lean`**; in-regime mixes run through Mills hydration kinetics into the Powers gel-space strength model; out-of-regime mixes still return a wire payload but attach explicit **`warnings`** instead of silent extrapolation. Eight bundled profiles (`default`, `uci_d1`, `zenodo_ndt`, `zenodo_sonreb`, `zenodo_rh`, `uhpc` *(Boundary)*, `selfheal` *(Boundary)*, `highscm`) live under **`calibration/profiles/*.v1.toml`**. The twenty-two constitutive modules each carry one formal-status bucket (**Mechanised** / **Structural** / **Empirical** / **Literature** / **NONE**) — see [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md). Every **`result.v2`** / **`audit.v1`** response includes **`calibration_profile`**, **`formal_anchor`**, sorted **`axioms`**, and any regime **`warnings`**; proofs and citations chain toward **`umst-formal`** and the **`physicalSecondLaw`** axiom where listed. Calibration rows total **17 646** CC-BY measurements — UCI (Yeh 1998) plus Zenodo Record **14921019** (TU/e + TNO).
 
 | Surface | Entry | Notes |
 |---------|-------|-------|
