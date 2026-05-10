@@ -231,7 +231,7 @@ To author a new domain cartridge, implement the [`IScienceCartridge`](https://gi
 
 ## Citing this work
 
-A formal Zenodo deposit will accompany the v0.1.0 release; the DOI below is reserved for that record. Until the deposit is live, please cite using the GitHub URL or the [CITATION.cff](CITATION.cff) file.
+Please cite using the GitHub URL or the [CITATION.cff](CITATION.cff) file until a formal DOI deposit is generated for the v0.1.0 release.
 
 ```bibtex
 @software{umst_concrete_2026,
@@ -239,8 +239,6 @@ A formal Zenodo deposit will accompany the v0.1.0 release; the DOI below is rese
   title        = {UMST Concrete Cartridge: a differentiable
                   constitutive engine for cementitious materials},
   year         = 2026,
-  publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.18768547},
   url          = {https://github.com/tytolabs/umst-concrete-cartridge}
 }
 ```
