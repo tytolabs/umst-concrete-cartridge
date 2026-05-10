@@ -13,6 +13,8 @@ Add **`calibration`** when you want the deterministic Markdown generator:
 cargo install umst-concrete-cartridge --features "cli,calibration"
 ```
 
+Place **`--profile`** / **`--profile-file` immediately after `umst`** (they are root-level flags), e.g. `umst --profile uci_d1 predict`, not `umst predict --profile …`.
+
 ## Global flags
 
 - **`--profile NAME`** — bundled calibration bundle id (`default`, `uci_d1`, …). Default: `default`.
