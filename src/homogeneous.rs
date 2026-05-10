@@ -9,7 +9,7 @@
 
 use crate::calibration::{ModelKind, Profile};
 use crate::formulas::{hydration_degree_calibrated, ultimate_doh_wc};
-use thiserror::Error;
+use std::fmt;
 
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
@@ -28,13 +28,28 @@ pub struct MixRow {
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Dispatch error: Jennings-not-yet, invalid mix; no formal claim.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum HomogeneousError {
-    #[error("Jennings gel-space homogeneous path is not available in v0.1 profiles")]
     JenningsNotImplemented,
-    #[error("invalid homogeneous mix (non-positive binder or effective cement)")]
     InvalidMix,
 }
+
+impl fmt::Display for HomogeneousError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::JenningsNotImplemented => write!(
+                f,
+                "Jennings gel-space homogeneous path is not available in v0.1 profiles"
+            ),
+            Self::InvalidMix => write!(
+                f,
+                "invalid homogeneous mix (non-positive binder or effective cement)"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for HomogeneousError {}
 
 fn dataset_key(profile: &Profile) -> &'static str {
     match profile.bundle_id.as_str() {

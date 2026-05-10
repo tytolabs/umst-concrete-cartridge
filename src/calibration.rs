@@ -10,7 +10,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fs;
 use std::path::Path;
-use thiserror::Error;
 
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
@@ -210,14 +209,43 @@ pub struct RegimeViolation {
 /// formal_status: NONE
 /// formal_axioms: NONE
 /// formal_anchor_rationale: Bundled profile IO and TOML parse failures only; DEC mass-conservation witness belongs on the manifold Laplacian — see `docs/FormalAnchors.md` “Future formal links”.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum CalibrationError {
-    #[error("unknown bundled profile `{0}`")]
     UnknownBundledProfile(String),
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
-    #[error(transparent)]
-    TomlDeserialize(#[from] toml::de::Error),
+    Io(std::io::Error),
+    TomlDeserialize(toml::de::Error),
+}
+
+impl fmt::Display for CalibrationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::UnknownBundledProfile(name) => write!(f, "unknown bundled profile `{name}`"),
+            Self::Io(e) => write!(f, "{e}"),
+            Self::TomlDeserialize(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+impl std::error::Error for CalibrationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Io(e) => Some(e),
+            Self::TomlDeserialize(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<std::io::Error> for CalibrationError {
+    fn from(e: std::io::Error) -> Self {
+        Self::Io(e)
+    }
+}
+
+impl From<toml::de::Error> for CalibrationError {
+    fn from(e: toml::de::Error) -> Self {
+        Self::TomlDeserialize(e)
+    }
 }
 
 impl Profile {

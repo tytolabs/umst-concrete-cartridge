@@ -14,7 +14,7 @@ use burn_ndarray::NdArray;
 use serde::Serialize;
 use serde_json::Value;
 use std::convert::TryFrom;
-use thiserror::Error;
+use std::fmt;
 use umst_manifold::core::traits::PhysicalResult;
 
 /// formal_anchor: literature://wire-schema-result-v1
@@ -181,40 +181,112 @@ impl TryFrom<Value> for MixSpec {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug)]
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: IO / parsing error variants; classification of mix-spec rejection causes.
 pub enum MixSpecError {
-    #[error("invalid JSON mix specification: {0}")]
-    Json(#[from] serde_json::Error),
-    #[error("water-cement ratio {0} outside allowed range [0.20, 0.80]")]
+    Json(serde_json::Error),
     WaterCementRatioOutOfRange(f32),
-    #[error("temperature_k {0} outside allowed range [273, 353] K")]
     TemperatureOutOfRange(f32),
-    #[error("field `{field}` outside allowed physical range")]
     FieldOutOfRange { field: &'static str },
+}
+
+impl fmt::Display for MixSpecError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Json(e) => write!(f, "invalid JSON mix specification: {e}"),
+            Self::WaterCementRatioOutOfRange(x) => write!(
+                f,
+                "water-cement ratio {x} outside allowed range [0.20, 0.80]"
+            ),
+            Self::TemperatureOutOfRange(x) => {
+                write!(f, "temperature_k {x} outside allowed range [273, 353] K")
+            }
+            Self::FieldOutOfRange { field } => {
+                write!(f, "field `{field}` outside allowed physical range")
+            }
+        }
+    }
+}
+
+impl std::error::Error for MixSpecError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Json(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<serde_json::Error> for MixSpecError {
+    fn from(e: serde_json::Error) -> Self {
+        Self::Json(e)
+    }
 }
 
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Binary-boundary error aggregation; sum-type over `MixSpecError`, calibration, tensor IO, and routing failures.
-#[derive(Debug, Error)]
+#[derive(Debug)]
 pub enum CliError {
-    #[error(transparent)]
-    MixSpec(#[from] MixSpecError),
-    #[error("tensor pipeline: {0}")]
+    MixSpec(MixSpecError),
     Tensor(&'static str),
-    #[error("optimization target `{0}` is not supported")]
     UnsupportedOptimizeTarget(String),
-    #[error("could not parse optimization target (expected FIELD=VALUE)")]
     InvalidOptimizeTarget,
-    #[error(transparent)]
-    Homogeneous(#[from] homog::HomogeneousError),
-    #[error(transparent)]
-    Calibration(#[from] calib::CalibrationError),
-    #[error("mix design lies outside all bundled calibration regimes")]
+    Homogeneous(homog::HomogeneousError),
+    Calibration(calib::CalibrationError),
     OutsideAllRegimes,
+}
+
+impl fmt::Display for CliError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MixSpec(e) => write!(f, "{e}"),
+            Self::Tensor(msg) => write!(f, "tensor pipeline: {msg}"),
+            Self::UnsupportedOptimizeTarget(t) => {
+                write!(f, "optimization target `{t}` is not supported")
+            }
+            Self::InvalidOptimizeTarget => write!(
+                f,
+                "could not parse optimization target (expected FIELD=VALUE)"
+            ),
+            Self::Homogeneous(e) => write!(f, "{e}"),
+            Self::Calibration(e) => write!(f, "{e}"),
+            Self::OutsideAllRegimes => {
+                write!(f, "mix design lies outside all bundled calibration regimes")
+            }
+        }
+    }
+}
+
+impl std::error::Error for CliError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::MixSpec(e) => Some(e),
+            Self::Homogeneous(e) => Some(e),
+            Self::Calibration(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<MixSpecError> for CliError {
+    fn from(e: MixSpecError) -> Self {
+        Self::MixSpec(e)
+    }
+}
+
+impl From<homog::HomogeneousError> for CliError {
+    fn from(e: homog::HomogeneousError) -> Self {
+        Self::Homogeneous(e)
+    }
+}
+
+impl From<calib::CalibrationError> for CliError {
+    fn from(e: calib::CalibrationError) -> Self {
+        Self::Calibration(e)
+    }
 }
 
 #[derive(Serialize)]
@@ -276,7 +348,7 @@ fn wire_formal_status(profile: &Profile) -> String {
         .formal
         .as_ref()
         .map(|f| f.status.as_str())
-        .or_else(|| profile.acceptance.acceptance_bucket.as_deref());
+        .or(profile.acceptance.acceptance_bucket.as_deref());
     match raw.map(str::trim) {
         Some("Mechanised") => "Mechanised".to_string(),
         Some("Structural") => "Structural".to_string(),
