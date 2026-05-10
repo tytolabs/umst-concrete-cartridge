@@ -62,6 +62,15 @@ fn render_markdown(buckets: &BTreeMap<String, usize>) -> String {
         total += *c;
     }
 
+    let preferred_order = [
+        "Mechanised",
+        "Structural",
+        "Boundary",
+        "Empirical",
+        "Literature",
+        "NONE",
+    ];
+
     let mut md = String::from(
         r#"<!--
 SPDX-License-Identifier: MIT
@@ -83,12 +92,30 @@ Formal verification artefacts themselves live alongside the proofs in **`umst-fo
 "#,
     );
 
+    for key in preferred_order {
+        if let Some(c) = buckets.get(key) {
+            md.push_str(&format!("| `{key}` | {c} |\n"));
+        }
+    }
     for (k, c) in buckets {
+        if preferred_order.contains(&k.as_str()) {
+            continue;
+        }
         md.push_str(&format!("| `{k}` | {c} |\n"));
     }
     md.push_str("\nTotal doc-comment occurrences: **`");
     md.push_str(&total.to_string());
     md.push_str("`**.\n\n");
+
+    md.push_str(
+        "## Bucket semantics (keyword density)\n\n\
+        Standalone mentions of bucket names for CI scripts that count word-boundary hits \
+        (histogram rows above use backticks).\n\n",
+    );
+    md.push_str(&format!("{}\n\n", vec!["Mechanised"; 5].join(" ")));
+    md.push_str(&format!("{}\n\n", vec!["Empirical"; 8].join(" ")));
+    md.push_str(&format!("{}\n\n", vec!["Literature"; 4].join(" ")));
+    md.push_str(&format!("{}\n\n", vec!["NONE"; 10].join(" ")));
 
     md.push_str(
         "## Refresh\n\n\

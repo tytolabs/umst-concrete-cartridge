@@ -9,10 +9,11 @@ use umst_manifold::core::tensors::MixTensor;
 /// 
 /// Because it is composed purely of `burn` tensor operations, the gradient of the hydration
 /// degree with respect to the input mix fractions can be computed natively.
-/// formal_anchor: NONE
-/// formal_status: Library
+/// formal_anchor: literature://Schindler-Folliard-maturity-Arrhenius
+/// formal_status: Literature
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_citation: "Schindler & Folliard (2005) maturity / hydration kinetics framing; standard Arrhenius temperature factor for cementitious systems"
+/// formal_form: "α = α_max(scm)·(1 − exp(−k(T,scm)·√t)); k = k_ref·exp(E/R·(1/T_ref−1/T))·(1−0.4·scm_ratio)"
 pub fn compute_hydration_degree<B: Backend>(mix: &MixTensor<B>, age_days: Tensor<B, 2>, temperature_c: Tensor<B, 2>) -> Tensor<B, 2> {
     let dims = mix.fractions.dims();
     let batch_size = dims[0];

@@ -9,18 +9,18 @@ use umst_manifold::core::traits::{IScienceCartridge, PhysicalResult};
 /// This acts as the Functor F: G -> P, mapping geometric spatial states
 /// into physical constitutive states by routing through the core engines.
 /// formal_anchor: NONE
-/// formal_status: Library
+/// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_anchor_rationale: Placeholder cartridge dispatcher; full MixTensor → engines mapping still pending — see manifold orchestration layer.
 pub struct ConcreteCartridge<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
 
 impl<B: Backend> ConcreteCartridge<B> {
     /// formal_anchor: NONE
-    /// formal_status: Library
+    /// formal_status: NONE
     /// formal_axioms: NONE
-    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+    /// formal_anchor_rationale: Default constructor for placeholder dispatcher only.
     pub fn new() -> Self {
         Self {
             _backend: std::marker::PhantomData,

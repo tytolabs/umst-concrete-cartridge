@@ -3,7 +3,8 @@
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! CI guardrail: every `pub fn`, `pub struct`, `pub enum`, and `pub trait` in `src/**/*.rs`
-//! must declare a `/// formal_anchor:` line in its immediately preceding doc comment block.
+//! must declare a consistent formal documentation block (anchor URI, `formal_status`, and
+//! status-specific metadata).
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -22,15 +23,16 @@ enum Kind {
     Fn,
 }
 
-struct PubItem {
+struct Violation {
     pub file: &'static str,
     pub kind: Kind,
     pub symbol: String,
+    pub detail: String,
 }
 
 struct AnchorVisitor {
     pub file_path: &'static str,
-    pub items: Vec<PubItem>,
+    pub items: Vec<Violation>,
 }
 
 fn is_pub(vis: &Visibility) -> bool {
@@ -54,50 +56,121 @@ fn extract_doc_line(attr: &syn::Attribute) -> Option<String> {
     Some(s.value())
 }
 
-fn doc_contains_formal_anchor(attrs: &[syn::Attribute]) -> (bool, bool) {
-    let mut anchor_none = false;
-    let has_anchor = attrs.iter().any(|a| {
-        if matches!(a.style, AttrStyle::Inner(_)) {
-            return false;
-        }
-        extract_doc_line(a).is_some_and(|ln| ln.trim().starts_with("formal_anchor:"))
-    });
-    for a in attrs {
-        if let Some(ln) = extract_doc_line(a) {
-            let t = ln.trim();
-            if t.starts_with("formal_anchor:") && t.contains("NONE") {
-                anchor_none = true;
-            }
-        }
-    }
-    (has_anchor, anchor_none)
+fn collect_outer_doc_lines(attrs: &[syn::Attribute]) -> Vec<String> {
+    attrs
+        .iter()
+        .filter(|a| matches!(a.style, AttrStyle::Outer))
+        .filter_map(extract_doc_line)
+        .collect()
 }
 
-fn doc_has_none_rationale(attrs: &[syn::Attribute]) -> bool {
-    attrs.iter().any(|a| {
-        extract_doc_line(a).is_some_and(|ln| ln.trim().starts_with("formal_anchor_rationale:"))
-    })
+fn parse_tagged_doc_lines(lines: &[String]) -> BTreeMap<String, String> {
+    let mut map = BTreeMap::new();
+    for raw in lines {
+        let t = raw.trim();
+        let Some((key, rest)) = t.split_once(':') else {
+            continue;
+        };
+        let key = key.trim();
+        if !matches!(
+            key,
+            "formal_anchor"
+                | "formal_status"
+                | "formal_axioms"
+                | "formal_dataset"
+                | "formal_citation"
+                | "formal_envelope"
+                | "formal_form"
+                | "formal_anchor_rationale"
+        ) {
+            continue;
+        }
+        map.insert(key.to_string(), rest.trim().to_string());
+    }
+    map
+}
+
+fn validate_formal_block(map: &BTreeMap<String, String>, symbol: &str) -> Result<(), String> {
+    let anchor = map
+        .get("formal_anchor")
+        .ok_or_else(|| format!("{symbol}: missing `/// formal_anchor:`"))?;
+    let status = map
+        .get("formal_status")
+        .ok_or_else(|| format!("{symbol}: missing `/// formal_status:`"))?;
+
+    if status == "Library" {
+        return Err(format!(
+            "{symbol}: `formal_status: Library` is retired — use NONE, Empirical, or Literature"
+        ));
+    }
+
+    match status.as_str() {
+        "Mechanised" | "Structural" | "Boundary" => {
+            if !anchor.starts_with("lean://") {
+                return Err(format!(
+                    "{symbol}: `{status}` requires `formal_anchor: lean://...`, got `{anchor}`"
+                ));
+            }
+        }
+        "Empirical" => {
+            if !anchor.starts_with("empirical://") {
+                return Err(format!(
+                    "{symbol}: Empirical requires `formal_anchor: empirical://...`, got `{anchor}`"
+                ));
+            }
+            for k in ["formal_dataset", "formal_citation", "formal_envelope"] {
+                if !map.contains_key(k) {
+                    return Err(format!("{symbol}: Empirical requires `/// {k}:`"));
+                }
+            }
+        }
+        "Literature" => {
+            if !anchor.starts_with("literature://") {
+                return Err(format!(
+                    "{symbol}: Literature requires `formal_anchor: literature://...`, got `{anchor}`"
+                ));
+            }
+            for k in ["formal_citation", "formal_form"] {
+                if !map.contains_key(k) {
+                    return Err(format!("{symbol}: Literature requires `/// {k}:`"));
+                }
+            }
+        }
+        "NONE" => {
+            if !anchor.contains("NONE") {
+                return Err(format!(
+                    "{symbol}: NONE status requires `formal_anchor: NONE`, got `{anchor}`"
+                ));
+            }
+            if !map.contains_key("formal_anchor_rationale") {
+                return Err(format!(
+                    "{symbol}: NONE status requires `/// formal_anchor_rationale:`"
+                ));
+            }
+        }
+        other => {
+            return Err(format!(
+                "{symbol}: unknown `formal_status: {other}` (expected Mechanised, Structural, Boundary, Empirical, Literature, or NONE)"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn check_pub_fn_attrs(
     sym: String,
     attrs: &[syn::Attribute],
     file_path: &'static str,
-    acc: &mut Vec<PubItem>,
+    acc: &mut Vec<Violation>,
 ) {
-    let (has_anchor, anchor_none) = doc_contains_formal_anchor(attrs);
-    if !has_anchor {
-        acc.push(PubItem {
-            file: file_path,
-            kind: Kind::Fn,
-            symbol: sym.clone(),
-        });
-    }
-    if has_anchor && anchor_none && !doc_has_none_rationale(attrs) {
-        acc.push(PubItem {
+    let lines = collect_outer_doc_lines(attrs);
+    let map = parse_tagged_doc_lines(&lines);
+    if let Err(detail) = validate_formal_block(&map, &sym) {
+        acc.push(Violation {
             file: file_path,
             kind: Kind::Fn,
             symbol: sym,
+            detail,
         });
     }
 }
@@ -107,22 +180,26 @@ impl<'ast> Visit<'ast> for AnchorVisitor {
         let file = self.file_path;
         match i {
             Item::Struct(s) if is_pub(&s.vis) => {
-                let (ok, none) = doc_contains_formal_anchor(&s.attrs);
-                if !ok || (none && !doc_has_none_rationale(&s.attrs)) {
-                    self.items.push(PubItem {
+                let lines = collect_outer_doc_lines(&s.attrs);
+                let map = parse_tagged_doc_lines(&lines);
+                if let Err(detail) = validate_formal_block(&map, &s.ident.to_string()) {
+                    self.items.push(Violation {
                         file,
                         kind: Kind::Struct,
                         symbol: s.ident.to_string(),
+                        detail,
                     });
                 }
             }
             Item::Enum(e) if is_pub(&e.vis) => {
-                let (ok, none) = doc_contains_formal_anchor(&e.attrs);
-                if !ok || (none && !doc_has_none_rationale(&e.attrs)) {
-                    self.items.push(PubItem {
+                let lines = collect_outer_doc_lines(&e.attrs);
+                let map = parse_tagged_doc_lines(&lines);
+                if let Err(detail) = validate_formal_block(&map, &e.ident.to_string()) {
+                    self.items.push(Violation {
                         file,
                         kind: Kind::Enum,
                         symbol: e.ident.to_string(),
+                        detail,
                     });
                 }
             }
@@ -147,12 +224,14 @@ impl<'ast> Visit<'ast> for AnchorVisitor {
             }
             Item::Trait(tr) => {
                 if is_pub(&tr.vis) {
-                    let (ok, none) = doc_contains_formal_anchor(&tr.attrs);
-                    if !ok || (none && !doc_has_none_rationale(&tr.attrs)) {
-                        self.items.push(PubItem {
+                    let lines = collect_outer_doc_lines(&tr.attrs);
+                    let map = parse_tagged_doc_lines(&lines);
+                    if let Err(detail) = validate_formal_block(&map, &tr.ident.to_string()) {
+                        self.items.push(Violation {
                             file,
                             kind: Kind::Trait,
                             symbol: tr.ident.to_string(),
+                            detail,
                         });
                     }
                 }
@@ -178,7 +257,7 @@ impl<'ast> Visit<'ast> for AnchorVisitor {
 fn visit_file(
     path: &Path,
     file_path: &'static str,
-    acc: &mut Vec<PubItem>,
+    acc: &mut Vec<Violation>,
 ) -> Result<(), Box<dyn Error>> {
     if path.extension() != Some(OsStr::new("rs")) {
         return Ok(());
@@ -196,7 +275,7 @@ fn visit_file(
     Ok(())
 }
 
-fn walk_src() -> Result<Vec<PubItem>, Box<dyn Error>> {
+fn walk_src() -> Result<Vec<Violation>, Box<dyn Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
     let mut out = Vec::new();
     let mut stack = vec![root];
@@ -223,16 +302,17 @@ fn all_public_symbols_have_formal_anchor_doc() -> Result<(), Box<dyn Error>> {
     if missing.is_empty() {
         return Ok(());
     }
-    let mut by_file: BTreeMap<&str, Vec<&PubItem>> = BTreeMap::new();
+    let mut by_file: BTreeMap<&str, Vec<&Violation>> = BTreeMap::new();
     for m in &missing {
         by_file.entry(m.file).or_default().push(m);
     }
-    let mut msg = String::from("Missing formal_anchor or formal_anchor_rationale (for NONE):\n");
+    let mut msg =
+        String::from("Formal documentation violations (anchor grammar / formal_status rules):\n");
     for (f, syms) in by_file {
         msg.push_str(f);
         msg.push('\n');
         for s in syms {
-            msg.push_str(&format!("  {:?} {}\n", s.kind, s.symbol));
+            msg.push_str(&format!("  {:?} {} — {}\n", s.kind, s.symbol, s.detail));
         }
     }
     panic!("{msg}");

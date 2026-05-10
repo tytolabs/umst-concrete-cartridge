@@ -43,9 +43,9 @@ pub enum PredictionWireVersion {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 /// formal_anchor: NONE
-/// formal_status: Library
+/// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_anchor_rationale: Trivial newtype accessor for validated water–cement ratio; no separate formal witness.
 pub struct WaterCementRatio(f32);
 
 impl TryFrom<f64> for WaterCementRatio {
@@ -63,9 +63,9 @@ impl TryFrom<f64> for WaterCementRatio {
 impl WaterCementRatio {
     #[must_use]
     /// formal_anchor: NONE
-    /// formal_status: Library
+    /// formal_status: NONE
     /// formal_axioms: NONE
-    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+    /// formal_anchor_rationale: Trivial accessor returning the validated scalar payload.
     pub fn value(self) -> f32 {
         self.0
     }
@@ -73,9 +73,9 @@ impl WaterCementRatio {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 /// formal_anchor: NONE
-/// formal_status: Library
+/// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_anchor_rationale: Trivial newtype accessor for validated absolute temperature; no separate formal witness.
 pub struct TemperatureK(f32);
 
 impl TryFrom<f64> for TemperatureK {
@@ -93,9 +93,9 @@ impl TryFrom<f64> for TemperatureK {
 impl TemperatureK {
     #[must_use]
     /// formal_anchor: NONE
-    /// formal_status: Library
+    /// formal_status: NONE
     /// formal_axioms: NONE
-    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+    /// formal_anchor_rationale: Trivial accessor returning the validated scalar payload.
     pub fn value(self) -> f32 {
         self.0
     }
@@ -185,9 +185,9 @@ impl TryFrom<Value> for MixSpec {
 
 #[derive(Debug, Error)]
 /// formal_anchor: NONE
-/// formal_status: Library
+/// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_anchor_rationale: JSON / range validation errors at the CLI IO boundary only.
 pub enum MixSpecError {
     #[error("invalid JSON mix specification: {0}")]
     Json(#[from] serde_json::Error),
@@ -405,6 +405,8 @@ pub struct CertifyChain {
     pub model_kind: String,
     pub model_anchor: String,
     pub acceptance_anchor: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub formal_status: Option<String>,
     pub axioms: Vec<String>,
     pub provenance_sha256: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -437,11 +439,18 @@ pub fn certify_profile_json(profile: &Profile) -> Value {
         .map(|f| f.axioms.clone())
         .unwrap_or_default();
     axioms.sort();
+    let formal_status = profile
+        .provenance
+        .formal
+        .as_ref()
+        .map(|f| f.status.clone())
+        .or_else(|| profile.acceptance.formal_status.clone());
     let chain = CertifyChain {
         profile: profile.bundle_id.clone(),
         model_kind: model_kind_wire(profile),
         model_anchor,
         acceptance_anchor,
+        formal_status,
         axioms,
         provenance_sha256: profile.provenance.prototype_3_sha256.clone(),
         zenodo_record: profile.provenance.zenodo_record.clone(),
@@ -465,6 +474,8 @@ struct MixSpecWireOut {
 }
 
 /// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_axioms: NONE
 /// formal_anchor_rationale: JSON round-trip helper for optimize output; no mechanised wire claim.
 pub fn serialize_mix_spec(spec: &MixSpec) -> Result<Value, CliError> {
     let wire = MixSpecWireOut {
@@ -490,9 +501,9 @@ fn tensor_element_at(t: Tensor<CliBackend, 2>, row: usize, col: usize) -> Result
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// formal_anchor: NONE
-/// formal_status: Library
+/// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_anchor_rationale: Auxiliary optimization dispatch tag for the CLI grid search only.
 pub enum OptimizeField {
     CompressiveStrengthMpa,
 }

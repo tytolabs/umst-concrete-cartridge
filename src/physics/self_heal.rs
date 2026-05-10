@@ -5,10 +5,12 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Autogenous Healing Engine.
 /// Computes crack-closure potential from unhydrated cement particles and precipitation.
-/// formal_anchor: NONE
-/// formal_status: Library
+/// formal_anchor: empirical://datasets/dataset_selfheal.csv
+/// formal_status: Empirical
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_dataset: "prototype_selfheal_boundary"
+/// formal_citation: "Bundled selfheal Boundary specialty profile; paired CSV dataset_selfheal.csv"
+/// formal_envelope: "Boundary profile (no [acceptance] strength gate); paired CSV still listed in dataset_metrics skip — healing kinetics exercised under tests/realism/adversarial_physics.rs"
 pub struct SelfHealEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -16,10 +18,12 @@ pub struct SelfHealEngine<B: Backend> {
 impl<B: Backend> SelfHealEngine<B> {
     /// Computes the healing potential and recovered fracture energy.
     /// Unhydrated cement and moisture presence allow microcracks to seal over time.
-    /// formal_anchor: NONE
-    /// formal_status: Library
+    /// formal_anchor: empirical://datasets/dataset_selfheal.csv
+    /// formal_status: Empirical
     /// formal_axioms: NONE
-    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+    /// formal_dataset: "prototype_selfheal_boundary"
+    /// formal_citation: "Bundled selfheal Boundary specialty profile; paired CSV dataset_selfheal.csv"
+    /// formal_envelope: "Boundary profile (no [acceptance] strength gate); paired CSV still listed in dataset_metrics skip — healing kinetics exercised under tests/realism/adversarial_physics.rs"
     pub fn compute_healing_potential(
         degree_hydration: Tensor<B, 4>,
         internal_rh: Tensor<B, 4>,

@@ -33,6 +33,15 @@ explicitly rather than implying coverage we have not yet achieved.
 | `formal_status` documentation ledger | `src/**/*.rs` doc lines | bucket counts | snapshot file | [`tests/proof_status_doc.rs`](../tests/proof_status_doc.rs) + [`docs/PROOF-STATUS.md`](../docs/PROOF-STATUS.md) | passing |
 | Live `umst` wire + certify | N/A (binary) | `result.v2` fields; regime `warnings`; certify JSON | See [`tests/cli/public_contract.rs`](../tests/cli/public_contract.rs) (acceptance checks 7–10) | `cli_public_contract` | passing with `cargo test --features cli` |
 
+## Empirical modules vs acceptance gates
+
+Tensor engines marked **`formal_status: Empirical`** carry `empirical://datasets/*.csv` anchors and an explicit **`formal_envelope`** line in Rust doc comments. That envelope must either:
+
+1. Quote the headline strength bounds from the paired **Contract** profile’s **`[acceptance]`** block (for example **`uci_d1.v1.toml`** for OPC-row modules tied to `dataset_d1.csv`), or
+2. State that the bundled profile is **Boundary** (no `[acceptance]`) and point at [`tests/realism/adversarial_physics.rs`](../tests/realism/adversarial_physics.rs) (and any module-specific regression cited in the validation table).
+
+Cross-check: [`tests/calibration/dataset_metrics.rs`](../tests/calibration/dataset_metrics.rs) enforces Contract CSV metrics; adversarial coverage is described in the realism test module.
+
 The validation envelope is deliberately narrow. We choose a small number
 of canonical datasets per module, document the tolerance, and refuse to
 claim coverage outside it.

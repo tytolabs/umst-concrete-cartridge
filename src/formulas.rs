@@ -10,9 +10,11 @@
 
 #![allow(clippy::excessive_precision)]
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
-/// formal_status: Structural
+/// formal_anchor: literature://Mills-1966-gel-stiffness-closure
+/// formal_status: Literature
 /// formal_axioms: NONE
+/// formal_citation: "Mills (1966); OPC gel stiffness / ultimate hydration cap closure used in routing"
+/// formal_form: "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)"
 ///
 /// Asymptotic ultimate degree of hydration α∞(w/c) for OPC-dominated pastes (Mills 1966 closure used in routing).
 #[must_use]

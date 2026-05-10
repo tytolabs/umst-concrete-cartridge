@@ -26,7 +26,9 @@ pub struct MixRow {
 }
 
 /// formal_anchor: NONE
-/// formal_anchor_rationale: Numerical dispatch error for Jennings path not yet ported from tensor engines.
+/// formal_status: NONE
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Homogeneous routing domain errors (Jennings path unavailable, invalid mix).
 #[derive(Debug, Error)]
 pub enum HomogeneousError {
     #[error("Jennings gel-space homogeneous path is not available in v0.1 profiles")]
@@ -48,8 +50,11 @@ fn dataset_key(profile: &Profile) -> &'static str {
     }
 }
 
-/// formal_anchor: NONE
-/// formal_anchor_rationale: Mills (1966) literature closure; not part of prototype JSON calibration lift.
+/// formal_anchor: literature://Mills-1966-gel-stiffness-closure
+/// formal_status: Literature
+/// formal_axioms: NONE
+/// formal_citation: "Mills (1966); conventional OPC gel stiffness vs porosity closure informing ultimate hydration cap"
+/// formal_form: "α_inf(w/c) piecewise rational proxy — see `ultimate_doh_wc` in `formulas.rs`"
 #[must_use]
 pub fn ultimate_doh(_profile: &Profile, w_c: f32) -> f32 {
     ultimate_doh_wc(w_c)
@@ -193,8 +198,11 @@ pub fn capillary_porosity(_profile: &Profile, w_c: f32, alpha: f32) -> f32 {
     ((w_c - 0.36 * alpha) / (w_c + 0.32)).clamp(0.0, 1.0)
 }
 
-/// formal_anchor: NONE
-/// formal_anchor_rationale: Roussel/Chateau–Ovarlez literature scaling; not lifted from prototype JSON.
+/// formal_anchor: literature://Roussel-2018-YODEL-Chateau-Ovarlez-2008
+/// formal_status: Literature
+/// formal_axioms: NONE
+/// formal_citation: "Roussel et al. (2018) structural buildability / YODEL lineage; Château & Ovarlez (2008) concentrated suspension rheology"
+/// formal_form: "τ_y = τ_paste(w/c, SP) · √μ(φ_agg); τ_paste ∝ (w/c_ref/w_c)³ · (1 − k_sp·SP); μ Krieger–Dougherty-type amplification vs φ_m"
 #[must_use]
 pub fn yield_stress_pa(
     _profile: &Profile,
@@ -216,8 +224,11 @@ pub fn yield_stress_pa(
     tau_paste * amp.sqrt()
 }
 
-/// formal_anchor: NONE
-/// formal_anchor_rationale: EN 15804-style factors; not part of prototype calibration JSON.
+/// formal_anchor: literature://EN-15804+A2-indicative-EPD-intensities
+/// formal_status: Literature
+/// formal_axioms: NONE
+/// formal_citation: "EN 15804+A2 (2019) environmental product declarations — indicative cradle-to-gate CO₂e intensities per constituent class"
+/// formal_form: "m_CO2e = 0.93·m_cem + 0.05·m_scm + 0.005·m_agg + 0.0003·m_w [kg CO₂e]"
 #[must_use]
 pub fn embodied_co2_kg_per_m3(
     _profile: &Profile,
@@ -242,7 +253,9 @@ pub fn safety_margin(profile: &Profile, w_c: f32, alpha: f32) -> f32 {
 }
 
 /// formal_anchor: NONE
-/// formal_anchor_rationale: Reference printing dosage assumption; not in prototype calibration JSON.
+/// formal_status: NONE
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Reference printing binder dosage assumption (350 kg/m³) not lifted from prototype calibration JSON.
 #[must_use]
 pub fn constituent_masses_kg_m3(
     _profile: &Profile,

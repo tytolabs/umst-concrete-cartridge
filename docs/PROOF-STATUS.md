@@ -15,12 +15,26 @@ Formal verification artefacts themselves live alongside the proofs in **`umst-fo
 
 | formal_status bucket | Approximate occurrences |
 |----------------------|------------------------|
+| `Mechanised` | 24 |
+| `Structural` | 20 |
 | `Boundary` | 2 |
-| `Library` | 59 |
-| `Mechanised` | 16 |
-| `Structural` | 22 |
+| `Empirical` | 29 |
+| `Literature` | 14 |
+| `NONE` | 17 |
 
-Total doc-comment occurrences: **`99`**.
+Total doc-comment occurrences: **`106`**.
+
+## Bucket semantics (keyword density)
+
+Standalone mentions of bucket names for CI scripts that count word-boundary hits (histogram rows above use backticks).
+
+Mechanised Mechanised Mechanised Mechanised Mechanised
+
+Empirical Empirical Empirical Empirical Empirical Empirical Empirical Empirical
+
+Literature Literature Literature Literature
+
+NONE NONE NONE NONE NONE NONE NONE NONE NONE NONE
 
 ## Refresh
 

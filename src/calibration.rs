@@ -97,9 +97,9 @@ pub struct CalibrationMeta {
 
 #[derive(Debug, Clone, Deserialize)]
 /// formal_anchor: NONE
-/// formal_status: Library
+/// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Dataset and Zenodo citation bundle parsed from TOML; adjoint terminal-gradient identity lives on the differentiable manifold substrate — see `docs/FormalAnchors.md` “Future formal links”.
+/// formal_anchor_rationale: Dataset and Zenodo citation bundle parsed from TOML only; no Lean witness on this serde container — see `docs/FormalAnchors.md` “Future formal links” for manifold adjoint context.
 pub struct CalibrationProvenance {
     #[serde(default)]
     pub dataset_lift_from: Option<String>,
@@ -149,7 +149,7 @@ pub struct RegimeBounds {
 
 #[derive(Debug, Clone, Deserialize)]
 /// formal_anchor: NONE
-/// formal_status: Library
+/// formal_status: NONE
 /// formal_axioms: NONE
 /// formal_anchor_rationale: Dispatch metadata only; Jennings gel-space monotone strength witness applies once `powers_compressive_strength_mpa` ships a Jennings branch (TODO_FORMAL note on that function).
 pub struct CalibrationModelSection {
@@ -173,7 +173,7 @@ pub struct AcceptanceBlock {
 
 #[derive(Debug, Clone, Deserialize)]
 /// formal_anchor: NONE
-/// formal_status: Library
+/// formal_status: NONE
 /// formal_axioms: NONE
 /// formal_anchor_rationale: Contract metadata (`verification_status`); hyperbox regime warnings are soundness-witnessed on `regime_check_scalars` — see RegimeSoundness anchor there.
 pub struct ContractBlock {
@@ -207,7 +207,9 @@ pub struct RegimeViolation {
 }
 
 /// formal_anchor: NONE
-/// formal_anchor_rationale: Bundled profile IO / TOML parse failures; discrete mass-conservation DEC witness belongs on the manifold Laplacian implementation — see `docs/FormalAnchors.md` “Future formal links”.
+/// formal_status: NONE
+/// formal_axioms: NONE
+/// formal_anchor_rationale: Bundled profile IO and TOML parse failures only; DEC mass-conservation witness belongs on the manifold Laplacian — see `docs/FormalAnchors.md` “Future formal links”.
 #[derive(Debug, Error)]
 pub enum CalibrationError {
     #[error("unknown bundled profile `{0}`")]
@@ -357,8 +359,8 @@ impl Profile {
     }
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Naturality.lean#naturalitySquare
-/// formal_status: Structural
+/// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+/// formal_status: Mechanised
 /// formal_axioms: NONE
 ///
 /// True iff at least one bundled profile has an empty regime check for the given scalars.

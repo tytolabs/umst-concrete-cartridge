@@ -5,10 +5,12 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Polymer Modification Engine.
 /// Computes Ohama's film formation model and resultant mechanical enhancements.
-/// formal_anchor: NONE
-/// formal_status: Library
+/// formal_anchor: empirical://datasets/dataset_highscm.csv
+/// formal_status: Empirical
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_dataset: "prototype_highscm_contract"
+/// formal_citation: "Bundled highscm Contract profile; paired CSV dataset_highscm.csv"
+/// formal_envelope: "Headline compressive strength vs dataset_highscm.csv: MAE ≤ 60 MPa, RMSE ≤ 80 MPa, R² ≥ −10 ([acceptance] highscm.v1.toml); polymer modifiers exercised under tests/realism/adversarial_physics.rs"
 pub struct PolymerEngine<B: Backend> {
     _backend: std::marker::PhantomData<B>,
 }
@@ -23,10 +25,12 @@ impl<B: Backend> PolymerEngine<B> {
     /// * `humidity` - Relative humidity (0.0 to 1.0)
     /// * `min_film_temp` - Minimum film-forming temperature of the polymer (MFT)
     /// * `flexibility_mod` - Material-specific flexibility parameter (e.g., 1.0 for SBR)
-    /// formal_anchor: NONE
-    /// formal_status: Library
+    /// formal_anchor: empirical://datasets/dataset_highscm.csv
+    /// formal_status: Empirical
     /// formal_axioms: NONE
-    /// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+    /// formal_dataset: "prototype_highscm_contract"
+    /// formal_citation: "Bundled highscm Contract profile; paired CSV dataset_highscm.csv"
+    /// formal_envelope: "Headline compressive strength vs dataset_highscm.csv: MAE ≤ 60 MPa, RMSE ≤ 80 MPa, R² ≥ −10 ([acceptance] highscm.v1.toml); polymer modifiers exercised under tests/realism/adversarial_physics.rs"
     pub fn compute_modifiers(
         pc_ratio: Tensor<B, 4>,
         temperature_c: Tensor<B, 4>,

@@ -9,10 +9,11 @@ use umst_manifold::core::tensors::MixTensor;
 /// 
 /// Because it is composed purely of `burn` tensor operations, the gradient of the porosity
 /// with respect to the input mix fractions allows the agent to naturally step towards denser mixes.
-/// formal_anchor: NONE
-/// formal_status: Library
+/// formal_anchor: literature://Powers-Brownyard-1947-capillary-porosity
+/// formal_status: Literature
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Differentiable training pathway; mechanised gate lemmas apply at manifold orchestration layer.
+/// formal_citation: "Powers & Brownyard (1946–1947) cement paste volume balance — capillary porosity closure"
+/// formal_form: "φ_c = (w/c − 0.36α)/(w/c + 0.32), clamped ≥ 0"
 pub fn compute_capillary_porosity<B: Backend>(wc_ratio: Tensor<B, 2>, hydration_degree: Tensor<B, 2>) -> Tensor<B, 2> {
     // Powers-Brownyard model for capillary porosity
     // p_c = (w/c - 0.36 * alpha) / (w/c + 0.32)
