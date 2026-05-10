@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
+[package]
+name = "umst-cli"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+autobenches = false
+authors = [
+    "Santhosh Shyamsundar <santhoshshyamsundar@gmail.com>",
+    "Santosh Prabhu Shenbagamoorthy",
+    "Studio TYTO",
+]
+description = "Command-line front-end for the UMST concrete cartridge."
+license = "MIT"
+repository = "https://github.com/tytolabs/umst-concrete-cartridge"
+
+[lib]
+name = "umst_cli"
+path = "src/lib.rs"
+
+[dependencies]
+umst-concrete-cartridge = { path = "../.." }
+umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "master" }
+burn = { version = "0.13.0", default-features = false }
+burn-ndarray = "0.13.0"
+clap = { version = "4.5", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+csv = "1.3"
+sha2 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+approx = "0.5"
+assert_cmd = "2.0"
+predicates = "3.1"
+jsonschema = "0.26"
+rand = "0.8"
+
+[[bin]]
+name = "umst"
+path = "src/main.rs"
+
+[[bin]]
+name = "calibration_report"
+path = "benches/calibration_report.rs"
+
+[[test]]
+name = "cli_predict"
+path = "tests/predict.rs"
+
+[[test]]
+name = "cli_schema"
+path = "tests/schema.rs"
+
+[[test]]
+name = "cli_public_contract"
+path = "tests/public_contract.rs"
+
+[[test]]
+name = "calibration_migration_anchor"
+path = "tests/calibration/migration_anchor.rs"
+
+[[test]]
+name = "calibration_profile_validity"
+path = "tests/calibration/profile_validity.rs"
+
+[[test]]
+name = "calibration_regime_warnings"
+path = "tests/calibration/regime_warnings.rs"
+
+[[test]]
+name = "calibration_dataset_metrics"
+path = "tests/calibration/dataset_metrics.rs"
+
+[[test]]
+name = "calibration_ssot_row_counts"
+path = "tests/calibration/ssot_row_counts.rs"

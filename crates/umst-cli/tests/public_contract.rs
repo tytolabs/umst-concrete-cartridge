@@ -4,8 +4,6 @@
 
 //! Live-binary smoke tests for public CLI contracts (acceptance checks 7–10).
 
-#![cfg(feature = "cli")]
-
 use assert_cmd::Command;
 use serde_json::Value;
 use std::collections::BTreeSet;
@@ -52,6 +50,12 @@ fn acceptance_8_predict_uci_d1_populates_v2_contract_fields() -> Result<(), Box<
     let v: Value = serde_json::from_slice(assert.get_output().stdout.as_slice())?;
     assert_eq!(v["schema_version"].as_str(), Some("result.v2"));
     assert_eq!(v["calibration_profile"].as_str(), Some("uci_d1"));
+    assert!(
+        v.get("physics_pipeline")
+            .map(|x| x.get("summary").is_some())
+            .unwrap_or(false),
+        "result.v2 should include physics_pipeline.summary"
+    );
     let model = v["calibration_model"]
         .as_str()
         .ok_or("calibration_model missing")?;

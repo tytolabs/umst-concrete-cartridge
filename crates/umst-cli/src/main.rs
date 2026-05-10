@@ -9,12 +9,12 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use umst_cli::cli::{self, MixSpec, PredictionWireVersion};
 use umst_concrete_cartridge::calibration::Profile;
-use umst_concrete_cartridge::cli::{self, MixSpec, PredictionWireVersion};
 
-const MIX_SCHEMA_V1: &str = include_str!("../../schema/mix.v1.json");
-const RESULT_SCHEMA_V1: &str = include_str!("../../schema/result.v1.json");
-const RESULT_SCHEMA_V2: &str = include_str!("../../schema/result.v2.json");
+const MIX_SCHEMA_V1: &str = include_str!("../../../schema/mix.v1.json");
+const RESULT_SCHEMA_V1: &str = include_str!("../../../schema/result.v1.json");
+const RESULT_SCHEMA_V2: &str = include_str!("../../../schema/result.v2.json");
 
 #[derive(Parser)]
 #[command(
@@ -47,6 +47,9 @@ enum Command {
         input: Option<PathBuf>,
         #[arg(long, value_enum, default_value_t = PredictionWireCli::V2)]
         schema_version: PredictionWireCli,
+        /// Attach legacy homogeneous scalars under `homogeneous_compare` (tensor path remains default).
+        #[arg(long)]
+        compare_homogeneous: bool,
     },
     Optimize {
         #[arg(long)]
@@ -129,8 +132,20 @@ fn regime_as_json(profile: &Profile) -> Value {
     })
 }
 
-fn print_prediction(profile: &Profile, spec: &MixSpec, wire: PredictionWireVersion) -> Result<()> {
-    let bundle = cli::predict(profile, spec).map_err(|e| anyhow::anyhow!("{e}"))?;
+fn print_prediction(
+    profile: &Profile,
+    spec: &MixSpec,
+    wire: PredictionWireVersion,
+    compare_homogeneous: bool,
+) -> Result<()> {
+    let bundle = cli::predict_with_options(
+        profile,
+        spec,
+        cli::PredictOptions {
+            compare_homogeneous,
+        },
+    )
+    .map_err(|e| anyhow::anyhow!("{e}"))?;
     let out = cli::serialize_prediction(&bundle, wire).map_err(|e| anyhow::anyhow!("{e}"))?;
     let text = serde_json::to_string_pretty(&out).context("serialize prediction JSON")?;
     println!("{text}");
@@ -176,6 +191,7 @@ fn main() -> ExitCode {
         Command::Predict {
             input,
             schema_version,
+            compare_homogeneous,
         } => {
             let globals = &root.globals;
             let profile_requested = globals.profile.trim();
@@ -214,7 +230,7 @@ fn main() -> ExitCode {
                 PredictionWireCli::V1 => PredictionWireVersion::V1,
                 PredictionWireCli::V2 => PredictionWireVersion::V2,
             };
-            print_prediction(&profile, &spec, wire).map_err(|e| e.to_string())
+            print_prediction(&profile, &spec, wire, *compare_homogeneous).map_err(|e| e.to_string())
         }
         Command::Optimize {
             input,
@@ -283,14 +299,16 @@ fn handle_profiles(cmd: &ProfilesCmd) -> Result<()> {
         ProfilesCmd::Describe { name } => {
             let p = Profile::load_bundled(name).map_err(|e| anyhow::anyhow!("{e}"))?;
             let txt = match p.bundle_id.as_str() {
-                "default" => include_str!("../../calibration/profiles/default.v1.toml"),
-                "uci_d1" => include_str!("../../calibration/profiles/uci_d1.v1.toml"),
-                "zenodo_ndt" => include_str!("../../calibration/profiles/zenodo_ndt.v1.toml"),
-                "zenodo_sonreb" => include_str!("../../calibration/profiles/zenodo_sonreb.v1.toml"),
-                "zenodo_rh" => include_str!("../../calibration/profiles/zenodo_rh.v1.toml"),
-                "uhpc" => include_str!("../../calibration/profiles/uhpc.v1.toml"),
-                "highscm" => include_str!("../../calibration/profiles/highscm.v1.toml"),
-                "selfheal" => include_str!("../../calibration/profiles/selfheal.v1.toml"),
+                "default" => include_str!("../../../calibration/profiles/default.v1.toml"),
+                "uci_d1" => include_str!("../../../calibration/profiles/uci_d1.v1.toml"),
+                "zenodo_ndt" => include_str!("../../../calibration/profiles/zenodo_ndt.v1.toml"),
+                "zenodo_sonreb" => {
+                    include_str!("../../../calibration/profiles/zenodo_sonreb.v1.toml")
+                }
+                "zenodo_rh" => include_str!("../../../calibration/profiles/zenodo_rh.v1.toml"),
+                "uhpc" => include_str!("../../../calibration/profiles/uhpc.v1.toml"),
+                "highscm" => include_str!("../../../calibration/profiles/highscm.v1.toml"),
+                "selfheal" => include_str!("../../../calibration/profiles/selfheal.v1.toml"),
                 _ => return Err(anyhow::anyhow!("unknown profile")),
             };
             print!("{txt}");

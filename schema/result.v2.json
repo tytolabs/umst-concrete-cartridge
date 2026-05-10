@@ -61,6 +61,16 @@
     "schema_version": {
       "type": "string",
       "const": "result.v2"
+    },
+    "physics_pipeline": {
+      "type": "object",
+      "description": "Collapsed-batch tensor physics capsule (see `physics_pipeline.v1` schema_version inside).",
+      "additionalProperties": true
+    },
+    "homogeneous_compare": {
+      "type": "object",
+      "description": "Legacy homogeneous scalars when `--compare-homogeneous` is set.",
+      "additionalProperties": true
     }
   }
 }

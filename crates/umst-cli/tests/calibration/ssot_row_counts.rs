@@ -22,7 +22,7 @@ fn count_data_rows(csv_path: &PathBuf) -> u64 {
 #[test]
 fn ssot_json_matches_csv_lines() {
     let root = manifest_dir();
-    let ssot_path = root.join("docs/SSOT.json");
+    let ssot_path = root.join("../../docs/SSOT.json");
     let json = fs::read_to_string(&ssot_path).expect("read docs/SSOT.json");
     let val: serde_json::Value = serde_json::from_str(&json).expect("parse SSOT.json as JSON");
 
@@ -40,7 +40,7 @@ fn ssot_json_matches_csv_lines() {
             .as_str()
             .expect("dataset entry missing string field `csv`");
         let expected = d["data_rows"].as_u64().expect("`data_rows` must be u64");
-        let path = root.join("datasets").join(csv);
+        let path = root.join("../../datasets").join(csv);
         let actual = count_data_rows(&path);
         sum_file += actual;
         assert_eq!(

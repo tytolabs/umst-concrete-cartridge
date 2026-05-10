@@ -63,6 +63,21 @@ flowchart LR
 
 ---
 
+## Development / CI parity
+
+Run the same Rust checks as [`.github/workflows/rust.yml`](.github/workflows/rust.yml):
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo build --workspace --verbose
+cargo test --workspace --verbose
+```
+
+Bulk **`predict`** and MCP **`evaluate_mix`** run the feedforward tensor pipeline **`run_full_physics_pipeline`** (batch-collapsed ranks; topology remains `compute_topology`). Mix column layout lives in [`src/mix_layout.rs`](src/mix_layout.rs); honesty / proof buckets in [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md).
+
+---
+
 ## Constitutive modules
 
 Twenty-two modules, each implemented as a pure tensor function. Citations refer to the canonical published model.
@@ -126,16 +141,36 @@ cargo run --quiet --bin calibration_report --manifest-path /path/to/umst-concret
 Calibration is delivered as **versioned TOML profiles** (`calibration/profiles/*.v1.toml`) with explicit regime bounds; the CLI selects a profile via **`--profile`** or **`--profile-file`**, and `predict` defaults to **`result.v2`** metadata (profile id, model wire name, Lean `formal_anchor` URI, regime `warnings`). See [`docs/Calibration.md`](docs/Calibration.md), [`calibration/SCHEMA.md`](calibration/SCHEMA.md), and [`docs/FormalAnchors.md`](docs/FormalAnchors.md).
 
 ```rust
+use burn_ndarray::NdArrayDevice;
+use burn_ndarray::NdArray;
+use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::core::ConcreteCartridge;
-use umst_manifold::core::{IScienceCartridge, MixTensor};
+use umst_concrete_cartridge::homogeneous::MixRow;
+use umst_concrete_cartridge::mix_layout::{fractions_from_mix_row, mix_tensor_from_layout};
+use umst_manifold::core::IScienceCartridge;
 
-let cartridge = ConcreteCartridge::default();
-let mix = MixTensor::from_proportions(/* w/c = */ 0.40, /* spf% = */ 1.2, /* T_K = */ 298.15);
+type B = NdArray<f32>;
 
-let result = cartridge.evaluate(&mix)?;
-println!("28-day compressive strength: {:.1} MPa", result.strength_28d_mpa);
-println!("Yield stress (slump): {:.1} Pa", result.yield_stress_pa);
+let profile = Profile::load_bundled("uci_d1").expect("uci_d1");
+let row = MixRow {
+    cement_kg_m3: 350.0,
+    water_kg_m3: 140.0,
+    slag_kg_m3: 0.0,
+    fly_ash_kg_m3: 0.0,
+    superplasticizer_kg_m3: 5.25,
+    age_days: 28.0,
+    temperature_c: 23.0,
+};
+let fractions = fractions_from_mix_row(&row, 0.65);
+let device = NdArrayDevice::default();
+let mix = mix_tensor_from_layout::<B>(&fractions, &device);
+
+let cartridge = ConcreteCartridge::<B>::with_profile(profile);
+let tensors = cartridge.compute_all(&mix);
+println!("Manifold tensor summary preview: {:?}", tensors.free_energy.into_data());
 ```
+
+See [`mix_layout.rs`](src/mix_layout.rs) for the `[Batch, 16]` feature map and [`pipeline/`](src/pipeline/) for the staged engine manifest.
 
 A worked end-to-end example reproducing a Powers DoH curve is in [`examples/hydration_simulation.rs`](examples/hydration_simulation.rs).
 

@@ -2,8 +2,6 @@
 // Copyright (c) 2026 Santhosh Shyamsundar,
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-#![cfg(feature = "cli")]
-
 //! Headline CSV strength gates apply only to **`[contract].verification_status = "Contract"`** profiles.
 //! **Boundary** bundles omit `[acceptance]` (or carry indicative bounds only) and are skipped —
 //! see `calibration/SCHEMA.md` and prototype Contract / Boundary doctrine.
@@ -17,7 +15,7 @@ use umst_concrete_cartridge::calibration_metrics::{regression_metrics, Regressio
 use umst_concrete_cartridge::homogeneous::{compressive_strength_mpa, MixRow};
 
 fn datasets_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("datasets")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../datasets")
 }
 
 fn csv_row_to_mix(r: &csv::StringRecord) -> Result<MixRow, Box<dyn Error>> {

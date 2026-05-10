@@ -54,14 +54,14 @@ jobs:
           ! grep -REn 'formal_status:[[:space:]]*Option' src/ --include='*.rs'
           ! grep -REn 'formal_status:[[:space:]]*Boundary' src/ --include='*.rs'
 
-      - name: Build (default features)
-        run: cargo build --verbose
+      - name: Build (default features, workspace)
+        run: cargo build --workspace --verbose
 
       - name: Build examples
-        run: cargo build --examples --verbose
+        run: cargo build --workspace --examples --verbose
 
-      - name: Run tests (library default + optional CLI targets)
-        run: cargo test --features cli --verbose
+      - name: Run tests (library + CLI workspace crates)
+        run: cargo test --workspace --verbose
 
       - name: Verify optional deps stay out of default tree (depth 1)
         run: |
@@ -91,4 +91,4 @@ jobs:
       - name: rustfmt
         run: cargo fmt --all -- --check
       - name: clippy
-        run: cargo clippy --all-targets --features cli -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings

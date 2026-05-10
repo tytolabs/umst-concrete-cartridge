@@ -10,14 +10,40 @@ pub mod calibration_metrics;
 pub mod core;
 pub mod formulas;
 pub mod homogeneous;
+pub mod mix_layout;
 pub mod physics;
-
-#[cfg(feature = "cli")]
-pub mod cli;
+/// Tensor engine orchestration (`compute_all`) and MCP/CLI capsules.
+pub mod pipeline;
 
 mod burn_compat;
 
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Re-export; classification follows the underlying symbol.
+/// formal_anchor_rationale: Stable import path for MCP/CLI integration tests.
+pub use pipeline::run_full_physics_pipeline;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: JSON envelope for staged tensor outputs.
+pub use pipeline::PhysicsPipelineReport;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Scalar digest accompanying report JSON.
+pub use pipeline::PhysicsPipelineSummary;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Stage record type embedded in [`PhysicsPipelineReport`].
+pub use pipeline::PipelineStageRecord;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Serialized stage disposition enum for MCP/CLI audit trails.
+pub use pipeline::PipelineStageStatus;
+/// formal_anchor: literature://wire-schema-physics-pipeline-v1
+/// formal_status: Literature
+/// formal_citation: "physics_pipeline schema tag (`physics_pipeline.v1`)"
+/// formal_form: "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape."
+/// formal_anchor_rationale: Wire consumers pin report JSON against this version field.
+pub use pipeline::PHYSICS_PIPELINE_SCHEMA_VERSION;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-export manifold façade symbols for ergonomics only.
 pub use umst_manifold::core::{IScienceCartridge, MixTensor, PhysicalResult};

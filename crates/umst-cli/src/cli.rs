@@ -2,19 +2,23 @@
 // Copyright (c) 2026 Santhosh Shyamsundar,
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! Pure CLI core: JSON validation (`MixSpec`), regime checks, homogeneous prediction through [`crate::homogeneous`],
-//! and serialization into versioned wire JSON (`result.v1` / `result.v2`).
+//! Pure CLI core: JSON validation (`MixSpec`), regime checks, tensor pipeline prediction (see [`PredictBundle::physics_pipeline`]),
+//! homogeneous compare flag, and versioned wire JSON (`result.v1` / `result.v2`).
 
-use crate::calibration::{self as calib, Profile};
-use crate::homogeneous::{
-    self as homog, constituent_masses_kg_m3, embodied_co2_kg_per_m3, mix_row_from_scalar_spec,
-};
-use burn::tensor::{Data, Shape, Tensor};
+use burn::tensor::Tensor;
 use burn_ndarray::NdArray;
 use serde::Serialize;
 use serde_json::Value;
 use std::convert::TryFrom;
 use std::fmt;
+use umst_concrete_cartridge::calibration::{self as calib, Profile};
+use umst_concrete_cartridge::homogeneous::{
+    self as homog, constituent_masses_kg_m3, embodied_co2_kg_per_m3, mix_row_from_scalar_spec,
+};
+use umst_concrete_cartridge::mix_layout::{fractions_from_mix_row, mix_tensor_from_layout};
+use umst_concrete_cartridge::pipeline::{
+    physical_result_from_report, run_full_physics_pipeline, PhysicsPipelineReport,
+};
 use umst_manifold::core::traits::PhysicalResult;
 
 /// formal_anchor: literature://wire-schema-result-v1
@@ -315,15 +319,29 @@ struct PredictionWireV2 {
     schema_version: &'static str,
 }
 
+/// Predict output toggles surfaced by MCP / `umst predict`.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Behavioral flags only — no Lean witness.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct PredictOptions {
+    /// When true, attaches a legacy homogeneous scalar envelope under `homogeneous_compare`.
+    pub compare_homogeneous: bool,
+}
+
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_anchor_rationale: Bundle of physical tensors plus calibration metadata returned by `predict`.
+/// formal_anchor_rationale: Bundle of physical tensors plus calibration metadata returned by [`predict`] / [`predict_with_options`].
 pub struct PredictBundle {
     pub physical: PhysicalResult<CliBackend>,
     pub warnings: Vec<String>,
     pub calibration_profile: String,
     pub calibration_model: String,
     pub formal_anchor: String,
+    /// Staged tensor-physics capsule serialized as `physics_pipeline` on `result.v2`.
+    pub physics_pipeline: PhysicsPipelineReport,
+    /// Present only when [`PredictOptions::compare_homogeneous`] is enabled.
+    pub homogeneous_compare: Option<serde_json::Value>,
 }
 
 fn model_kind_wire(profile: &Profile) -> String {
@@ -364,6 +382,18 @@ fn wire_formal_status(profile: &Profile) -> String {
 /// formal_status: Structural
 /// formal_anchor_rationale: Natural transformation φ ∘ F ∘ ψ over the cartridge functor (CLI orchestration entry).
 pub fn predict(profile: &Profile, spec: &MixSpec) -> Result<PredictBundle, CliError> {
+    predict_with_options(profile, spec, PredictOptions::default())
+}
+
+/// Same as [`predict`] with optional homogeneous sidecar for regression diffs.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Feature flag glue for MCP/CLI; no standalone formal claim.
+pub fn predict_with_options(
+    profile: &Profile,
+    spec: &MixSpec,
+    options: PredictOptions,
+) -> Result<PredictBundle, CliError> {
     if !calib::any_bundled_profile_covers_scalars(
         spec.w_c.value(),
         spec.temperature_k.value(),
@@ -394,39 +424,39 @@ pub fn predict(profile: &Profile, spec: &MixSpec) -> Result<PredictBundle, CliEr
         spec.temperature_k.value(),
     );
 
-    let alpha = homog::degree_of_hydration_alpha(profile, &row)?;
-    let fc = homog::compressive_strength_mpa(profile, &row)?;
-    let tau = homog::yield_stress_pa(
-        profile,
-        spec.w_c.value(),
-        spec.superplasticiser_pct,
-        spec.aggregate_volume_fraction,
-    );
-    let (cement, scm, agg, water) = constituent_masses_kg_m3(
-        profile,
-        spec.w_c.value(),
-        spec.fly_ash_pct,
-        spec.silica_fume_pct,
-        spec.aggregate_volume_fraction,
-    );
-    let gwp = embodied_co2_kg_per_m3(profile, cement, scm, agg, water);
-    let margin = homog::safety_margin(profile, spec.w_c.value(), alpha);
-
+    let layout = fractions_from_mix_row(&row, spec.aggregate_volume_fraction);
     let device = burn_ndarray::NdArrayDevice::default();
-    let free_energy =
-        Tensor::<CliBackend, 2>::from_data(Data::new(vec![fc, tau], Shape::new([1, 2])), &device);
-    let dissipation =
-        Tensor::<CliBackend, 2>::from_data(Data::new(vec![alpha], Shape::new([1, 1])), &device);
-    let safety_margin_t =
-        Tensor::<CliBackend, 2>::from_data(Data::new(vec![margin], Shape::new([1, 1])), &device);
-    let cost =
-        Tensor::<CliBackend, 2>::from_data(Data::new(vec![gwp], Shape::new([1, 1])), &device);
+    let mix_tensor = mix_tensor_from_layout::<CliBackend>(&layout, &device);
+    let physics_pipeline = run_full_physics_pipeline::<CliBackend>(profile, &mix_tensor);
+    let physical = physical_result_from_report::<CliBackend>(profile, &physics_pipeline, &device);
 
-    let physical = PhysicalResult {
-        free_energy,
-        dissipation,
-        safety_margin: safety_margin_t,
-        cost,
+    let homogeneous_compare = if options.compare_homogeneous {
+        let alpha_h = homog::degree_of_hydration_alpha(profile, &row)?;
+        let fc_h = homog::compressive_strength_mpa(profile, &row)?;
+        let tau_h = homog::yield_stress_pa(
+            profile,
+            spec.w_c.value(),
+            spec.superplasticiser_pct,
+            spec.aggregate_volume_fraction,
+        );
+        let (cement, scm, agg, water) = constituent_masses_kg_m3(
+            profile,
+            spec.w_c.value(),
+            spec.fly_ash_pct,
+            spec.silica_fume_pct,
+            spec.aggregate_volume_fraction,
+        );
+        let gwp_h = embodied_co2_kg_per_m3(profile, cement, scm, agg, water);
+        let margin_h = homog::safety_margin(profile, spec.w_c.value(), alpha_h);
+        Some(serde_json::json!({
+            "compressive_strength_mpa": f64::from(fc_h),
+            "yield_stress_pa": f64::from(tau_h),
+            "degree_of_hydration": f64::from(alpha_h),
+            "gwp_kg_co2_eq_per_m3": f64::from(gwp_h),
+            "safety_margin": f64::from(margin_h),
+        }))
+    } else {
+        None
     };
 
     Ok(PredictBundle {
@@ -435,6 +465,8 @@ pub fn predict(profile: &Profile, spec: &MixSpec) -> Result<PredictBundle, CliEr
         calibration_profile: profile.bundle_id.clone(),
         calibration_model: model_kind_wire(profile),
         formal_anchor: profile_formal_anchor_uri(profile),
+        physics_pipeline,
+        homogeneous_compare,
     })
 }
 
@@ -478,7 +510,17 @@ pub fn serialize_prediction(
                 warnings: bundle.warnings.clone(),
                 schema_version: RESULT_SCHEMA_VERSION_V2,
             };
-            serde_json::to_value(wire).map_err(|e| CliError::MixSpec(MixSpecError::Json(e)))
+            let mut out = serde_json::to_value(&wire)
+                .map_err(|e| CliError::MixSpec(MixSpecError::Json(e)))?;
+            let pipeline_val = serde_json::to_value(&bundle.physics_pipeline)
+                .map_err(|e| CliError::MixSpec(MixSpecError::Json(e)))?;
+            if let Value::Object(ref mut map) = out {
+                map.insert("physics_pipeline".into(), pipeline_val);
+                if let Some(h) = bundle.homogeneous_compare.clone() {
+                    map.insert("homogeneous_compare".into(), h);
+                }
+            }
+            Ok(out)
         }
     }
 }
@@ -678,7 +720,7 @@ fn mix_with_w_c(base: &MixSpec, w_c: WaterCementRatio) -> Result<MixSpec, MixSpe
     })
 }
 
-#[cfg(all(test, feature = "cli"))]
+#[cfg(test)]
 mod wire_roundtrip_tests {
     use super::*;
 

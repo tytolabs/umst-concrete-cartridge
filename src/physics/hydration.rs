@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-use burn::tensor::{Tensor, backend::Backend};
+use burn::tensor::{backend::Backend, Tensor};
 use umst_manifold::core::tensors::MixTensor;
 
 /// Pure function to calculate the hydration degree alpha over time.
@@ -11,7 +11,11 @@ use umst_manifold::core::tensors::MixTensor;
 /// formal_anchor: lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone
 /// formal_status: Mechanised
 /// formal_axioms: NONE
-pub fn compute_hydration_degree<B: Backend>(mix: &MixTensor<B>, age_days: Tensor<B, 2>, temperature_c: Tensor<B, 2>) -> Tensor<B, 2> {
+pub fn compute_hydration_degree<B: Backend>(
+    mix: &MixTensor<B>,
+    age_days: Tensor<B, 2>,
+    temperature_c: Tensor<B, 2>,
+) -> Tensor<B, 2> {
     let dims = mix.fractions.dims();
     let batch_size = dims[0];
 
@@ -20,7 +24,11 @@ pub fn compute_hydration_degree<B: Backend>(mix: &MixTensor<B>, age_days: Tensor
     let slag = mix.fractions.clone().slice([0..batch_size, 5..6]); // Assume index 5
     let fly_ash = mix.fractions.clone().slice([0..batch_size, 6..7]); // Assume index 6
 
-    let binder = cement.clone().add(slag.clone()).add(fly_ash.clone()).clamp_min(1e-6);
+    let binder = cement
+        .clone()
+        .add(slag.clone())
+        .add(fly_ash.clone())
+        .clamp_min(1e-6);
     let scm_ratio = slag.add(fly_ash).div(binder);
 
     // alpha_max = 0.95 - scm_ratio * 0.15
@@ -37,7 +45,11 @@ pub fn compute_hydration_degree<B: Backend>(mix: &MixTensor<B>, age_days: Tensor
     // temp_factor = exp(E/R * (1/T_ref - 1/T))
     let inv_t_ref = 1.0 / t_ref_k;
     let inv_t = t_k.powf_scalar(-1.0);
-    let temp_factor = inv_t.mul_scalar(-1.0).add_scalar(inv_t_ref).mul_scalar(e_over_r).exp();
+    let temp_factor = inv_t
+        .mul_scalar(-1.0)
+        .add_scalar(inv_t_ref)
+        .mul_scalar(e_over_r)
+        .exp();
 
     // scm_factor = 1.0 - scm_ratio * 0.4
     let scm_factor = scm_ratio.mul_scalar(-0.4).add_scalar(1.0);

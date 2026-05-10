@@ -4,8 +4,6 @@
 
 //! Integration test: lifted constants from `uci_d1` influence homogeneous strength on a stratified CSV sample.
 
-#![cfg(feature = "cli")]
-
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
 use rand::SeedableRng;
@@ -17,7 +15,7 @@ use umst_concrete_cartridge::homogeneous::{compressive_strength_mpa, MixRow};
 
 fn csv_path(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("datasets")
+        .join("../../datasets")
         .join(name)
 }
 

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
+[package]
+name = "umst-mcp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = [
+    "Santhosh Shyamsundar <santhoshshyamsundar@gmail.com>",
+    "Santosh Prabhu Shenbagamoorthy",
+    "Studio TYTO",
+]
+description = "Model Context Protocol (MCP) server exposing the UMST concrete engine to AI agents."
+license = "MIT"
+repository = "https://github.com/tytolabs/umst-concrete-cartridge"
+
+[dependencies]
+umst-concrete-cartridge = { path = "../.." }
+burn-ndarray = "0.13.0"
+tokio = { version = "1.36", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"

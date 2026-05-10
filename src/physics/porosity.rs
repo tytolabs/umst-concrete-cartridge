@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-use burn::tensor::{Tensor, backend::Backend};
+use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure function to calculate the bulk capillary porosity of the cement paste over time.
 ///
@@ -10,7 +10,10 @@ use burn::tensor::{Tensor, backend::Backend};
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
 /// formal_status: Mechanised
 /// formal_axioms: NONE
-pub fn compute_capillary_porosity<B: Backend>(wc_ratio: Tensor<B, 2>, hydration_degree: Tensor<B, 2>) -> Tensor<B, 2> {
+pub fn compute_capillary_porosity<B: Backend>(
+    wc_ratio: Tensor<B, 2>,
+    hydration_degree: Tensor<B, 2>,
+) -> Tensor<B, 2> {
     // Powers-Brownyard model for capillary porosity
     // p_c = (w/c - 0.36 * alpha) / (w/c + 0.32)
     // Water volume consumed by hydration is 0.36 * alpha
@@ -20,7 +23,5 @@ pub fn compute_capillary_porosity<B: Backend>(wc_ratio: Tensor<B, 2>, hydration_
 
     let total_paste_volume = wc_ratio.add_scalar(0.32);
 
-    let porosity = capillary_water.div(total_paste_volume);
-
-    porosity
+    capillary_water.div(total_paste_volume)
 }

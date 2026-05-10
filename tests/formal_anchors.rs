@@ -3,13 +3,13 @@
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! CI guardrail: five-status formal documentation (`Mechanised | Structural | Empirical |
-//! Literature | NONE`) on every `pub` surface in `src/**/*.rs`.
+//! Literature | NONE`) on every `pub` surface in repository Rust sources (`src/`, `crates/umst-cli/src/`).
 
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use syn::spanned::Spanned;
 use syn::visit::Visit;
@@ -431,20 +431,26 @@ fn visit_file(
 }
 
 fn walk_src() -> Result<Vec<Violation>, Box<dyn Error>> {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let roots = [manifest.join("src"), manifest.join("crates/umst-cli/src")];
     let mut out = Vec::new();
-    let mut stack = vec![root];
-    while let Some(p) = stack.pop() {
-        for e in fs::read_dir(&p)? {
-            let e = e?;
-            let pth = e.path();
-            if pth.is_dir() {
-                stack.push(pth);
-            } else {
-                let rel = pth.strip_prefix(env!("CARGO_MANIFEST_DIR"))?;
-                let static_rel: &'static str =
-                    Box::leak(rel.to_string_lossy().into_owned().into_boxed_str());
-                visit_file(&pth, static_rel, &mut out)?;
+    for root in roots {
+        if !root.is_dir() {
+            continue;
+        }
+        let mut stack = vec![root];
+        while let Some(p) = stack.pop() {
+            for e in fs::read_dir(&p)? {
+                let e = e?;
+                let pth = e.path();
+                if pth.is_dir() {
+                    stack.push(pth);
+                } else {
+                    let rel = pth.strip_prefix(&manifest)?;
+                    let static_rel: &'static str =
+                        Box::leak(rel.to_string_lossy().into_owned().into_boxed_str());
+                    visit_file(&pth, static_rel, &mut out)?;
+                }
             }
         }
     }
@@ -475,18 +481,24 @@ fn all_public_symbols_have_formal_anchor_doc() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn src_formal_status_histogram_sanity() -> Result<(), Box<dyn Error>> {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let roots = [manifest.join("src"), manifest.join("crates/umst-cli/src")];
     let mut combined = String::new();
-    let mut stack = vec![root];
-    while let Some(p) = stack.pop() {
-        for e in fs::read_dir(&p)? {
-            let e = e?;
-            let pth = e.path();
-            if pth.is_dir() {
-                stack.push(pth);
-            } else if pth.extension() == Some(OsStr::new("rs")) {
-                combined.push_str(&fs::read_to_string(&pth)?);
-                combined.push('\n');
+    for root in roots {
+        if !root.is_dir() {
+            continue;
+        }
+        let mut stack = vec![root];
+        while let Some(p) = stack.pop() {
+            for e in fs::read_dir(&p)? {
+                let e = e?;
+                let pth = e.path();
+                if pth.is_dir() {
+                    stack.push(pth);
+                } else if pth.extension() == Some(OsStr::new("rs")) {
+                    combined.push_str(&fs::read_to_string(&pth)?);
+                    combined.push('\n');
+                }
             }
         }
     }

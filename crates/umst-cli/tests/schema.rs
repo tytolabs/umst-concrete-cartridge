@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 #[test]
 fn schema_mix_matches_bundled_file() -> Result<(), Box<dyn Error>> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("schema/mix.v1.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schema/mix.v1.json");
     let disk_text = fs::read_to_string(&path)?;
     let expected: Value = serde_json::from_str(&disk_text)?;
 
@@ -24,7 +24,7 @@ fn schema_mix_matches_bundled_file() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn schema_result_matches_bundled_file() -> Result<(), Box<dyn Error>> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("schema/result.v1.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schema/result.v1.json");
     let disk_text = fs::read_to_string(&path)?;
     let expected: Value = serde_json::from_str(&disk_text)?;
 
@@ -38,7 +38,7 @@ fn schema_result_matches_bundled_file() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn schema_result_v2_matches_bundled_file() -> Result<(), Box<dyn Error>> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("schema/result.v2.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schema/result.v2.json");
     let disk_text = fs::read_to_string(&path)?;
     let expected: Value = serde_json::from_str(&disk_text)?;
 

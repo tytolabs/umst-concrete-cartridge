@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! Regenerates `docs/PROOF-STATUS.md` from a deterministic scan of `src/**/*.rs` formal doc blocks.
+//! Regenerates `docs/PROOF-STATUS.md` from a deterministic scan of formal doc blocks under
+//! `src/**/*.rs` and `crates/umst-cli/src/**/*.rs`.
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -231,28 +232,34 @@ impl<'ast> Visit<'ast> for CollectVisitor {
 }
 
 fn collect_all_rows() -> Result<Vec<Row>, Box<dyn Error>> {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let roots = [manifest.join("src"), manifest.join("crates/umst-cli/src")];
     let mut rows = Vec::new();
-    let mut stack = vec![root];
-    while let Some(p) = stack.pop() {
-        for e in fs::read_dir(&p)? {
-            let e = e?;
-            let pth = e.path();
-            if pth.is_dir() {
-                stack.push(pth);
-            } else if pth.extension() == Some(OsStr::new("rs")) {
-                let rel = pth.strip_prefix(env!("CARGO_MANIFEST_DIR"))?;
-                let file_path = rel.to_string_lossy().into_owned();
-                let src = fs::read_to_string(&pth)?;
-                let syn_file = syn::parse_file(&src)?;
-                let mut v = CollectVisitor {
-                    file_path,
-                    rows: Vec::new(),
-                };
-                for item in syn_file.items {
-                    v.visit_item(&item);
+    for root in roots {
+        if !root.is_dir() {
+            continue;
+        }
+        let mut stack = vec![root];
+        while let Some(p) = stack.pop() {
+            for e in fs::read_dir(&p)? {
+                let e = e?;
+                let pth = e.path();
+                if pth.is_dir() {
+                    stack.push(pth);
+                } else if pth.extension() == Some(OsStr::new("rs")) {
+                    let rel = pth.strip_prefix(&manifest)?;
+                    let file_path = rel.to_string_lossy().into_owned();
+                    let src = fs::read_to_string(&pth)?;
+                    let syn_file = syn::parse_file(&src)?;
+                    let mut v = CollectVisitor {
+                        file_path,
+                        rows: Vec::new(),
+                    };
+                    for item in syn_file.items {
+                        v.visit_item(&item);
+                    }
+                    rows.extend(v.rows);
                 }
-                rows.extend(v.rows);
             }
         }
     }
@@ -281,7 +288,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # Proof status (Rust cartridge sources)
 
-Generated from `src/**/*.rs` formal documentation blocks. Regenerate with:
+Generated from `src/**/*.rs` and `crates/umst-cli/src/**/*.rs` formal documentation blocks. Regenerate with:
 
 ```bash
 cargo test -p umst-concrete-cartridge --test proof_status_doc \

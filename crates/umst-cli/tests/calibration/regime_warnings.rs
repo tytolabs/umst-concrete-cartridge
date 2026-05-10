@@ -2,13 +2,11 @@
 // Copyright (c) 2026 Santhosh Shyamsundar,
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-#![cfg(feature = "cli")]
-
 use serde_json::json;
 use std::error::Error;
 
+use umst_cli::cli::{predict, serialize_prediction, MixSpec, PredictionWireVersion};
 use umst_concrete_cartridge::calibration::Profile;
-use umst_concrete_cartridge::cli::{predict, MixSpec, PredictionWireVersion};
 
 fn spec(w: f32, tk: f32, fly: f32, sf: f32, age: f32) -> Result<MixSpec, Box<dyn Error>> {
     Ok(MixSpec::try_from(json!({
@@ -25,8 +23,7 @@ fn regime_warnings_contain_field_tokens() -> Result<(), Box<dyn Error>> {
     let p = Profile::load_bundled("uci_d1")?;
     let on = spec(0.40_f32, 293.15_f32, 0.0, 0.0, 672.0)?;
     let bundle_on = predict(&p, &on)?;
-    let wire =
-        umst_concrete_cartridge::cli::serialize_prediction(&bundle_on, PredictionWireVersion::V2)?;
+    let wire = serialize_prediction(&bundle_on, PredictionWireVersion::V2)?;
     let warns_on = wire["warnings"].as_array().unwrap();
     assert!(
         warns_on.is_empty(),
@@ -35,8 +32,7 @@ fn regime_warnings_contain_field_tokens() -> Result<(), Box<dyn Error>> {
 
     let off_w = spec(0.56_f32, 293.15_f32, 0.0, 0.0, 672.0)?;
     let bundle_off = predict(&p, &off_w)?;
-    let wire_off =
-        umst_concrete_cartridge::cli::serialize_prediction(&bundle_off, PredictionWireVersion::V2)?;
+    let wire_off = serialize_prediction(&bundle_off, PredictionWireVersion::V2)?;
     let wlist = wire_off["warnings"].as_array().unwrap();
     assert!(
         wlist
@@ -47,8 +43,7 @@ fn regime_warnings_contain_field_tokens() -> Result<(), Box<dyn Error>> {
 
     let off_t = spec(0.40_f32, 340.0_f32, 0.0, 0.0, 672.0)?;
     let bundle_t = predict(&p, &off_t)?;
-    let wire_t =
-        umst_concrete_cartridge::cli::serialize_prediction(&bundle_t, PredictionWireVersion::V2)?;
+    let wire_t = serialize_prediction(&bundle_t, PredictionWireVersion::V2)?;
     let tlist = wire_t["warnings"].as_array().unwrap();
     assert!(
         tlist.iter().any(|v| v
@@ -62,8 +57,7 @@ fn regime_warnings_contain_field_tokens() -> Result<(), Box<dyn Error>> {
     let off_scm = spec(0.42_f32, 293.15_f32, 10.0_f32, 2.0_f32, 672.0)?;
     let p_hs = Profile::load_bundled("highscm")?;
     let bundle_sc = predict(&p_hs, &off_scm)?;
-    let wire_sc =
-        umst_concrete_cartridge::cli::serialize_prediction(&bundle_sc, PredictionWireVersion::V2)?;
+    let wire_sc = serialize_prediction(&bundle_sc, PredictionWireVersion::V2)?;
     assert!(
         wire_sc["warnings"]
             .as_array()
