@@ -14,7 +14,6 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 [![Rust 2021](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
 [![Python 3.10+](https://img.shields.io/badge/python-≥3.10-blue.svg)](https://www.python.org/)
-[![JOSS submission](https://img.shields.io/badge/JOSS-submission%20planned-lightgrey.svg)](https://github.com/tytolabs/umst-concrete-cartridge)
 
 Pure functional **`burn`** tensors · **22** coupled modules · calibrated **profiles** · mechanised lemmas where noted in [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md)
 
