@@ -119,5 +119,5 @@ jobs:
           python-version: "3.12"
       - name: Install maturin
         run: pip install "maturin>=1.7,<2"
-      - name: maturin develop (tests extras: Hypothesis bindings smoke)
+      - name: "maturin develop (tests extras — Hypothesis bindings smoke)"
         run: maturin develop --release --manifest-path crates/umst-py/Cargo.toml --extras tests
