@@ -229,15 +229,26 @@ fn main() {
         .unwrap_or(0.15_f32);
     let vol_proj = VolumeProjection::new(target_vf, 48);
 
+    let e0 = 200e6_f32;
+    let e_min_rel = env::var("UMST_SHELL_E_MIN_REL")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1e-3_f32)
+        .clamp(1e-9, 1.0);
     let material = ElasticMaterial {
-        e0: 200e6,
+        e0,
         nu: 0.2,
         simp_p: 3.0,
-        e_min: 1.0,
+        e_min: e0 * e_min_rel,
     };
     let use_pc = env::var("UMST_SHELL_PCG").map(|v| v != "0").unwrap_or(true);
+    let max_cg = env::var("UMST_SHELL_MAX_CG")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(2000usize)
+        .clamp(50, 50_000);
     let cg_cfg = MechanicsInnerLoopConfig {
-        max_cg_iterations: 200,
+        max_cg_iterations: max_cg,
         cg_tolerance: 1e-5,
         pcg_tolerance: 1e-5,
         use_preconditioner: use_pc,
