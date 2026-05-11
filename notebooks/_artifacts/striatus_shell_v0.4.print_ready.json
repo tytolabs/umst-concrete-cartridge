@@ -1,0 +1,26 @@
+{
+  "artefact_version": "v0.4",
+  "total_volume_cm3": 1571419.9573125788,
+  "material_volume_cm3": 239999.8188018799,
+  "surface_area_cm2": 328570.04659997235,
+  "bbox_mm": [
+    3998.3468353166245,
+    3998.2874700799584,
+    100.00000149011612
+  ],
+  "min_feature_size_mm": 28.693374405024887,
+  "max_overhang_deg": 0.0,
+  "polygon_count": 7680,
+  "sha256_stl": "c4273f5ee83252dfe7602df57b8fe5598697fb091d1bbb94edba396539c636cd",
+  "demo_config_hash": "d591e1dc3e92544c9f060251c879d602a62fa7e62d9a71d397eac1240fd40242",
+  "timestamp_unix": 1778501768,
+  "density_xy_plane_variance": 1.5773902132479835e-08,
+  "mesh_volume_fraction_in_bbox": 0.9829643742287636,
+  "mesh_connected_components": 1,
+  "mesh_euler_characteristic_largest": 2,
+  "mesh_genus_closed_orientable_largest": 0.0,
+  "gate_topo_complexity_b7": false,
+  "gate_volume_fraction_mesh_b7": false,
+  "gate_density_xy_variance_b8": false,
+  "gates_track_b8_all_pass": false
+}
