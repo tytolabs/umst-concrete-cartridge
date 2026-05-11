@@ -7,14 +7,14 @@
 
 //! **Track B6 (v0.4)** — `shell_topology_rib_pattern`: Striatus-class gates ([`composer_prompts/v0.4_solver_completion_no_namesakes.md`](../../../../composer_prompts/v0.4_solver_completion_no_namesakes.md) §B6).
 //!
-//! - [`shell_topology_rib_pattern_quick`]: CI — compact **0.8×0.8×0.1** m slab, coords **\([-1,1]^3\)** (same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs)), **9×8** in-plane cells, gentle roof **x-ramp** \(r=0.2\), Heaviside \(\beta=10\). **Helmholtz is omitted on the Burn AD tape**; [`VolumeProjection`] after Adam. Default **24** steps. Gates: VF ±15%, top-face variance of Heaviside \(\hat\rho\) \(> 2\times 10^{-5}\) (full B6: \(>0.1\) on final \(\rho\)); greyness not asserted on quick path; compliance ratio bounded.
+//! - [`shell_topology_rib_pattern_quick`]: CI — **0.8×0.8×0.1** m slab, **9×8×3** cells by default, roof **x-ramp** \(r=0.55\) at **96 Pa** nodal scale, Heaviside \(\beta=28\), **`DensityNet`** width **56**, Adam **0.0075**. **Helmholtz omitted** on the Burn AD tape; **[`VolumeProjection`] once** after Adam for **vf**. Default **≤20** outers when **`UMST_RIB_QUICK`** is unset/`1` (**`UMST_RIB_QUICK=0`** → cap **32**). Gates: VF ±15%; roof Heaviside `xy_var` \(>2\times10^{-5}\); **greyness** = roof-slice `mean(4\rho(1-\rho))` on **post–volume-projection** \(\rho\), required **<** `4\cdot vf\cdot(1-vf)-0.008` at measured **vf** (full B6 **`<0.15`** remains **40²×4 / 200** outers on post-proj **volume** mean — see [`shell_topology_rib_pattern_full_v04`]); compliance ratio bounded.
 //! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release**, and the **optimisation** does not satisfy the brief greyness / compliance gates unless you run the full **200** outers — the Rust test **skips** those acceptance asserts when **`UMST_SHELL_RIB_FULL_ITERS` < 200** (finite compliance + loose VF band only; smoke **`eprintln!`** reports **vf / greyness / xy_var / c0 / c1** under **`--nocapture`**). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **only** literal **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape (an empty `UMST_SHELL_HELM=` must **not** enable — older `!= \"0\"` parsing turned it on and tripped scatter backward at Striatus N); default **off**. **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`**, **`UMST_SHELL_ROOF_RAMP`** / **`UMST_SHELL_ROOF_RAMP_F`** — top-face **x** ramp \(w=1+r\,i_x/n_x\) (**`UMST_SHELL_ROOF_RAMP_F`**, default **0.2**). **`UMST_SHELL_ROOF_RAMP=0`** → **uniform** roof (same as **`optimize_shell_3d`** with ramp unset). **Unset** or any value other than **`0`** / **`1`** → **ramp on** for this harness (matches quick CI’s gentle **x** bias; the example still defaults ramp **off** when unset). Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
 //!
 //! **Bar-network PCG (Ring 1 / B6):** `VectorMechanicsSolver::packed_bar_network_equilibrium` (umst-manifold `mechanics.rs`) caps passes at **`min(max_cg_iterations, 3N)`** and **exits early** when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\). On **40×40×4**, `N≈8.4×10³`; the full harness defaults **`max_cg_iterations = 2000`** (**`UMST_SHELL_MAX_CG`**) and **`e_min = 10⁻³·E₀`** (**`UMST_SHELL_E_MIN_REL`**) for SIMP conditioning under four-sided perimeter pins + roof traction (v0.4 follow-up Ring 1).
 
 //! **`UMST_RIB_QUICK`:** unset or `1` — implied “small / few iterations” CI mode (grid defaults below). Set `UMST_RIB_QUICK=0` only if you intentionally enlarge the quick harness via `UMST_SHELL_*`.
 //!
-//! **Sizing env:** `UMST_SHELL_NX`, `UMST_SHELL_NY`, `UMST_SHELL_NZ`, `UMST_SHELL_ITERS`, `UMST_SHELL_VF`.
+//! **Sizing env:** `UMST_SHELL_NX`, `UMST_SHELL_NY`, `UMST_SHELL_NZ`, `UMST_SHELL_ITERS`, `UMST_SHELL_VF`. **`UMST_RIB_QUICK=0`** raises the quick outer cap from **20** to **32** (see [`short_mesh_and_iters`]).
 
 use std::env;
 
@@ -147,21 +147,27 @@ fn parse_usize(key: &str) -> Option<usize> {
     env::var(key).ok()?.parse().ok()
 }
 
+fn rib_quick_ci_mode() -> bool {
+    !matches!(env::var("UMST_RIB_QUICK").as_deref(), Ok("0"))
+}
+
 fn short_mesh_and_iters() -> (usize, usize, usize, usize) {
     let gx = parse_usize("UMST_SHELL_NX");
     let gy = parse_usize("UMST_SHELL_NY");
     let gz = parse_usize("UMST_SHELL_NZ");
     let git = parse_usize("UMST_SHELL_ITERS");
     let all_unset = gx.is_none() && gy.is_none() && gz.is_none() && git.is_none();
+    let quick = rib_quick_ci_mode();
+    let max_iters = if quick { 20 } else { 32 };
+    let default_iters = if quick { 20 } else { 24 };
     if all_unset {
-        // Mild XY aspect ratio + a few extra Adam steps help the quick gate clear the 4e-5 top-slice floor.
-        return (9, 8, 2, 24);
+        return (9, 8, 3, default_iters);
     }
     (
         gx.unwrap_or(9).clamp(4, 32).min(16),
         gy.unwrap_or(8).clamp(4, 32).min(16),
         gz.unwrap_or(2).clamp(2, 8).min(4),
-        git.unwrap_or(24).clamp(1, 64).min(32),
+        git.unwrap_or(default_iters).clamp(1, 64).min(max_iters),
     )
 }
 
@@ -175,6 +181,23 @@ fn parse_target_vf() -> f32 {
 fn greyness_mean(rho: &[f32]) -> f32 {
     let n = rho.len().max(1) as f32;
     rho.iter().map(|&r| 4.0 * r * (1.0 - r)).sum::<f32>() / n
+}
+
+fn greyness_roof_slice_mean(rho: &[f32], nx: usize, ny: usize, nz: usize) -> f32 {
+    let nx1 = nx + 1;
+    let ny1 = ny + 1;
+    let iz = nz;
+    let mut s = 0.0_f32;
+    let mut c = 0usize;
+    for iy in 0..ny1 {
+        for ix in 0..nx1 {
+            let nid = ix + iy * nx1 + iz * nx1 * ny1;
+            let r = rho[nid].clamp(0.0, 1.0);
+            s += 4.0 * r * (1.0 - r);
+            c += 1;
+        }
+    }
+    s / c.max(1) as f32
 }
 
 fn xy_plane_variance(rho: &[f32], nx: usize, ny: usize, nz: usize) -> f32 {
@@ -255,11 +278,9 @@ fn run_rib_quick_metrics() -> RibMetrics {
         .div_scalar(coord_scale)
         .mul_scalar(2.0)
         .sub_scalar(1.0);
-    // Gentle x-ramp on roof traction (same lumping as [`top_load_inner`]); biases adjoint sensitivities in x
-    // without Striatus-style XY reflection averaging.
-    let live_inner = top_load_inner_x_ramp(nx, ny, nz, 50.0, dx, dy, 0.2, device);
+    let live_inner = top_load_inner_x_ramp(nx, ny, nz, 96.0, dx, dy, 0.55, device);
 
-    let proj = HeavisideProjection::new(10.0, 0.5);
+    let proj = HeavisideProjection::new(28.0, 0.5);
 
     let mat = ElasticMaterial {
         e0: 200e6,
@@ -292,7 +313,7 @@ fn run_rib_quick_metrics() -> RibMetrics {
 
     // Large enough that `sigmoid(MLP(x))` is not numerically flat on the roof slice under f32; full
     // Striatus uses continuation + reflection instead of this knob.
-    let mut opt = topology_optimizer_scaled(target_vf, 3.0, 32, 0.42, device);
+    let mut opt = topology_optimizer_scaled(target_vf, 3.0, 56, 0.5, device);
     let mut adam = AdamConfig::new().init::<B, _>();
 
     let mut comp_scale = 1e-12_f32;
@@ -332,7 +353,7 @@ fn run_rib_quick_metrics() -> RibMetrics {
 
         let grads = total_loss.backward();
         let gp = GradientsParams::from_grads(grads, &opt.density_net);
-        opt.density_net = adam.step(0.005, opt.density_net, gp);
+        opt.density_net = adam.step(0.0075, opt.density_net, gp);
     }
 
     let rho_raw = opt.density_net.forward_batched(coords_norm.clone());
@@ -347,9 +368,7 @@ fn run_rib_quick_metrics() -> RibMetrics {
     let rho_phys = vol_proj.project(rho_inner);
     let rho_vec = rho_phys.into_data().value;
     let vf = rho_vec.iter().sum::<f32>() / rho_vec.len().max(1) as f32;
-    // Quick CI: greyness on **Heaviside** ρ (pre-`VolumeProjection`). v0.4 B6 print gate uses
-    // post-projection ρ; bisection pushes many nodes toward ~0.5 and inflates `4ρ(1-ρ)`.
-    let greyness = greyness_mean(&rho_mid_vec);
+    let greyness = greyness_roof_slice_mean(&rho_vec, nx, ny, nz);
 
     RibMetrics {
         vf,
@@ -616,7 +635,7 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
 fn shell_topology_rib_pattern_quick() {
     let target_vf = parse_target_vf();
     let m = run_rib_quick_metrics();
-    let band = 0.15_f32 * target_vf;
+        let band = 0.15_f32 * target_vf;
     assert!(
         (m.vf - target_vf).abs() <= band,
         "projected vf {:?} within ±15% of {:?}",
@@ -631,12 +650,16 @@ fn shell_topology_rib_pattern_quick() {
         m.xy_var
     );
     assert!(m.xy_var.is_finite(), "xy var {:?}", m.xy_var);
-    // Quick path reports greyness on **Heaviside** ρ (pre-`VolumeProjection`); bisection toward V*
-    // can park many nodes near 0.5 so `4ρ(1−ρ)` is large — unlike full B6, which measures post-proj ρ.
+    let g_uni = 4.0_f32 * m.vf * (1.0_f32 - m.vf);
     assert!(
-        m.greyness.is_finite() && m.greyness <= 1.0_f32 + 1e-3,
-        "greyness (Heaviside ρ) {:?} finite in [0,1] band",
-        m.greyness
+        m.greyness < g_uni - 0.008_f32,
+        "roof-slice post–projection greyness {:?} must sit ≥0.008 below the uniform-at-vf ceiling {:?} (quick de-greying proxy; full B6 `<0.15` stays on 40²×4 / 200 outers); vf={:?} xy_var={:?} c0={:?} c1={:?}",
+        m.greyness,
+        g_uni,
+        m.vf,
+        m.xy_var,
+        m.c0,
+        m.c1
     );
     assert!(
         m.c0.is_finite() && m.c1.is_finite(),
