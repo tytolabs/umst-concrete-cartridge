@@ -8,7 +8,7 @@
 //! **Track B6 (v0.4)** — `shell_topology_rib_pattern`: Striatus-class gates ([`composer_prompts/v0.4_solver_completion_no_namesakes.md`](../../../../composer_prompts/v0.4_solver_completion_no_namesakes.md) §B6).
 //!
 //! - [`shell_topology_rib_pattern_quick`]: CI — compact **0.8×0.8×0.1** m slab, coords **\([-1,1]^3\)** (same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs)), **9×8** in-plane cells, gentle roof **x-ramp** \(r=0.2\), Heaviside \(\beta=10\). **Helmholtz is omitted on the Burn AD tape**; [`VolumeProjection`] after Adam. Default **24** steps. Gates: VF ±15%, top-face variance of Heaviside \(\hat\rho\) \(> 2\times 10^{-5}\) (full B6: \(>0.1\) on final \(\rho\)); greyness not asserted on quick path; compliance ratio bounded.
-//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release**, and the **optimisation** does not satisfy the brief greyness / compliance gates unless you run the full **200** outers — the Rust test **skips** those acceptance asserts when **`UMST_SHELL_RIB_FULL_ITERS` < 200** (finite compliance + loose VF band only). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **only** literal **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape (an empty `UMST_SHELL_HELM=` must **not** enable — older `!= \"0\"` parsing turned it on and tripped scatter backward at Striatus N); default **off**. **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`** — same semantics as the example. Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
+//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release**, and the **optimisation** does not satisfy the brief greyness / compliance gates unless you run the full **200** outers — the Rust test **skips** those acceptance asserts when **`UMST_SHELL_RIB_FULL_ITERS` < 200** (finite compliance + loose VF band only; smoke **`eprintln!`** reports **vf / greyness / xy_var / c0 / c1** under **`--nocapture`**). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **only** literal **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape (an empty `UMST_SHELL_HELM=` must **not** enable — older `!= \"0\"` parsing turned it on and tripped scatter backward at Striatus N); default **off**. **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`**, **`UMST_SHELL_ROOF_RAMP`** / **`UMST_SHELL_ROOF_RAMP_F`** (optional **x** roof traction ramp when **`UMST_SHELL_ROOF_RAMP=1`**, same literal parsing as the example) — same semantics as the example. Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
 //!
 //! **Bar-network PCG (Ring 1 / B6):** `VectorMechanicsSolver::packed_bar_network_equilibrium` (umst-manifold `mechanics.rs`) caps passes at **`min(max_cg_iterations, 3N)`** and **exits early** when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\). On **40×40×4**, `N≈8.4×10³`; the full harness defaults **`max_cg_iterations = 2000`** (**`UMST_SHELL_MAX_CG`**) and **`e_min = 10⁻³·E₀`** (**`UMST_SHELL_E_MIN_REL`**) for SIMP conditioning under four-sided perimeter pins + roof traction (v0.4 follow-up Ring 1).
 
@@ -443,6 +443,16 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         Tensor::<B, 3>::from_data(Data::new(bm, Shape::new([1, nn, 3])), device)
     };
 
+    // Roof traction: match `optimize_shell_3d` — optional x-ramp (`UMST_SHELL_ROOF_RAMP=1`) biases
+    // sensitivities in x when uniform pressure + XY mirroring would otherwise leave the field too grey.
+    let roof_ramp_on = matches!(env::var("UMST_SHELL_ROOF_RAMP").as_deref(), Ok("1"));
+    let roof_ramp_f = env::var("UMST_SHELL_ROOF_RAMP_F")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.2_f32);
+    let ramp = if roof_ramp_on { roof_ramp_f } else { 0.0_f32 };
+    let nx_d = nx.max(1) as f32;
+
     let mut live_f = vec![0.0f32; n * 3];
     let nx1 = nx + 1;
     let ny1 = ny + 1;
@@ -450,7 +460,8 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     for iy in 0..=ny {
         for ix in 0..=nx {
             let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
-            live_f[nid * 3 + 2] = -50.0 * dx * dy;
+            let w = 1.0_f32 + ramp * (ix as f32 / nx_d);
+            live_f[nid * 3 + 2] = -50.0 * dx * dy * w;
         }
     }
     let live_force: Tensor<B, 3> =
@@ -669,7 +680,12 @@ fn shell_topology_rib_pattern_full_v04() {
             m.xy_var
         );
         eprintln!(
-            "shell_topology_rib_pattern_full_v04: smoke mode (UMST_SHELL_RIB_FULL_ITERS={adam_iters} < 200) — B6 greyness / xy_var / compliance-drop gates skipped"
+            "shell_topology_rib_pattern_full_v04: smoke mode (UMST_SHELL_RIB_FULL_ITERS={adam_iters} < 200) — B6 greyness / xy_var / compliance-drop gates skipped | vf={:.4} greyness={:.4} xy_var={:.4} c0={:.4} c1={:.4}",
+            m.vf,
+            m.greyness,
+            m.xy_var,
+            m.c0,
+            m.c1
         );
         return;
     }
