@@ -8,9 +8,9 @@
 //! **Track B6 (v0.4)** — `shell_topology_rib_pattern`: Striatus-class gates ([`composer_prompts/v0.4_solver_completion_no_namesakes.md`](../../../../composer_prompts/v0.4_solver_completion_no_namesakes.md) §B6).
 //!
 //! - [`shell_topology_rib_pattern_quick`]: CI — compact **0.8×0.8×0.1** m slab, coords **\([-1,1]^3\)** (same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs)), **9×8** in-plane cells, gentle roof **x-ramp** \(r=0.2\), Heaviside \(\beta=10\). **Helmholtz is omitted on the Burn AD tape**; [`VolumeProjection`] after Adam. Default **24** steps. Gates: VF ±15%, top-face variance of Heaviside \(\hat\rho\) \(> 2\times 10^{-5}\) (full B6: \(>0.1\) on final \(\rho\)); greyness not asserted on quick path; compliance ratio bounded.
-//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release`, and **does not** satisfy the brief greyness / compliance gates (those need the full **200** outers). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape; default **off** (scatter backward mis-shapes at Striatus `N` on Burn 0.13). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full harness.
+//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release`, and **does not** satisfy the brief greyness / compliance gates (those need the full **200** outers). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape; default **off** (scatter backward mis-shapes at Striatus `N` on Burn 0.13). **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`** — same semantics as the example. Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
 //!
-//! **Bar-network PCG (Ring 1 / B6):** `VectorMechanicsSolver::packed_bar_network_equilibrium` (umst-manifold `mechanics.rs`) caps passes at **`min(max_cg_iterations, 3N)`** and **exits early** when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\). On **40×40×4**, `N≈8.4×10³`; the full harness sets **`max_cg_iterations = 2000`** and **`e_min = 10⁻³·E₀`** for SIMP conditioning under four-sided perimeter pins + roof traction (v0.4 follow-up Ring 1).
+//! **Bar-network PCG (Ring 1 / B6):** `VectorMechanicsSolver::packed_bar_network_equilibrium` (umst-manifold `mechanics.rs`) caps passes at **`min(max_cg_iterations, 3N)`** and **exits early** when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\). On **40×40×4**, `N≈8.4×10³`; the full harness defaults **`max_cg_iterations = 2000`** (**`UMST_SHELL_MAX_CG`**) and **`e_min = 10⁻³·E₀`** (**`UMST_SHELL_E_MIN_REL`**) for SIMP conditioning under four-sided perimeter pins + roof traction (v0.4 follow-up Ring 1).
 
 //! **`UMST_RIB_QUICK`:** unset or `1` — implied “small / few iterations” CI mode (grid defaults below). Set `UMST_RIB_QUICK=0` only if you intentionally enlarge the quick harness via `UMST_SHELL_*`.
 //!
@@ -373,6 +373,24 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let device_default = Default::default();
     let device = &device_default;
 
+    let use_self_weight = env::var("UMST_SHELL_SELF_WEIGHT")
+        .map(|v| v != "0")
+        .unwrap_or(false);
+    let vol_in_loop = env::var("UMST_SHELL_VOL_LOOP")
+        .map(|v| v != "0")
+        .unwrap_or(true);
+    let use_pc = env::var("UMST_SHELL_PCG").map(|v| v != "0").unwrap_or(true);
+    let max_cg = env::var("UMST_SHELL_MAX_CG")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(2000usize)
+        .clamp(50, 50_000);
+    let e_min_rel = env::var("UMST_SHELL_E_MIN_REL")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1e-3_f32)
+        .clamp(1e-9, 1.0);
+
     let nx = 40usize;
     let ny = 40usize;
     let nz = 4usize;
@@ -459,16 +477,15 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         e0,
         nu: 0.2,
         simp_p: 3.0,
-        // Soft void floor (v0.4 follow-up path 2): 1 Pa vs 200 GPa gave ~2×10⁸ contrast and ill-conditioned
-        // Jacobi-PCG on large slabs; 1e-3·E₀ matches documented SIMP conditioning guidance.
-        e_min: e0 * 1e-3,
+        // Soft void floor: match `optimize_shell_3d` / Track B6 — override with `UMST_SHELL_E_MIN_REL`.
+        e_min: e0 * e_min_rel,
     };
     let cg_cfg = MechanicsInnerLoopConfig {
         // `packed_bar_network_equilibrium` caps at min(this, 3N); 200 iters was far below a useful solve.
-        max_cg_iterations: 2000,
+        max_cg_iterations: max_cg,
         cg_tolerance: 1e-6,
         pcg_tolerance: 1e-6,
-        use_preconditioner: true,
+        use_preconditioner: use_pc,
         max_equilibrium_substeps: 1,
     };
 
@@ -510,9 +527,19 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             rho_raw.clone()
         };
         let rho_mid = proj.project(rho_tilde).reshape([1, n, 1]);
-        let rho_bar = vol_proj.project(rho_mid).reshape([1, n, 1]);
+        let rho_bar = if vol_in_loop {
+            vol_proj.project(rho_mid.clone()).reshape([1, n, 1])
+        } else {
+            rho_mid.clone()
+        };
 
-        let bf = sw_cfg.body_force(rho_bar.clone()).add(live_force.clone());
+        let bf = if use_self_weight {
+            sw_cfg
+                .body_force(rho_bar.clone())
+                .add(live_force.clone())
+        } else {
+            live_force.clone()
+        };
         let p_act = ContinuationSchedule::value(it.saturating_sub(1), iter_total);
         let simp_mat = SimpElasticMaterial {
             e0: material.e0,
@@ -535,6 +562,12 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         last_rho = rho_bar.clone().into_data().value;
 
         if it == 1 {
+            assert!(
+                c_raw.is_finite(),
+                "B6 full harness: non-finite raw compliance at iter 1 (bar PCG / load path). \
+Try UMST_SHELL_SELF_WEIGHT=0, UMST_SHELL_MAX_CG>=2000, UMST_SHELL_E_MIN_REL=0.001, UMST_SHELL_PCG=1. \
+Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, max_cg={max_cg})."
+            );
             comp_scale = c_raw.max(1e-12);
             c0 = c_raw / comp_scale;
         }
@@ -543,6 +576,9 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
 
         let loss_scalar = total_loss.clone().into_data().value[0];
         if loss_scalar.is_nan() || loss_scalar.is_infinite() {
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} skipped Adam (non-finite loss={loss_scalar})"
+            );
             continue;
         }
 
@@ -606,9 +642,51 @@ fn shell_topology_rib_pattern_full_v04() {
     );
     let target_vf = parse_target_vf();
     let m = run_rib_full_striatus(target_vf);
-    assert!((m.vf - target_vf).abs() <= 0.01, "vf {:?}", m.vf);
-    assert!(m.greyness < 0.15, "greyness {:?}", m.greyness);
-    assert!(m.xy_var > 0.1, "xy_var {:?}", m.xy_var);
-    assert!(m.c0.is_finite() && m.c1.is_finite(), "compliance");
-    assert!(m.c1 < m.c0 * 0.6, "compliance drop {:?} {:?}", m.c1, m.c0);
+    assert!(
+        (m.vf - target_vf).abs() <= 0.01,
+        "vf gate: got vf={} target_vf={} (greyness={} xy_var={} c0={} c1={})",
+        m.vf,
+        target_vf,
+        m.greyness,
+        m.xy_var,
+        m.c0,
+        m.c1
+    );
+    assert!(
+        m.greyness < 0.15,
+        "greyness gate: got {} (vf={} xy_var={} c0={} c1={})",
+        m.greyness,
+        m.vf,
+        m.xy_var,
+        m.c0,
+        m.c1
+    );
+    assert!(
+        m.xy_var > 0.1,
+        "xy_var gate: got {} (vf={} greyness={} c0={} c1={})",
+        m.xy_var,
+        m.vf,
+        m.greyness,
+        m.c0,
+        m.c1
+    );
+    assert!(
+        m.c0.is_finite() && m.c1.is_finite(),
+        "compliance finite: c0={:?} c1={:?} (vf={} greyness={} xy_var={})",
+        m.c0,
+        m.c1,
+        m.vf,
+        m.greyness,
+        m.xy_var
+    );
+    assert!(
+        m.c1 < m.c0 * 0.6,
+        "compliance drop gate: c0={} c1={} ratio={} (vf={} greyness={} xy_var={})",
+        m.c0,
+        m.c1,
+        m.c1 / m.c0.max(1e-30),
+        m.vf,
+        m.greyness,
+        m.xy_var
+    );
 }

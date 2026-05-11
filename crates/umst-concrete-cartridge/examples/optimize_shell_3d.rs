@@ -310,9 +310,8 @@ fn main() {
         .unwrap_or(20usize);
     let partners = reflection_xy_partner_indices::<B>(nx, ny, nz, &device);
 
-    let helm_on = env::var("UMST_SHELL_HELM")
-        .map(|v| v != "0")
-        .unwrap_or(false);
+    // Only `UMST_SHELL_HELM=1` enables Helmholtz; `UMST_SHELL_HELM=` yields `Ok("")`, which must not enable.
+    let helm_on = matches!(env::var("UMST_SHELL_HELM").as_deref(), Ok("1"));
     let vol_in_loop = env::var("UMST_SHELL_VOL_LOOP")
         .map(|v| v != "0")
         .unwrap_or(true);
