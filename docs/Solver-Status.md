@@ -179,7 +179,35 @@ Lower-priority stretch items from the follow-up brief (stacked THMC beyond split
 
 - The brief defines **target** public filenames and thresholds for **v0.4**. A checkout may still ship **v0.3-only** names (e.g. `striatus_shell_v0.3.*`) or lack rib-pattern completion — **do not** claim “v0.4 Striatus shell complete” until the **exact** filenames below exist, meet **Track L** size/structural gates, and **Track B8** checks are satisfied (tests + `print_ready.json`).
 - **CI vs brief:** default cartridge CI may run only a **quick** rib-pattern harness; the brief’s **40 × 40 × 4**, **200**-iteration proof may stay **`#[ignore]`** or env-gated — see **this file** preamble (**Track B6**).
-- **B6 bar equilibrium:** `packed_bar_network_equilibrium` runs a **fixed** PCG iteration count **`min(max_cg_iterations, 3N)`** and does **not** early-exit on `cg_tolerance` / `pcg_tolerance` (those fields are API placeholders for callers). The full B6 harness therefore raises `max_cg_iterations` and uses **`E_{\min} = 10^{-3} E_0`** at **40×40×4** for solve fidelity and SIMP void–solid contrast; details in `shell_topology_rib_pattern.rs` module docs.
+- **B6 bar equilibrium:** `packed_bar_network_equilibrium` caps PCG at **`min(max_cg_iterations, 3N)`** and **early-exits** when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\) (see `umst-manifold` `mechanics.rs`). The full B6 harness still uses a large `max_cg_iterations`, tight relative tolerances, and **`E_{\min} = 10^{-3} E_0`** at **40×40×4**; details in `shell_topology_rib_pattern.rs` module docs.
+
+### NaN / conditioning — `optimize_shell_3d` (40²×4)
+
+**Where NaNs enter:** [`AdjointCompliance::forward_and_loss`](../../umst-manifold/src/physics/adjoint.rs) builds nodal stiffness from `SimpElasticMaterial`, runs inner [`VectorMechanicsSolver::packed_bar_network_equilibrium`](../../umst-manifold/src/physics/mechanics.rs) (projected **f32** PCG, capped iteration count, optional Jacobi preconditioner), then `masked_dot` → raw compliance `c_raw`. The discrete-adjoint surrogate re-lifts inner tensors with `Tensor::from_inner`; non-finite **`u`** or edge elongations **`δ_e`** poison **`c_raw`** and the surrogate. **Self-weight** body force scales with filtered density on large slabs and can drive bar PCG into **non-finite** `u` in **`f32`** (`crates/umst-concrete-cartridge/tests/shell_demo_smoke.rs` uses traction-only for that reason). **Helmholtz** Richardson on the **Burn Autodiff** tape can amplify round-off on large 3-D graphs; [`HelmholtzFilter::apply`](../../umst-manifold/src/physics/topology_filter.rs) honours the constructor iteration count (it no longer forces a **400**-step minimum over a **240**-step caller). **In-loop [`VolumeProjection`]** bisection on AD can trip Burn scatter backward limits on large slabs — the cartridge example defaults to **terminal-only** projection unless **`UMST_SHELL_VOL_LOOP=1`**.
+
+**Reproduce (cartridge example — finite with default env flags):**
+
+```bash
+cd umst-concrete-cartridge
+cargo run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render'
+```
+
+**Stress ill-conditioning (historical NaN at iter 1 — low PCG budget + tiny `E_min`):**
+
+```bash
+cd umst-concrete-cartridge
+UMST_SHELL_MAX_CG=200 UMST_SHELL_E_MIN_REL=5e-9 \
+  cargo run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render'
+```
+
+**Full B6 ignored harness:**
+
+```bash
+cd umst-concrete-cartridge
+UMST_SHELL_RIB_PATTERN=1 cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 -- --ignored
+```
+
+**Mitigations:** raise **`UMST_SHELL_MAX_CG`**, keep **`UMST_SHELL_E_MIN_REL≈1e-3`** (Track B6 **`10^{-3}E_0`**), keep **`UMST_SHELL_PCG=1`**, **`UMST_SHELL_SELF_WEIGHT=0`** for traction-only while **`f32`** bar PCG is hardened, **`UMST_SHELL_HELM=0`** to A/B the graph filter on AD, **`UMST_SHELL_VOL_LOOP=0`** to skip in-loop volume bisection on AD; future **f64** inner equilibrium remains deferred.
 
 ### Exact artefact paths (relative to `umst-concrete-cartridge/` repo root)
 
@@ -204,10 +232,12 @@ UMST_SHELL_DUMP_ITER=1 UMST_SHELL_DUMP_STRIDE=10 UMST_SHELL_ITERS=200 \
     bash notebooks/_run_shell_demo.sh
 ```
 
-**Shell demo — brief env / NaN / artefacts (operator notes):**
+**Shell demo — brief env / NaN / artefacts (mechanics + topology operator notes):**
 
 - **`UMST_SHELL_ITERS=5`** (or any smaller value) only shortens the Rust loop; it does **not** fix **`loss=NaN`** at iter 1 when the forward adjoint path is unstable.
-- With default **`UMST_SHELL_SELF_WEIGHT`** enabled in `optimize_shell_3d`, **`f32`** PCG + self-weight on the **40×40×4** slab often yields **NaN** compliance immediately; **`notebooks/_run_shell_demo.sh`** therefore defaults **`UMST_SHELL_SELF_WEIGHT=0`** (traction + roof pressure only) so the Python chain can run. Override in the environment if you explicitly want self-weight.
+- **`optimize_shell_3d`** defaults **`UMST_SHELL_SELF_WEIGHT`** to **off** (roof traction only); turning **`UMST_SHELL_SELF_WEIGHT=1`** on **40×40×4** can still stress **`f32`** PCG + large RHS. **`notebooks/_run_shell_demo.sh`** also defaults self-weight off for the Python chain; enable explicitly if needed.
+- **AdjointCompliance / SIMP:** non-finite `c_raw` or surrogate often traces to **stiffness span** (`E_min` vs `E_0` + CG budget), **ill-conditioned PCG** (manifold `mechanics.rs` stops the inner loop if `rz` or \(\beta\) becomes non-finite), or **fractional `p`** with slightly negative edge-averaged \(\rho_e\) making \(\rho_e^{p-1}\) NaN (mitigated by clamping \(\rho_e\) to \([0,1]\) on the sensitivity path in `adjoint.rs`). **`UMST_SHELL_HELM=1`** and **`UMST_SHELL_VOL_LOOP=1`** on large slabs can add Burn-side fragility — see `optimize_shell_3d.rs` module docs.
+- **Smoke repro:** `cd umst-concrete-cartridge && UMST_SHELL_RIB_PATTERN=1 UMST_SHELL_RIB_FULL_ITERS=1 cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 -- --ignored`.
 - If **`iter_*.npy`** from an older grid or dump remain under `examples/_artifacts/shell/`, **`render_shell_gif.py`** takes the iter branch and can **`ValueError`** on reshape vs the current **`manifest.json`** — delete them (`find …/shell -name 'iter_*.npy' -delete`) or set **`UMST_SHELL_DUMP_ITER=1`** only when the grid matches.
 - A **stale `manifest.json`** (e.g. smaller `nx,ny,nz`) vs a fresh **`final.npy`** from the large grid triggers **`final.npy size … != grid …`** in **`render_shell_gif.py`**; re-run **`optimize_shell_3d`** once so manifest and tensors align.
 

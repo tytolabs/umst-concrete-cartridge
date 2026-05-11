@@ -446,7 +446,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         direction: [0.0, 0.0, -1.0],
     };
 
-    let helm = HelmholtzFilter::new((2.0 * dx.min(dy).min(dz)).max(1e-6), 240, 1e-7);
+    let helm = HelmholtzFilter::new((2.0 * dx.min(dy).min(dz)).max(1e-6), 48, 1e-7);
     let mut proj = HeavisideProjection::new(1.0, 0.5);
     let vol_proj = VolumeProjection::new(target_vf, 48);
 
@@ -492,13 +492,18 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         let beta = BetaContinuation::beta(it.saturating_sub(1), iter_total, 1.0, 32.0);
         proj.set_beta(beta);
 
-        let mut rho_raw = opt.density_net.forward_batched(coords_norm.clone());
+        let mut rho_raw = opt
+            .density_net
+            .forward_batched(coords_norm.clone())
+            .reshape([1, n, 1]);
         if sym_period > 0 && it % sym_period == 0 {
-            rho_raw = apply_reflection_xy_average(rho_raw, &partners);
+            rho_raw = apply_reflection_xy_average(rho_raw, &partners).reshape([1, n, 1]);
         }
-        let rho_tilde = helm.apply(rho_raw, edges_b1.clone(), dx_f);
-        let rho_mid = proj.project(rho_tilde);
-        let rho_bar = vol_proj.project(rho_mid);
+        let rho_tilde = helm
+            .apply(rho_raw, edges_b1.clone(), dx_f)
+            .reshape([1, n, 1]);
+        let rho_mid = proj.project(rho_tilde).reshape([1, n, 1]);
+        let rho_bar = vol_proj.project(rho_mid).reshape([1, n, 1]);
 
         let bf = sw_cfg.body_force(rho_bar.clone()).add(live_force.clone());
         let p_act = ContinuationSchedule::value(it.saturating_sub(1), iter_total);

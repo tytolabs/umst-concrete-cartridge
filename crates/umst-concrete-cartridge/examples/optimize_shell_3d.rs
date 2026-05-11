@@ -5,9 +5,11 @@
 //!
 //! Optimisation loss uses **discrete-adjoint compliance** ([`AdjointCompliance`]): equilibrium PCG runs on
 //! the inner (non-AD) backend while sensitivities follow the SIMP bar-network surrogate. Pseudo-density
-//! pipeline: optional **Helmholtz** (`UMST_SHELL_HELM=1`, default **off** — 240 Richardson iterations on the
-//! Burn AD graph destabilise `f32` on large slabs) → Heaviside (\(\beta\) via [`BetaContinuation`]) →
-//! **[`VolumeProjection`] each Adam step by default** (`UMST_SHELL_VOL_LOOP=0` skips in-loop projection);
+//! pipeline: optional **Helmholtz** (`UMST_SHELL_HELM=1`; default **off** — 240 Richardson steps on the Burn
+//! Autodiff tape can destabilise `f32` on large 3-D slabs; manifold `HelmholtzFilter` no longer forces a 400-iter
+//! floor over the constructor count) → Heaviside (\(\beta\) via [`BetaContinuation`]) → optional in-loop
+//! [`VolumeProjection`] (`UMST_SHELL_VOL_LOOP=0` skips in-loop projection; default **on** so mean VF tracks
+//! `UMST_SHELL_VF` and bar stiffness stays well-posed; terminal export still runs projection on the inner backend).
 //! SIMP exponent \(p\) follows [`ContinuationSchedule`]. Final `final_sigma.npy` still comes from a plain
 //! [`ExtrudedPlateMechanics::solve_equilibrium`] pass (no AD on that path).
 //! Writes `examples/_artifacts/shell/final.npy` (`float32`, shape `[1, N, 1]`) — same tensor layout
@@ -16,18 +18,15 @@
 //! \([\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{xy},\sigma_{yz},\sigma_{xz}]\)) for
 //! `overlay_final_isostatics.py` when present.
 //! Optional per-iteration dumps: set `UMST_SHELL_DUMP_ITER=1` (writes large gitignored `iter_*.npy`).
-//! **In-loop [`VolumeProjection`]** defaults **on** (matches **Track B6** full rib harness: mean VF toward
-//! `UMST_SHELL_VF` each Adam step). Set **`UMST_SHELL_VOL_LOOP=0`** to skip it during optimisation (Heaviside
-//! ρ̂ only); that can leave mean density near **0.5** and trigger **non-finite** bar-network compliance on
-//! **40²×4** without also tightening other knobs. The bisection backward can still hit Burn scatter limits on
-//! some hosts — disable only for debugging.
-//! **Self-weight:** default **on** (roof pressure + [`SelfWeightConfig`] body force). Set
-//! **`UMST_SHELL_SELF_WEIGHT=0`** for traction-only.
-//! **40×40×4 Striatus grid:** bar-network PCG uses a **fixed** `min(max_cg_iterations, 3N)` pass count (no tol
-//! early exit — see manifold `VectorMechanicsSolver::packed_bar_network_equilibrium`). Match **Track B6**
-//! full harness (`shell_topology_rib_pattern` `//!`): **`E_min = 10⁻³·E₀`** and **`max_cg_iterations = 2000`**
-//! (defaults here); `200` + `E_min = 1` Pa vs `E₀ = 200e6` Pa caused **NaN** compliance at iter 1. Override
-//! PCG budget with **`UMST_SHELL_MAX_CG`**; void floor with **`UMST_SHELL_E_MIN_REL`** (fraction of `e0`).
+//! **Self-weight:** default **off** (roof traction only — matches `shell_demo_smoke` and avoids **non-finite**
+//! bar PCG in `f32` on large grids). Set **`UMST_SHELL_SELF_WEIGHT=1`** for gravity body force.
+//! **40×40×4 Striatus grid:** bar-network PCG in `packed_bar_network_equilibrium` runs up to
+//! **`min(max_cg_iterations, 3N)`** iterations and **early-exits** when the projected residual
+//! \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\) (see manifold
+//! `mechanics.rs`). Match **Track B6** full harness (`shell_topology_rib_pattern` `#!`): **`E_min = 10⁻³·E₀`**
+//! and **`max_cg_iterations = 2000`** (defaults here); a too-small CG budget with **`E_min = 1`** Pa vs
+//! **`E₀ = 200`** GPa caused **non-finite** compliance at iter 1. Override PCG budget with **`UMST_SHELL_MAX_CG`**;
+//! void floor with **`UMST_SHELL_E_MIN_REL`** (fraction of `e0`).
 //!
 //! formal_anchor: Literature
 //! formal_citation: Sigmund & Maute 2013, Struct. Multidisc. Optim. 48:1031-1055
@@ -234,7 +233,7 @@ fn main() {
     };
     let use_self_weight = env::var("UMST_SHELL_SELF_WEIGHT")
         .map(|v| v != "0")
-        .unwrap_or(true);
+        .unwrap_or(false);
 
     let helm = HelmholtzFilter::new((2.0 * dx.min(dy).min(dz)).max(1e-6), 240, 1e-7);
     let mut proj = HeavisideProjection::new(1.0, 0.5);
@@ -312,9 +311,11 @@ fn main() {
     let partners = reflection_xy_partner_indices::<B>(nx, ny, nz, &device);
 
     let helm_on = env::var("UMST_SHELL_HELM")
-        .map(|v| v == "1")
+        .map(|v| v != "0")
         .unwrap_or(false);
-    let vol_in_loop = !matches!(env::var("UMST_SHELL_VOL_LOOP").as_deref(), Ok("0"));
+    let vol_in_loop = env::var("UMST_SHELL_VOL_LOOP")
+        .map(|v| v != "0")
+        .unwrap_or(true);
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let art_dir = manifest_dir.join("examples/_artifacts/shell");

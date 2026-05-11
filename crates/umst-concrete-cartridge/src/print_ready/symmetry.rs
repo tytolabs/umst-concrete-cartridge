@@ -50,12 +50,26 @@ pub fn apply_reflection_xy_average<B: Backend<FloatElem = f32>>(
     rho: Tensor<B, 3>,
     partners: &Tensor<B, 3, Int>,
 ) -> Tensor<B, 3> {
-    // `gather` (burn 0.13) requires `indices` to match `rho`'s shape on every axis except the
-    // gather dimension. Partners are `[1, N, 4]`, so repeat the density channel to `[1, N, 4]`.
-    let rho_wide = rho.repeat(2, 4);
-    let gathered = rho_wide.gather(1, partners.clone());
-    let [b, n, four] = gathered.dims();
-    debug_assert_eq!(four, 4);
-    let _ = b;
-    gathered.mean_dim(2).reshape(Shape::new([b, n, 1]))
+    let [batch, n, channels] = rho.dims();
+    debug_assert_eq!(
+        channels, 1,
+        "apply_reflection_xy_average: expected rho shape [B, N, 1], got channels={channels}"
+    );
+    debug_assert_eq!(
+        partners.dims(),
+        [batch, n, 4],
+        "apply_reflection_xy_average: partners must be [B, N, 4]"
+    );
+    // Four separate `[B, N]` gathers: a single `gather(1, partners.reshape([B, 4N]))` mis-shapes
+    // the index tensor on **Autodiff** at large `N` (Striatus-scale 40×40×4 — Burn 0.13 / ndarray).
+    let rho_line = rho.reshape([batch, n]);
+    let mut acc = Tensor::zeros_like(&rho_line);
+    for k in 0..4usize {
+        let idx_k = partners
+            .clone()
+            .slice([0..batch, 0..n, k..k + 1])
+            .reshape([batch, n]);
+        acc = acc.add(rho_line.clone().gather(1, idx_k));
+    }
+    acc.div_scalar(4.0).reshape(Shape::new([batch, n, 1]))
 }
