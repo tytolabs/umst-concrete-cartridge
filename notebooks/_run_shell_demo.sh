@@ -3,6 +3,7 @@
 # Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 # End-to-end Striatus shell demo: Rust NPY dumps -> PNG frames -> overlay -> GIF -> STL.
 # Optional: UMST_SHELL_ITERS=5 for CI/smoke; UMST_SHELL_DUMP_ITER=1 for iter_*.npy frames (large).
+# Optional: UMST_SHELL_HELM=1 enables graph Helmholtz on the AD tape (example default is off).
 # render_shell_gif.py interpolates from uniform when iter_*.npy are absent.
 # Default UMST_SHELL_SELF_WEIGHT=0 (traction-only): default optimize_shell_3d self-weight often gives NaN
 # compliance on f32 adjoint at 40×40×4; smaller UMST_SHELL_ITERS does not fix that.
