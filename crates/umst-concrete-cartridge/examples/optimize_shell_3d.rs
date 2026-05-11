@@ -5,7 +5,9 @@
 //!
 //! Optimisation loss uses **discrete-adjoint compliance** ([`AdjointCompliance`]): equilibrium PCG runs on
 //! the inner (non-AD) backend while sensitivities follow the SIMP bar-network surrogate. Pseudo-density
-//! pipeline: Helmholtz → Heaviside (\(\beta\) via [`BetaContinuation`]) → [`VolumeProjection`] toward target VF;
+//! pipeline: optional **Helmholtz** (`UMST_SHELL_HELM=1`, default **off** — 240 Richardson iterations on the
+//! Burn AD graph destabilise `f32` on large slabs) → Heaviside (\(\beta\) via [`BetaContinuation`]) →
+//! **[`VolumeProjection`] each Adam step by default** (`UMST_SHELL_VOL_LOOP=0` skips in-loop projection);
 //! SIMP exponent \(p\) follows [`ContinuationSchedule`]. Final `final_sigma.npy` still comes from a plain
 //! [`ExtrudedPlateMechanics::solve_equilibrium`] pass (no AD on that path).
 //! Writes `examples/_artifacts/shell/final.npy` (`float32`, shape `[1, N, 1]`) — same tensor layout
@@ -14,10 +16,17 @@
 //! \([\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{xy},\sigma_{yz},\sigma_{xz}]\)) for
 //! `overlay_final_isostatics.py` when present.
 //! Optional per-iteration dumps: set `UMST_SHELL_DUMP_ITER=1` (writes large gitignored `iter_*.npy`).
+//! **In-loop [`VolumeProjection`]** defaults **on** (matches **Track B6** full rib harness: mean VF toward
+//! `UMST_SHELL_VF` each Adam step). Set **`UMST_SHELL_VOL_LOOP=0`** to skip it during optimisation (Heaviside
+//! ρ̂ only); that can leave mean density near **0.5** and trigger **non-finite** bar-network compliance on
+//! **40²×4** without also tightening other knobs. The bisection backward can still hit Burn scatter limits on
+//! some hosts — disable only for debugging.
+//! **Self-weight:** default **on** (roof pressure + [`SelfWeightConfig`] body force). Set
+//! **`UMST_SHELL_SELF_WEIGHT=0`** for traction-only.
 //! **40×40×4 Striatus grid:** bar-network PCG uses a **fixed** `min(max_cg_iterations, 3N)` pass count (no tol
 //! early exit — see manifold `VectorMechanicsSolver::packed_bar_network_equilibrium`). Match **Track B6**
 //! full harness (`shell_topology_rib_pattern` `//!`): **`E_min = 10⁻³·E₀`** and **`max_cg_iterations = 2000`**
-//! (defaults here); `200` + `E_min = 1` Pa vs `E₀ = 200` GPa caused **NaN** compliance at iter 1. Override
+//! (defaults here); `200` + `E_min = 1` Pa vs `E₀ = 200e6` Pa caused **NaN** compliance at iter 1. Override
 //! PCG budget with **`UMST_SHELL_MAX_CG`**; void floor with **`UMST_SHELL_E_MIN_REL`** (fraction of `e0`).
 //!
 //! formal_anchor: Literature
@@ -166,6 +175,9 @@ fn write_npy_f32(path: &std::path::Path, data: &[f32], shape: &[usize]) -> io::R
 
 fn main() {
     let device = Default::default();
+    // Match `shell_topology_rib_pattern_full_v04` for reproducible first-iter numerics (unseeded MLP + AD
+    // Helmholtz can hit NaNs on large slabs).
+    <B as BackendTrait>::seed(42);
     let nx = env::var("UMST_SHELL_NX")
         .ok()
         .and_then(|s| s.parse().ok())
@@ -220,6 +232,9 @@ fn main() {
         mass_penalty_q: 1.0,
         direction: [0.0, 0.0, -1.0],
     };
+    let use_self_weight = env::var("UMST_SHELL_SELF_WEIGHT")
+        .map(|v| v != "0")
+        .unwrap_or(true);
 
     let helm = HelmholtzFilter::new((2.0 * dx.min(dy).min(dz)).max(1e-6), 240, 1e-7);
     let mut proj = HeavisideProjection::new(1.0, 0.5);
@@ -296,6 +311,11 @@ fn main() {
         .unwrap_or(20usize);
     let partners = reflection_xy_partner_indices::<B>(nx, ny, nz, &device);
 
+    let helm_on = env::var("UMST_SHELL_HELM")
+        .map(|v| v == "1")
+        .unwrap_or(false);
+    let vol_in_loop = !matches!(env::var("UMST_SHELL_VOL_LOOP").as_deref(), Ok("0"));
+
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let art_dir = manifest_dir.join("examples/_artifacts/shell");
     let _ = fs::create_dir_all(&art_dir);
@@ -306,8 +326,8 @@ fn main() {
     fs::write(art_dir.join("manifest.json"), manifest).expect("write manifest.json");
 
     println!(
-        "optimize_shell_3d: grid {}×{}×{} cells, {} nodes, {} iterations",
-        nx, ny, nz, n, iterations
+        "optimize_shell_3d: grid {}×{}×{} cells, {} nodes, {} iterations, self_weight={}, vol_in_loop={}",
+        nx, ny, nz, n, iterations, use_self_weight, vol_in_loop
     );
 
     let mut last_loss = f32::NAN;
@@ -322,11 +342,24 @@ fn main() {
         if sym_on && sym_period > 0 && it % sym_period == 0 {
             rho_raw = apply_reflection_xy_average(rho_raw, &partners);
         }
-        let rho_tilde = helm.apply(rho_raw, edges_b1.clone(), dx_f);
+        // `UMST_SHELL_HELM=1` enables graph filter on the AD tape (can diverge in `f32` at Striatus scale).
+        let rho_tilde = if helm_on {
+            helm.apply(rho_raw.clone(), edges_b1.clone(), dx_f)
+        } else {
+            rho_raw.clone()
+        };
         let rho_mid = proj.project(rho_tilde);
-        let rho_bar = vol_proj.project(rho_mid);
+        let rho_bar = if vol_in_loop {
+            vol_proj.project(rho_mid.clone())
+        } else {
+            rho_mid.clone()
+        };
 
-        let bf = sw_cfg.body_force(rho_bar.clone()).add(live_force.clone());
+        let bf = if use_self_weight {
+            sw_cfg.body_force(rho_bar.clone()).add(live_force.clone())
+        } else {
+            live_force.clone()
+        };
         let p_act = ContinuationSchedule::value(it.saturating_sub(1), iter_total);
         let simp_mat = SimpElasticMaterial {
             e0: material.e0,
@@ -396,20 +429,30 @@ fn main() {
         .density_net
         .forward_batched(coords_norm.clone())
         .clamp(1e-6, 1.0 - 1e-6);
-    let rho_tilde = helm.apply(rho_final, edges_b1.clone(), dx_f);
+    let rho_tilde = if helm_on {
+        helm.apply(rho_final.clone(), edges_b1.clone(), dx_f)
+    } else {
+        rho_final
+    };
     let rho_mid = proj.project(rho_tilde);
-    let rho_out = vol_proj.project(rho_mid);
-    let bytes = rho_out.clone().into_data().value;
+    // Volume projection on inner only: no AD backward on bisection (export-only when `vol_in_loop` is false).
+    let rho_out_inner = vol_proj.project(rho_mid.inner());
+    let bytes = rho_out_inner.clone().into_data().value;
     let final_path = art_dir.join("final.npy");
     write_npy_f32(&final_path, &bytes, &[1, n, 1]).expect("write final.npy");
 
-    let sw = sw_cfg.body_force(rho_out.clone());
-    let body_force = sw.add(live_force.clone());
+    let body_force_inner = if use_self_weight {
+        sw_cfg
+            .body_force(rho_out_inner.clone())
+            .add(live_force.clone().inner())
+    } else {
+        live_force.clone().inner()
+    };
 
     let (_u_post, sigma_post) = plate.solve_equilibrium(
-        rho_out.clone(),
-        body_force.clone(),
-        boundary_mask.clone(),
+        rho_out_inner,
+        body_force_inner,
+        boundary_mask.clone().inner(),
         material,
         &cg_cfg,
     );

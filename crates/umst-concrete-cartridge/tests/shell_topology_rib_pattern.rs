@@ -8,9 +8,9 @@
 //! **Track B6 (v0.4)** — `shell_topology_rib_pattern`: Striatus-class gates ([`composer_prompts/v0.4_solver_completion_no_namesakes.md`](../../../../composer_prompts/v0.4_solver_completion_no_namesakes.md) §B6).
 //!
 //! - [`shell_topology_rib_pattern_quick`]: CI — compact **0.8×0.8×0.1** m slab, coords **\([-1,1]^3\)** (same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs)), **9×8** in-plane cells, gentle roof **x-ramp** \(r=0.2\), Heaviside \(\beta=10\). **Helmholtz is omitted on the Burn AD tape**; [`VolumeProjection`] after Adam. Default **24** steps. Gates: VF ±15%, top-face variance of Heaviside \(\hat\rho\) \(> 2\times 10^{-5}\) (full B6: \(>0.1\) on final \(\rho\)); greyness not asserted on quick path; compliance ratio bounded.
-//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental -- --ignored` (pass **`shell_topology_rib_pattern_full_v04`** before `--` to run only that test). **Runtime:** typically multi-minute CPU (Burn adjoint + Helmholtz each step). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full harness.
+//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental -- --ignored` (pass **`shell_topology_rib_pattern_full_v04`** before `--` to run only that test). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam loop for timing without editing Rust. **Runtime:** with PCG early exit (see below) typically minutes on CPU, not multi-hour. Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full harness.
 //!
-//! **Bar-network PCG (Ring 1 / B6):** `VectorMechanicsSolver::packed_bar_network_equilibrium` (umst-manifold `mechanics.rs`) runs a **fixed** iteration count `min(max_cg_iterations, 3N)` with no residual early exit (`pcg_tolerance` / `cg_tolerance` are kept for API parity). On **40×40×4**, `N≈8.4×10³` so the inner cap is **≈2.5×10⁴**; the full harness therefore sets **`max_cg_iterations = 2000`** (200 was far below a usable solve budget) and uses **`e_min = 10⁻³·E₀`** to limit `E_max/E_min` contrast under four-sided perimeter pins + roof traction (v0.4 follow-up Ring 1).
+//! **Bar-network PCG (Ring 1 / B6):** `VectorMechanicsSolver::packed_bar_network_equilibrium` (umst-manifold `mechanics.rs`) caps passes at **`min(max_cg_iterations, 3N)`** and **exits early** when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\). On **40×40×4**, `N≈8.4×10³`; the full harness sets **`max_cg_iterations = 2000`** and **`e_min = 10⁻³·E₀`** for SIMP conditioning under four-sided perimeter pins + roof traction (v0.4 follow-up Ring 1).
 
 //! **`UMST_RIB_QUICK`:** unset or `1` — implied “small / few iterations” CI mode (grid defaults below). Set `UMST_RIB_QUICK=0` only if you intentionally enlarge the quick harness via `UMST_SHELL_*`.
 //!
@@ -360,6 +360,14 @@ fn run_rib_quick_metrics() -> RibMetrics {
     }
 }
 
+fn parse_full_rib_adam_iters() -> usize {
+    env::var("UMST_SHELL_RIB_FULL_ITERS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(200)
+        .clamp(1, 200)
+}
+
 fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     <B as BackendTrait>::seed(42);
     let device_default = Default::default();
@@ -368,7 +376,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let nx = 40usize;
     let ny = 40usize;
     let nz = 4usize;
-    let iterations = 200usize;
+    let iterations = parse_full_rib_adam_iters();
     let iter_total = iterations;
 
     let lx = 4.0_f32;
@@ -577,7 +585,7 @@ fn shell_topology_rib_pattern_quick() {
 }
 
 #[test]
-#[ignore = "slow B6: UMST_SHELL_RIB_PATTERN=1 cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 -- --ignored"]
+#[ignore = "slow B6: UMST_SHELL_RIB_PATTERN=1 cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 -- --ignored (optional UMST_SHELL_RIB_FULL_ITERS=1..200 for smoke)"]
 fn shell_topology_rib_pattern_full_v04() {
     assert_eq!(
         env::var("UMST_SHELL_RIB_PATTERN").as_deref(),

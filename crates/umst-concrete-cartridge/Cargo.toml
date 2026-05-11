@@ -34,6 +34,9 @@ mechanics-adjoint = ["umst-manifold/mechanics-adjoint"]
 statistical-mechanics-vinet = ["umst-manifold/statistical-mechanics-vinet"]
 # CPU matmul speedup via Apple Accelerate when building on macOS (see README).
 blas-accelerate = ["burn-ndarray/blas-accelerate", "umst-manifold/blas-accelerate"]
+# Mac convenience bundle: solver-experimental + render + Accelerate. Auto-threads BLAS via vecLib.
+# Use: `cargo test --features mac-fast` / `cargo run --example optimize_shell_3d --features mac-fast`.
+mac-fast = ["solver-experimental", "render", "blas-accelerate"]
 # Striatus-class shell demo (`optimize_shell_3d`): NPY artefact layout + renderer hook (binary still solver-only).
 render = []
 
