@@ -17,7 +17,9 @@
 //! Also writes `final_sigma.npy` (`float32`, shape `[1, N, 6]`, Voigt order
 //! \([\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{xy},\sigma_{yz},\sigma_{xz}]\)) for
 //! `overlay_final_isostatics.py` when present.
-//! Optional per-iteration dumps: set `UMST_SHELL_DUMP_ITER=1` (writes large gitignored `iter_*.npy`).
+//! Optional per-iteration dumps: set **`UMST_SHELL_DUMP_ITER=1`** (writes large gitignored **`iter_*.npy`**).
+//! When dumps are on, **`UMST_SHELL_DUMP_STRIDE`** defaults to **10** (first, every **N**th, and last outer —
+//! same default as **`notebooks/_run_shell_demo.sh`**) so a **40×40×4** / **200**-outer run does not write **200** full fields.
 //! **Self-weight:** default **off** (roof traction only — matches `shell_demo_smoke` and avoids **non-finite**
 //! bar PCG in `f32` on large grids). Set **`UMST_SHELL_SELF_WEIGHT=1`** for gravity body force.
 //! **40×40×4 Striatus grid:** bar-network PCG in `packed_bar_network_equilibrium` runs up to
@@ -30,16 +32,18 @@
 //!
 //! **Bounded grid caps (env):** **`UMST_SHELL_NX` / `NY` / `NZ`** clamp to **`[6, 40]`** / **`[6, 40]`** / **`[2, 8]`**
 //! cells; **`UMST_SHELL_ITERS`** to **`[1, 500]`**. Track L / B8 proof on the **40×40×4** lattice still expects
-//! **`UMST_SHELL_ITERS=200`** (see `notebooks/_run_shell_demo.sh`). For a **fast wall-clock** check that
+//! **`UMST_SHELL_ITERS=200`** (see `notebooks/_run_shell_demo.sh`). **Overnight Rust-only (explicit 40×40×4, log):** from **`umst-concrete-cartridge/`**, after removing stale **`iter_*.npy`**: `UMST_SHELL_NX=40 UMST_SHELL_NY=40 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=200 UMST_SHELL_DUMP_ITER=0 cargo run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render' 2>&1 | tee shell_opt_40cube4_i200.log` — **`bash notebooks/_run_shell_demo.sh`** re-runs the Rust binary then GIF/STL/JSON; to post-process an existing **`final.npy`** only, invoke **`render_shell_gif.py`** … **`export_print_ready.py`** in order instead. For a **fast wall-clock** check that
 //! **`export_print_ready.py`** accepts the field (**ρ span ≥ 1e⁻³**), use a smaller grid, e.g.
 //! **`UMST_SHELL_NX=16 UMST_SHELL_NY=16 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=40`** (~minutes on a laptop CPU in
 //! `--release`); that does **not** by itself satisfy Ring‑1 B8 topology gates on the full Striatus lattice.
 //!
-//! **Final artefact vs last training step:** when **`UMST_SHELL_SYMMETRY`** is on (default), the optimiser
-//! averages **ρ** over the four XY mirror partners every **`UMST_SHELL_SYMM_PERIOD`** outers. The committed
-//! **`final.npy`** applies the **same XY average once** after the terminal forward so the export matches that
-//! symmetrised design (without this, **`final.npy`** could drift from the last mirrored forward and stay
-//! nearly uniform in XY while still meeting the volume target).
+//! **Final artefact vs last training step (XY symmetry):** when **`UMST_SHELL_SYMMETRY`** is on (default), the optimiser
+//! averages **ρ** over the four XY mirror partners every **`UMST_SHELL_SYMM_PERIOD`** outers (default **20**).
+//! **`final.npy`** then applies the **same XY reflection average once** after the terminal forward (before
+//! Helmholtz / projection / stress export). GIF frames built from **`iter_*.npy`** show **in-loop** **ρ** (mirrored
+//! only on sym-period steps), so the last animation frame can differ slightly from **`final.npy`** until you
+//! rely on **`final.npy`** / **`export_print_ready.py`** for Track L — use **`manifest.json`** (`symmetry_xy`,
+//! `sym_period`, …) to record what ran. **`UMST_SHELL_SYMMETRY=0`** disables both in-loop mirroring and the terminal average.
 //!
 //! formal_anchor: Literature
 //! formal_citation: Sigmund & Maute 2013, Struct. Multidisc. Optim. 48:1031-1055
@@ -332,7 +336,7 @@ fn main() {
     let dump_stride = env::var("UMST_SHELL_DUMP_STRIDE")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(1usize)
+        .unwrap_or(10usize)
         .max(1usize);
 
     let sym_on = env::var("UMST_SHELL_SYMMETRY")
@@ -354,8 +358,13 @@ fn main() {
     let art_dir = manifest_dir.join("examples/_artifacts/shell");
     let _ = fs::create_dir_all(&art_dir);
 
+    let sym_json = if sym_on { "true" } else { "false" };
+    let roof_json = if roof_ramp_on { "true" } else { "false" };
+    let sw_json = if use_self_weight { "true" } else { "false" };
+    let vol_json = if vol_in_loop { "true" } else { "false" };
+    let dump_json = if dump_iter { "true" } else { "false" };
     let manifest = format!(
-        r#"{{"nx":{nx},"ny":{ny},"nz":{nz},"lx":{lx},"ly":{ly},"lz":{lz},"dx":{dx},"dy":{dy},"dz":{dz}}}"#
+        r#"{{"nx":{nx},"ny":{ny},"nz":{nz},"lx":{lx},"ly":{ly},"lz":{lz},"dx":{dx},"dy":{dy},"dz":{dz},"burn_seed":42,"iters":{iterations},"symmetry_xy":{sym_json},"sym_period":{sym_period},"roof_x_ramp":{roof_json},"self_weight":{sw_json},"vol_in_loop":{vol_json},"dump_iter":{dump_json},"dump_stride":{dump_stride}}}"#
     );
     fs::write(art_dir.join("manifest.json"), manifest).expect("write manifest.json");
 
