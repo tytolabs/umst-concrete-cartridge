@@ -65,6 +65,8 @@ def test_print_ready_track_b8_topology_gates() -> None:
         "gates_track_b8_all_pass",
     ):
         assert key in side, f"missing sidecar field {key!r} (re-run export_print_ready.py)"
+    if "contour_isovalue" in side:
+        assert isinstance(side["contour_isovalue"], (int, float))
     if not side["gates_track_b8_all_pass"]:
         msg = (
             "committed print_ready is STL-feasible but not B8-complete "

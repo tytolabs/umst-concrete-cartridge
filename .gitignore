@@ -31,3 +31,7 @@ notebooks/audit_three_panels.png
 
 # Striatus shell demo per-iteration dumps (large; final.npy may be committed selectively)
 crates/umst-concrete-cartridge/examples/_artifacts/shell/iter_*.npy
+
+# Local optimisation / agent logs
+opt*.log
+rust_out

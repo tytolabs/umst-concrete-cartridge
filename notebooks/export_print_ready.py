@@ -7,7 +7,11 @@ Consumes `final.npy` (`float32`, shape `[1, N, 1]`) and `manifest.json` written 
 `ExtrudedPlateMechanics`).
 
 Track B7/B8 (v0.4): sidecar includes mesh genus / component counts, density XY variance
-(z-averaged), marching-cubes volume fraction in bbox, and boolean gates for non-slab topology.
+(z-averaged, same construction as `shell_topology_rib_pattern` `xy_plane_variance`), marching-cubes
+volume fraction in bbox, and boolean gates for non-slab topology. Isosurface uses **0.5** when
+`min(ρ) < 0.5 < max(ρ)`; otherwise the midpoint of the observed band (needed while ρ is still
+entirely below 0.5). Nearly uniform fields (`max(ρ)−min(ρ) < 1e-3`) abort export instead of the
+legacy threshold slab that inflated STL volume to ~100% of bbox.
 """
 from __future__ import annotations
 
@@ -216,6 +220,7 @@ def main() -> None:
         "mesh_connected_components": n_cc,
         "mesh_euler_characteristic_largest": chi,
         "mesh_genus_closed_orientable_largest": genus,
+        "contour_isovalue": float(iso),
         "gate_topo_complexity_b7": gate_topo_complexity,
         "gate_volume_fraction_mesh_b7": gate_volume_fraction_mesh,
         "gate_density_xy_variance_b8": gate_density_xy_variance,
