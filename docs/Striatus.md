@@ -80,7 +80,7 @@ The differentiable stack matters for research workflows: gradients of compliance
 1. Skim this essay top-to-bottom for the historical arc.
 2. Open [`References.bib`](References.bib) and locate each `[Author Year]` key used above.
 3. Run the shell demo script once you have Rust + Python extras installed; watch the GIF with the overlay frames paused.
-4. Inspect `striatus_shell_v0.4.print_ready.json` next to the STL before sending the mesh to any slicer (including `gates_track_b8_all_pass` when the optimisation produced non-trivial rib topology).
+4. Inspect **`notebooks/_artifacts/striatus_shell_v0.4.print_ready.json`** (field **`gates_track_b8_all_pass`**) next to **`notebooks/_artifacts/striatus_shell_v0.4.stl`** before sending the mesh to any slicer. Pytest coverage: **`notebooks/tests/test_print_ready.py`**. Full **B6** opt-in harness + honesty on **200** outers / greyness / roof semantics: **`docs/Solver-Status.md`** → **P0 runbook — `shell_topology_rib_pattern_full_v04`** and **Solver lanes — Topology / shell**.
 
 That order keeps **intent** (compression paths) ahead of **implementation** (meshes and JSON).
 

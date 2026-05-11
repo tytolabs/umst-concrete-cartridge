@@ -36,6 +36,7 @@
 //! **`export_print_ready.py`** accepts the field (**ρ span ≥ 1e⁻³**), use a smaller grid, e.g.
 //! **`UMST_SHELL_NX=16 UMST_SHELL_NY=16 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=40`** (~minutes on a laptop CPU in
 //! `--release`); that does **not** by itself satisfy Ring‑1 B8 topology gates on the full Striatus lattice.
+//! **Track B8 rollup:** `export_print_ready.py` writes **`gates_track_b8_all_pass`** into **`notebooks/_artifacts/striatus_shell_v0.4.print_ready.json`** (see **`docs/Solver-Status.md`** — P0 / Topology shell).
 //!
 //! **Final artefact vs last training step (XY symmetry):** when **`UMST_SHELL_SYMMETRY`** is on (default), the optimiser
 //! averages **ρ** over the four XY mirror partners every **`UMST_SHELL_SYMM_PERIOD`** outers (default **20**).
