@@ -10,7 +10,18 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.1] — 2026-05-10
+## [Unreleased]
+
+### Added
+
+- Striatus-class shell topology demo: `optimize_shell_3d` (with `solver-experimental` + `render`), `shell_demo_smoke`, Z2×Z2 symmetry helper in `print_ready::symmetry`, and driver `notebooks/_run_shell_demo.sh`.
+- PyVista render pipeline (`render_shell_gif.py`, `overlay_final_isostatics.py`, `stitch_gif.py`), STL export (`export_print_ready.py`), and `notebooks/tests/test_print_ready.py`.
+- Documentation pack `docs/Striatus.md` and `docs/References.bib`; README hero embed for `notebooks/_artifacts/striatus_emergence.gif`; optional `crates/umst-py[render]` extra in `pyproject.toml`.
+- Acceptance helpers: `notebooks/check_shell_artifact_budgets.sh` (GIF/STL size budgets) and `notebooks/check_shell_determinism.sh` (two-run STL hash); composer prompt documents CI subset commands.
+
+### Changed
+
+- Workspace Rust crates set `publish = false` (distribution via Git tags, Docker, and maturin wheels—not crates.io).
 
 ### Added
 

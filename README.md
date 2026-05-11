@@ -12,6 +12,8 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 **Differentiable constitutive engine for cementitious materials** on the [UMST manifold](https://github.com/tytolabs/umst-manifold): one Rust façade drives the `umst` CLI, PyO3 bindings, and MCP server, emitting stable `result.v2` / `audit.v1` JSON with calibration profile metadata, formal anchors, and explicit warnings. For engineers wiring mix-design tools, researchers reproducing bundled calibration corpora, and operators packaging containers or agent-facing MCP tools.
 
+**Shell / Striatus artefacts (honesty):** this repo’s `notebooks/_artifacts/` may contain **v0.3-only** checked-in names (e.g. `striatus_shell_v0.3.obj`, `striatus_shell_v0.3.print_ready.json`) while **v0.4** target filenames from the brief — `striatus_emergence.gif`, `striatus_shell_v0.4.stl`, `striatus_shell_v0.4.print_ready.json`, optional `striatus_shell_v0.4.obj` — are **not** claimed here until they exist on disk and pass Track L / B6 gates. See **[`docs/Solver-Status.md`](docs/Solver-Status.md) → DEFERRAL — Topology / shell (Tracks B + L)** and, when this repo sits beside `composer_prompts/` in the parent workspace, **[`../composer_prompts/v0.4_phase_3_followup_for_composer.md`](../composer_prompts/v0.4_phase_3_followup_for_composer.md)** (Ring 1). When regenerating, use the command block in that follow-up doc; design narrative lives in [`docs/Striatus.md`](docs/Striatus.md). **Do not** embed or assert a shipped hero GIF/STL until `notebooks/_artifacts/` contains those target files.
+
 **Repository:** [github.com/tytolabs/umst-concrete-cartridge](https://github.com/tytolabs/umst-concrete-cartridge)
 
 ## Build and test
@@ -28,7 +30,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 Install the CLI locally: `cargo install --path crates/umst-cli`.
 
-**Toolchain:** Rust **1.88** is verified in this workspace (recommended when using a path patch to `umst-manifold`, which pins 1.88). Workspace metadata declares **1.75** as `rust-version`; upgrade the toolchain if dependency resolution requires it.
+**Toolchain:** Rust **1.88** is pinned at [`rust-toolchain.toml`](rust-toolchain.toml); use `rustup default 1.88` or `cargo +1.88 …` for CI parity. Workspace metadata declares **1.75** as `rust-version` (floor); upgrade rustc if Cargo reports MSRV violations.
+
+**CPU matmul (macOS):** optional `cargo build --workspace --features blas-accelerate` (crate `blas-accelerate` enables `burn-ndarray` Accelerate linking). Tune **`VECLIB_MAXIMUM_THREADS`** (Accelerate) or **`OPENBLAS_NUM_THREADS`** (OpenBLAS builds elsewhere).
+
+**Solver verification matrix (lanes + benchmark paths):** [`docs/Solver-Status.md`](docs/Solver-Status.md) (upstream detail in `umst-manifold/docs/Solver-Status.md`).
 
 ## Cargo features (`umst-concrete-cartridge`)
 
@@ -36,6 +42,7 @@ Install the CLI locally: `cargo install --path crates/umst-cli`.
 |--------|---------|
 | *(default)* | Standard façade and topology path without experimental manifold solvers pulled into the cartridge. |
 | `solver-experimental` | Enables `umst-manifold` experimental solver stack (e.g. AT2 damage + coupled THMC stubs) inside `ConcreteCartridge::compute_topology`. |
+| `blas-accelerate` | Faster CPU GEMM via Apple Accelerate on macOS (`burn-ndarray`). |
 
 Other workspace crates (`umst-cli`, `umst-mcp`, `umst-py`) consume the library; they do not add separate Cargo feature flags beyond dependency edges.
 
@@ -44,7 +51,9 @@ Other workspace crates (`umst-cli`, `umst-mcp`, `umst-py`) consume the library; 
 ```bash
 cd umst-concrete-cartridge
 pip install './crates/umst-py[notebook]'
-# or: cd crates/umst-py && maturin develop --extras notebook
+pip install './crates/umst-py[render,tests]'
+# Print-readiness (after `bash notebooks/_run_shell_demo.sh`): pytest notebooks/tests/test_print_ready.py -v
+# or: cd crates/umst-py && maturin develop --extras notebook,render,tests
 ```
 
 Headless notebooks: [`notebooks/README.md`](notebooks/README.md). Determinism checks: `python3 -m unittest discover -s crates/umst-py/tests -p 'test_property_determinism.py' -v` after `pip install -e 'crates/umst-py[tests]'`.
@@ -85,6 +94,7 @@ Dataset row counts and citations: [`datasets/PROVENANCE.md`](datasets/PROVENANCE
 - Wire schemas (`mix.v1`, `result.v2`, `audit.v1`): [`docs/WireSchemas.md`](docs/WireSchemas.md)
 - Constitutive equations and validation: [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md), [`docs/Validation.md`](docs/Validation.md)
 - Formal anchor status by symbol: [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md)
+- Striatus shell lineage + artefact contract: [`docs/Striatus.md`](docs/Striatus.md), [`docs/References.bib`](docs/References.bib)
 - Formal provenance (Lean URIs): [`docs/FormalProvenance.md`](docs/FormalProvenance.md)
 
 Formal lemmas live in [umst-formal](https://github.com/tytolabs/umst-formal).
@@ -100,3 +110,5 @@ Use [`CITATION.cff`](CITATION.cff) or the repository URL for software citations.
 Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Security: [`SECURITY.md`](SECURITY.md).
 
 Released under the [MIT License](LICENSE).
+
+Workspace Rust crates set `publish = false` in `Cargo.toml` to avoid accidental `cargo publish` to crates.io; distribution is via Git tags, Docker, and the `maturin` wheel workflow—not the crates.io registry.

@@ -19,7 +19,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Mechanised** | 26 |
 | **Structural** | 33 |
 | **Empirical** | 27 |
-| **Literature** | 19 |
+| **Literature** | 38 |
 | **NONE** | 92 |
 
 ## Mechanised
@@ -46,8 +46,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/porosity.rs:6` | `lean://umst-formal/Lean/Powers.lean#PowersState` | NONE |
 | `SetTimeEngine` | `crates/umst-concrete-cartridge/src/physics/set_time.rs:6` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | NONE |
 | `compute_setting_time` | `crates/umst-concrete-cartridge/src/physics/set_time.rs:17` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | NONE |
-| `StrengthEngine` | `crates/umst-concrete-cartridge/src/physics/strength.rs:6` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | physicalSecondLaw |
-| `compute_strength_jennings` | `crates/umst-concrete-cartridge/src/physics/strength.rs:17` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | physicalSecondLaw |
+| `StrengthEngine` | `crates/umst-concrete-cartridge/src/physics/strength.rs:43` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | physicalSecondLaw |
+| `compute_strength_jennings` | `crates/umst-concrete-cartridge/src/physics/strength.rs:54` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | physicalSecondLaw |
 | `ThermoEngine` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:6` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | NONE |
 | `compute_heat_rate` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:16` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | NONE |
 | `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/transport.rs:17` | `lean://umst-formal/Lean/Powers.lean#PowersState` | NONE |
@@ -132,20 +132,39 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `RESULT_SCHEMA_VERSION_V1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:23` | `literature://wire-schema-result-v1` | "UMST concrete cartridge JSON wire schema tag (`result.v1`)" \| "`result.v1` — version tag for deprecated prediction JSON envelope" |
 | `RESULT_SCHEMA_VERSION_V2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:29` | `literature://wire-schema-result-v2` | "UMST concrete cartridge JSON wire schema tag (`result.v2`)" \| "`result.v2` — version tag for current prediction JSON envelope" |
 | `AUDIT_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/facade/mod.rs:536` | `literature://wire-schema-audit-v1` | "UMST concrete cartridge JSON wire schema tag (`audit.v1`)" \| "`audit.v1` — batch CSV audit envelope with tensor predictions vs optional CSV strength" |
+| `OpticalAuditWireV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:834` | `literature://optics/fresnel-simpson-portland-paste` | "ASTM E903 spectrum; Sihvola 1999 dielectric database; v0.4 Track H3 acceptance gate" \| "(R_solar, A_uv, ε_lwir) integrated from plain-Portland (λ, ε_r) profile at 50 mm" |
 | `ultimate_doh_wc` | `crates/umst-concrete-cartridge/src/formulas.rs:13` | `literature://Mills-1966-gel-stiffness-closure` | "Mills (1966); OPC gel stiffness / ultimate hydration cap closure used in routing" \| "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)" |
 | `ultimate_doh` | `crates/umst-concrete-cartridge/src/homogeneous.rs:67` | `literature://Mills-1966-gel-stiffness-closure` | "Mills (1966); α_inf = 1.031 w/c / (0.194 + w/c)" \| "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)" |
 | `embodied_co2_kg_per_m3` | `crates/umst-concrete-cartridge/src/homogeneous.rs:239` | `literature://EN-15804+A2-indicative-EPD-intensities` | "EN 15804+A2 (2019) environmental product declarations — indicative cradle-to-gate CO₂e intensities per constituent class" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3); inline coefficients match bundled EPD intensity convention" |
 | `constituent_masses_kg_m3` | `crates/umst-concrete-cartridge/src/homogeneous.rs:266` | `literature://ACI-211.1-binder-dosage-convention` | "ACI 211.1 — Standard Practice for Selecting Proportions for Normal, Heavyweight, and Mass Concrete" \| "350 kg/m³ binder dosage convention for constituent mass reconstruction from scalar mix spec" |
-| `PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/lib.rs:49` | `literature://wire-schema-physics-pipeline-v1` | "physics_pipeline schema tag (`physics_pipeline.v1`)" \| "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape." |
+| `PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/lib.rs:54` | `literature://wire-schema-physics-pipeline-v1` | "physics_pipeline schema tag (`physics_pipeline.v1`)" \| "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape." |
+| `ClinkerPhase` | `crates/umst-concrete-cartridge/src/physics/clinker_eos.rs:22` | `literature://stat-mech/vinet-clinker-phase-enum` | "Manzano et al. 2009 J. Am. Chem. Soc. 131:7416; Speziale et al. 2008 Phys. Chem. Miner. 35:573; Clark et al. 2008 Cem. Concr. Res. 38:19; Pellenq et al. 2009 PNAS 106:16102" \| "Discrete phase tags carrying (V0, K0, K0') for Vinet P(V) calibration" |
+| `VinetPhaseParams` | `crates/umst-concrete-cartridge/src/physics/clinker_eos.rs:36` | `literature://stat-mech/vinet-phase-params` | "Vinet et al. 1986 J. Phys. C 19:L467" \| "(V0 [Å³/f.u.], K0 [GPa], K0' [1]) parameter triple" |
+| `params` | `crates/umst-concrete-cartridge/src/physics/clinker_eos.rs:49` | `literature://stat-mech/vinet-clinker-table` | "Manzano et al. 2009; Speziale et al. 2008; Clark et al. 2008; Pellenq et al. 2009" \| "VinetPhaseParams { v0_per_fu_ang3, bulk_modulus_gpa, k0_prime }" |
+| `bulk_modulus_ambient_gpa` | `crates/umst-concrete-cartridge/src/physics/clinker_eos.rs:84` | `literature://stat-mech/vinet-k0-ambient` | "Vinet et al. 1986 J. Phys. C 19:L467" \| "K0 from tabulated EOS fit at P \\approx 0" |
+| `vinet_pressure_gpa` | `crates/umst-concrete-cartridge/src/physics/clinker_eos.rs:94` | `literature://stat-mech/vinet-pressure-closed-form` | "Vinet et al. 1986 J. Phys. C 19:L467" \| "P(V) = 3 K0 ((1-x)/x²) exp(η(1-x)), x=(V/V0)^(1/3), η=(3/2)(K0'-1)" |
+| `voigt_bulk_modulus_gpa` | `crates/umst-concrete-cartridge/src/physics/clinker_eos.rs:109` | `literature://micromechanics/voigt-upper-bound` | "Voigt W. 1887 Ann. Phys. 274:573 (rule of mixtures)" \| "K_Voigt = f K_a + (1-f) K_b" |
 | `FiberEngine` | `crates/umst-concrete-cartridge/src/physics/fiber.rs:6` | `literature://Naaman-2006-ACI-SP235-pullout` | "Naaman (2006) ACI SP-235 — fiber pullout and crack-bridging micromechanics" \| "V_{f,crit} = σ_cu / (η_l η_o τ_b l_f / d_f)" |
 | `compute_micromechanics` | `crates/umst-concrete-cartridge/src/physics/fiber.rs:17` | `literature://Naaman-2006-ACI-SP235-pullout` | "Naaman (2006) ACI SP-235 — fiber pullout and crack-bridging micromechanics" \| "V_{f,crit} = σ_cu / (η_l η_o τ_b l_f / d_f)" |
 | `FractureEngine` | `crates/umst-concrete-cartridge/src/physics/fracture.rs:6` | `literature://Ulm-Coussy-2003-micromechanics` | "Ulm & Coussy (2003) Mechanics of Porous Continua (MIT Press); micromechanics derivation" \| "K_Ic = √(2 γ_s E_eff); E_eff = E_0 (1 − φ)^n" |
 | `compute_effective_modulus_mt` | `crates/umst-concrete-cartridge/src/physics/fracture.rs:18` | `literature://Ulm-Coussy-2003-micromechanics` | "Ulm & Coussy (2003) Mechanics of Porous Continua (MIT Press); micromechanics derivation" \| "K_Ic = √(2 γ_s E_eff); E_eff = E_0 (1 − φ)^n" |
 | `compute_fracture_toughness` | `crates/umst-concrete-cartridge/src/physics/fracture.rs:88` | `literature://Ulm-Coussy-2003-micromechanics` | "Ulm & Coussy (2003) Mechanics of Porous Continua (MIT Press); micromechanics derivation" \| "K_Ic = √(2 γ_s E_eff); E_eff = E_0 (1 − φ)^n" |
+| `ManifoldPhotonicsSolver` | `crates/umst-concrete-cartridge/src/physics/optical.rs:25` | `literature://electromagnetics/photonics-phasor-driver` | "Rumpf M. 2022 Computational Electromagnetics in MATLAB; Taflove & Hagness 2005 FDTD handbook" \| "Alias to PhotonicsSolver { frequency_hz } — Maxwell phasor placeholder pending FDFD Helmholtz" |
+| `refractive_index_real` | `crates/umst-concrete-cartridge/src/physics/optical.rs:36` | `literature://optics/refractive-index-dielectric` | "Born & Wolf 1999 Principles of Optics" \| "n = sqrt(ε_r) for non-magnetic dielectric" |
+| `fresnel_power_reflectance_air_to_medium` | `crates/umst-concrete-cartridge/src/physics/optical.rs:46` | `literature://optics/fresnel-normal-incidence` | "Born & Wolf 1999 Principles of Optics" \| "R = ((n1-n2)/(n1+n2))² with n1=1" |
+| `solar_reflectance` | `crates/umst-concrete-cartridge/src/physics/optical.rs:98` | `literature://concrete/solar-reflectance-cool-roof` | "ASTM E903 standard practice for solar absorptance; Track H3 UMST v0.4 brief" \| "Simpson average of Fresnel R(λ) + diffuse fraction (rough paste); Helmholtz interior deferred" |
+| `photocatalytic_uv_absorption` | `crates/umst-concrete-cartridge/src/physics/optical.rs:117` | `literature://photocatalysis/uv-absorption-cement` | "Beer 1852; Lambert 1760 absorption law; ISO photocatalytic concrete test lines (~365 nm)" \| "A = 1 - exp(-4π k z / λ) - R(n(ε_r)), k lower-bounded per paste UV anchor" |
+| `radiative_cooling_emissivity` | `crates/umst-concrete-cartridge/src/physics/optical.rs:139` | `literature://radiative-cooling/lwir-emissivity` | "Zhai et al. 2017 Joule 1:359 (radiative cooling); Kirchhoff 1860" \| "ε ≈ 1 - R at λ = 10.5 μm, ε_r(λ) from piecewise-linear profile" |
+| `default_extinction_k_uv` | `crates/umst-concrete-cartridge/src/physics/optical.rs:155` | `literature://dielectrics/sihvola-cement-complex-permittivity` | "Sihvola A. 1999 Electromagnetic Mixing Formulas and Applications" \| "k ≈ (n tan δ)/2 with tan δ = 0.018 anchor" |
+| `plain_portland_visible_profile` | `crates/umst-concrete-cartridge/src/physics/optical.rs:169` | `literature://dielectrics/portland-cement-permittivity-band` | "Track H3 UMST v0.4 brief (ε_r = 5.6 plain paste); LWIR ε_r order-of-magnitude" \| "Piecewise-linear (λ_nm, ε_r) knots for solar / UV / atmospheric-window interpolation" |
+| `paste_bulk_modulus_voigt_from_wc_gpa` | `crates/umst-concrete-cartridge/src/physics/optical.rs:179` | `literature://micromechanics/voigt-csh-bulk-from-wc` | "Jennings H.M. 2000 Cem. Concr. Res.; Pellenq et al. 2009 PNAS (C-S-H modulus)" \| "K = f_ld K_ld + (1-f_ld) K_hd with f_ld(w/c) from Jennings linear fit" |
 | `compute_packing_density` | `crates/umst-concrete-cartridge/src/physics/packing.rs:6` | `literature://Andreasen-Andersen-1930-Fuller-curve` | "Andreasen & Andersen (1930), Kolloid-Z. 50, 217" \| "P(D) = (D^q - D_min^q) / (D_max^q - D_min^q), q in [0.30, 0.45]" |
+| `paste_csh_youngs_moduli_gpa` | `crates/umst-concrete-cartridge/src/physics/strength.rs:26` | `literature://micromechanics/csh-vinet-anchored-gel-moduli` | "Pellenq et al. 2009 PNAS 106:16102; Ulm & Constantinides 2004; Jennings 2000" \| "(E_LD, E_HD) = (CSH_LD_SCALE_OF_BULK, CSH_HD_SCALE_OF_BULK) * K_csh_vinet" |
 | `SustainabilityEngine` | `crates/umst-concrete-cartridge/src/physics/sustainability.rs:6` | `literature://EN-15804+A2-GWP-and-unit-costs` | "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)" |
 | `compute_embodied_carbon` | `crates/umst-concrete-cartridge/src/physics/sustainability.rs:19` | `literature://EN-15804+A2-GWP-and-unit-costs` | "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)" |
 | `compute_financial_cost` | `crates/umst-concrete-cartridge/src/physics/sustainability.rs:51` | `literature://EN-15804+A2-GWP-and-unit-costs` | "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)" |
+| `reflection_xy_partner_indices` | `crates/umst-concrete-cartridge/src/print_ready/symmetry.rs:12` | `literature://symmetry-density-topology-sheet` | "Sigmund & Maute 2013, Struct. Multidisc. Optim. 48:1031-1055" \| "Index tensor `[1, N, 4]` listing the four xy-reflection partners of each primal vertex" |
+| `apply_reflection_xy_average` | `crates/umst-concrete-cartridge/src/print_ready/symmetry.rs:45` | `literature://symmetry-density-topology-sheet` | "Sigmund & Maute 2013, Struct. Multidisc. Optim. 48:1031-1055" \| "Arithmetic mean of `rho` over the four xy-reflection partners (gather + mean)" |
 
 ## NONE
 
@@ -190,18 +209,18 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `tensor_element_at` | `crates/umst-concrete-cartridge/src/facade/mod.rs:780` | `NONE` | Internal tensor scalar read for wire projection; index contract from pipeline layout. |
 | `PredictionWireV1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:796` | `NONE` | Serde wire projection for `result.v1` scalars; versioning tagged in `schema_version`. |
 | `PredictionWireV2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:811` | `NONE` | Serde wire projection for `result.v2` scalars; `physics_pipeline` merged at JSON boundary. |
-| `prediction_wire_v1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:829` | `NONE` | Pure wire projection; transport encoding is caller-owned. |
-| `prediction_wire_v2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:851` | `NONE` | Pure wire projection; nested objects merged by CLI/MCP `serde_json`. |
-| `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/facade/mod.rs:878` | `NONE` | Round-trip mix spec view for CLI `mix print` / MCP. |
-| `mix_spec_wire_out` | `crates/umst-concrete-cartridge/src/facade/mod.rs:891` | `NONE` | Serialize-friendly mix view without JSON crate in core. |
+| `prediction_wire_v1` | `crates/umst-concrete-cartridge/src/facade/mod.rs:873` | `NONE` | Pure wire projection; transport encoding is caller-owned. |
+| `prediction_wire_v2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:895` | `NONE` | Pure wire projection; nested objects merged by CLI/MCP `serde_json`. |
+| `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/facade/mod.rs:966` | `NONE` | Round-trip mix spec view for CLI `mix print` / MCP. |
+| `mix_spec_wire_out` | `crates/umst-concrete-cartridge/src/facade/mod.rs:979` | `NONE` | Serialize-friendly mix view without JSON crate in core. |
 | `HomogeneousError` | `crates/umst-concrete-cartridge/src/homogeneous.rs:28` | `NONE` | Dispatch error: Jennings-not-yet, invalid mix; no formal claim. |
 | `mix_hydration_state` | `crates/umst-concrete-cartridge/src/homogeneous.rs:76` | `NONE` | Internal homogeneous helper composing calibrated α(t,T,scm) and effective w/c from profile parameters. |
-| `apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, MixTensor, PhysicalResult` | `crates/umst-concrete-cartridge/src/lib.rs:23` | `NONE` | Re-exports manifold façade symbols for ergonomics only. |
-| `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/lib.rs:29` | `NONE` | Stable import path for MCP/CLI integration tests. |
-| `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/lib.rs:33` | `NONE` | JSON envelope for staged tensor outputs. |
-| `PhysicsPipelineSummary` | `crates/umst-concrete-cartridge/src/lib.rs:37` | `NONE` | Scalar digest accompanying report JSON. |
-| `PipelineStageRecord` | `crates/umst-concrete-cartridge/src/lib.rs:41` | `NONE` | Stage record type embedded in [`PhysicsPipelineReport`]. |
-| `PipelineStageStatus` | `crates/umst-concrete-cartridge/src/lib.rs:45` | `NONE` | Serialized stage disposition enum for MCP/CLI audit trails. |
+| `apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, MixTensor, PhysicalResult` | `crates/umst-concrete-cartridge/src/lib.rs:28` | `NONE` | Re-exports manifold façade symbols for ergonomics only. |
+| `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/lib.rs:34` | `NONE` | Stable import path for MCP/CLI integration tests. |
+| `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/lib.rs:38` | `NONE` | JSON envelope for staged tensor outputs. |
+| `PhysicsPipelineSummary` | `crates/umst-concrete-cartridge/src/lib.rs:42` | `NONE` | Scalar digest accompanying report JSON. |
+| `PipelineStageRecord` | `crates/umst-concrete-cartridge/src/lib.rs:46` | `NONE` | Stage record type embedded in [`PhysicsPipelineReport`]. |
+| `PipelineStageStatus` | `crates/umst-concrete-cartridge/src/lib.rs:50` | `NONE` | Serialized stage disposition enum for MCP/CLI audit trails. |
 | `MIX_FEATURE_COUNT` | `crates/umst-concrete-cartridge/src/mix_layout.rs:13` | `NONE` | Structural convention for CLI ↔ tensor engines; documented here as SSOT for column indices. |
 | `IDX_WATER_KG_M3` | `crates/umst-concrete-cartridge/src/mix_layout.rs:19` | `NONE` | Structural column tag for wire ↔ tensor bridging. |
 | `IDX_CEMENT_KG_M3` | `crates/umst-concrete-cartridge/src/mix_layout.rs:24` | `NONE` | Must stay aligned with `physics::hydration` slicers. |
