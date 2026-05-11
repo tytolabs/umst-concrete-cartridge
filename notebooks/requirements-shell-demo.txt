@@ -1,0 +1,10 @@
+# Shell demo / Track L Python stack (render_shell_gif, overlay, stitch, export_print_ready).
+# Install into the same venv / `uv` environment as `crates/umst-py` so NumPy matches PyVista/VTK wheels.
+# Python 3.10+ recommended (align with `maturin`/umst-py CI).
+numpy>=1.26,<3
+pyvista>=0.43
+imageio>=2.34
+imageio-ffmpeg>=0.5
+trimesh>=4.4
+meshio>=5.3
+pillow>=10.0

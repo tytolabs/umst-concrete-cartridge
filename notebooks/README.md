@@ -10,7 +10,7 @@ Jupyter notebooks for exploratory audits against the bundled UCI and Zenodo CSV 
 | Notebook | Content |
 |----------|--------|
 | [`sustainable_mix_audit.ipynb`](sustainable_mix_audit.ipynb) | Small fixed corpus, `audit` binding, matplotlib panels (regime counts, predicted vs. observed, provenance summary). |
-| Striatus shell | [`_run_shell_demo.sh`](_run_shell_demo.sh): `optimize_shell_3d` → PNG frames → GIF + STL (`pip install './crates/umst-py[render]'`). After a run: `pytest notebooks/tests/test_print_ready.py -v` with `./crates/umst-py[render,tests]`. Optional: [`check_shell_artifact_budgets.sh`](check_shell_artifact_budgets.sh), [`check_shell_determinism.sh`](check_shell_determinism.sh). |
+| Striatus shell | [`_run_shell_demo.sh`](_run_shell_demo.sh): `optimize_shell_3d` → PNG frames → GIF + STL (`pip install './crates/umst-py[render]'`). After a run: `pytest notebooks/tests/test_print_ready.py -v` with `./crates/umst-py[render,tests]`. Optional: [`check_shell_artifact_budgets.sh`](check_shell_artifact_budgets.sh), [`check_shell_determinism.sh`](check_shell_determinism.sh). **Commit gate:** do not `git add` multi‑MB `notebooks/_artifacts/*.gif` / `*.stl` / `*.obj` unless you intend Track L ship (finite demo: run `check_shell_artifact_budgets.sh` and `test_print_ready.py` first); `iter_*.npy` under `examples/_artifacts/shell/` stays gitignored. |
 
 ## Run headless (repository root)
 
@@ -45,4 +45,18 @@ pip install -r notebooks/requirements-shell-demo.txt
 pip install './crates/umst-py[render]'
 ```
 
+After `source .venv/bin/activate`, confirm `which python3` matches the interpreter used for `pip` / `uv pip` (and for `maturin develop` if you build the extension that way).
+
 GIF/STL tooling (`render_shell_gif.py`, `overlay_final_isostatics.py`): sets `pv.OFF_SCREEN = True` and `Plotter(off_screen=True)` — no GUI required. Prefer **PyVista ≥ 0.43 / VTK wheels** on Apple Silicon (arm64 VTK).
+
+**Track L / brief-aligned run (from repo root):** `_run_shell_demo.sh` exports defaults `UMST_SHELL_SELF_WEIGHT=0`, `UMST_SHELL_ITERS=200`, `UMST_SHELL_DUMP_ITER=0`, `UMST_SHELL_DUMP_STRIDE=10` (override as needed). Match the v0.4 brief one-liner with `UMST_SHELL_DUMP_ITER=1` and the same stride/iters. Optional stability knobs read by `optimize_shell_3d` (documented in `crates/umst-concrete-cartridge/examples/optimize_shell_3d.rs` and `docs/Solver-Status.md`): `UMST_SHELL_E_MIN_REL`, `UMST_SHELL_MAX_CG`, `UMST_SHELL_PCG`, `UMST_SHELL_HELM`, `UMST_SHELL_VOL_LOOP`, grid `UMST_SHELL_NX` / `UMST_SHELL_NY` / `UMST_SHELL_NZ`, `UMST_SHELL_VF`. Override tooling with `CARGO=cargo` / `PYTHON=python3` if needed.
+
+**CI-fast smoke (Rust optimiser only — not Track L / B6 geometry):** `optimize_shell_3d` clamps `UMST_SHELL_NX` / `UMST_SHELL_NY` to **[6, 40]** and `UMST_SHELL_NZ` to **[2, 8]** — use a small grid and few iterations to exercise the example without the full 40×40×4 budget, e.g.
+
+```bash
+cd umst-concrete-cartridge
+UMST_SHELL_NX=6 UMST_SHELL_NY=6 UMST_SHELL_NZ=2 UMST_SHELL_ITERS=2 UMST_SHELL_DUMP_ITER=0 UMST_SHELL_MAX_CG=200 \
+  cargo run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render'
+```
+
+This path is CPU-oriented (Burn default backend in typical checkouts); **no GPU is required** for the smoke above. If other workspace builds link CPU BLAS, cap threads with **`VECLIB_MAXIMUM_THREADS`** (macOS Accelerate) or **`OPENBLAS_NUM_THREADS`** (OpenBLAS) — see the repo root [`README.md`](../README.md) “CPU matmul” note.
