@@ -10,10 +10,10 @@
 
 | Gate | Test | Command sketch |
 | --- | --- | --- |
-| **Green on default CI** | `shell_topology_rib_pattern_quick` | `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental` (add `--release` for faster numerics if desired). |
+| **Green on default CI** | `shell_topology_rib_pattern_quick` | `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental` (add `--release` for faster numerics if desired). **Quick harness ≠ demo loads:** CI uses a compact slab with **72 Pa** roof ramp **r=0.38**; **greyness** is the **volume** mean on **post–volume-projection** **ρ** (see `shell_topology_rib_pattern.rs` `#!`); **`optimize_shell_3d`** defaults **50 Pa** and uniform roof unless **`UMST_SHELL_ROOF_RAMP=1`**. |
 | **`#[ignore]` full Striatus B6** | `shell_topology_rib_pattern_full_v04` | Set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored`. Put **`--release` on the `cargo test` side** (before `--`); flags after `--` are forwarded to the test binary and are not compile profiles. |
 
-**Full B6:** **40×40×4**, **200** Adam outers by default; **`UMST_SHELL_RIB_FULL_ITERS`** (clamped **1…200**) shortens the loop for smoke only — **one outer** still runs the full Striatus-scale **forward + autodiff backward** and can take **many CPU minutes** in `--release**, and **does not** satisfy the brief greyness / compliance-ratio gates (those need the full **200**-outer schedule). Budget **hours** for the default **200**-outer proof on a typical workstation unless noted otherwise. **Latest `--release` attempt (2026-05-11, default 200 outers, uniform roof — harness then matched `optimize_shell_3d` with `UMST_SHELL_ROOF_RAMP` unset):** `shell_topology_rib_pattern_full_v04` **failed** the **greyness** gate (`mean(4ρ(1−ρ)) ≈ 0.51` vs `< 0.15`); **~7655 s** wall time; **finite** (not NaN / early `c_raw` non-finite). **Bounded smoke (`UMST_SHELL_RIB_FULL_ITERS=15`, `--release`, `--nocapture`, this checkout):** **x** ramp **on** vs **`UMST_SHELL_ROOF_RAMP=0`** uniform (`UMST_SHELL_ROOF_RAMP=1` matches **`optimize_shell_3d`**; after the harness change, **unset** also uses the ramp) leaves **greyness ~0.51** and **xy_var ~0** at 15 outers (volume projection still dominates), but **scaled end compliance `c1`** moves **~109 → ~32** vs uniform roof — measurable load-asymmetry benefit without claiming the **200**-outer greyness gate is cleared. **Follow-up:** full harness now defaults **x** ramp unless **`UMST_SHELL_ROOF_RAMP=0`**; **greyness `< 0.15` not re-verified** (no new **200**-outer completion in-repo).
+**Full B6:** **40×40×4**, **200** Adam outers by default; **`UMST_SHELL_RIB_FULL_ITERS`** (clamped **1…200**) shortens the loop for smoke only — **one outer** still runs the full Striatus-scale **forward + autodiff backward** and can take **many CPU minutes** in `--release**, and **does not** satisfy the brief greyness / compliance-ratio gates (those need the full **200**-outer schedule). Budget **hours** for the default **200**-outer proof on a typical workstation unless noted otherwise. **Greyness / roof (2026-05-11 log + today's defaults):** see **Solver lanes — Topology / shell → [2026-05-11 greyness vs roof-ramp defaults (honest)](#2026-05-11-greyness-vs-roof-ramp-defaults-honest)** — last documented **200**-outer **`--release`** miss **~0.51** vs **< 0.15** (**finite**, **~7655 s**); short smokes show **`c1`** improves with **x** ramp more than greyness; **no** fresh **200**-outer in-repo proof that greyness clears.
 
 **Mechanics:** bar PCG in `packed_bar_network_equilibrium` caps at **`min(max_cg_iterations, 3N)`** and stops when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\); the full B6 harness defaults **`max_cg_iterations = 2000`** and **`E_min = 10^{-3} E_0`** (**`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_E_MIN_REL`**). **`UMST_SHELL_HELM`:** default **off** on the Burn tape (same as `optimize_shell_3d`); **only** literal **`UMST_SHELL_HELM=1`** enables graph Helmholtz in-loop (an empty `UMST_SHELL_HELM=` assignment must **not** enable — older `!= "0"` parsing turned it on; scatter backward can still fail at large Striatus `N` on Burn 0.13 when enabled). **Full `shell_topology_rib_pattern_full_v04` harness** also reads **`UMST_SHELL_SELF_WEIGHT`** (default **off**, same as `optimize_shell_3d` / `_run_shell_demo.sh`), **`UMST_SHELL_VOL_LOOP`**, **`UMST_SHELL_PCG`**, and **`UMST_SHELL_ROOF_RAMP`** / **`UMST_SHELL_ROOF_RAMP_F`**: **`UMST_SHELL_ROOF_RAMP=0`** forces **uniform** roof pressure (like **`optimize_shell_3d`** with ramp unset); **unset** or any value other than **`0`** / **`1`** turns the gentle **x** ramp **on** at **`UMST_SHELL_ROOF_RAMP_F`** (default **0.2**) so the Striatus-scale load matches the CI quick harness — **`optimize_shell_3d`** itself still requires literal **`UMST_SHELL_ROOF_RAMP=1`** for the same ramp. **iter-1 non-finite `c_raw`** **panics** fast; assertion messages include **vf / greyness / xy_var / compliance** on gate miss. See test `#!` and manifold **Solver lanes — Topology / shell**.
 
@@ -232,21 +232,56 @@ Uniform roof like **`optimize_shell_3d`** with ramp unset: prefix **`UMST_SHELL_
 
 ### Track L — regeneration command (verbatim from brief)
 
-Run from the **workspace root** that contains `umst-concrete-cartridge/` (the brief’s first line `cd`s into it):
+**GIF cadence (iter dumps on):** from repo root `umst-concrete-cartridge/`:
 
 ```bash
 cd umst-concrete-cartridge
 rm -rf crates/umst-concrete-cartridge/examples/_artifacts/shell/iter_*.npy
 rm -rf notebooks/_artifacts/frames notebooks/_artifacts/striatus_emergence.gif
 UMST_SHELL_DUMP_ITER=1 UMST_SHELL_DUMP_STRIDE=10 UMST_SHELL_ITERS=200 \
-    bash notebooks/_run_shell_demo.sh
+  bash notebooks/_run_shell_demo.sh
 ```
+
+### Copy-paste overnight — 40×40×4 × 200 outers (Track L, no `iter_*.npy`)
+
+Single block: **`notebooks/_run_shell_demo.sh`** ends with **`notebooks/export_print_ready.py`** (same `PYTHON` as the GIF/STL steps). Rust uses **`--release`** inside the script (`cargo run --release … optimize_shell_3d`).
+
+```bash
+cd umst-concrete-cartridge
+rm -f crates/umst-concrete-cartridge/examples/_artifacts/shell/iter_*.npy
+
+export UMST_SHELL_NX=40 UMST_SHELL_NY=40 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=200
+export UMST_SHELL_DUMP_ITER=0 UMST_SHELL_DUMP_STRIDE=10
+export UMST_SHELL_SELF_WEIGHT=0
+# Roof in optimize_shell_3d: only literal UMST_SHELL_ROOF_RAMP=1 enables x ramp (UMST_SHELL_ROOF_RAMP_F default 0.2).
+# unset / omitted => uniform roof pressure (differs from B6 full harness — see “2026-05-11 greyness” below).
+
+bash notebooks/_run_shell_demo.sh 2>&1 | tee shell_track_l_40cube4_i200.log
+```
+
+**Artefacts (relative to `umst-concrete-cartridge/`):**
+
+| Step | Path |
+| --- | --- |
+| Rust manifest + density | `crates/umst-concrete-cartridge/examples/_artifacts/shell/manifest.json`, `…/final.npy` |
+| GIF / STL / print-ready | `notebooks/_artifacts/striatus_emergence.gif`, `notebooks/_artifacts/striatus_shell_v0.4.stl`, `notebooks/_artifacts/striatus_shell_v0.4.print_ready.json` |
+
+If the Python stack stops early, re-run exporter only from the same cwd: `python3 notebooks/export_print_ready.py` (needs Trimesh + graph engines — see operator notes below).
+
+(`optimize_shell_3d` + **`manifest.json`** record **`burn_seed`: 42**, **`symmetry_xy`**, **`sym_period`**, **`dump_stride`**, **`iters`**, roof/self-weight / vol-loop flags — use the manifest beside **`final.npy`** for **ρ-span** / export forensics.)
+
+### 2026-05-11 greyness vs roof-ramp defaults (honest)
+
+- **What was measured:** a full **`shell_topology_rib_pattern_full_v04`** **`--release`** run (**200** outers, **40×40×4**, seed **42**) reported **greyness** `mean(4ρ(1−ρ)) ≈ 0.51` vs the B6 gate **&lt; 0.15** (**~7655 s** wall; **finite** — not an early NaN / `c_raw` blow-up). That log predates the current **B6 harness** roof convention below.
+- **Two surfaces today:** **`optimize_shell_3d`** / **`_run_shell_demo.sh`** use **uniform** roof traction unless you set **`UMST_SHELL_ROOF_RAMP=1`**. The **opt-in B6 test harness** uses **`UMST_SHELL_ROOF_RAMP=0`** → uniform; **unset** or any value other than **`0`** / **`1`** → gentle **x** ramp at **`UMST_SHELL_ROOF_RAMP_F`** (default **0.2**) so CI quick matches Striatus load asymmetry — **do not** assume “unset” means the same thing across example vs test.
+- **What we are not claiming:** no in-repo **200**-outer re-proof yet that greyness clears under the post-harness ramp story; bounded smokes (e.g. **15** outers) still showed **~0.51** greyness on the roof Heaviside slice while **`c1`** moved with ramp vs uniform — load asymmetry helps compliance, not the grey gate by itself in those short runs.
+- **Operator takeaway:** pick roof semantics explicitly (`0` / `1` / “harness default” for B6) before comparing logs to **`export_print_ready.py`** / Track L artefacts.
 
 **Shell demo — operator notes (`_run_shell_demo.sh` + Python):**
 
 - **`UMST_SHELL_ITERS=5`** (or any smaller value) only shortens the Rust loop; it does **not** fix **`loss=NaN`** at iter 1 when the forward adjoint path is unstable with **self-weight** on the **40×40×4** slab.
 - **`notebooks/_run_shell_demo.sh`** exports **`UMST_SHELL_SELF_WEIGHT=0`** by default (traction + roof pressure) so **`f32`** PCG + adjoint usually stays finite; override in the environment only if you accept self-weight risk.
-- Remove stale **`iter_*.npy`** when changing grid or dump settings — otherwise **`render_shell_gif.py`** may take the iter branch and **`ValueError`** on reshape vs **`manifest.json`** (`find …/shell -name 'iter_*.npy' -delete`).
+- Remove stale **`iter_*.npy`** when changing grid or dump settings — otherwise **`render_shell_gif.py`** may take the iter branch and **`ValueError`** on reshape vs **`manifest.json`** (`find …/shell -name 'iter_*.npy' -delete`). With **`UMST_SHELL_DUMP_ITER=1`**, **`UMST_SHELL_DUMP_STRIDE`** defaults to **10** in both **`optimize_shell_3d`** and **`_run_shell_demo.sh`** (first / every **N**th / last outer) unless overridden.
 - If **`manifest.json`** and **`final.npy`** disagree (stale manifest), **`render_shell_gif.py`** raises **`final.npy size … != grid …`**; re-run **`optimize_shell_3d`** once to align.
 - **`export_print_ready.py`** needs Trimesh graph engines: **`uv pip install --python .venv/bin/python networkx scipy`** (otherwise **`ImportError: no graph engines available!`**). Exporter aborts if **`max(ρ)−min(ρ) < 1e-3`** (uniform field — extend **`UMST_SHELL_ITERS`** on **40×40×4**, or use the **bounded** **`16×16×4` / 40-outer** **`--release`** recipe in **`notebooks/_run_shell_demo.sh`** comments + **`optimize_shell_3d`** rustdoc for a fast **ρ-span** smoke only); picks marching-cubes **0.5** when **`min(ρ) < 0.5 < max(ρ)`**, else the band midpoint (early outers can sit entirely below **0.5**); PyVista “non-manifold” before STL is a **warn** only — **Trimesh** watertight / winding checks remain hard gates.
 - **`optimize_shell_3d`** (default **`UMST_SHELL_SYMMETRY=1`**): **`final.npy`** applies the **terminal XY reflection average** so the dumped field matches the symmetrised design used during training; PCG / projected PCG residual tolerances default to **1e−6** (same order as **`shell_topology_rib_pattern`** full harness). Optional **`UMST_SHELL_ROOF_RAMP=1`** enables a gentle roof traction ramp in **x** ( **`UMST_SHELL_ROOF_RAMP_F`**, default **0.2**).
@@ -257,7 +292,7 @@ UMST_SHELL_DUMP_ITER=1 UMST_SHELL_DUMP_STRIDE=10 UMST_SHELL_ITERS=200 \
 
 **Honest status — Track L pytest (committed sidecar vs B8):** With a venv that has **`pytest`** + **`trimesh`**, `python notebooks/test_print_ready.py` / `pytest notebooks/tests/test_print_ready.py`: **`test_striatus_stl_feasibility`** passes (watertight / winding / overhang / feature-size gates on the committed STL). **`test_print_ready_track_b8_topology_gates`** **skips** when **`gates_track_b8_all_pass`** is false (Ring‑1 B8 still needs a full **40×40×4**, **200**-outer Track L solve + re-export; short runs or uniform-ish **`final.npy`** keep topology gates false — **`export_print_ready.py`** span / isovalue guards replace the legacy “threshold slab” that inflated STL volume to ~100% of bbox). **`optimize_shell_3d`** now aligns **`final.npy`** with **terminal XY symmetrisation** (when symmetry is on), uses **1e−6** PCG tolerances like the B6 full harness, and documents a **bounded** **`16×16×4` / 40-outer** **`--release`** recipe for **`ρ` span ≥ 1e−3** exporter smoke (not a substitute for B8 on the Striatus grid). **`export_print_ready.py`** emits the full schema plus optional **`contour_isovalue`**; **`UMST_REQUIRE_B8=1`** forces a **fail** instead of skip until **`bash notebooks/_run_shell_demo.sh`** (or equivalent **200**-outer Track L) + re-export yields **`gates_track_b8_all_pass: true`**. Until then, committed mesh sidecar is **STL-feasible** but **not** B8-complete.
 
-**Full B6 (`shell_topology_rib_pattern_full_v04`, `--release`, `--ignored`, `UMST_SHELL_RIB_PATTERN=1`):** with **`UMST_SHELL_RIB_FULL_ITERS=200`** (default), gates are **greyness `< 0.15`**, **`xy_var > 0.1`**, **VF ±1%**, **compliance drop `< 0.6×`** vs iter-1 — distinct from NaN / low-PCG-budget path in **`optimize_shell_3d`** stress note above. **2026-05-11 run** (uniform roof, **`UMST_SHELL_ROOF_RAMP` unset** matched example, ramp **off** at that revision): **failed** on **greyness** (`mean(4ρ(1−ρ)) ≈ 0.51`, gate `< 0.15`; **~7655 s** wall time; **finite**, not NaN / early `c_raw` non-finite). **Harness change:** **`UMST_SHELL_ROOF_RAMP=0`** → uniform roof ( **`optimize_shell_3d`** default when unset); **unset** or non-**0**/non-**1** → gentle **x** ramp at **`UMST_SHELL_ROOF_RAMP_F`** (default **0.2**) — **`optimize_shell_3d`** still needs literal **`UMST_SHELL_ROOF_RAMP=1`**. **No** fresh **200**-outer proof that greyness clears. With **`UMST_SHELL_RIB_FULL_ITERS` below 200** (smoke), the same test only checks **finite** compliance / metrics and a **loose VF band** (±15%); smoke **`--nocapture`** prints **vf / greyness / xy_var / c0 / c1** (manifold **Solver lanes — Topology / shell** matches).
+**Full B6 (`shell_topology_rib_pattern_full_v04`, `--release`, `--ignored`, `UMST_SHELL_RIB_PATTERN=1`):** with **`UMST_SHELL_RIB_FULL_ITERS=200`** (default), gates are **greyness `< 0.15`**, **`xy_var > 0.1`**, **VF ±1%**, **compliance drop `< 0.6×`** vs iter-1 — distinct from NaN / low-PCG-budget path in **`optimize_shell_3d`** stress note above. **2026-05-11 run + roof semantics:** consolidated above in **[2026-05-11 greyness vs roof-ramp defaults (honest)](#2026-05-11-greyness-vs-roof-ramp-defaults-honest)**. With **`UMST_SHELL_RIB_FULL_ITERS` below 200** (smoke), the same test only checks **finite** compliance / metrics and a **loose VF band** (±15%); smoke **`--nocapture`** prints **vf / greyness / xy_var / c0 / c1** (manifold **Solver lanes — Topology / shell** matches).
 
 ### Track B — shell acceptance (exact names)
 

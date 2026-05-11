@@ -1,20 +1,41 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-# End-to-end Striatus shell demo: Rust NPY dumps -> PNG frames -> overlay -> GIF -> STL.
+# End-to-end Striatus shell demo: Rust (`cargo run --release` … optimize_shell_3d) -> PNG frames -> GIF -> STL ->
+# `notebooks/export_print_ready.py` (last step in this script).
 #
 # Python env (see notebooks/README.md): use one venv; install NumPy + render stack with the *same*
 # interpreter you use here (`PYTHON=python3` or `.venv/bin/python`). Prefer `uv venv` + `uv pip install`
 # or `python3 -m venv` + `pip install -r notebooks/requirements-shell-demo.txt` then
 # `pip install './crates/umst-py[render]'` (or `maturin develop --extras render` from crates/umst-py).
+# `export_print_ready.py` also needs graph engines: `uv pip install --python .venv/bin/python networkx scipy`
+# (see docs/Solver-Status.md — Topology / shell).
+#
+# --- Copy-paste overnight: 40×40×4 × 200 outers (Track L scale, many CPU hours) -----------------
+# From directory that contains `notebooks/` and `crates/` (this repo root = parent of `notebooks/`):
+#
+#   cd umst-concrete-cartridge
+#   rm -f crates/umst-concrete-cartridge/examples/_artifacts/shell/iter_*.npy
+#   export UMST_SHELL_NX=40 UMST_SHELL_NY=40 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=200
+#   export UMST_SHELL_DUMP_ITER=0 UMST_SHELL_DUMP_STRIDE=10
+#   export UMST_SHELL_SELF_WEIGHT=0
+#   # Roof load: unset or !=1 => uniform in optimize_shell_3d; literal UMST_SHELL_ROOF_RAMP=1 => x ramp (F default 0.2)
+#   # export UMST_SHELL_ROOF_RAMP=1
+#   bash notebooks/_run_shell_demo.sh 2>&1 | tee shell_track_l_40cube4_i200.log
+#
+# Rust writes under crates/umst-concrete-cartridge/examples/_artifacts/shell/ (manifest.json, final.npy, …).
+# This script writes under notebooks/_artifacts/: striatus_emergence.gif, striatus_shell_v0.4.stl,
+# striatus_shell_v0.4.print_ready.json (via export_print_ready.py). Re-run exporter only from repo root:
+#   python3 notebooks/export_print_ready.py
+#   # or: .venv/bin/python notebooks/export_print_ready.py
 #
 # Optional: UMST_SHELL_ITERS=5 for CI/smoke; UMST_SHELL_DUMP_ITER=1 for iter_*.npy frames (large).
+#   With dumps on, UMST_SHELL_DUMP_STRIDE defaults to 10 here and in optimize_shell_3d (first / every Nth / last outer).
 # Optional: UMST_SHELL_HELM=1 enables graph Helmholtz on the AD tape (example default is off).
-# Optional: UMST_SHELL_ROOF_RAMP=1 (+ UMST_SHELL_ROOF_RAMP_F, default 0.2) — gentle roof traction ramp in x
-# (same as shell_topology_rib_pattern quick harness); default off (uniform roof load, matches B6 full harness).
-# Repro / conditioning (optimize_shell_3d, same names): UMST_SHELL_NX, UMST_SHELL_NY, UMST_SHELL_NZ, UMST_SHELL_VF,
-# UMST_SHELL_INIT_SCALE, UMST_SHELL_SYMMETRY, UMST_SHELL_SYMM_PERIOD, UMST_SHELL_PCG, UMST_SHELL_MAX_CG,
-# UMST_SHELL_E_MIN_REL, UMST_SHELL_SELF_WEIGHT (this script defaults SELF_WEIGHT to 0), UMST_SHELL_VOL_LOOP.
+#
+# Repro / conditioning (optimize_shell_3d reads the same names): UMST_SHELL_VF, UMST_SHELL_INIT_SCALE,
+# UMST_SHELL_SYMMETRY, UMST_SHELL_SYMM_PERIOD, UMST_SHELL_PCG, UMST_SHELL_MAX_CG, UMST_SHELL_E_MIN_REL,
+# UMST_SHELL_VOL_LOOP, UMST_SHELL_ROOF_RAMP / UMST_SHELL_ROOF_RAMP_F.
 #
 # CI-fast / smoke (Rust step only — not brief-aligned): example clamps grid to nx,ny in [6,40] and nz in [2,8], e.g.
 #   UMST_SHELL_NX=6 UMST_SHELL_NY=6 UMST_SHELL_NZ=2 UMST_SHELL_ITERS=2 UMST_SHELL_DUMP_ITER=0 UMST_SHELL_MAX_CG=200 \
