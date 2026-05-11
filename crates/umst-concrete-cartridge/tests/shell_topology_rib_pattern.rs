@@ -8,7 +8,7 @@
 //! **Track B6 (v0.4)** — `shell_topology_rib_pattern`: Striatus-class gates ([`composer_prompts/v0.4_solver_completion_no_namesakes.md`](../../../../composer_prompts/v0.4_solver_completion_no_namesakes.md) §B6).
 //!
 //! - [`shell_topology_rib_pattern_quick`]: CI — compact **0.8×0.8×0.1** m slab, coords **\([-1,1]^3\)** (same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs)), **9×8** in-plane cells, gentle roof **x-ramp** \(r=0.2\), Heaviside \(\beta=10\). **Helmholtz is omitted on the Burn AD tape**; [`VolumeProjection`] after Adam. Default **24** steps. Gates: VF ±15%, top-face variance of Heaviside \(\hat\rho\) \(> 2\times 10^{-5}\) (full B6: \(>0.1\) on final \(\rho\)); greyness not asserted on quick path; compliance ratio bounded.
-//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release`, and **does not** satisfy the brief greyness / compliance gates (those need the full **200** outers). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape; default **off** (scatter backward mis-shapes at Striatus `N` on Burn 0.13). **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`** — same semantics as the example. Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
+//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release**, and the **optimisation** does not satisfy the brief greyness / compliance gates unless you run the full **200** outers — the Rust test **skips** those acceptance asserts when **`UMST_SHELL_RIB_FULL_ITERS` < 200** (finite compliance + loose VF band only). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **only** literal **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape (an empty `UMST_SHELL_HELM=` must **not** enable — older `!= \"0\"` parsing turned it on and tripped scatter backward at Striatus N); default **off**. **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`** — same semantics as the example. Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
 //!
 //! **Bar-network PCG (Ring 1 / B6):** `VectorMechanicsSolver::packed_bar_network_equilibrium` (umst-manifold `mechanics.rs`) caps passes at **`min(max_cg_iterations, 3N)`** and **exits early** when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\). On **40×40×4**, `N≈8.4×10³`; the full harness defaults **`max_cg_iterations = 2000`** (**`UMST_SHELL_MAX_CG`**) and **`e_min = 10⁻³·E₀`** (**`UMST_SHELL_E_MIN_REL`**) for SIMP conditioning under four-sided perimeter pins + roof traction (v0.4 follow-up Ring 1).
 
@@ -639,7 +639,40 @@ fn shell_topology_rib_pattern_full_v04() {
         "set UMST_SHELL_RIB_PATTERN=1 for the long Striatus-scale acceptance run"
     );
     let target_vf = parse_target_vf();
+    let adam_iters = parse_full_rib_adam_iters();
     let m = run_rib_full_striatus(target_vf);
+    assert!(
+        m.c0.is_finite() && m.c1.is_finite(),
+        "compliance finite: c0={:?} c1={:?} (vf={} greyness={} xy_var={})",
+        m.c0,
+        m.c1,
+        m.vf,
+        m.greyness,
+        m.xy_var
+    );
+    assert!(
+        m.xy_var.is_finite() && m.greyness.is_finite(),
+        "metrics finite: xy_var={} greyness={}",
+        m.xy_var,
+        m.greyness
+    );
+    // Smoke (`UMST_SHELL_RIB_FULL_ITERS` < 200): one or few outers still exercise 40×40×4 AD +
+    // bar PCG wiring; brief B6 gates need the full 200-outer schedule (module `//!` above).
+    if adam_iters < 200 {
+        let band = 0.15_f32 * target_vf;
+        assert!(
+            (m.vf - target_vf).abs() <= band,
+            "smoke vf band: got vf={} target_vf={} (±15% quick-style band; greyness={} xy_var={})",
+            m.vf,
+            target_vf,
+            m.greyness,
+            m.xy_var
+        );
+        eprintln!(
+            "shell_topology_rib_pattern_full_v04: smoke mode (UMST_SHELL_RIB_FULL_ITERS={adam_iters} < 200) — B6 greyness / xy_var / compliance-drop gates skipped"
+        );
+        return;
+    }
     assert!(
         (m.vf - target_vf).abs() <= 0.01,
         "vf gate: got vf={} target_vf={} (greyness={} xy_var={} c0={} c1={})",
@@ -667,15 +700,6 @@ fn shell_topology_rib_pattern_full_v04() {
         m.greyness,
         m.c0,
         m.c1
-    );
-    assert!(
-        m.c0.is_finite() && m.c1.is_finite(),
-        "compliance finite: c0={:?} c1={:?} (vf={} greyness={} xy_var={})",
-        m.c0,
-        m.c1,
-        m.vf,
-        m.greyness,
-        m.xy_var
     );
     assert!(
         m.c1 < m.c0 * 0.6,

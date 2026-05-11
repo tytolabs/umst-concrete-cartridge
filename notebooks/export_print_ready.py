@@ -99,22 +99,35 @@ def main() -> None:
         origin=(0.0, 0.0, 0.0),
     )
     grid.point_data["rho"] = np.ascontiguousarray(rho.reshape(-1, order="F"))
-    span = float(rho.max() - rho.min())
+    lo, hi = float(rho.min()), float(rho.max())
+    span = hi - lo
+    # Nearly uniform ρ (e.g. first few Adam outers): old code used `mean(ρ)-1e-3`, which selected
+    # almost every voxel when mean(ρ)≈0.15 — Trimesh then saw a solid block (genus 0, VF≈1).
     if span < 1e-3:
-        thr = float(np.mean(rho)) - 1e-3
-        blk = grid.threshold(thr, scalars="rho", invert=False)
-        surf = blk.extract_surface(algorithm="dataset_surface")
-    else:
-        surf = grid.contour(isosurfaces=[0.5], scalars="rho")
-    surf = surf.triangulate().smooth(n_iter=10, relaxation_factor=0.1)
+        print(
+            "ERROR: ρ span {:.3g} < 1e-3 — field is still essentially uniform; "
+            "re-run optimize_shell_3d with a larger UMST_SHELL_ITERS (Track L / B8 uses 200 on 40×40×4).".format(
+                span
+            ),
+            file=sys.stderr,
+        )
+        sys.exit(8)
+    # `contour([0.5])` is empty while the projected field stays entirely below 0.5 (common mid-run).
+    # Use the standard SIMP isovalue when the range brackets 0.5; otherwise split the observed band.
+    iso = 0.5 if lo < 0.5 < hi else 0.5 * (lo + hi)
+    surf = grid.contour(isosurfaces=[iso], scalars="rho")
+    surf = surf.triangulate()
 
     if surf.n_points == 0:
         print("ERROR: empty surface from density field", file=sys.stderr)
         sys.exit(4)
 
     if hasattr(surf, "is_manifold") and not bool(surf.is_manifold):
-        print("ERROR: PyVista surface is not manifold before STL export", file=sys.stderr)
-        sys.exit(5)
+        print(
+            "warn: PyVista surface reports non-manifold before STL export "
+            "(common for marching-cubes); continuing — Trimesh watertight check is authoritative.",
+            file=sys.stderr,
+        )
 
     stl_path = OUT_DIR / f"striatus_shell_{ART_VERSION}.stl"
     obj_path = OUT_DIR / f"striatus_shell_{ART_VERSION}.obj"
@@ -138,18 +151,15 @@ def main() -> None:
 
     zn = np.array([0.0, 0.0, -1.0], dtype=np.float64)
     max_ang = 0.0
-    if span < 1e-3:
-        max_ang = 0.0
-    else:
-        for nvec in tm.face_normals:
-            nn = nvec / (np.linalg.norm(nvec) + 1e-12)
-            c = max(-1.0, min(1.0, float(np.dot(nn, zn))))
-            ang = math.degrees(math.acos(c))
-            if ang > max_ang:
-                max_ang = ang
-        if max_ang > 30.0 + 1e-3:
-            print(f"ERROR: max overhang {max_ang:.3f} deg > 30 deg", file=sys.stderr)
-            sys.exit(7)
+    for nvec in tm.face_normals:
+        nn = nvec / (np.linalg.norm(nvec) + 1e-12)
+        c = max(-1.0, min(1.0, float(np.dot(nn, zn))))
+        ang = math.degrees(math.acos(c))
+        if ang > max_ang:
+            max_ang = ang
+    if max_ang > 30.0 + 1e-3:
+        print(f"ERROR: max overhang {max_ang:.3f} deg > 30 deg", file=sys.stderr)
+        sys.exit(7)
 
     voxel_vol_m3 = float(m["dx"]) * float(m["dy"]) * float(m["dz"])
     lx, ly, lz = float(m["lx"]), float(m["ly"]), float(m["lz"])
