@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 pub mod chemo_water;
+pub mod clinker_eos;
 pub mod colloidal;
 pub mod cost;
 pub mod creep;
@@ -12,6 +13,7 @@ pub mod freeze_thaw;
 pub mod hydration;
 pub mod itz;
 pub mod nano;
+pub mod optical;
 pub mod packing;
 pub mod polymer;
 pub mod porosity;

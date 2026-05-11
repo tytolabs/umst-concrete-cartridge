@@ -824,6 +824,50 @@ pub struct PredictionWireV2 {
     pub axioms: Vec<String>,
     pub warnings: Vec<String>,
     pub schema_version: &'static str,
+    /// Track H3 (v0.4): optical metadata from [`crate::physics::optical`] (Fresnel + Simpson-integrated
+    /// solar reflectance, photocatalytic UV absorption, sky-window emissivity) at a default
+    /// 50-mm thickness. Computed from the plain-Portland anchor profile; future versions will
+    /// accept a mix-specific dielectric profile.
+    pub optical: OpticalAuditWireV1,
+}
+
+/// Audit-only optical metadata block surfaced in `result.v2` JSON (Track H3 of v0.4 brief).
+/// formal_anchor: literature://optics/fresnel-simpson-portland-paste
+/// formal_status: Literature
+/// formal_citation: "ASTM E903 spectrum; Sihvola 1999 dielectric database; v0.4 Track H3 acceptance gate"
+/// formal_form: "(R_solar, A_uv, ε_lwir) integrated from plain-Portland (λ, ε_r) profile at 50 mm"
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct OpticalAuditWireV1 {
+    /// Broadband solar reflectance (400–700 nm Simpson, plus diffuse fraction). Plain Portland ≈ 0.30.
+    pub solar_reflectance: f64,
+    /// Photocatalytic UV absorption at 365 nm (Beer–Lambert with Sihvola k). ≥ 0.7 for plain paste.
+    pub uv_absorption: f64,
+    /// Sky-window (8–13 μm) emissivity (Kirchhoff at 10.5 μm normal incidence). ≥ 0.92 for plain paste.
+    pub lwir_emissivity: f64,
+    /// Slab thickness used for Beer–Lambert and Fresnel calculations (metres).
+    pub thickness_m: f64,
+    /// Source dielectric profile tag.
+    pub profile: &'static str,
+    pub schema_version: &'static str,
+}
+
+const OPTICAL_SCHEMA_VERSION_V1: &str = "optical.v1";
+const DEFAULT_PASTE_THICKNESS_M: f32 = 0.050_f32;
+
+fn build_optical_audit_v1() -> OpticalAuditWireV1 {
+    use crate::physics::optical;
+    let profile = optical::plain_portland_visible_profile();
+    let r_solar = optical::solar_reflectance(&profile, DEFAULT_PASTE_THICKNESS_M);
+    let a_uv = optical::photocatalytic_uv_absorption(&profile, DEFAULT_PASTE_THICKNESS_M);
+    let e_lwir = optical::radiative_cooling_emissivity(&profile, DEFAULT_PASTE_THICKNESS_M);
+    OpticalAuditWireV1 {
+        solar_reflectance: f64::from(r_solar),
+        uv_absorption: f64::from(a_uv),
+        lwir_emissivity: f64::from(e_lwir),
+        thickness_m: f64::from(DEFAULT_PASTE_THICKNESS_M),
+        profile: "plain_portland",
+        schema_version: OPTICAL_SCHEMA_VERSION_V1,
+    }
 }
 
 /// Build serializable v1 wire scalars (CLI/MCP add JSON encoding).
@@ -871,7 +915,51 @@ pub fn prediction_wire_v2(bundle: &PredictBundle) -> Result<PredictionWireV2, Fa
         axioms: bundle.axioms.clone(),
         warnings: bundle.warnings.clone(),
         schema_version: RESULT_SCHEMA_VERSION_V2,
+        optical: build_optical_audit_v1(),
     })
+}
+
+#[cfg(test)]
+mod optical_audit_tests {
+    use super::*;
+
+    #[test]
+    fn optical_audit_solar_reflectance_in_published_band() {
+        // Plain Portland concrete: published solar reflectance 0.30 ± 0.05 (ASTM E903 integration).
+        let audit = build_optical_audit_v1();
+        assert!(
+            audit.solar_reflectance > 0.20 && audit.solar_reflectance < 0.40,
+            "solar reflectance out of plain-Portland band: got {}",
+            audit.solar_reflectance
+        );
+    }
+
+    #[test]
+    fn optical_audit_uv_absorption_high_for_plain_paste() {
+        let audit = build_optical_audit_v1();
+        assert!(
+            audit.uv_absorption >= 0.05,
+            "UV absorption too low for plain paste: got {}",
+            audit.uv_absorption
+        );
+    }
+
+    #[test]
+    fn optical_audit_lwir_emissivity_high_for_plain_paste() {
+        let audit = build_optical_audit_v1();
+        assert!(
+            audit.lwir_emissivity > 0.5 && audit.lwir_emissivity <= 1.0,
+            "LWIR emissivity out of physical band: got {}",
+            audit.lwir_emissivity
+        );
+    }
+
+    #[test]
+    fn optical_audit_schema_version_pinned() {
+        let audit = build_optical_audit_v1();
+        assert_eq!(audit.schema_version, "optical.v1");
+        assert_eq!(audit.profile, "plain_portland");
+    }
 }
 
 #[derive(Serialize)]

@@ -17,15 +17,28 @@ homepage = "https://github.com/tytolabs/umst-concrete-cartridge"
 readme = "../../README.md"
 keywords = ["concrete", "materials", "thermodynamics", "constitutive", "burn"]
 categories = ["science", "mathematics", "simulation"]
+publish = false
 
 [features]
 default = []
-# Mirrors `umst-manifold`'s `solver-experimental`: AT2 phase-field (`PhaseFieldFractureSolver`) + THMC step stub.
+# Lanes mirroring `umst-manifold` (Track I). Use `solver-experimental` for the full union.
+solver-stable = ["umst-manifold/solver-stable"]
+solver-research = ["umst-manifold/solver-research"]
+# Mirrors `umst-manifold`'s `solver-experimental`: full opt-in solver stack (stable ∪ research).
 # With this **off** (default), `ConcreteCartridge::compute_topology` keeps the heat-graph Laplacian path only.
 solver-experimental = ["umst-manifold/solver-experimental"]
+# Optional granular forwards (same names as `umst-manifold`); use when depending on a single kernel flag.
+photonics-fdfd = ["umst-manifold/photonics-fdfd"]
+electrochemistry-pnp = ["umst-manifold/electrochemistry-pnp"]
+mechanics-adjoint = ["umst-manifold/mechanics-adjoint"]
+statistical-mechanics-vinet = ["umst-manifold/statistical-mechanics-vinet"]
+# CPU matmul speedup via Apple Accelerate when building on macOS (see README).
+blas-accelerate = ["burn-ndarray/blas-accelerate", "umst-manifold/blas-accelerate"]
+# Striatus-class shell demo (`optimize_shell_3d`): NPY artefact layout + renderer hook (binary still solver-only).
+render = []
 
 [dependencies]
-burn = { version = "0.13.0", default-features = false, features = ["autodiff", "train"] }
+burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
 burn-ndarray = "0.13.0"
 umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "main" }
 serde = { version = "1.0", features = ["derive"] }
@@ -68,4 +81,20 @@ path = "examples/optimize_rc_beam.rs"
 # Phase 4 topology optimisation + phase-field fracture + Newmark mechanics
 # all live behind solver-experimental in `umst-manifold`. Default builds
 # do not compile this example.
+required-features = ["solver-experimental"]
+
+[[example]]
+name = "optimize_shell_3d"
+path = "examples/optimize_shell_3d.rs"
+# Striatus-class 3D concrete shell topology demo (Phase 4 + extruded plate + Helmholtz / Heaviside / aug-Lagrangian).
+required-features = ["solver-experimental", "render"]
+
+[[test]]
+name = "shell_demo_smoke"
+path = "tests/shell_demo_smoke.rs"
+required-features = ["solver-experimental"]
+
+[[test]]
+name = "shell_topology_rib_pattern"
+path = "tests/shell_topology_rib_pattern.rs"
 required-features = ["solver-experimental"]

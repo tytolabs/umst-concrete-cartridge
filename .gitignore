@@ -5,6 +5,7 @@ Cargo.lock
 .env
 .env.local
 .venv/
+.venv-shell/
 
 .DS_Store
 Thumbs.db
@@ -27,3 +28,6 @@ __pycache__/
 
 # Notebook side-effect (the canonical figure lives inside the .ipynb)
 notebooks/audit_three_panels.png
+
+# Striatus shell demo per-iteration dumps (large; final.npy may be committed selectively)
+crates/umst-concrete-cartridge/examples/_artifacts/shell/iter_*.npy

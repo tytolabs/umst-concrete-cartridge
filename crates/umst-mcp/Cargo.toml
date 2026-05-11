@@ -12,6 +12,11 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Model Context Protocol (MCP) server exposing the UMST concrete engine to AI agents."
+publish = false
+
+[features]
+default = []
+blas-accelerate = ["umst-cli/blas-accelerate"]
 
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }

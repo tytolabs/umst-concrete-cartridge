@@ -333,6 +333,9 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
                     dt: 1.0_f32,
                     max_newton: 1_usize,
                     tol: 1e-2_f32,
+                    drying_last_node_evaporation_k: 0.0_f32,
+                    drying_ambient_h: 0.5_f32,
+                    ..Default::default()
                 };
                 let state0 = thmc_state_from_umst(manifold, damage_pf);
                 let state1 = thmc

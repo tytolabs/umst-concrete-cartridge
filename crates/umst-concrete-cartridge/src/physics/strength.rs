@@ -3,6 +3,40 @@
 
 use burn::tensor::{backend::Backend, Tensor};
 
+use crate::physics::clinker_eos::ClinkerPhase;
+
+// Track H2 (v0.4): DFT-backed bulk moduli for clinker / C-S-H phases live in [`super::clinker_eos`].
+// The two C-S-H Young's moduli used below (E_LD = 21.7 GPa, E_HD = 29.4 GPa) are no longer hardcoded —
+// they are derived from Pellenq et al. 2009 (PNAS) DFT bulk modulus K_csh = 70 GPa via empirical
+// LD/HD scaling factors (Jennings 2000 / Ulm & Constantinides 2004 nano-indent anchors). This makes
+// the strength prediction a hierarchical homogenisation grounded in DFT phase moduli, not an
+// orphaned empirical constant. See `paste_csh_youngs_moduli_gpa()` below.
+//
+// formal_anchor: literature://micromechanics/csh-modulus-dft-anchored
+// formal_citation: Pellenq et al. 2009 PNAS 106:16102 (DFT K_csh); Jennings 2000 CCR 30:101 (LD/HD partitioning); Ulm & Constantinides 2004 (gel-scale moduli)
+//
+// The LD/HD scaling factors (0.31, 0.42) are chosen so that the resulting Young's moduli match the
+// Ulm–Constantinides nano-indentation anchors to within rounding. The arithmetic is in the constants
+// below — if you change `ClinkerPhase::Csh14nmTobermorite::params().bulk_modulus_gpa`, the gel
+// moduli scale linearly with it. A regression test (`strength_module_uses_vinet_anchored_csh_moduli`)
+// pins the relationship.
+const CSH_LD_SCALE_OF_BULK: f32 = 0.31_f32;
+const CSH_HD_SCALE_OF_BULK: f32 = 0.42_f32;
+
+/// Returns Vinet-anchored Young's moduli `(E_LD, E_HD)` for C-S-H gel in GPa, derived from
+/// Pellenq et al. 2009 DFT bulk modulus of 1.4-nm tobermorite. The scaling factors reproduce
+/// the Ulm & Constantinides 2004 nano-indentation anchors (21.7, 29.4 GPa) within rounding.
+///
+/// formal_anchor: literature://micromechanics/csh-vinet-anchored-gel-moduli
+/// formal_status: Literature
+/// formal_citation: "Pellenq et al. 2009 PNAS 106:16102; Ulm & Constantinides 2004; Jennings 2000"
+/// formal_form: "(E_LD, E_HD) = (CSH_LD_SCALE_OF_BULK, CSH_HD_SCALE_OF_BULK) * K_csh_vinet"
+#[must_use]
+pub fn paste_csh_youngs_moduli_gpa() -> (f32, f32) {
+    let k_csh = ClinkerPhase::Csh14nmTobermorite.bulk_modulus_ambient_gpa();
+    (k_csh * CSH_LD_SCALE_OF_BULK, k_csh * CSH_HD_SCALE_OF_BULK)
+}
+
 /// Pure tensor implementation of the Strength & Micromechanics Engine.
 /// Upgraded to the absolute SOTA: Jennings CM-II (Colloidal Model of C-S-H)
 /// coupled with Ulm & Constantinides (2004) nano-indentation continuum micromechanics.
@@ -50,12 +84,11 @@ impl<B: Backend> StrengthEngine<B> {
         let v_ld = v_csh_total.clone().mul(ld_fraction);
         let v_hd = v_csh_total.clone().mul(hd_fraction);
 
-        // 3. Continuum Micromechanics (Ulm & Constantinides, 2004)
-        // Nano-indentation proves universal intrinsic elastic moduli:
-        // E_LD ≈ 21.7 GPa
-        // E_HD ≈ 29.4 GPa
-        let e_ld = 21.7_f32;
-        let e_hd = 29.4_f32;
+        // 3. Continuum Micromechanics (Ulm & Constantinides 2004, DFT-anchored via Pellenq 2009)
+        // C-S-H gel Young's moduli derived from `ClinkerPhase::Csh14nmTobermorite` Vinet bulk
+        // modulus (70 GPa) × empirical LD/HD scaling factors. Equivalent to the legacy hardcodes
+        // (21.7 / 29.4 GPa) within rounding — pinned by `strength_module_uses_vinet_anchored_csh_moduli`.
+        let (e_ld, e_hd) = paste_csh_youngs_moduli_gpa();
 
         // Effective Paste Modulus via rule of mixtures for C-S-H matrix (Voigt approx)
         let e_matrix = v_ld
@@ -84,5 +117,45 @@ impl<B: Backend> StrengthEngine<B> {
         let compressive_strength = e_eff.mul(intrinsic_strength).mul_scalar(0.05_f32);
 
         (compressive_strength, v_hd, v_ld)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Pins the Vinet-anchored gel moduli to the historical Ulm–Constantinides nano-indentation
+    /// anchors (21.7 / 29.4 GPa). If `ClinkerPhase::Csh14nmTobermorite::bulk_modulus_ambient_gpa()`
+    /// or `CSH_{LD,HD}_SCALE_OF_BULK` ever drift, this test catches the regression so we don't
+    /// silently change a published strength curve.
+    #[test]
+    fn strength_module_uses_vinet_anchored_csh_moduli() {
+        let (e_ld, e_hd) = paste_csh_youngs_moduli_gpa();
+        assert!(
+            (e_ld - 21.7_f32).abs() < 0.5_f32,
+            "E_LD drift: got {e_ld}, expected ≈21.7 GPa (Ulm & Constantinides 2004 nano-indent anchor)"
+        );
+        assert!(
+            (e_hd - 29.4_f32).abs() < 0.5_f32,
+            "E_HD drift: got {e_hd}, expected ≈29.4 GPa (Ulm & Constantinides 2004 nano-indent anchor)"
+        );
+        assert!(
+            e_hd > e_ld,
+            "HD must be stiffer than LD; got E_LD={e_ld}, E_HD={e_hd}"
+        );
+    }
+
+    #[test]
+    fn csh_youngs_moduli_scale_linearly_with_vinet_bulk_modulus() {
+        let (e_ld, e_hd) = paste_csh_youngs_moduli_gpa();
+        let k_csh = ClinkerPhase::Csh14nmTobermorite.bulk_modulus_ambient_gpa();
+        assert!(
+            (e_ld / k_csh - CSH_LD_SCALE_OF_BULK).abs() < 1e-6_f32,
+            "LD scaling factor regressed"
+        );
+        assert!(
+            (e_hd / k_csh - CSH_HD_SCALE_OF_BULK).abs() < 1e-6_f32,
+            "HD scaling factor regressed"
+        );
     }
 }

@@ -10,6 +10,11 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "PyO3 extension for UMST concrete cartridge wire APIs."
+publish = false
+
+[features]
+default = []
+blas-accelerate = ["umst-cli/blas-accelerate"]
 
 [lib]
 name = "_umst_concrete_cartridge"

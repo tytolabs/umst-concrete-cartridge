@@ -11,6 +11,15 @@ license.workspace = true
 repository.workspace = true
 autobenches = false
 description = "Command-line front-end for the UMST concrete cartridge."
+publish = false
+
+[features]
+default = []
+blas-accelerate = [
+    "umst-concrete-cartridge/blas-accelerate",
+    "burn-ndarray/blas-accelerate",
+    "umst-manifold/blas-accelerate",
+]
 
 [lib]
 name = "umst_cli"

@@ -22,7 +22,16 @@ Repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 
 [project.optional-dependencies]
 notebook = ["notebook>=7", "jupyterlab>=4", "matplotlib>=3.7", "pandas>=2.0"]
-tests = ["hypothesis>=6,<7"]
+render = [
+  "pyvista>=0.43",
+  "imageio>=2.34",
+  "imageio-ffmpeg>=0.5",
+  "numpy>=1.26",
+  "trimesh>=4.4",
+  "meshio>=5.3",
+  "pillow>=10.0",
+]
+tests = ["hypothesis>=6,<7", "pytest>=8"]
 
 [tool.maturin]
 python-source = "python"
