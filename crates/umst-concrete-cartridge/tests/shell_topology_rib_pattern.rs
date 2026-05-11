@@ -534,9 +534,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         };
 
         let bf = if use_self_weight {
-            sw_cfg
-                .body_force(rho_bar.clone())
-                .add(live_force.clone())
+            sw_cfg.body_force(rho_bar.clone()).add(live_force.clone())
         } else {
             live_force.clone()
         };
