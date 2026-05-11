@@ -28,6 +28,19 @@
 //! **`E₀ = 200`** GPa caused **non-finite** compliance at iter 1. Override PCG budget with **`UMST_SHELL_MAX_CG`**;
 //! void floor with **`UMST_SHELL_E_MIN_REL`** (fraction of `e0`).
 //!
+//! **Bounded grid caps (env):** **`UMST_SHELL_NX` / `NY` / `NZ`** clamp to **`[6, 40]`** / **`[6, 40]`** / **`[2, 8]`**
+//! cells; **`UMST_SHELL_ITERS`** to **`[1, 500]`**. Track L / B8 proof on the **40×40×4** lattice still expects
+//! **`UMST_SHELL_ITERS=200`** (see `notebooks/_run_shell_demo.sh`). For a **fast wall-clock** check that
+//! **`export_print_ready.py`** accepts the field (**ρ span ≥ 1e⁻³**), use a smaller grid, e.g.
+//! **`UMST_SHELL_NX=16 UMST_SHELL_NY=16 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=40`** (~minutes on a laptop CPU in
+//! `--release`); that does **not** by itself satisfy Ring‑1 B8 topology gates on the full Striatus lattice.
+//!
+//! **Final artefact vs last training step:** when **`UMST_SHELL_SYMMETRY`** is on (default), the optimiser
+//! averages **ρ** over the four XY mirror partners every **`UMST_SHELL_SYMM_PERIOD`** outers. The committed
+//! **`final.npy`** applies the **same XY average once** after the terminal forward so the export matches that
+//! symmetrised design (without this, **`final.npy`** could drift from the last mirrored forward and stay
+//! nearly uniform in XY while still meeting the volume target).
+//!
 //! formal_anchor: Literature
 //! formal_citation: Sigmund & Maute 2013, Struct. Multidisc. Optim. 48:1031-1055
 //! formal_form: Neural-SIMP topology optimisation on an extruded \(40^2\times4\) hex slab under self-weight + roof pressure
@@ -123,16 +136,29 @@ fn pin_bottom_perimeter_bm(
     Tensor::from_data(Data::new(bm, Shape::new([1, n, 3])), device)
 }
 
-fn build_top_pressure_load(nx: usize, ny: usize, nz: usize, pa: f32, dx: f32, dy: f32) -> Vec<f32> {
+/// Roof nodal traction with optional **x** ramp \(w = 1 + r\,i_x/n_x\) (same lumping as `shell_topology_rib_pattern`).
+/// `ramp = 0` recovers uniform pressure. **`UMST_SHELL_ROOF_RAMP=1`** enables **`UMST_SHELL_ROOF_RAMP_F`** (default **0.2**)
+/// to bias sensitivities in **x** when short runs on small slabs would otherwise stay nearly symmetric / flat in XY.
+fn build_top_pressure_load_ramp(
+    nx: usize,
+    ny: usize,
+    nz: usize,
+    pa: f32,
+    dx: f32,
+    dy: f32,
+    ramp: f32,
+) -> Vec<f32> {
     let nx1 = nx + 1;
     let ny1 = ny + 1;
     let n = nx1 * ny1 * (nz + 1);
     let mut bf = vec![0.0f32; n * 3];
     let iz_top = nz;
+    let nx_d = nx.max(1) as f32;
     for iy in 0..=ny {
         for ix in 0..=nx {
             let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
-            bf[nid * 3 + 2] = -pa * dx * dy;
+            let w = 1.0_f32 + ramp * (ix as f32 / nx_d);
+            bf[nid * 3 + 2] = -pa * dx * dy * w;
         }
     }
     bf
@@ -221,7 +247,13 @@ fn main() {
     let boundary_mask = pin_four_corners_bm(nx, ny, nz, &device);
 
     let pressure_pa = 50.0_f32;
-    let live_flat = build_top_pressure_load(nx, ny, nz, pressure_pa, dx, dy);
+    let roof_ramp_on = matches!(env::var("UMST_SHELL_ROOF_RAMP").as_deref(), Ok("1"));
+    let roof_ramp_f = env::var("UMST_SHELL_ROOF_RAMP_F")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.2_f32);
+    let ramp = if roof_ramp_on { roof_ramp_f } else { 0.0_f32 };
+    let live_flat = build_top_pressure_load_ramp(nx, ny, nz, pressure_pa, dx, dy, ramp);
     let live_force = Tensor::from_data(Data::new(live_flat, Shape::new([1, n, 3])), &device);
 
     let voxel_vol = dx * dy * dz;
@@ -263,8 +295,10 @@ fn main() {
         .clamp(50, 50_000);
     let cg_cfg = MechanicsInnerLoopConfig {
         max_cg_iterations: max_cg,
-        cg_tolerance: 1e-5,
-        pcg_tolerance: 1e-5,
+        // Match `shell_topology_rib_pattern` full harness (`run_rib_full_striatus`) — slightly tighter than
+        // 1e-5 to reduce spurious non-finite adjoint compliance on stiff 40×40×4 slabs.
+        cg_tolerance: 1e-6,
+        pcg_tolerance: 1e-6,
         use_preconditioner: use_pc,
         max_equilibrium_substeps: 1,
     };
@@ -326,8 +360,8 @@ fn main() {
     fs::write(art_dir.join("manifest.json"), manifest).expect("write manifest.json");
 
     println!(
-        "optimize_shell_3d: grid {}×{}×{} cells, {} nodes, {} iterations, self_weight={}, vol_in_loop={}",
-        nx, ny, nz, n, iterations, use_self_weight, vol_in_loop
+        "optimize_shell_3d: grid {}×{}×{} cells, {} nodes, {} iterations, self_weight={}, vol_in_loop={}, roof_x_ramp={}",
+        nx, ny, nz, n, iterations, use_self_weight, vol_in_loop, roof_ramp_on
     );
 
     let mut last_loss = f32::NAN;
@@ -425,10 +459,14 @@ fn main() {
         opt.density_net = adam.step(0.005, opt.density_net, grads_params);
     }
 
-    let rho_final = opt
+    let mut rho_final = opt
         .density_net
         .forward_batched(coords_norm.clone())
-        .clamp(1e-6, 1.0 - 1e-6);
+        .clamp(1e-6, 1.0 - 1e-6)
+        .reshape([1, n, 1]);
+    if sym_on {
+        rho_final = apply_reflection_xy_average(rho_final, &partners);
+    }
     let rho_tilde = if helm_on {
         helm.apply(rho_final.clone(), edges_b1.clone(), dx_f)
     } else {

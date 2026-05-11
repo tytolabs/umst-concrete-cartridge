@@ -10,12 +10,18 @@
 #
 # Optional: UMST_SHELL_ITERS=5 for CI/smoke; UMST_SHELL_DUMP_ITER=1 for iter_*.npy frames (large).
 # Optional: UMST_SHELL_HELM=1 enables graph Helmholtz on the AD tape (example default is off).
+# Optional: UMST_SHELL_ROOF_RAMP=1 (+ UMST_SHELL_ROOF_RAMP_F, default 0.2) — gentle roof traction ramp in x
+# (same as shell_topology_rib_pattern quick harness); default off (uniform roof load, matches B6 full harness).
 # Repro / conditioning (optimize_shell_3d, same names): UMST_SHELL_NX, UMST_SHELL_NY, UMST_SHELL_NZ, UMST_SHELL_VF,
 # UMST_SHELL_INIT_SCALE, UMST_SHELL_SYMMETRY, UMST_SHELL_SYMM_PERIOD, UMST_SHELL_PCG, UMST_SHELL_MAX_CG,
 # UMST_SHELL_E_MIN_REL, UMST_SHELL_SELF_WEIGHT (this script defaults SELF_WEIGHT to 0), UMST_SHELL_VOL_LOOP.
 #
 # CI-fast / smoke (Rust step only — not brief-aligned): example clamps grid to nx,ny in [6,40] and nz in [2,8], e.g.
 #   UMST_SHELL_NX=6 UMST_SHELL_NY=6 UMST_SHELL_NZ=2 UMST_SHELL_ITERS=2 UMST_SHELL_DUMP_ITER=0 UMST_SHELL_MAX_CG=200 \
+#     cargo run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render'
+#
+# Bounded “ρ span ≥ 1e⁻³” smoke (still not Ring‑1 B8 on full 40³ lattice — export guard only), typical laptop minutes in --release:
+#   UMST_SHELL_NX=16 UMST_SHELL_NY=16 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=40 UMST_SHELL_DUMP_ITER=0 \
 #     cargo run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render'
 # CPU BLAS threads (if linked): macOS Accelerate — VECLIB_MAXIMUM_THREADS; OpenBLAS — OPENBLAS_NUM_THREADS
 # (see repo README “CPU matmul”).
