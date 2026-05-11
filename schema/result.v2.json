@@ -15,7 +15,8 @@
     "formal_anchor",
     "axioms",
     "warnings",
-    "schema_version"
+    "schema_version",
+    "optical"
   ],
   "properties": {
     "compressive_strength_mpa": {
@@ -86,6 +87,52 @@
       "type": "object",
       "description": "Legacy homogeneous scalars when `--compare-homogeneous` is set.",
       "additionalProperties": true
+    },
+    "optical": {
+      "type": "object",
+      "description": "Track H3 audit block: plain-Portland dielectric profile optics at fixed thickness (Fresnel + broadband integrals).",
+      "additionalProperties": false,
+      "required": [
+        "solar_reflectance",
+        "uv_absorption",
+        "lwir_emissivity",
+        "thickness_m",
+        "profile",
+        "schema_version"
+      ],
+      "properties": {
+        "solar_reflectance": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Broadband solar reflectance (400–700 nm Simpson + diffuse fraction)."
+        },
+        "uv_absorption": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Photocatalytic UV absorption at 365 nm (Beer–Lambert)."
+        },
+        "lwir_emissivity": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Sky-window emissivity (Kirchhoff at ~10.5 μm)."
+        },
+        "thickness_m": {
+          "type": "number",
+          "exclusiveMinimum": 0.0,
+          "description": "Slab thickness used for path-length optics (metres)."
+        },
+        "profile": {
+          "type": "string",
+          "description": "Dielectric profile tag (e.g. plain_portland)."
+        },
+        "schema_version": {
+          "type": "string",
+          "const": "optical.v1"
+        }
+      }
     }
   }
 }

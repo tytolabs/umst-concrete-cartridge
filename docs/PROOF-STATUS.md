@@ -46,8 +46,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/porosity.rs:6` | `lean://umst-formal/Lean/Powers.lean#PowersState` | NONE |
 | `SetTimeEngine` | `crates/umst-concrete-cartridge/src/physics/set_time.rs:6` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | NONE |
 | `compute_setting_time` | `crates/umst-concrete-cartridge/src/physics/set_time.rs:17` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | NONE |
-| `StrengthEngine` | `crates/umst-concrete-cartridge/src/physics/strength.rs:43` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | physicalSecondLaw |
-| `compute_strength_jennings` | `crates/umst-concrete-cartridge/src/physics/strength.rs:54` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | physicalSecondLaw |
+| `StrengthEngine` | `crates/umst-concrete-cartridge/src/physics/strength.rs:40` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | physicalSecondLaw |
+| `compute_strength_jennings` | `crates/umst-concrete-cartridge/src/physics/strength.rs:51` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | physicalSecondLaw |
 | `ThermoEngine` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:6` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | NONE |
 | `compute_heat_rate` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:16` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | NONE |
 | `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/transport.rs:17` | `lean://umst-formal/Lean/Powers.lean#PowersState` | NONE |
