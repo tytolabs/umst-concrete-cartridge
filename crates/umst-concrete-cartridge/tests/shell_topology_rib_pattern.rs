@@ -8,7 +8,7 @@
 //! **Track B6 (v0.4)** — `shell_topology_rib_pattern`: Striatus-class gates ([`composer_prompts/v0.4_solver_completion_no_namesakes.md`](../../../../composer_prompts/v0.4_solver_completion_no_namesakes.md) §B6).
 //!
 //! - [`shell_topology_rib_pattern_quick`]: CI — **0.8×0.8×0.1** m slab, **9×8×3** cells by default, roof **x-ramp** \(r=0.55\) at **96 Pa** nodal scale, Heaviside \(\beta=28\), **`DensityNet`** width **56**, Adam **0.0075**. **Helmholtz omitted** on the Burn AD tape; **[`VolumeProjection`] once** after Adam for **vf**. Default **≤20** outers when **`UMST_RIB_QUICK`** is unset/`1` (**`UMST_RIB_QUICK=0`** → cap **32**). Gates: VF ±15%; roof Heaviside `xy_var` \(>2\times10^{-5}\); **greyness** = roof-slice `mean(4\rho(1-\rho))` on **post–volume-projection** \(\rho\), required **<** `4\cdot vf\cdot(1-vf)-0.008` at measured **vf** (full B6 **`<0.15`** remains **40²×4 / 200** outers on post-proj **volume** mean — see [`shell_topology_rib_pattern_full_v04`]); compliance ratio bounded.
-//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release**, and the **optimisation** does not satisfy the brief greyness / compliance gates unless you run the full **200** outers — the Rust test **skips** those acceptance asserts when **`UMST_SHELL_RIB_FULL_ITERS` < 200** (finite compliance + loose VF band only; smoke **`eprintln!`** reports **vf / greyness / xy_var / c0 / c1** under **`--nocapture`**). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **only** literal **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape (an empty `UMST_SHELL_HELM=` must **not** enable — older `!= \"0\"` parsing turned it on and tripped scatter backward at Striatus N); default **off**. **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`**, **`UMST_SHELL_ROOF_RAMP`** / **`UMST_SHELL_ROOF_RAMP_F`** — top-face **x** ramp \(w=1+r\,i_x/n_x\) (**`UMST_SHELL_ROOF_RAMP_F`**, default **0.2**). **`UMST_SHELL_ROOF_RAMP=0`** → **uniform** roof (same as **`optimize_shell_3d`** with ramp unset). **Unset** or any value other than **`0`** / **`1`** → **ramp on** for this harness (matches quick CI’s gentle **x** bias; the example still defaults ramp **off** when unset). **`UMST_SHELL_ADAM_LR`** (default **0.005**) scales Burn Adam on outers that pass the finite-loss check. **`UMST_SHELL_GREY_LAMBDA`** (default **0**) adds **`λ·mean(4ρ(1−ρ))`** to the scaled compliance loss when **`λ > 0`** (experimental greyness pressure; unset preserves historical behaviour). Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
+//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Deferral:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release**, and the **optimisation** does not satisfy the brief greyness / compliance gates unless you run the full **200** outers — the Rust test **skips** those acceptance asserts when **`UMST_SHELL_RIB_FULL_ITERS` < 200** (finite compliance + loose VF band only; smoke **`eprintln!`** reports **vf / greyness / xy_var / c0 / c1** under **`--nocapture`**). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **only** literal **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape (an empty `UMST_SHELL_HELM=` must **not** enable — older `!= \"0\"` parsing turned it on and tripped scatter backward at Striatus N); default **off**. **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`**, **`UMST_SHELL_ROOF_RAMP`** / **`UMST_SHELL_ROOF_RAMP_F`** — top-face **x** ramp \(w=1+r\,i_x/n_x\) (**`UMST_SHELL_ROOF_RAMP_F`**, default **0.2**). **`UMST_SHELL_ROOF_RAMP=0`** → **uniform** roof (same as **`optimize_shell_3d`** with ramp unset). **Unset** or any value other than **`0`** / **`1`** → **ramp on** for this harness (matches quick CI’s gentle **x** bias; the example still defaults ramp **off** when unset). **`UMST_SHELL_ADAM_LR`** (default **0.005**) scales Burn Adam on outers that pass the finite-loss check. **`UMST_SHELL_ADAM_EPS`** (default **1e-5**, Burn default) widens Adam's denominator floor when second-moment estimates are tiny. **`UMST_SHELL_ADAM_GRAD_CLIP_NORM`** (unset = off): if set to a **positive** float, applies **L2 norm** gradient clipping to **`density_net`** each outer (optional stabiliser for rare non-finite scaled-loss skips). **`UMST_SHELL_GREY_LAMBDA`** (default **0**) adds **`λ·mean(4ρ(1−ρ))`** to the scaled compliance loss when **`λ > 0`** (experimental greyness pressure; unset preserves historical behaviour). Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
 //!
 //! **Bar-network PCG (Ring 1 / B6):** `VectorMechanicsSolver::packed_bar_network_equilibrium` (umst-manifold `mechanics.rs`) caps passes at **`min(max_cg_iterations, 3N)`** and **exits early** when \(\|P(f-Ku)\|_2 \le \max(\texttt{pcg\_tolerance},\texttt{cg\_tolerance})\,\|Pf\|_2\). On **40×40×4**, `N≈8.4×10³`; the full harness defaults **`max_cg_iterations = 2000`** (**`UMST_SHELL_MAX_CG`**) and **`e_min = 10⁻³·E₀`** (**`UMST_SHELL_E_MIN_REL`**) for SIMP conditioning under four-sided perimeter pins + roof traction (v0.4 follow-up Ring 1).
 
@@ -19,6 +19,7 @@
 use std::env;
 
 use burn::backend::Autodiff;
+use burn::grad_clipping::GradientClippingConfig;
 use burn::module::{Module, ModuleMapper, ParamId};
 use burn::optim::{AdamConfig, GradientsParams, Optimizer};
 use burn::tensor::{
@@ -406,6 +407,25 @@ fn parse_grey_penalty_lambda() -> f32 {
         .max(0.0)
 }
 
+/// Burn Adam ε (default **1e−5**, same as `AdamConfig`); widen slightly if second-moment estimates underflow.
+fn parse_full_rib_adam_epsilon() -> f32 {
+    env::var("UMST_SHELL_ADAM_EPS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1e-5_f32)
+        .clamp(1e-12_f32, 1e-2_f32)
+}
+
+/// Optional **L2 norm** gradient clip on `density_net` (unset = off). Mitigates rare non-finite Adam loss
+/// from exploding adjoint/Helmholtz paths without changing the quick CI harness.
+fn parse_full_rib_adam_grad_clip_norm() -> Option<GradientClippingConfig> {
+    env::var("UMST_SHELL_ADAM_GRAD_CLIP_NORM")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .filter(|&v| v > 0.0)
+        .map(GradientClippingConfig::Norm)
+}
+
 fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     <B as BackendTrait>::seed(42);
     let device_default = Default::default();
@@ -552,7 +572,11 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let cross_section_area = voxel_vol.cbrt().powf(2.0);
 
     let mut opt = topology_optimizer_scaled(target_vf, 3.0, 64, 0.05, device);
-    let mut adam = AdamConfig::new().init::<B, _>();
+    let mut adam_cfg = AdamConfig::new().with_epsilon(parse_full_rib_adam_epsilon());
+    if let Some(gc) = parse_full_rib_adam_grad_clip_norm() {
+        adam_cfg = adam_cfg.with_grad_clipping(Some(gc));
+    }
+    let mut adam = adam_cfg.init::<B, _>();
     let adam_lr = parse_full_rib_adam_lr();
     let grey_lambda = parse_grey_penalty_lambda();
     let dx_f = dx.min(dy).min(dz);

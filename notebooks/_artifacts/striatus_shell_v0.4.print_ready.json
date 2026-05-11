@@ -15,12 +15,13 @@
   "demo_config_hash": "d591e1dc3e92544c9f060251c879d602a62fa7e62d9a71d397eac1240fd40242",
   "timestamp_unix": 1778501768,
   "density_xy_plane_variance": 1.5773902132479835e-08,
+  "nodal_volume_fraction": 0.15272799462998063,
   "mesh_volume_fraction_in_bbox": 0.9829643742287636,
   "mesh_connected_components": 1,
   "mesh_euler_characteristic_largest": 2,
   "mesh_genus_closed_orientable_largest": 0.0,
   "gate_topo_complexity_b7": false,
-  "gate_volume_fraction_mesh_b7": false,
+  "gate_volume_fraction_mesh_b7": true,
   "gate_density_xy_variance_b8": false,
   "gates_track_b8_all_pass": false
 }

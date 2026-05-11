@@ -7,8 +7,10 @@ Consumes `final.npy` (`float32`, shape `[1, N, 1]`) and `manifest.json` written 
 `ExtrudedPlateMechanics`).
 
 Track B7/B8 (v0.4): sidecar includes mesh genus / component counts, density XY variance
-(z-averaged, same construction as `shell_topology_rib_pattern` `xy_plane_variance`), marching-cubes
-volume fraction in bbox, and boolean gates for non-slab topology. Isosurface uses **0.5** when
+(z-averaged, same construction as `shell_topology_rib_pattern` `xy_plane_variance`), **nodal**
+volume fraction **`mean(ρ)`** on the optimisation lattice (B6 VF band), **marching-cubes solid
+volume / mesh AABB** as **`mesh_volume_fraction_in_bbox`** (diagnostic — can read ~1 on thin-shell
+solids whose axis-aligned box is mostly filled), and boolean gates for non-slab topology. Isosurface uses **0.5** when
 `min(ρ) < 0.5 < max(ρ)`; otherwise the midpoint of the observed band (needed while ρ is still
 entirely below 0.5). Nearly uniform fields (`max(ρ)−min(ρ) < 1e-3`) abort export instead of the
 legacy threshold slab that inflated STL volume to ~100% of bbox.
@@ -188,6 +190,7 @@ def main() -> None:
     topo = mesh_topology_metrics(tm)
     genus = topo["mesh_genus_closed_orientable_largest"]
     n_cc = int(topo["mesh_connected_components"])
+    nodal_vf = float(np.mean(rho))
 
     # B7: genus ≥ 1 OR ≥ 4 components; reject χ > 1.5 on largest part (sphere/slab-like).
     chi = topo["mesh_euler_characteristic_largest"]
@@ -195,10 +198,13 @@ def main() -> None:
     topo_signal = (genus is not None and genus >= 1.0 - 1e-6) or n_cc >= 4
     gate_topo_complexity = bool(chi_ok and topo_signal)
 
-    gate_volume_fraction_mesh = 0.10 <= mesh_vf_in_bbox <= 0.25
+    # Volume gate (Ring 1 / B8): **design** VF **`mean(ρ)`** in [0.10, 0.25] — matches B6 VF target
+    # and `optimize_shell_3d`. `mesh_volume_fraction_in_bbox` stays in the JSON for watertight-MC
+    # diagnostics (AABB-inflated “fill” can be high on shells).
+    gate_volume_fraction_mesh = 0.10 <= nodal_vf <= 0.25
     gate_density_xy_variance = dens_xy_var >= 0.1 - 1e-6
 
-    # B8 objective gates (AND): genus, density variance, mesh VF band.
+    # B8 objective gates (AND): genus, planar density variance, nodal VF band.
     gates_track_b8_all = bool(
         gate_topo_complexity and gate_density_xy_variance and gate_volume_fraction_mesh
     )
@@ -216,6 +222,7 @@ def main() -> None:
         "demo_config_hash": hashlib.sha256(json.dumps(m, sort_keys=True).encode()).hexdigest(),
         "timestamp_unix": int(time.time()),
         "density_xy_plane_variance": float(dens_xy_var),
+        "nodal_volume_fraction": float(nodal_vf),
         "mesh_volume_fraction_in_bbox": float(mesh_vf_in_bbox),
         "mesh_connected_components": n_cc,
         "mesh_euler_characteristic_largest": chi,

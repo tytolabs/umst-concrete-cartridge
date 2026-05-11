@@ -1,5 +1,19 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+"""Track L / B8 sidecar + STL feasibility tests.
+
+`UMST_REQUIRE_B8=1` forces failure (not skip) when `gates_track_b8_all_pass` is false in
+`striatus_shell_v0.4.print_ready.json` — same contract as `docs/Solver-Status.md` (*Honest status —
+Track L pytest*). Default CI / local runs without that env keep the topology gate as an expected
+skip until Track L regeneration passes all three B8 booleans.
+
+**m1-l artefact constraints (brief):** GIF ≤ **5 MB**, ≥ **30** frames; STL ≤ **8 MB**;
+`bash notebooks/check_shell_artifact_budgets.sh` from repo root. Sidecar lists **`nodal_volume_fraction`**
+(mean **ρ** on the optimisation lattice) for the B8 VF gate; **`mesh_volume_fraction_in_bbox`** is diagnostic.
+
+Peak GPU VRAM or unified-memory footprint is **not** asserted here or in Solver-Status defaults; cite
+numbers only from an explicit profiling note or task.
+"""
 from __future__ import annotations
 
 import json
@@ -55,6 +69,7 @@ def test_print_ready_track_b8_topology_gates() -> None:
     assert side.get("artefact_version") == "v0.4"
     for key in (
         "density_xy_plane_variance",
+        "nodal_volume_fraction",
         "mesh_volume_fraction_in_bbox",
         "mesh_connected_components",
         "mesh_euler_characteristic_largest",
@@ -76,8 +91,8 @@ def test_print_ready_track_b8_topology_gates() -> None:
         if _REQUIRE_B8:
             pytest.fail(msg)
         pytest.skip(msg)
-    assert side["gate_density_xy_variance_b8"] is True, "density_xy_plane_variance should be ≥ 0.1"
-    assert side["gate_volume_fraction_mesh_b7"] is True, "mesh_volume_fraction_in_bbox should be in [0.10, 0.25]"
+    assert side["gate_density_xy_variance_b8"] is True, "density_xy_plane_variance gate (≥ 0.1)"
+    assert side["gate_volume_fraction_mesh_b7"] is True, "nodal_volume_fraction (mean ρ) in [0.10, 0.25]"
     assert side["gate_topo_complexity_b7"] is True, "genus ≥ 1 or ≥4 components, and χ ≤ 1.5 on largest part"
     assert side["gates_track_b8_all_pass"] is True
 
