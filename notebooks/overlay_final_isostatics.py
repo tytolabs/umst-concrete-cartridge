@@ -118,7 +118,10 @@ def main() -> None:
         blk = grid.threshold(thr, scalars="rho", invert=False)
         surf = blk.extract_surface(algorithm="dataset_surface")
     else:
-        surf = grid.contour(isosurfaces=[0.5], scalars="rho")
+        lo, hi = float(np.min(rho)), float(np.max(rho))
+        # Match `export_print_ready.py`: SIMP 0.5 when the band brackets it; else band midpoint.
+        iso = 0.5 if lo < 0.5 < hi else 0.5 * (lo + hi)
+        surf = grid.contour(isosurfaces=[iso], scalars="rho")
     if surf.n_points == 0:
         plotter.close()
         raise RuntimeError("empty density iso-surface; cannot overlay streamlines")
