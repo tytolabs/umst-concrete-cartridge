@@ -4,15 +4,24 @@
 //! Reinforced Concrete Topology Optimization using UMST Phase 4.
 //!
 //! This example demonstrates how the UMST framework handles heterogeneous materials.
-//! By masking the bottom chord of the beam as "steel" (high stiffness, non-editable)
-//! and the rest as "concrete" (low stiffness, editable by the DensityNet), the AI
-//! naturally discovers Strut-and-Tie models to anchor into the rebar.
+//! By masking the bottom chord of the beam as a **non-editable** full-density spine (the “rebar” corridor)
+//! and the rest as editable “concrete” driven by [`TopologyOptimizer`], the network discovers load paths
+//! that tie into that fixed chord (Strut-and-Tie–style layouts in the density field).
+//!
+//! **Mechanics + AD:** compliance uses **[`AdjointCompliance`]** (discrete-adjoint bar surrogate), matching
+//! [`optimize_shell_3d`](./optimize_shell_3d.rs): equilibrium runs on the **inner** (non-autodiff) backend while
+//! \(\partial c/\partial\rho\) follows the SIMP law on the tape. That avoids differentiating through PCG /
+//! `masked_dot` on `Autodiff<NdArray>`, which has triggered Burn NdArray **scatter** shape mismatches in the
+//! backward pass for this graph. A **uniform** reference Young’s modulus (**30 GPa**) and void floor
+//! **`E_{\min}=10^{-3}E_0`** are used for the adjoint bar network (the demo’s story is the **mask**, not
+//! a separate 200 GPa steel constitutive branch in the surrogate).
 //!
 //! **Iteration dumps (for [`notebooks/render_beam_gif.py`](../../../notebooks/render_beam_gif.py)):** set **`UMST_BEAM_DUMP=1`**
 //! to write float32 **`iter_*.npy`** (**shape `[1, N, 1]`**, `N=n_x·n_y`) plus **`manifest.json`** under **`examples/_artifacts/beam/`**.
 //! Optional **`UMST_BEAM_DUMP_STRIDE`** (default **5**, ≥1); **`UMST_BEAM_ITERS`** caps epochs (default **50**).
 //!
-//! **Backward:** `TopologyOptimizer` + equilibrium + `masked_dot(compliance)` has triggered Burn NdArray scatter-shape panics in the wild; **`notebooks/_run_beam_demo.sh`** falls back to **`beam_demo_synthetic_npys.py`** when this binary aborts, while preserving the **`.npy` / `manifest.json`** contract when optimisation runs cleanly.
+//! **End-to-end GIF:** from repo root, `bash notebooks/_run_beam_demo.sh` runs this example then the renderer
+//! (no synthetic NPY fallback when the optimiser completes successfully).
 
 use std::env;
 use std::fs;
@@ -21,15 +30,17 @@ use std::path::PathBuf;
 
 use burn::backend::Autodiff;
 use burn::optim::{AdamConfig, GradientsParams, Optimizer};
+use burn::tensor::backend::AutodiffBackend;
 use burn::tensor::{Data, Int, Shape, Tensor};
 use burn_ndarray::NdArray;
 use umst_manifold::ai::topology::TopologyOptimizer;
-use umst_manifold::physics::mechanics::VectorMechanicsSolver;
+use umst_manifold::physics::adjoint::{AdjointCompliance, SimpElasticMaterial};
 use umst_manifold::physics::solvers::PhaseFieldFractureSolver;
 use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 
 type Backend = Autodiff<NdArray<f32>>;
 type B = Backend;
+type Inner = <B as AutodiffBackend>::InnerBackend;
 
 /// NumPy `.npy` v1.0 writer for C-contiguous `float32` payload (matches `optimize_shell_3d`).
 fn write_npy_f32(path: &std::path::Path, data: &[f32], shape: &[usize]) -> io::Result<()> {
@@ -169,7 +180,7 @@ fn main() {
         bm_data[i * 3 + 1] = 0.0;
         bm_data[i * 3 + 2] = 0.0;
     }
-    let boundary_mask =
+    let boundary_mask: Tensor<B, 3> =
         Tensor::from_data(Data::new(bm_data, Shape::new([batch, n_nodes, 3])), &device);
 
     // 4. Loading (Body Force)
@@ -177,22 +188,14 @@ fn main() {
     let mut bf_data = vec![0.0_f32; batch * n_nodes * 3];
     let top_right = (ny - 1) * nx + (nx - 1);
     bf_data[top_right * 3 + 1] = -50_000.0; // 50 kN downward
-    let body_force =
+    let body_force: Tensor<B, 3> =
         Tensor::from_data(Data::new(bf_data, Shape::new([batch, n_nodes, 3])), &device);
 
-    // 5. Heterogeneous Material & AI Constraints (The Rebar Mask)
-    // Bottom row (y == 0) is Steel (200 GPa). Rest is Concrete (30 GPa).
-    let mut e_base_data = vec![30e9_f32; batch * n_nodes];
+    // 5. AI constraints (rebar corridor): bottom row fixed at ρ=1, non-editable.
     let mut editable_mask_data = vec![1.0_f32; batch * n_nodes]; // 1.0 = AI can edit
-
     for x in 0..nx {
-        e_base_data[x] = 200e9_f32; // Steel chord at bottom
         editable_mask_data[x] = 0.0_f32; // AI cannot remove steel
     }
-    let e_base_bn1 = Tensor::from_data(
-        Data::new(e_base_data, Shape::new([batch, n_nodes, 1])),
-        &device,
-    );
     let editable_mask = Tensor::from_data(
         Data::new(editable_mask_data, Shape::new([batch, n_nodes, 1])),
         &device,
@@ -213,6 +216,24 @@ fn main() {
     let area = 0.01_f32; // 10cm x 10cm cross section
     let volume_lambda = 5000.0_f32; // Lagrange multiplier for volume constraint
 
+    // Discrete-adjoint bar path: inner tensors only (same layout as `optimize_shell_3d`).
+    let coords_n3_inner = coords
+        .clone()
+        .slice([0..batch, 0..n_nodes, 0..3])
+        .reshape([n_nodes, 3])
+        .inner();
+    let edges_inner = edges_b1.clone().inner();
+    let boundary_inner = boundary_mask.clone().inner();
+    let body_force_inner = body_force.clone().inner();
+    let damage_inner = Tensor::<Inner, 3>::zeros([batch, n_nodes, 1], &device);
+    let e0_concrete = 30e9_f32;
+    let simp_mat = SimpElasticMaterial {
+        e0: e0_concrete,
+        nu: 0.3,
+        p: topopt.penalization,
+        e_min: e0_concrete * 1e-3_f32,
+    };
+
     println!("Starting Strut-and-Tie discovery...");
 
     // 7. Training Loop
@@ -232,45 +253,23 @@ fn main() {
         let vol_diff = current_volume_fraction.clone().sub(target_vol);
         let volume_loss = vol_diff.clone().powf_scalar(2.0).mul_scalar(volume_lambda);
 
-        // Calculate SIMP Modulus
-        let e_eff = rho
-            .clone()
-            .powf_scalar(topopt.penalization)
-            .mul(e_base_bn1.clone());
-        let nu = Tensor::<B, 3>::full([batch, n_nodes, 1], 0.3, &device);
-        let stiffness = Tensor::cat(vec![e_eff, nu], 2);
-
-        // Calculate Self-Weight Gravity (-Y direction)
-        let gravity_force = Tensor::<B, 3>::zeros([batch, n_nodes, 3], &device); // Simplified for this MVP
-        let total_force = body_force.clone().add(gravity_force);
-
-        // Solve Mechanics
-        let damage = Tensor::<B, 3>::zeros([batch, n_nodes, 1], &device);
-        let displacement = Tensor::<B, 3>::zeros([batch, n_nodes, 3], &device);
-        let (u, _stress) = VectorMechanicsSolver::solve_equilibrium(
-            displacement,
-            coords
-                .clone()
-                .slice([0..1, 0..n_nodes, 0..3])
-                .reshape([n_nodes, 3]),
-            stiffness,
-            total_force.clone(),
-            edges_b1.clone(),
-            damage,
-            boundary_mask.clone(),
-            area,
+        let (compliance, c_raw) = AdjointCompliance::forward_and_loss(
+            rho.clone(),
+            edges_inner.clone(),
+            coords_n3_inner.clone(),
+            boundary_inner.clone(),
+            body_force_inner.clone(),
+            damage_inner.clone(),
+            simp_mat,
             &inner_cfg,
+            area,
         );
 
-        // Calculate Compliance
-        let compliance =
-            umst_manifold::physics::linear::masked_dot(&total_force, &u, &boundary_mask);
-
-        // Total Loss = Compliance + Volume Penalty
+        // Total Loss = Compliance surrogate + Volume Penalty
         let total_loss = compliance.clone().add(volume_loss.clone());
 
         let loss_val = total_loss.clone().into_data().value[0];
-        let comp_val = compliance.clone().into_data().value[0];
+        let comp_val = c_raw;
         let vol_val = current_volume_fraction.clone().into_data().value[0];
 
         if epoch % 5 == 0 || epoch == 1 {
