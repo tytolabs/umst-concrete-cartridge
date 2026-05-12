@@ -6,15 +6,17 @@ Consumes `final.npy` (`float32`, shape `[1, N, 1]`) and `manifest.json` written 
 `examples/optimize_shell_3d.rs` (node order `ix + nx1*iy + nx1*ny1*iz`, same as
 `ExtrudedPlateMechanics`).
 
-Track B7/B8 (v0.4): sidecar includes mesh genus / component counts, density XY variance
-(z-averaged, same construction as `shell_topology_rib_pattern` `xy_plane_variance`), **nodal**
-`mean(ρ)` for the design VF gate, marching-cubes **`mesh_volume_fraction_in_bbox`** (diagnostic),
-`source_final_npy_sha256`, `contour_isovalue`, and boolean gates for non-slab topology.
-**B8 thresholds (2026-05-12):** z-averaged `density_xy_plane_variance` is gated at **≥ 0.028** — Track L
-`final.npy` after in-loop volume projection sits **O(10⁻²)** for smooth rib-safe fields (see
-`docs/verification/m1_b6_closeout_2026-05-12.md`); the legacy **0.1** target assumed sharper binary schedules.
-Topology gate allows **≥2** watertight MC components when variance clears that floor (χ≤2 on the largest part),
-or the original **genus ≥ 1** / **≥4**-component rules.
+Track B7/B8 (v0.4 brief): sidecar includes mesh genus / component counts, z-averaged XY density variance
+(same construction as `shell_topology_rib_pattern` / `density_xy_plane_variance`), **nodal** `mean(ρ)`
+for the VF band **[0.10, 0.25]**, marching-cubes **`mesh_volume_fraction_in_bbox`** (diagnostic),
+`source_final_npy_sha256`, `contour_isovalue`, and rollup **`gates_track_b8_all_pass`**.
+
+**B7 topology:** on the largest watertight marching-cubes part, **χ ≤ 1.5** (when χ is known), and
+**topo_signal** = **(genus ≥ 1) OR (watertight component count ≥ 4)** — no substitute path from
+“≥2 components + low variance”.
+
+**B8 planar texture:** `density_xy_plane_variance` **≥ 0.1** (AND topo + VF gates above).
+
 `material_volume_cm3` is **`nodal_volume_fraction * lx * ly * lz`** (design VF × domain), not a
 binarized `sum(ρ>0.5)·voxel` mix that skewed volumes vs `nodal_volume_fraction` on thin shells.
 Abort if `max(ρ)−min(ρ) < 8·10⁻⁴` (tight in-loop volume projection can sit just under 1e−3).
@@ -235,19 +237,14 @@ def main() -> None:
     n_cc = int(topo["mesh_connected_components"])
     chi = topo["mesh_euler_characteristic_largest"]
 
-    # B7: genus ≥ 1 OR ≥4 components, OR (≥2 MC components with measurable z-averaged XY texture). χ on the
-    # largest watertight part may be 2 (sphere-like) for shallow shells — allow χ≤2 when paired with texture.
-    chi_ok = chi is None or float(chi) <= 2.0 + 1e-6
-    topo_signal = (
-        (genus is not None and genus >= 1.0 - 1e-6)
-        or n_cc >= 4
-        or (n_cc >= 2 and dens_xy_var >= 0.025)
-    )
+    # B7 (brief): genus ≥ 1 OR ≥4 watertight components; χ on largest part ≤ 1.5 when known.
+    chi_ok = chi is None or float(chi) <= 1.5 + 1e-6
+    topo_signal = (genus is not None and genus >= 1.0 - 1e-6) or n_cc >= 4
     gate_topo_complexity = bool(chi_ok and topo_signal)
 
-    # Design VF band + planar texture floor (see module docstring — measured Track L fields ~3×10⁻²).
+    # B8: VF band + strict z-averaged planar ρ variance (brief floor 0.1).
     gate_volume_fraction_mesh = 0.10 <= nodal_vf <= 0.25
-    gate_density_xy_variance = dens_xy_var >= 0.028 - 1e-9
+    gate_density_xy_variance = dens_xy_var >= 0.1 - 1e-9
 
     # B8 objective gates (AND): topo complexity, z-averaged planar ρ variance, nodal VF band.
     gates_track_b8_all_pass = bool(
