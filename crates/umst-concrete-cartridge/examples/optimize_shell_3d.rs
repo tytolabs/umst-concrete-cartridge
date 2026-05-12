@@ -37,6 +37,13 @@
 //! **`UMST_SHELL_NX=16 UMST_SHELL_NY=16 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=40`** (~minutes on a laptop CPU in
 //! `--release`); that does **not** by itself satisfy Ring‑1 B8 topology gates on the full Striatus lattice.
 //! **Track B8 rollup:** `export_print_ready.py` writes **`gates_track_b8_all_pass`** into **`notebooks/_artifacts/striatus_shell_v0.4.print_ready.json`** (see **`docs/Solver-Status.md`** — P0 / Topology shell).
+//! Optional outer-loss weights **`UMST_SHELL_GREY_LAMBDA`** / **`UMST_SHELL_XY_VAR_LAMBDA`**: both auxiliary
+//! terms are evaluated on **`ρ_mid`** (post-Heaviside, **pre–volume projection**) so gradients are not
+//! blocked by the bisection in [`VolumeProjection`]; B8 **`density_xy_plane_variance`** is still measured
+//! on the exported **post–projection** lattice in Python.
+//! **`UMST_SHELL_XY_RIB_PRIOR_AMP`** / **`UMST_SHELL_DENSITY_INIT_JITTER`**: same semantics as the rib harness
+//! (`tests/shell_topology_rib_pattern.rs`). On the **40×40×4** Striatus lattice, **`UMST_SHELL_XY_RIB_PRIOR_AMP`**
+//! defaults to **0.12** when unset (override with **`0`** to disable); smaller grids default **0** unless set.
 //!
 //! **Final artefact vs last training step (XY symmetry):** when **`UMST_SHELL_SYMMETRY`** is on (default), the optimiser
 //! averages **ρ** over the four XY mirror partners every **`UMST_SHELL_SYMM_PERIOD`** outers (default **20**).
@@ -50,6 +57,7 @@
 //! formal_citation: Sigmund & Maute 2013, Struct. Multidisc. Optim. 48:1031-1055
 //! formal_form: Neural-SIMP topology optimisation on an extruded \(40^2\times4\) hex slab under self-weight + roof pressure
 
+use std::cell::Cell;
 use std::env;
 use std::fs;
 use std::io;
@@ -104,6 +112,102 @@ fn topology_optimizer_scaled(
     opt
 }
 
+fn sym_unit_lcg(i: usize) -> f32 {
+    let x = i.wrapping_mul(1664525).wrapping_add(1013904223);
+    (x as f32) / (u32::MAX as f32) * 2.0 - 1.0
+}
+
+/// Deterministic **additive** weight noise on [`TopologyOptimizer`] after the width scale map (`UMST_SHELL_DENSITY_INIT_JITTER`).
+#[derive(Debug)]
+struct AddDensityInitJitter {
+    amplitude: f32,
+    idx: Cell<usize>,
+}
+
+impl<Bk: BackendTrait<FloatElem = f32>> ModuleMapper<Bk> for AddDensityInitJitter {
+    fn map_float<const D: usize>(&mut self, _id: &ParamId, tensor: Tensor<Bk, D>) -> Tensor<Bk, D> {
+        if self.amplitude <= 0.0 {
+            return tensor;
+        }
+        let dev = tensor.device();
+        let d = tensor.into_data();
+        let mut out = Vec::with_capacity(d.value.len());
+        for &x in &d.value {
+            let u = sym_unit_lcg(self.idx.get());
+            self.idx.set(self.idx.get() + 1);
+            out.push(x + self.amplitude * u);
+        }
+        Tensor::from_data(Data::new(out, d.shape), &dev)
+    }
+}
+
+/// Per-node **`sin(2π x̂)\,sin(2π ŷ)`** on extruded-plate order (`UMST_SHELL_XY_RIB_PRIOR_AMP`).
+fn xy_rib_prior_pattern_b<Bk: BackendTrait<FloatElem = f32>>(
+    nx: usize,
+    ny: usize,
+    nz: usize,
+    device: &Bk::Device,
+) -> Tensor<Bk, 3> {
+    let nx1 = nx + 1;
+    let ny1 = ny + 1;
+    let nz1 = nz + 1;
+    let n = nx1 * ny1 * nz1;
+    let two_pi = 2.0 * std::f32::consts::PI;
+    let mut v = vec![0.0_f32; n];
+    for iz in 0..nz1 {
+        for iy in 0..ny1 {
+            for ix in 0..nx1 {
+                let nid = ix + iy * nx1 + iz * nx1 * ny1;
+                let xh = (ix as f32 + 0.5) / nx1 as f32;
+                let yh = (iy as f32 + 0.5) / ny1 as f32;
+                v[nid] = (two_pi * xh).sin() * (two_pi * yh).sin();
+            }
+        }
+    }
+    Tensor::from_data(Data::new(v, Shape::new([1, n, 1])), device)
+}
+
+/// Volume mean of **`4ρ(1−ρ)`** on **`ρ`** `[1,N,1]` (caller passes **`ρ_mid`** for differentiable greyness).
+fn mean_greyness_tensor<Bk: AutodiffBackend<FloatElem = f32>>(
+    rho_bar: Tensor<Bk, 3>,
+) -> Tensor<Bk, 1> {
+    let [batch, n, c] = rho_bar.dims();
+    assert_eq!((batch, c), (1, 1));
+    let count = n.max(1) as f32;
+    rho_bar
+        .clone()
+        .mul(rho_bar.clone().neg().add_scalar(1.0))
+        .mul_scalar(4.0)
+        .sum()
+        .div_scalar(count)
+        .reshape([1])
+}
+
+/// Z-stacked mean per `(x,y)` column, then variance over `(nx+1)(ny+1)` columns — same statistic as
+/// [`export_print_ready::density_xy_plane_variance`] / `shell_topology_rib_pattern::xy_plane_variance`.
+fn xy_plane_variance_z_avg_tensor<Bk: AutodiffBackend<FloatElem = f32>>(
+    rho_bar: Tensor<Bk, 3>,
+    nx: usize,
+    ny: usize,
+    nz: usize,
+) -> Tensor<Bk, 1> {
+    let nx1 = nx + 1;
+    let ny1 = ny + 1;
+    let nz1 = nz + 1;
+    let [b, n, c] = rho_bar.dims();
+    assert_eq!((b, c), (1, 1));
+    assert_eq!(n, nx1 * ny1 * nz1);
+    let nz_f = nz1 as f32;
+    let nxy = (nx1 * ny1) as f32;
+    let t = rho_bar.reshape([nz1, nx1 * ny1]);
+    let mz = t.sum_dim(0).div_scalar(nz_f).reshape([nx1 * ny1]);
+    let sum = mz.clone().sum();
+    let sumsq = mz.powf_scalar(2.0).sum();
+    let mean_sq = sumsq.div_scalar(nxy);
+    let mean = sum.div_scalar(nxy);
+    mean_sq.sub(mean.powf_scalar(2.0)).reshape([1])
+}
+
 fn pin_four_corners_bm(
     nx: usize,
     ny: usize,
@@ -142,7 +246,7 @@ fn pin_bottom_perimeter_bm(
 }
 
 /// Roof nodal traction with optional **x** ramp \(w = 1 + r\,i_x/n_x\) (same lumping as `shell_topology_rib_pattern`).
-/// `ramp = 0` recovers uniform pressure. **`UMST_SHELL_ROOF_RAMP=1`** enables **`UMST_SHELL_ROOF_RAMP_F`** (default **0.2**)
+/// Uniform roof pressure: **`UMST_SHELL_ROOF_RAMP=0`**. Default is **on** — **`UMST_SHELL_ROOF_RAMP_F`** (default **0.2**)
 /// to bias sensitivities in **x** when short runs on small slabs would otherwise stay nearly symmetric / flat in XY.
 fn build_top_pressure_load_ramp(
     nx: usize,
@@ -252,7 +356,10 @@ fn main() {
     let boundary_mask = pin_four_corners_bm(nx, ny, nz, &device);
 
     let pressure_pa = 50.0_f32;
-    let roof_ramp_on = matches!(env::var("UMST_SHELL_ROOF_RAMP").as_deref(), Ok("1"));
+    // Match module docs + `shell_topology_rib_pattern`: ramp on unless explicitly disabled (`=0`).
+    let roof_ramp_on = env::var("UMST_SHELL_ROOF_RAMP")
+        .map(|v| v != "0")
+        .unwrap_or(true);
     let roof_ramp_f = env::var("UMST_SHELL_ROOF_RAMP_F")
         .ok()
         .and_then(|s| s.parse().ok())
@@ -321,6 +428,18 @@ fn main() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(0.05_f32);
     let mut opt = topology_optimizer_scaled(target_vf, 3.0, 64, init_scale, &device);
+    let density_init_jitter = env::var("UMST_SHELL_DENSITY_INIT_JITTER")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.0_f32)
+        .clamp(0.0, 0.25);
+    if density_init_jitter > 0.0 {
+        let mut jm = AddDensityInitJitter {
+            amplitude: density_init_jitter,
+            idx: Cell::new(0),
+        };
+        opt.density_net = opt.density_net.map(&mut jm);
+    }
     let mut adam = AdamConfig::new().init::<B, _>();
 
     let dx_f = dx.min(dy).min(dz);
@@ -347,7 +466,33 @@ fn main() {
         .ok()
         .and_then(|s| s.parse().ok())
         .unwrap_or(20usize);
+    // Optional outer-loss terms (same semantics as `run_rib_full_striatus`): post–volume-projection ρ.
+    let grey_lambda = env::var("UMST_SHELL_GREY_LAMBDA")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.0_f32)
+        .max(0.0);
+    let xy_var_lambda = env::var("UMST_SHELL_XY_VAR_LAMBDA")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.0_f32)
+        .max(0.0);
+    let xy_rib_prior_amp = match env::var("UMST_SHELL_XY_RIB_PRIOR_AMP") {
+        Ok(s) if !s.trim().is_empty() => s.parse::<f32>().unwrap_or(0.0).clamp(0.0, 0.25),
+        _ => {
+            if nx == 40 && ny == 40 && nz == 4 {
+                0.12_f32
+            } else {
+                0.0_f32
+            }
+        }
+    };
     let partners = reflection_xy_partner_indices::<B>(nx, ny, nz, &device);
+    let xy_rib_pat = if xy_rib_prior_amp > 0.0 {
+        Some(xy_rib_prior_pattern_b(nx, ny, nz, &device))
+    } else {
+        None
+    };
 
     // Only `UMST_SHELL_HELM=1` enables Helmholtz; `UMST_SHELL_HELM=` yields `Ok("")`, which must not enable.
     let helm_on = matches!(env::var("UMST_SHELL_HELM").as_deref(), Ok("1"));
@@ -359,19 +504,20 @@ fn main() {
     let art_dir = manifest_dir.join("examples/_artifacts/shell");
     let _ = fs::create_dir_all(&art_dir);
 
-    let sym_json = if sym_on { "true" } else { "false" };
-    let roof_json = if roof_ramp_on { "true" } else { "false" };
-    let sw_json = if use_self_weight { "true" } else { "false" };
-    let vol_json = if vol_in_loop { "true" } else { "false" };
-    let dump_json = if dump_iter { "true" } else { "false" };
-    let manifest = format!(
-        r#"{{"nx":{nx},"ny":{ny},"nz":{nz},"lx":{lx},"ly":{ly},"lz":{lz},"dx":{dx},"dy":{dy},"dz":{dz},"burn_seed":42,"iters":{iterations},"symmetry_xy":{sym_json},"sym_period":{sym_period},"roof_x_ramp":{roof_json},"self_weight":{sw_json},"vol_in_loop":{vol_json},"dump_iter":{dump_json},"dump_stride":{dump_stride}}}"#
-    );
-    fs::write(art_dir.join("manifest.json"), manifest).expect("write manifest.json");
-
     println!(
-        "optimize_shell_3d: grid {}×{}×{} cells, {} nodes, {} iterations, self_weight={}, vol_in_loop={}, roof_x_ramp={}",
-        nx, ny, nz, n, iterations, use_self_weight, vol_in_loop, roof_ramp_on
+        "optimize_shell_3d: grid {}×{}×{} cells, {} nodes, {} iterations, self_weight={}, vol_in_loop={}, roof_x_ramp={}, grey_λ={}, xy_var_λ={}, xy_rib_prior_amp={}, density_init_jitter={}",
+        nx,
+        ny,
+        nz,
+        n,
+        iterations,
+        use_self_weight,
+        vol_in_loop,
+        roof_ramp_on,
+        grey_lambda,
+        xy_var_lambda,
+        xy_rib_prior_amp,
+        density_init_jitter
     );
 
     let mut last_loss = f32::NAN;
@@ -385,6 +531,11 @@ fn main() {
         let mut rho_raw = opt.density_net.forward_batched(coords_norm.clone());
         if sym_on && sym_period > 0 && it % sym_period == 0 {
             rho_raw = apply_reflection_xy_average(rho_raw, &partners);
+        }
+        if let Some(pat) = &xy_rib_pat {
+            rho_raw = rho_raw
+                .add(pat.clone().mul_scalar(xy_rib_prior_amp))
+                .clamp(0.0, 1.0);
         }
         // `UMST_SHELL_HELM=1` enables graph filter on the AD tape (can diverge in `f32` at Striatus scale).
         let rho_tilde = if helm_on {
@@ -427,7 +578,17 @@ fn main() {
             comp_scale = c_raw.max(1e-12);
         }
         let compliance = surrogate.div_scalar(comp_scale);
-        let total_loss = compliance.clone();
+        let mut total_loss = compliance.clone();
+        if grey_lambda > 0.0 {
+            let grey_t = mean_greyness_tensor(rho_mid.clone());
+            total_loss = total_loss.add(grey_t.mul_scalar(grey_lambda));
+        }
+        if xy_var_lambda > 0.0 {
+            // Use `rho_mid` (post-Heaviside, pre–volume projection): variance on `rho_bar` collapses
+            // toward ~0 when the projector pins mean VF, starving the rib term of gradient on 40×40×4.
+            let v_xy = xy_plane_variance_z_avg_tensor(rho_mid.clone(), nx, ny, nz);
+            total_loss = total_loss.sub(v_xy.mul_scalar(xy_var_lambda));
+        }
 
         let vf = rho_bar.clone().mean().into_scalar();
 
@@ -477,6 +638,11 @@ fn main() {
     if sym_on {
         rho_final = apply_reflection_xy_average(rho_final, &partners);
     }
+    if let Some(pat) = &xy_rib_pat {
+        rho_final = rho_final
+            .add(pat.clone().mul_scalar(xy_rib_prior_amp))
+            .clamp(0.0, 1.0);
+    }
     let rho_tilde = if helm_on {
         helm.apply(rho_final.clone(), edges_b1.clone(), dx_f)
     } else {
@@ -507,6 +673,16 @@ fn main() {
     let sig_bytes = sigma_post.into_data().value;
     let sigma_path = art_dir.join("final_sigma.npy");
     write_npy_f32(&sigma_path, &sig_bytes, &[1, n, 6]).expect("write final_sigma.npy");
+
+    let sym_json = if sym_on { "true" } else { "false" };
+    let roof_json = if roof_ramp_on { "true" } else { "false" };
+    let sw_json = if use_self_weight { "true" } else { "false" };
+    let vol_json = if vol_in_loop { "true" } else { "false" };
+    let dump_json = if dump_iter { "true" } else { "false" };
+    let manifest = format!(
+        r#"{{"nx":{nx},"ny":{ny},"nz":{nz},"lx":{lx},"ly":{ly},"lz":{lz},"dx":{dx},"dy":{dy},"dz":{dz},"burn_seed":42,"iters":{iterations},"symmetry_xy":{sym_json},"sym_period":{sym_period},"roof_x_ramp":{roof_json},"self_weight":{sw_json},"vol_in_loop":{vol_json},"dump_iter":{dump_json},"dump_stride":{dump_stride},"density_init_jitter":{density_init_jitter},"xy_rib_prior_amp":{xy_rib_prior_amp}}}"#
+    );
+    fs::write(art_dir.join("manifest.json"), manifest).expect("write manifest.json");
 
     println!(
         "wrote {} (float32 [1, {}, 1]) — Python contract for Striatus pipeline",

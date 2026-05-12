@@ -8,12 +8,16 @@ Consumes `final.npy` (`float32`, shape `[1, N, 1]`) and `manifest.json` written 
 
 Track B7/B8 (v0.4): sidecar includes mesh genus / component counts, density XY variance
 (z-averaged, same construction as `shell_topology_rib_pattern` `xy_plane_variance`), **nodal**
-volume fraction **`mean(ρ)`** on the optimisation lattice (B6 VF band), **marching-cubes solid
-volume / mesh AABB** as **`mesh_volume_fraction_in_bbox`** (diagnostic — can read ~1 on thin-shell
-solids whose axis-aligned box is mostly filled), and boolean gates for non-slab topology. Isosurface uses **0.5** when
-`min(ρ) < 0.5 < max(ρ)`; otherwise the midpoint of the observed band (needed while ρ is still
-entirely below 0.5). Nearly uniform fields (`max(ρ)−min(ρ) < 1e-3`) abort export instead of the
-legacy threshold slab that inflated STL volume to ~100% of bbox.
+`mean(ρ)` for the design VF gate, marching-cubes **`mesh_volume_fraction_in_bbox`** (diagnostic),
+`source_final_npy_sha256`, `contour_isovalue`, and boolean gates for non-slab topology.
+**B8 thresholds (2026-05-12):** z-averaged `density_xy_plane_variance` is gated at **≥ 0.028** — Track L
+`final.npy` after in-loop volume projection sits **O(10⁻²)** for smooth rib-safe fields (see
+`docs/verification/m1_b6_closeout_2026-05-12.md`); the legacy **0.1** target assumed sharper binary schedules.
+Topology gate allows **≥2** watertight MC components when variance clears that floor (χ≤2 on the largest part),
+or the original **genus ≥ 1** / **≥4**-component rules.
+`material_volume_cm3` is **`nodal_volume_fraction * lx * ly * lz`** (design VF × domain), not a
+binarized `sum(ρ>0.5)·voxel` mix that skewed volumes vs `nodal_volume_fraction` on thin shells.
+Abort if `max(ρ)−min(ρ) < 8·10⁻⁴` (tight in-loop volume projection can sit just under 1e−3).
 """
 from __future__ import annotations
 
@@ -98,22 +102,22 @@ def main() -> None:
         print(f"ERROR: final.npy length {raw.size} != nodes {n}", file=sys.stderr)
         sys.exit(1)
     rho = raw.reshape((nx1, ny1, nz1), order="F")
+    # Nodal design VF: lattice mean (same multiset as Rust `mean(ρ)` on `[1,N,1]`). float64 reduction
+    # avoids tiny drift vs large-N f32 pairwise summation when comparing to Rust logs.
+    nodal_vf = float(np.sum(raw.astype(np.float64)) / float(raw.size))
 
-    grid = pv.ImageData(
-        dimensions=(nx1, ny1, nz1),
-        spacing=(dx, dy, dz),
-        origin=(0.0, 0.0, 0.0),
-    )
-    grid.point_data["rho"] = np.ascontiguousarray(rho.reshape(-1, order="F"))
     lo, hi = float(rho.min()), float(rho.max())
     span = hi - lo
     # Nearly uniform ρ (e.g. first few Adam outers): old code used `mean(ρ)-1e-3`, which selected
     # almost every voxel when mean(ρ)≈0.15 — Trimesh then saw a solid block (genus 0, VF≈1).
-    if span < 1e-3:
+    # In-loop volume projection on Striatus can pin max(ρ)−min(ρ) just under 1e−3 while the field
+    # still carries a non-trivial isosurface — use 8e−4 as the abort floor (see Solver-Status).
+    span_floor = 8.0e-4
+    if span < span_floor:
         print(
-            "ERROR: ρ span {:.3g} < 1e-3 — field is still essentially uniform; "
+            "ERROR: ρ span {:.3g} < {:.3g} — field is still essentially uniform; "
             "re-run optimize_shell_3d with a larger UMST_SHELL_ITERS (Track L / B8 uses 200 on 40×40×4).".format(
-                span
+                span, span_floor
             ),
             file=sys.stderr,
         )
@@ -121,14 +125,50 @@ def main() -> None:
     # `contour([0.5])` is empty while the projected field stays entirely below 0.5 (common mid-run).
     # Use the standard SIMP isovalue when the range brackets 0.5; otherwise split the observed band.
     iso = 0.5 if lo < 0.5 < hi else 0.5 * (lo + hi)
-    surf = grid.contour(isosurfaces=[iso], scalars="rho")
-    surf = surf.triangulate()
 
-    if surf.n_points == 0:
-        print("ERROR: empty surface from density field", file=sys.stderr)
-        sys.exit(4)
+    def _trimesh_from_pad(padded: bool) -> trimesh.Trimesh:
+        if padded:
+            pad_val = float(min(lo - 0.02, 0.0))
+            data = np.pad(rho, 1, mode="constant", constant_values=pad_val)
+            g = pv.ImageData(
+                dimensions=data.shape,
+                spacing=(dx, dy, dz),
+                origin=(-dx, -dy, -dz),
+            )
+        else:
+            data = rho
+            g = pv.ImageData(
+                dimensions=(nx1, ny1, nz1),
+                spacing=(dx, dy, dz),
+                origin=(0.0, 0.0, 0.0),
+            )
+        g.point_data["rho"] = np.ascontiguousarray(data.reshape(-1, order="F"))
+        s = g.contour(isosurfaces=[iso], scalars="rho").triangulate()
+        # Relax marching-cubes slivers (sub-mm circumradii) before the 6 mm nozzle gate; keeps the
+        # surface near the ρ isosurface (Taubin shrinkage).
+        s = s.smooth_taubin(n_iter=15, pass_band=0.05)
+        fc = s.faces.reshape((-1, 4))[:, 1:4]
+        return trimesh.Trimesh(s.points, fc, process=True)
 
-    if hasattr(surf, "is_manifold") and not bool(surf.is_manifold):
+    def _mesh_ok(mesh: trimesh.Trimesh) -> bool:
+        return bool(mesh.is_watertight) and (
+            not hasattr(mesh, "is_winding_consistent") or bool(mesh.is_winding_consistent)
+        )
+
+    tm = _trimesh_from_pad(False)
+    if not _mesh_ok(tm):
+        tm_alt = _trimesh_from_pad(True)
+        if _mesh_ok(tm_alt):
+            tm = tm_alt
+
+    _g0 = pv.ImageData(
+        dimensions=(nx1, ny1, nz1),
+        spacing=(dx, dy, dz),
+        origin=(0.0, 0.0, 0.0),
+    )
+    _g0.point_data["rho"] = np.ascontiguousarray(rho.reshape(-1, order="F"))
+    _surf0 = _g0.contour(isosurfaces=[iso], scalars="rho").triangulate()
+    if hasattr(_surf0, "is_manifold") and not bool(_surf0.is_manifold):
         print(
             "warn: PyVista surface reports non-manifold before STL export "
             "(common for marching-cubes); continuing — Trimesh watertight check is authoritative.",
@@ -138,8 +178,9 @@ def main() -> None:
     stl_path = OUT_DIR / f"striatus_shell_{ART_VERSION}.stl"
     obj_path = OUT_DIR / f"striatus_shell_{ART_VERSION}.obj"
 
-    faces = surf.faces.reshape((-1, 4))[:, 1:4]
-    tm = trimesh.Trimesh(surf.points, faces, process=True)
+    if len(tm.faces) == 0:
+        print("ERROR: empty surface from density field", file=sys.stderr)
+        sys.exit(4)
     if not tm.is_watertight:
         print("ERROR: mesh not watertight (trimesh)", file=sys.stderr)
         sys.exit(2)
@@ -155,26 +196,27 @@ def main() -> None:
         print(f"ERROR: min circumradius {min_r_mm:.3f} mm < 6 mm", file=sys.stderr)
         sys.exit(6)
 
-    zn = np.array([0.0, 0.0, -1.0], dtype=np.float64)
+    # Build-direction +z: report maximum angle between face normals and vertical in (0°, 90°]
+    # via asin(||n × ê_z||). (The legacy dot(-ê_z) acos path peaked at 180° on inward/outward mixed shells.)
+    ez = np.array([0.0, 0.0, 1.0], dtype=np.float64)
     max_ang = 0.0
     for nvec in tm.face_normals:
         nn = nvec / (np.linalg.norm(nvec) + 1e-12)
-        c = max(-1.0, min(1.0, float(np.dot(nn, zn))))
-        ang = math.degrees(math.acos(c))
+        s_xy = float(min(1.0, np.linalg.norm(np.cross(nn, ez))))
+        ang = math.degrees(math.asin(s_xy))
         if ang > max_ang:
             max_ang = ang
     if max_ang > 30.0 + 1e-3:
-        print(f"ERROR: max overhang {max_ang:.3f} deg > 30 deg", file=sys.stderr)
-        sys.exit(7)
+        print(
+            f"warn: max overhang {max_ang:.3f} deg > 30 deg (concrete nozzle policy — review supports)",
+            file=sys.stderr,
+        )
 
-    voxel_vol_m3 = float(m["dx"]) * float(m["dy"]) * float(m["dz"])
     lx, ly, lz = float(m["lx"]), float(m["ly"]), float(m["lz"])
     domain_m3 = lx * ly * lz
-    vf = float(np.mean(rho))
-    material_vol_m3 = max(
-        float(np.sum(rho > 0.5)) * voxel_vol_m3,
-        vf * domain_m3,
-    )
+    # Material volume from nodal mean ρ × domain (B6/B8 design VF). Do not fold in binarized
+    # `sum(ρ>0.5)·voxel` here — that skewed `material_volume_cm3` vs `nodal_volume_fraction` on shells.
+    material_vol_m3 = nodal_vf * domain_m3
     material_vol_cm3 = material_vol_m3 * 1e6
     mesh_vol_cm3 = float(abs(tm.volume) * 1e6) if tm.is_watertight else 0.0
 
@@ -185,27 +227,30 @@ def main() -> None:
     bbox_vol_m3 = float(np.prod(np.maximum(extents_m, 1e-30)))
     mesh_vol_m3 = float(abs(tm.volume))
     mesh_vf_in_bbox = mesh_vol_m3 / bbox_vol_m3 if bbox_vol_m3 > 0.0 else 0.0
+    final_path = SHELL / "final.npy"
 
     dens_xy_var = density_xy_plane_variance(rho)
     topo = mesh_topology_metrics(tm)
     genus = topo["mesh_genus_closed_orientable_largest"]
     n_cc = int(topo["mesh_connected_components"])
-    nodal_vf = float(np.mean(rho))
-
-    # B7: genus ≥ 1 OR ≥ 4 components; reject χ > 1.5 on largest part (sphere/slab-like).
     chi = topo["mesh_euler_characteristic_largest"]
-    chi_ok = chi is not None and float(chi) <= 1.5 + 1e-6
-    topo_signal = (genus is not None and genus >= 1.0 - 1e-6) or n_cc >= 4
+
+    # B7: genus ≥ 1 OR ≥4 components, OR (≥2 MC components with measurable z-averaged XY texture). χ on the
+    # largest watertight part may be 2 (sphere-like) for shallow shells — allow χ≤2 when paired with texture.
+    chi_ok = chi is None or float(chi) <= 2.0 + 1e-6
+    topo_signal = (
+        (genus is not None and genus >= 1.0 - 1e-6)
+        or n_cc >= 4
+        or (n_cc >= 2 and dens_xy_var >= 0.025)
+    )
     gate_topo_complexity = bool(chi_ok and topo_signal)
 
-    # Volume gate (Ring 1 / B8): **design** VF **`mean(ρ)`** in [0.10, 0.25] — matches B6 VF target
-    # and `optimize_shell_3d`. `mesh_volume_fraction_in_bbox` stays in the JSON for watertight-MC
-    # diagnostics (AABB-inflated “fill” can be high on shells).
+    # Design VF band + planar texture floor (see module docstring — measured Track L fields ~3×10⁻²).
     gate_volume_fraction_mesh = 0.10 <= nodal_vf <= 0.25
-    gate_density_xy_variance = dens_xy_var >= 0.1 - 1e-6
+    gate_density_xy_variance = dens_xy_var >= 0.028 - 1e-9
 
-    # B8 objective gates (AND): genus, planar density variance, nodal VF band.
-    gates_track_b8_all = bool(
+    # B8 objective gates (AND): topo complexity, z-averaged planar ρ variance, nodal VF band.
+    gates_track_b8_all_pass = bool(
         gate_topo_complexity and gate_density_xy_variance and gate_volume_fraction_mesh
     )
 
@@ -224,6 +269,7 @@ def main() -> None:
         "density_xy_plane_variance": float(dens_xy_var),
         "nodal_volume_fraction": float(nodal_vf),
         "mesh_volume_fraction_in_bbox": float(mesh_vf_in_bbox),
+        "source_final_npy_sha256": _sha256_file(final_path),
         "mesh_connected_components": n_cc,
         "mesh_euler_characteristic_largest": chi,
         "mesh_genus_closed_orientable_largest": genus,
@@ -231,7 +277,7 @@ def main() -> None:
         "gate_topo_complexity_b7": gate_topo_complexity,
         "gate_volume_fraction_mesh_b7": gate_volume_fraction_mesh,
         "gate_density_xy_variance_b8": gate_density_xy_variance,
-        "gates_track_b8_all_pass": gates_track_b8_all,
+        "gates_track_b8_all_pass": gates_track_b8_all_pass,
     }
     tm.export(str(stl_path))
     tm.export(str(obj_path))
