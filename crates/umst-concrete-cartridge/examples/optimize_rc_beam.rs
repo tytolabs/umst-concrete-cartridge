@@ -301,9 +301,9 @@ fn main() {
     let damage_old = Tensor::<B, 3>::zeros([batch, n_nodes, 1], &device);
     let gc_bn1 = Tensor::<B, 3>::zeros([batch, n_nodes, 1], &device).add_scalar(100.0); // Concrete Gc
 
-    // Stub strain for fracture MVP (requires fully coupled solver in reality)
-    let strain_stub = Tensor::<B, 4>::zeros([batch, n_nodes, 3, 3], &device);
-    let damage_new = fracture.update_damage(strain_stub, damage_old, gc_bn1, edges_b1.clone());
+    // Zero-strain placeholder for fracture wiring in this example (full THMC–mechanics coupling not exercised here).
+    let strain_zero_placeholder = Tensor::<B, 4>::zeros([batch, n_nodes, 3, 3], &device);
+    let damage_new = fracture.update_damage(strain_zero_placeholder, damage_old, gc_bn1, edges_b1.clone());
 
     let max_damage = damage_new.max().into_data().value[0];
     println!("Maximum Crack Damage (d): {:.3}", max_damage);
