@@ -3,8 +3,11 @@
 
 //! Striatus-class concrete shell topology optimisation (extruded plate + SIMP).
 //!
-//! Optimisation loss uses **discrete-adjoint compliance** ([`AdjointCompliance`]): equilibrium PCG runs on
-//! the inner (non-AD) backend while sensitivities follow the SIMP bar-network surrogate. Pseudo-density
+//! Optimisation loss uses **discrete-adjoint compliance**: default **[`AdjointCompliance`]** (bar-network
+//! surrogate); set **`UMST_SHELL_ADJOINT_KIND=q1_hex`** for
+//! [`AdjointComplianceQ1Hex`](umst_manifold::physics::adjoint_q1_hex::AdjointComplianceQ1Hex)
+//! (Q1-hex continuum surrogate on the same extruded brick; enabled with **`solver-experimental`**).
+//! Equilibrium runs on the inner (non-AD) backend while sensitivities follow the SIMP law. Pseudo-density
 //! pipeline: optional **Helmholtz** (`UMST_SHELL_HELM=1`; default **off** — 240 Richardson steps on the Burn
 //! Autodiff tape can destabilise `f32` on large 3-D slabs; manifold `HelmholtzFilter` no longer forces a 400-iter
 //! floor over the constructor count) → Heaviside (\(\beta\) via [`BetaContinuation`]) → optional in-loop
@@ -76,6 +79,7 @@ use umst_manifold::ai::topology::{
     VolumeProjection,
 };
 use umst_manifold::physics::adjoint::{AdjointCompliance, SimpElasticMaterial};
+use umst_manifold::physics::adjoint_q1_hex::AdjointComplianceQ1Hex;
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
 use umst_manifold::physics::mechanics::SelfWeightConfig;
 use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
@@ -499,18 +503,22 @@ fn main() {
     let vol_in_loop = env::var("UMST_SHELL_VOL_LOOP")
         .map(|v| v != "0")
         .unwrap_or(true);
+    let use_q1_hex_adjoint = env::var("UMST_SHELL_ADJOINT_KIND")
+        .map(|s| s.eq_ignore_ascii_case("q1_hex"))
+        .unwrap_or(false);
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let art_dir = manifest_dir.join("examples/_artifacts/shell");
     let _ = fs::create_dir_all(&art_dir);
 
     println!(
-        "optimize_shell_3d: grid {}×{}×{} cells, {} nodes, {} iterations, self_weight={}, vol_in_loop={}, roof_x_ramp={}, grey_λ={}, xy_var_λ={}, xy_rib_prior_amp={}, density_init_jitter={}",
+        "optimize_shell_3d: grid {}×{}×{} cells, {} nodes, {} iterations, adjoint={}, self_weight={}, vol_in_loop={}, roof_x_ramp={}, grey_λ={}, xy_var_λ={}, xy_rib_prior_amp={}, density_init_jitter={}",
         nx,
         ny,
         nz,
         n,
         iterations,
+        if use_q1_hex_adjoint { "q1_hex" } else { "bar" },
         use_self_weight,
         vol_in_loop,
         roof_ramp_on,
@@ -562,17 +570,33 @@ fn main() {
             p: p_act,
             e_min: material.e_min,
         };
-        let (surrogate, c_raw) = AdjointCompliance::forward_and_loss(
-            rho_bar.clone(),
-            edges_inner.clone(),
-            coords_n3_inner.clone(),
-            boundary_inner.clone(),
-            bf.inner(),
-            damage_z.clone(),
-            simp_mat,
-            &cg_cfg,
-            cross_section_area,
-        );
+        let (surrogate, c_raw) = if use_q1_hex_adjoint {
+            AdjointComplianceQ1Hex::forward_and_loss(
+                rho_bar.clone(),
+                nx,
+                ny,
+                nz,
+                dx,
+                dy,
+                dz,
+                bf.inner(),
+                boundary_inner.clone(),
+                simp_mat,
+                &cg_cfg,
+            )
+        } else {
+            AdjointCompliance::forward_and_loss(
+                rho_bar.clone(),
+                edges_inner.clone(),
+                coords_n3_inner.clone(),
+                boundary_inner.clone(),
+                bf.inner(),
+                damage_z.clone(),
+                simp_mat,
+                &cg_cfg,
+                cross_section_area,
+            )
+        };
 
         if it == 1 {
             comp_scale = c_raw.max(1e-12);

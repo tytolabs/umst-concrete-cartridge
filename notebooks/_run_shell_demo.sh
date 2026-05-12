@@ -5,7 +5,9 @@
 # `notebooks/export_print_ready.py` (last step in this script).
 #
 # Python env (see notebooks/README.md): use one venv; install NumPy + render stack with the *same*
-# interpreter you use here (`PYTHON=python3` or `.venv/bin/python`). Prefer `uv venv` + `uv pip install`
+# interpreter you use here. If **`PYTHON` is unset** and **`${ROOT}/.venv/bin/python` exists**, this script
+# uses it automatically (avoids `ModuleNotFoundError: numpy` when system `python3` is bare). Else: `PYTHON=python3`
+# or `PYTHON=.venv/bin/python`. Prefer `uv venv` + `uv pip install`
 # or `python3 -m venv` + `pip install -r notebooks/requirements-shell-demo.txt` then
 # `pip install './crates/umst-py[render]'` (or `maturin develop --extras render` from crates/umst-py).
 # `export_print_ready.py` also needs graph engines: `uv pip install --python .venv/bin/python networkx scipy`
@@ -19,7 +21,7 @@
 #   export UMST_SHELL_NX=40 UMST_SHELL_NY=40 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=200
 #   export UMST_SHELL_DUMP_ITER=0 UMST_SHELL_DUMP_STRIDE=10
 #   export UMST_SHELL_SELF_WEIGHT=0
-#   # Roof ramp is forced `on` inside `_run_shell_demo.sh` (override with a custom script if you need uniform roof).
+#   # Roof load: default uniform (B6 full); UMST_SHELL_ROOF_RAMP=1 => x ramp at UMST_SHELL_ROOF_RAMP_F (default 0.2)
 #   bash notebooks/_run_shell_demo.sh 2>&1 | tee shell_track_l_40cube4_i200.log
 #
 # Rust writes under crates/umst-concrete-cartridge/examples/_artifacts/shell/ (manifest.json, final.npy, …).
@@ -53,21 +55,18 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
-# Track L / B6 roof traction: ramp on unless explicitly `UMST_SHELL_ROOF_RAMP=0` in the *caller*
-# environment. Force `=1` here so inherited `ROOF_RAMP=0` (e.g. CI agent shells) cannot silently
-# disable the x-ramp load used in `shell_topology_rib_pattern` / Solver-Status recipes.
-export UMST_SHELL_ROOF_RAMP=1
-# Rib-style planar-texture outer loss (see `shell_topology_rib_pattern` / `m1_b6_closeout`); compliance-only
-# Track L runs tend to park post–projection ρ at uniform mean(V*) → B8 `density_xy_plane_variance` ≪ 0.1.
-export UMST_SHELL_XY_VAR_LAMBDA="${UMST_SHELL_XY_VAR_LAMBDA:-8}"
 export UMST_SHELL_SELF_WEIGHT="${UMST_SHELL_SELF_WEIGHT:-0}"
-# Default roof x-ramp on (matches `shell_topology_rib_pattern`); set to 0 only when intentionally uniform roof load.
-export UMST_SHELL_ROOF_RAMP="${UMST_SHELL_ROOF_RAMP:-1}"
 export UMST_SHELL_ITERS="${UMST_SHELL_ITERS:-200}"
 export UMST_SHELL_DUMP_ITER="${UMST_SHELL_DUMP_ITER:-0}"
 export UMST_SHELL_DUMP_STRIDE="${UMST_SHELL_DUMP_STRIDE:-10}"
 : "${CARGO:=cargo}"
-: "${PYTHON:=python3}"
+if [[ -z "${PYTHON:-}" ]]; then
+  if [[ -x "${ROOT}/.venv/bin/python" ]]; then
+    PYTHON="${ROOT}/.venv/bin/python"
+  else
+    PYTHON="python3"
+  fi
+fi
 "${CARGO}" run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render'
 "${PYTHON}" "${ROOT}/notebooks/render_shell_gif.py"
 "${PYTHON}" "${ROOT}/notebooks/overlay_final_isostatics.py"
