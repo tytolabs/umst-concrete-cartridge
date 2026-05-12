@@ -56,7 +56,11 @@ pub fn fresnel_power_reflectance_air_to_medium(n_medium: f32) -> f32 {
 }
 
 /// Diffuse hemispherical uplift (rough cement paste vs specular Fresnel slab).
-const SOLAR_DIFFUSE_FRACTION: f32 = 0.22;
+///
+/// Calibrated so [`solar_reflectance`] on [`plain_portland_visible_profile`] lands near the **0.30**
+/// cool-roof / paste anchor (ASTM E903 bands) with the brief’s ε_r ≈ 5.6 knots — the underlying
+/// Fresnel slab reflectance is ~0.16–0.17, so the diffuse tail must be modest (~0.16) not “white paint” high.
+const SOLAR_DIFFUSE_FRACTION: f32 = 0.162_f32;
 
 /// Linearly interpolate `y` from piecewise-linear `(x,y)` knots (x ascending).
 fn interpolate_xy(xs_ys: &[(f32, f32)], xq: f32) -> f32 {
@@ -205,6 +209,19 @@ mod tests {
         // n = 2, ε_r = 4
         let r = fresnel_power_reflectance_air_to_medium(2.0);
         assert!((r - 1.0_f32 / 9.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn plain_portland_solar_reflectance_within_ten_percent_of_reference_band() {
+        // Published plain Portland / paste solar reflectance ~0.30 ± 0.05 (ASTM E903); ±10% gate on 0.30 anchor.
+        let prof = plain_portland_visible_profile();
+        let rs = solar_reflectance(&prof, 0.05);
+        let r0 = 0.30_f32;
+        let tol = 0.10_f32 * r0;
+        assert!(
+            (rs - r0).abs() <= tol,
+            "solar_reflectance={rs} expected within ±10% of reference {r0} (tol={tol})"
+        );
     }
 
     #[test]
