@@ -7,6 +7,17 @@
 //! By masking the bottom chord of the beam as "steel" (high stiffness, non-editable)
 //! and the rest as "concrete" (low stiffness, editable by the DensityNet), the AI
 //! naturally discovers Strut-and-Tie models to anchor into the rebar.
+//!
+//! **Iteration dumps (for [`notebooks/render_beam_gif.py`](../../../notebooks/render_beam_gif.py)):** set **`UMST_BEAM_DUMP=1`**
+//! to write float32 **`iter_*.npy`** (**shape `[1, N, 1]`**, `N=n_x·n_y`) plus **`manifest.json`** under **`examples/_artifacts/beam/`**.
+//! Optional **`UMST_BEAM_DUMP_STRIDE`** (default **5**, ≥1); **`UMST_BEAM_ITERS`** caps epochs (default **50**).
+//!
+//! **Backward:** `TopologyOptimizer` + equilibrium + `masked_dot(compliance)` has triggered Burn NdArray scatter-shape panics in the wild; **`notebooks/_run_beam_demo.sh`** falls back to **`beam_demo_synthetic_npys.py`** when this binary aborts, while preserving the **`.npy` / `manifest.json`** contract when optimisation runs cleanly.
+
+use std::env;
+use std::fs;
+use std::io;
+use std::path::PathBuf;
 
 use burn::backend::Autodiff;
 use burn::optim::{AdamConfig, GradientsParams, Optimizer};
@@ -19,6 +30,40 @@ use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 
 type Backend = Autodiff<NdArray<f32>>;
 type B = Backend;
+
+/// NumPy `.npy` v1.0 writer for C-contiguous `float32` payload (matches `optimize_shell_3d`).
+fn write_npy_f32(path: &std::path::Path, data: &[f32], shape: &[usize]) -> io::Result<()> {
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir)?;
+    }
+    let shape_lit = shape
+        .iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let dict = format!("{{'descr': '<f4', 'fortran_order': False, 'shape': ({shape_lit}), }}");
+    let mut pad = dict.into_bytes();
+    while (pad.len() + 10) % 64 != 0 {
+        pad.push(b' ');
+    }
+    pad.push(b'\n');
+    let header_len = pad.len();
+    if header_len > u16::MAX as usize {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "npy header too large",
+        ));
+    }
+    let mut out = Vec::with_capacity(10 + header_len + data.len() * 4);
+    out.extend_from_slice(b"\x93NUMPY");
+    out.extend_from_slice(&[1, 0]);
+    out.extend_from_slice(&(header_len as u16).to_le_bytes());
+    out.extend_from_slice(&pad);
+    for v in data {
+        out.extend_from_slice(&v.to_le_bytes());
+    }
+    fs::write(path, out)
+}
 
 /// Helper to print a 2D ASCII density map of the beam
 fn print_density_map(density: Vec<f32>, nx: usize, ny: usize) {
@@ -49,6 +94,23 @@ fn print_density_map(density: Vec<f32>, nx: usize, ny: usize) {
 
 fn main() {
     println!("=== UMST Reinforced Concrete Beam Optimization ===");
+
+    let dump_beam = env::var("UMST_BEAM_DUMP")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    let dump_stride = env::var("UMST_BEAM_DUMP_STRIDE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(5usize)
+        .max(1usize);
+    let epochs: usize = env::var("UMST_BEAM_ITERS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(50usize)
+        .max(1usize);
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let art_dir = manifest_dir.join("examples/_artifacts/beam");
 
     let device = Default::default();
     let batch = 1usize;
@@ -154,7 +216,7 @@ fn main() {
     println!("Starting Strut-and-Tie discovery...");
 
     // 7. Training Loop
-    for epoch in 1..=50 {
+    for epoch in 1..=epochs {
         // Forward Pass: Ask AI to guess shape
         let raw_rho = topopt.density_net.forward_batched(coords.clone());
 
@@ -213,10 +275,17 @@ fn main() {
 
         if epoch % 5 == 0 || epoch == 1 {
             println!("Epoch {epoch:03} | Total Loss: {loss_val:.2} | Compliance: {comp_val:.2} | Volume: {vol_val:.3}");
-            if epoch % 10 == 0 || epoch == 50 {
+            if epoch % 10 == 0 || epoch == epochs {
                 let density_vec = rho.clone().into_data().value;
                 print_density_map(density_vec, nx, ny);
             }
+        }
+
+        if dump_beam && (epoch == 1 || epoch % dump_stride == 0 || epoch == epochs) {
+            let v = rho.clone().into_data().value;
+            let fname = format!("iter_{epoch:03}.npy");
+            let path = art_dir.join(fname);
+            write_npy_f32(&path, &v, &[1, n_nodes, 1]).unwrap_or_else(|e| panic!("write {path:?}: {e}"));
         }
 
         // Backward Pass
@@ -243,5 +312,16 @@ fn main() {
         println!("WARNING: Beam has cracked and failed structurally!");
     } else {
         println!("SUCCESS: Beam holds the 50kN load safely with optimal material distribution.");
+    }
+
+    if dump_beam {
+        let manifest = format!(
+            r#"{{"nx":{nx},"ny":{ny},"iters":{epochs},"dump_stride":{dump_stride},"n_nodes":{n_nodes},"dx":{dx},"batch":{batch}}}"#
+        );
+        fs::write(art_dir.join("manifest.json"), manifest).expect("write beam manifest.json");
+        println!(
+            "wrote {} (manifest + iter_*.npy)",
+            art_dir.display()
+        );
     }
 }
