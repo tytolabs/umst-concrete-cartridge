@@ -42,6 +42,50 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix the same comm
 - **`m1-l` (Track L committed artefacts):** **`notebooks/_artifacts/striatus_emergence.gif`**, **`striatus_shell_v0.4.stl`**, and **`striatus_shell_v0.4.print_ready.json`** are present. **`test_striatus_stl_feasibility`** passes (watertight, winding-consistent, overhang, feature-size). **Track L artefact budgets** (GIF ≤ **5 MB**, ≥ **30** frames; STL ≤ **8 MB**): `bash notebooks/check_shell_artifact_budgets.sh`. **Nodal** design VF **`mean(ρ)` ∈ [0.10, 0.25]** is **met** on the committed sidecar (**`gate_volume_fraction_mesh_b7`**: **true**; **`nodal_volume_fraction`** ≈ **0.153** on last committed export). **Shell topology / rib texture** acceptance (**`gate_topo_complexity_b7`**, **`gate_density_xy_variance_b8`**) is **not** met (genus **0**, χ **2**; planar density variance **≪ 0.1**); **`gates_track_b8_all_pass`** stays **false** — see **`m1-b8`**.
 - **`m1-b8` (B8 rollup blocked):** committed **`striatus_shell_v0.4.print_ready.json`** has **`gates_track_b8_all_pass`: false** because **`gate_topo_complexity_b7`** and **`gate_density_xy_variance_b8`** are still **false** (largest closed orientable genus **0**, χ **2**; planar density variance **≪ 0.1**). **`gate_volume_fraction_mesh_b7`** is **true** (**`nodal_volume_fraction`** ≈ **0.153**); **`mesh_volume_fraction_in_bbox`** (diagnostic, marching-cubes ÷ mesh AABB) can remain **≈ 0.98** on thin shells. **`UMST_REQUIRE_B8=1 pytest notebooks/tests/test_print_ready.py`** **fails** until Track L regeneration yields **`gates_track_b8_all_pass`: true** (all three booleans **true** per exporter rollup).
 
+## v0.4 amendment: B8 still false after `phase2-b6-200outer` 40×40×4 × 200 outers (2026-05-12)
+
+**Run:** `bash notebooks/_run_shell_demo.sh` with `UMST_SHELL_NX=40 UMST_SHELL_NY=40 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=200 UMST_SHELL_DUMP_ITER=0 UMST_SHELL_DUMP_STRIDE=10 UMST_SHELL_SELF_WEIGHT=0 UMST_SHELL_ADJOINT_KIND=q1_hex UMST_SHELL_ROOF_RAMP=1`. Wall time ~37 min; exit 0; binary built from committed `optimize_shell_3d.rs` (post Wave A). Loss trajectory: iter 1 = 1.0 → peak iter 61 ≈ 27.68 → iter 200 = 21.347 (compliance ≡ loss, vf = 0.150, terminal β = 31.45).
+
+**Artefact SHA-256:**
+
+| File | SHA-256 |
+| --- | --- |
+| `notebooks/_artifacts/striatus_emergence.gif` | `0e439e306de619ae134778ef5be0c88b4003ee8dc5c8c786c92278aef7fbbb32` |
+| `notebooks/_artifacts/striatus_shell_v0.4.stl` | `57910e7db11b73519884ea2d5a74f6aa9dea37e922a29925ff4e6f37a244df1f` |
+| `notebooks/_artifacts/striatus_shell_v0.4.obj` | `7f42e19ac3a263ab03b70937501ef9492c6d1bf91621a287dc78f0b9bc5731ef` |
+| `crates/umst-concrete-cartridge/examples/_artifacts/shell/final.npy` | `89373e9ec703cf95e8d4fa0d9ad0ced03b6aa227640d9c0e6fa783cc6861dc45` |
+| `crates/umst-concrete-cartridge/examples/_artifacts/shell/final_sigma.npy` | `fee3ffcea9492437998fa7bd987c64454bd2a74bd6f646146b76be8d12b88270` |
+
+**Measured exporter numerics (regenerated `striatus_shell_v0.4.print_ready.json`, not committed):**
+
+| Field | Value | Brief threshold | Status |
+| --- | --- | --- | --- |
+| `density_xy_plane_variance` | **0.03337** | `≥ 0.1` | **fail** |
+| `mesh_genus_closed_orientable_largest` | **0.0** | `≥ 1` | **fail** |
+| `mesh_euler_characteristic_largest` | 2 | — | (genus-0 sphere) |
+| `mesh_connected_components` | 2 | — | — |
+| `nodal_volume_fraction` | 0.14999974 | `∈ [0.10, 0.25]` | pass |
+| `mesh_volume_fraction_in_bbox` | 0.3879 | — | (diagnostic) |
+| `gate_topo_complexity_b7` | false | true | **fail** |
+| `gate_density_xy_variance_b8` | false | true | **fail** |
+| `gate_volume_fraction_mesh_b7` | true | true | pass |
+| `gates_track_b8_all_pass` | **false** | true | **fail** |
+
+**Honest fallback (per swarm TODO `phase2-export-sidecar-true` honest-fallback contract):**
+
+1. `notebooks/export_print_ready.py:240-252` brief-strict gates **NOT** weakened — exporter source unchanged.
+2. New `striatus_shell_v0.4.print_ready.json` **NOT** committed (would only flip `timestamp_unix` / `source_final_npy_sha256` / per-field decimals; topology booleans remain false). Disk state reverted to last committed sidecar from `4d01279`.
+3. **`phase3-striatus-strict` blocked.** No YAML row in `umst-manifold/docs/MULTI_AGENT_GAP_CLOSURE_PLAN.md` (`closeout-m1-b6`, `closeout-m1-b8`, `closeout-int-striatus`) is flipped; rows remain `pending` per swarm TODO honest-fallback contract.
+4. `UMST_REQUIRE_B8=1 pytest notebooks/tests/test_print_ready.py::test_print_ready_track_b8_topology_gates` continues to **fail** by design until a configuration change reaches `gates_track_b8_all_pass: true` honestly.
+
+**Suggested brief amendment (decision needed by D1 owner / brief author):**
+
+- **Option A — 24×24×4 fallback (per swarm TODO L160):** rerun `phase2-b6-200outer` with `UMST_SHELL_NX=24 UMST_SHELL_NY=24 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=200`; brief amendment relaxes Striatus demo grid from 40³ to 24³ with measured genus/variance.
+- **Option B — extend outer iteration count and/or revisit `xy_rib_prior_amp`:** terminal β=31.45 suggests the SIMP penalty has reached the plateau where final β no longer drives variance up; consider raising `xy_rib_prior_amp` from 0.12 (the harness default visible in the iter-1 banner) and/or adding `UMST_SHELL_HELM=1` graph-Helmholtz filtering to break the genus-0 dome solution.
+- **Option C — accept current artefacts with B8 documented as a v0.4.1 deferral.** Brief amendment moves the genus/variance gates from "Ring 1 Track B8" to a v0.4.1 Ring 2 row; v0.4 ships with `gate_volume_fraction_mesh_b7: true` only.
+
+**Do not** edit `notebooks/export_print_ready.py:240-252` thresholds without an accompanying brief amendment authored by the v0.4 brief owner.
+
 
 ### Appendix — `UMST_SHELL_*` reference (Matrix #1 / B6 full harness + Striatus demo)
 
