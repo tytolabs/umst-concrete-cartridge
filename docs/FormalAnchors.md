@@ -53,7 +53,7 @@ The cartridge classifies each public Rust symbol into exactly one of five bucket
 
 Full inventory: [`docs/PROOF-STATUS.md`](PROOF-STATUS.md) (sorted, regenerated).
 
-### Future formal links (cross-repo / deferred)
+### Future formal links (cross-repo / open)
 
 - **Adjoint / terminal gradient:** `lean://umst-formal/Lean/Adjoint.lean#adjoint_recovers_gradient` — belongs with **`umst-manifold`** adjoint sensitivities, not TOML serde structs.
 - **DEC / graph Laplacian:** `lean://umst-formal/Lean/DEC.lean#laplacian_row_sum_zero` — target manifold **`physics::laplacian`** once anchor-audited.

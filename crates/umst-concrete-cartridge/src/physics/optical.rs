@@ -106,7 +106,7 @@ fn simpson_average_5<F: Fn(f32) -> f32>(lambda_nm: [f32; 5], integrand: F) -> f3
 /// formal_anchor: literature://concrete/solar-reflectance-cool-roof
 /// formal_status: Literature
 /// formal_citation: "ASTM E903 standard practice for solar absorptance; Track H3 UMST v0.4 brief"
-/// formal_form: "Simpson average of Fresnel R(λ) + diffuse fraction (rough paste); Helmholtz interior deferred"
+/// formal_form: "Simpson average of Fresnel R(λ) + diffuse fraction (rough paste); Helmholtz interior open"
 #[must_use]
 pub fn solar_reflectance(eps_profile: &[(f32, f32)], thickness_m: f32) -> f32 {
     let _ = thickness_m.max(0.0);
