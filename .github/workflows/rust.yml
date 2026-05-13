@@ -19,6 +19,8 @@ env:
   # Cargo's libgit2 fetcher fails to anonymously clone public GitHub
   # repos in CI; fall back to the system git CLI which handles it.
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+  # Widest Linux-safe union: `blas-accelerate` / `mac-fast` pull Apple Accelerate and fail on ubuntu-latest.
+  CI_WORKSPACE_FEATURES: solver-experimental,render
 
 jobs:
   readme-sanity:
@@ -44,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Pin to match umst-manifold CI / rust-toolchain.toml (transitive graph for --all-features).
+      # Pin to match umst-manifold CI / rust-toolchain.toml (MSRV / clippy parity).
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.88"
@@ -55,7 +57,7 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: cargo clippy
-        run: cargo clippy --workspace --all-targets --all-features --verbose -- -D warnings
+        run: cargo clippy --workspace --all-targets --features "$CI_WORKSPACE_FEATURES" --verbose -- -D warnings
 
       # Human audit: count or list Rust *doc-comment* formal_status buckets only — otherwise
       # `pub formal_status: String` (e.g. CertifyChain wire JSON) false-positives.
@@ -81,8 +83,8 @@ jobs:
       - name: Build (default features, workspace)
         run: cargo build --workspace --verbose
 
-      - name: Check all-features
-        run: cargo check --workspace --all-features --verbose
+      - name: Check workspace (${{ env.CI_WORKSPACE_FEATURES }})
+        run: cargo check --workspace --features "$CI_WORKSPACE_FEATURES" --verbose
 
       - name: Build examples
         run: cargo build --workspace --examples --verbose
