@@ -10,6 +10,10 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write
+
 env:
   CARGO_TERM_COLOR: always
   # Cargo's libgit2 fetcher fails to anonymously clone public GitHub
@@ -21,7 +25,7 @@ jobs:
     name: README sanity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: README sanity (catch accidental wipes)
         run: |
           set -euo pipefail
@@ -39,7 +43,7 @@ jobs:
     name: build & test (ndarray backend)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       # Pin to match umst-manifold CI / rust-toolchain.toml (transitive graph for --all-features).
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -105,7 +109,7 @@ jobs:
     name: maturin develop (umst-py)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.88"
