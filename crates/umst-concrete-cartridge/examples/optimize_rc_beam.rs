@@ -4,21 +4,77 @@
 //! Reinforced Concrete Topology Optimization using UMST Phase 4.
 //!
 //! This example demonstrates how the UMST framework handles heterogeneous materials.
-//! By masking the bottom chord of the beam as "steel" (high stiffness, non-editable)
-//! and the rest as "concrete" (low stiffness, editable by the DensityNet), the AI
-//! naturally discovers Strut-and-Tie models to anchor into the rebar.
+//! By masking the bottom chord of the beam as a **non-editable** full-density spine (the “rebar” corridor)
+//! and the rest as editable “concrete” driven by [`TopologyOptimizer`], the network discovers load paths
+//! that tie into that fixed chord (Strut-and-Tie–style layouts in the density field).
+//!
+//! **Mechanics + AD:** compliance uses **[`AdjointCompliance`]** (discrete-adjoint bar surrogate), matching
+//! [`optimize_shell_3d`](./optimize_shell_3d.rs): equilibrium runs on the **inner** (non-autodiff) backend while
+//! \(\partial c/\partial\rho\) follows the SIMP law on the tape. That avoids differentiating through PCG /
+//! `masked_dot` on `Autodiff<NdArray>`, which has triggered Burn NdArray **scatter** shape mismatches in the
+//! backward pass for this graph. A **uniform** reference Young’s modulus (**30 GPa**) and void floor
+//! **`E_{\min}=10^{-3}E_0`** are used for the adjoint bar network (the demo’s story is the **mask**, not
+//! a separate 200 GPa steel constitutive branch in the surrogate).
+//!
+//! **Iteration dumps (for [`notebooks/render_beam_gif.py`](../../../notebooks/render_beam_gif.py)):** dumps are **on by default** (`UMST_BEAM_DUMP=0` / `false` to skip).
+//! Writes float32 **`iter_*.npy`** (**shape `[1, N, 1]`**, `N=n_x·n_y`) plus a **`manifest.json`** with grid, stride, compliance stats, and frame epoch list under **`examples/_artifacts/beam/`**.
+//! **`UMST_BEAM_DUMP_STRIDE`** (default **3**, ≥1); **`UMST_BEAM_ITERS`** (default **90**, ≥1).
+//!
+//! **End-to-end GIF:** from repo root, `bash notebooks/_run_beam_demo.sh` runs this example then the renderer
+//! (no synthetic NPY fallback when the optimiser completes successfully).
+
+use std::env;
+use std::fs;
+use std::io;
+use std::path::PathBuf;
 
 use burn::backend::Autodiff;
 use burn::optim::{AdamConfig, GradientsParams, Optimizer};
+use burn::tensor::backend::AutodiffBackend;
 use burn::tensor::{Data, Int, Shape, Tensor};
 use burn_ndarray::NdArray;
 use umst_manifold::ai::topology::TopologyOptimizer;
-use umst_manifold::physics::mechanics::VectorMechanicsSolver;
+use umst_manifold::physics::adjoint::{AdjointCompliance, SimpElasticMaterial};
 use umst_manifold::physics::solvers::PhaseFieldFractureSolver;
 use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 
 type Backend = Autodiff<NdArray<f32>>;
 type B = Backend;
+type Inner = <B as AutodiffBackend>::InnerBackend;
+
+/// NumPy `.npy` v1.0 writer for C-contiguous `float32` payload (matches `optimize_shell_3d`).
+fn write_npy_f32(path: &std::path::Path, data: &[f32], shape: &[usize]) -> io::Result<()> {
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir)?;
+    }
+    let shape_lit = shape
+        .iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let dict = format!("{{'descr': '<f4', 'fortran_order': False, 'shape': ({shape_lit}), }}");
+    let mut pad = dict.into_bytes();
+    while (pad.len() + 10) % 64 != 0 {
+        pad.push(b' ');
+    }
+    pad.push(b'\n');
+    let header_len = pad.len();
+    if header_len > u16::MAX as usize {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "npy header too large",
+        ));
+    }
+    let mut out = Vec::with_capacity(10 + header_len + data.len() * 4);
+    out.extend_from_slice(b"\x93NUMPY");
+    out.extend_from_slice(&[1, 0]);
+    out.extend_from_slice(&(header_len as u16).to_le_bytes());
+    out.extend_from_slice(&pad);
+    for v in data {
+        out.extend_from_slice(&v.to_le_bytes());
+    }
+    fs::write(path, out)
+}
 
 /// Helper to print a 2D ASCII density map of the beam
 fn print_density_map(density: Vec<f32>, nx: usize, ny: usize) {
@@ -50,10 +106,39 @@ fn print_density_map(density: Vec<f32>, nx: usize, ny: usize) {
 fn main() {
     println!("=== UMST Reinforced Concrete Beam Optimization ===");
 
+    let dump_beam = match env::var("UMST_BEAM_DUMP") {
+        Err(_) => true,
+        Ok(ref s) if s.trim().is_empty() => true,
+        Ok(ref s)
+            if s == "0" || s.eq_ignore_ascii_case("false") || s.eq_ignore_ascii_case("off") =>
+        {
+            false
+        }
+        Ok(ref s) => {
+            s == "1"
+                || s.eq_ignore_ascii_case("true")
+                || s.eq_ignore_ascii_case("yes")
+                || s.eq_ignore_ascii_case("on")
+        }
+    };
+    let dump_stride = env::var("UMST_BEAM_DUMP_STRIDE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(3usize)
+        .max(1usize);
+    let epochs: usize = env::var("UMST_BEAM_ITERS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(90usize)
+        .max(1usize);
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let art_dir = manifest_dir.join("examples/_artifacts/beam");
+
     let device = Default::default();
     let batch = 1usize;
-    let nx = 20usize;
-    let ny = 5usize;
+    let nx = 32usize;
+    let ny = 8usize;
     let n_nodes = nx * ny;
     let dx = 0.1_f32; // 10cm grid
 
@@ -107,7 +192,7 @@ fn main() {
         bm_data[i * 3 + 1] = 0.0;
         bm_data[i * 3 + 2] = 0.0;
     }
-    let boundary_mask =
+    let boundary_mask: Tensor<B, 3> =
         Tensor::from_data(Data::new(bm_data, Shape::new([batch, n_nodes, 3])), &device);
 
     // 4. Loading (Body Force)
@@ -115,22 +200,14 @@ fn main() {
     let mut bf_data = vec![0.0_f32; batch * n_nodes * 3];
     let top_right = (ny - 1) * nx + (nx - 1);
     bf_data[top_right * 3 + 1] = -50_000.0; // 50 kN downward
-    let body_force =
+    let body_force: Tensor<B, 3> =
         Tensor::from_data(Data::new(bf_data, Shape::new([batch, n_nodes, 3])), &device);
 
-    // 5. Heterogeneous Material & AI Constraints (The Rebar Mask)
-    // Bottom row (y == 0) is Steel (200 GPa). Rest is Concrete (30 GPa).
-    let mut e_base_data = vec![30e9_f32; batch * n_nodes];
+    // 5. AI constraints (rebar corridor): bottom row fixed at ρ=1, non-editable.
     let mut editable_mask_data = vec![1.0_f32; batch * n_nodes]; // 1.0 = AI can edit
-
-    for x in 0..nx {
-        e_base_data[x] = 200e9_f32; // Steel chord at bottom
-        editable_mask_data[x] = 0.0_f32; // AI cannot remove steel
+    for slot in &mut editable_mask_data[..nx] {
+        *slot = 0.0_f32; // AI cannot remove steel
     }
-    let e_base_bn1 = Tensor::from_data(
-        Data::new(e_base_data, Shape::new([batch, n_nodes, 1])),
-        &device,
-    );
     let editable_mask = Tensor::from_data(
         Data::new(editable_mask_data, Shape::new([batch, n_nodes, 1])),
         &device,
@@ -151,10 +228,51 @@ fn main() {
     let area = 0.01_f32; // 10cm x 10cm cross section
     let volume_lambda = 5000.0_f32; // Lagrange multiplier for volume constraint
 
+    // Discrete-adjoint bar path: inner tensors only (same layout as `optimize_shell_3d`).
+    let coords_n3_inner = coords
+        .clone()
+        .slice([0..batch, 0..n_nodes, 0..3])
+        .reshape([n_nodes, 3])
+        .inner();
+    let edges_inner = edges_b1.clone().inner();
+    let boundary_inner = boundary_mask.clone().inner();
+    let body_force_inner = body_force.clone().inner();
+    let damage_inner = Tensor::<Inner, 3>::zeros([batch, n_nodes, 1], &device);
+    let e0_concrete = 30e9_f32;
+    let simp_mat = SimpElasticMaterial {
+        e0: e0_concrete,
+        nu: 0.3,
+        p: topopt.penalization,
+        e_min: e0_concrete * 1e-3_f32,
+    };
+
     println!("Starting Strut-and-Tie discovery...");
 
+    let log_every = if epochs <= 48 {
+        2usize
+    } else {
+        (epochs / 28).max(3)
+    };
+    let map_milestones: Vec<usize> = {
+        let mut v = vec![1usize, epochs];
+        if epochs > 2 {
+            v.push(epochs / 3);
+        }
+        if epochs > 4 {
+            v.push((2 * epochs) / 3);
+        }
+        v.sort_unstable();
+        v.dedup();
+        v
+    };
+
+    let mut dump_epochs: Vec<usize> = Vec::new();
+    let mut compliance_initial: Option<f32> = None;
+    let mut compliance_best = f32::MAX;
+    let mut compliance_final = 0.0_f32;
+
     // 7. Training Loop
-    for epoch in 1..=50 {
+    for epoch in 1..=epochs {
         // Forward Pass: Ask AI to guess shape
         let raw_rho = topopt.density_net.forward_batched(coords.clone());
 
@@ -170,53 +288,46 @@ fn main() {
         let vol_diff = current_volume_fraction.clone().sub(target_vol);
         let volume_loss = vol_diff.clone().powf_scalar(2.0).mul_scalar(volume_lambda);
 
-        // Calculate SIMP Modulus
-        let e_eff = rho
-            .clone()
-            .powf_scalar(topopt.penalization)
-            .mul(e_base_bn1.clone());
-        let nu = Tensor::<B, 3>::full([batch, n_nodes, 1], 0.3, &device);
-        let stiffness = Tensor::cat(vec![e_eff, nu], 2);
-
-        // Calculate Self-Weight Gravity (-Y direction)
-        let gravity_force = Tensor::<B, 3>::zeros([batch, n_nodes, 3], &device); // Simplified for this MVP
-        let total_force = body_force.clone().add(gravity_force);
-
-        // Solve Mechanics
-        let damage = Tensor::<B, 3>::zeros([batch, n_nodes, 1], &device);
-        let displacement = Tensor::<B, 3>::zeros([batch, n_nodes, 3], &device);
-        let (u, _stress) = VectorMechanicsSolver::solve_equilibrium(
-            displacement,
-            coords
-                .clone()
-                .slice([0..1, 0..n_nodes, 0..3])
-                .reshape([n_nodes, 3]),
-            stiffness,
-            total_force.clone(),
-            edges_b1.clone(),
-            damage,
-            boundary_mask.clone(),
-            area,
+        let (compliance, c_raw) = AdjointCompliance::forward_and_loss(
+            rho.clone(),
+            edges_inner.clone(),
+            coords_n3_inner.clone(),
+            boundary_inner.clone(),
+            body_force_inner.clone(),
+            damage_inner.clone(),
+            simp_mat,
             &inner_cfg,
+            area,
         );
 
-        // Calculate Compliance
-        let compliance =
-            umst_manifold::physics::linear::masked_dot(&total_force, &u, &boundary_mask);
-
-        // Total Loss = Compliance + Volume Penalty
+        // Total Loss = Compliance surrogate + Volume Penalty
         let total_loss = compliance.clone().add(volume_loss.clone());
 
         let loss_val = total_loss.clone().into_data().value[0];
-        let comp_val = compliance.clone().into_data().value[0];
+        let comp_val = c_raw;
         let vol_val = current_volume_fraction.clone().into_data().value[0];
 
-        if epoch % 5 == 0 || epoch == 1 {
-            println!("Epoch {epoch:03} | Total Loss: {loss_val:.2} | Compliance: {comp_val:.2} | Volume: {vol_val:.3}");
-            if epoch % 10 == 0 || epoch == 50 {
-                let density_vec = rho.clone().into_data().value;
-                print_density_map(density_vec, nx, ny);
-            }
+        if epoch == 1 {
+            compliance_initial = Some(comp_val);
+        }
+        compliance_best = compliance_best.min(comp_val);
+        compliance_final = comp_val;
+
+        if epoch == 1 || epoch == epochs || epoch % log_every == 0 {
+            println!("Epoch {epoch:03}/{epochs:03} | loss {loss_val:.2} | c {comp_val:.2} | c_min {compliance_best:.2} | vol {vol_val:.3}");
+        }
+        if map_milestones.binary_search(&epoch).is_ok() {
+            let density_vec = rho.clone().into_data().value;
+            print_density_map(density_vec, nx, ny);
+        }
+
+        if dump_beam && (epoch == 1 || epoch % dump_stride == 0 || epoch == epochs) {
+            let v = rho.clone().into_data().value;
+            let fname = format!("iter_{epoch:03}.npy");
+            let path = art_dir.join(fname);
+            write_npy_f32(&path, &v, &[1, n_nodes, 1])
+                .unwrap_or_else(|e| panic!("write {path:?}: {e}"));
+            dump_epochs.push(epoch);
         }
 
         // Backward Pass
@@ -233,9 +344,14 @@ fn main() {
     let damage_old = Tensor::<B, 3>::zeros([batch, n_nodes, 1], &device);
     let gc_bn1 = Tensor::<B, 3>::zeros([batch, n_nodes, 1], &device).add_scalar(100.0); // Concrete Gc
 
-    // Stub strain for fracture MVP (requires fully coupled solver in reality)
-    let strain_stub = Tensor::<B, 4>::zeros([batch, n_nodes, 3, 3], &device);
-    let damage_new = fracture.update_damage(strain_stub, damage_old, gc_bn1, edges_b1.clone());
+    // Zero-strain placeholder for fracture wiring in this example (full THMC–mechanics coupling not exercised here).
+    let strain_zero_placeholder = Tensor::<B, 4>::zeros([batch, n_nodes, 3, 3], &device);
+    let damage_new = fracture.update_damage(
+        strain_zero_placeholder,
+        damage_old,
+        gc_bn1,
+        edges_b1.clone(),
+    );
 
     let max_damage = damage_new.max().into_data().value[0];
     println!("Maximum Crack Damage (d): {:.3}", max_damage);
@@ -243,5 +359,48 @@ fn main() {
         println!("WARNING: Beam has cracked and failed structurally!");
     } else {
         println!("SUCCESS: Beam holds the 50kN load safely with optimal material distribution.");
+    }
+
+    if dump_beam {
+        let c0 = compliance_initial.unwrap_or(compliance_final);
+        let frames_csv = dump_epochs
+            .iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+        let vol_tgt = topopt.volume_target;
+        let p_simp = topopt.penalization;
+        let manifest = format!(
+            concat!(
+                "{{",
+                "\"schema\":\"umst_beam_dump_v2\",",
+                "\"nx\":{nx},\"ny\":{ny},",
+                "\"n_nodes\":{n_nodes},\"dx\":{dx},\"batch\":{batch},",
+                "\"iters\":{epochs},\"dump_stride\":{dump_stride},",
+                "\"n_frames\":{n_frames},\"frame_epochs\":[{frames_csv}],",
+                "\"compliance_initial\":{c0:.8},\"compliance_final\":{cf:.8},\"compliance_best\":{cb:.8},",
+                "\"e0_pa\":{e0},\"nu\":0.3,\"volume_target\":{vol_tgt},\"simp_p\":{p_simp},",
+                "\"n_edges\":{n_edges}",
+                "}}"
+            ),
+            nx = nx,
+            ny = ny,
+            n_nodes = n_nodes,
+            dx = dx,
+            batch = batch,
+            epochs = epochs,
+            dump_stride = dump_stride,
+            n_frames = dump_epochs.len(),
+            frames_csv = frames_csv,
+            c0 = c0,
+            cf = compliance_final,
+            cb = compliance_best,
+            e0 = e0_concrete,
+            vol_tgt = vol_tgt,
+            p_simp = p_simp,
+            n_edges = n_edges,
+        );
+        fs::write(art_dir.join("manifest.json"), manifest).expect("write beam manifest.json");
+        println!("wrote {} (manifest + iter_*.npy)", art_dir.display());
     }
 }

@@ -5,13 +5,15 @@
 # `notebooks/export_print_ready.py` (last step in this script).
 #
 # Python env (see notebooks/README.md): use one venv; install NumPy + render stack with the *same*
-# interpreter you use here (`PYTHON=python3` or `.venv/bin/python`). Prefer `uv venv` + `uv pip install`
+# interpreter you use here. If **`PYTHON` is unset** and **`${ROOT}/.venv/bin/python` exists**, this script
+# uses it automatically (avoids `ModuleNotFoundError: numpy` when system `python3` is bare). Else: `PYTHON=python3`
+# or `PYTHON=.venv/bin/python`. Prefer `uv venv` + `uv pip install`
 # or `python3 -m venv` + `pip install -r notebooks/requirements-shell-demo.txt` then
 # `pip install './crates/umst-py[render]'` (or `maturin develop --extras render` from crates/umst-py).
 # `export_print_ready.py` also needs graph engines: `uv pip install --python .venv/bin/python networkx scipy`
 # (see docs/Solver-Status.md — Topology / shell).
 #
-# --- Copy-paste overnight: 40×40×4 × 200 outers (Track L scale, many CPU hours) -----------------
+# --- Long Track L block: 40×40×4 × 200 outers (many CPU hours; wall time is machine-dependent) ---
 # From directory that contains `notebooks/` and `crates/` (this repo root = parent of `notebooks/`):
 #
 #   cd umst-concrete-cartridge
@@ -19,8 +21,7 @@
 #   export UMST_SHELL_NX=40 UMST_SHELL_NY=40 UMST_SHELL_NZ=4 UMST_SHELL_ITERS=200
 #   export UMST_SHELL_DUMP_ITER=0 UMST_SHELL_DUMP_STRIDE=10
 #   export UMST_SHELL_SELF_WEIGHT=0
-#   # Roof load: unset or !=1 => uniform in optimize_shell_3d; literal UMST_SHELL_ROOF_RAMP=1 => x ramp (F default 0.2)
-#   # export UMST_SHELL_ROOF_RAMP=1
+#   # Roof load: default uniform (B6 full); UMST_SHELL_ROOF_RAMP=1 => x ramp at UMST_SHELL_ROOF_RAMP_F (default 0.2)
 #   bash notebooks/_run_shell_demo.sh 2>&1 | tee shell_track_l_40cube4_i200.log
 #
 # Rust writes under crates/umst-concrete-cartridge/examples/_artifacts/shell/ (manifest.json, final.npy, …).
@@ -59,7 +60,13 @@ export UMST_SHELL_ITERS="${UMST_SHELL_ITERS:-200}"
 export UMST_SHELL_DUMP_ITER="${UMST_SHELL_DUMP_ITER:-0}"
 export UMST_SHELL_DUMP_STRIDE="${UMST_SHELL_DUMP_STRIDE:-10}"
 : "${CARGO:=cargo}"
-: "${PYTHON:=python3}"
+if [[ -z "${PYTHON:-}" ]]; then
+  if [[ -x "${ROOT}/.venv/bin/python" ]]; then
+    PYTHON="${ROOT}/.venv/bin/python"
+  else
+    PYTHON="python3"
+  fi
+fi
 "${CARGO}" run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render'
 "${PYTHON}" "${ROOT}/notebooks/render_shell_gif.py"
 "${PYTHON}" "${ROOT}/notebooks/overlay_final_isostatics.py"

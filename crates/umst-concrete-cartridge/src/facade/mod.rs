@@ -935,6 +935,19 @@ mod optical_audit_tests {
     }
 
     #[test]
+    fn optical_audit_solar_reflectance_within_ten_percent_of_anchor() {
+        let audit = build_optical_audit_v1();
+        let r0 = 0.30_f64;
+        let tol = 0.10_f64 * r0;
+        assert!(
+            (audit.solar_reflectance - r0).abs() <= tol,
+            "solar_reflectance={} expected within ±10% of {}",
+            audit.solar_reflectance,
+            r0
+        );
+    }
+
+    #[test]
     fn optical_audit_uv_absorption_high_for_plain_paste() {
         let audit = build_optical_audit_v1();
         assert!(

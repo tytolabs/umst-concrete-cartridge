@@ -33,8 +33,9 @@ const CSH_HD_SCALE_OF_BULK: f32 = 0.42_f32;
 /// formal_form: "(E_LD, E_HD) = (CSH_LD_SCALE_OF_BULK, CSH_HD_SCALE_OF_BULK) * K_csh_vinet"
 #[must_use]
 pub fn paste_csh_youngs_moduli_gpa() -> (f32, f32) {
-    let k_csh = ClinkerPhase::Csh14nmTobermorite.bulk_modulus_ambient_gpa();
-    (k_csh * CSH_LD_SCALE_OF_BULK, k_csh * CSH_HD_SCALE_OF_BULK)
+    // Vinet EoS `K₀` for 1.4-nm tobermorite (ambient) — single source of truth in `clinker_eos`.
+    let k0_csh = ClinkerPhase::Csh14nmTobermorite.params().bulk_modulus_gpa;
+    (k0_csh * CSH_LD_SCALE_OF_BULK, k0_csh * CSH_HD_SCALE_OF_BULK)
 }
 
 /// Pure tensor implementation of the Strength & Micromechanics Engine.

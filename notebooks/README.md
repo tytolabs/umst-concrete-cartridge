@@ -10,7 +10,8 @@ Jupyter notebooks for exploratory audits against the bundled UCI and Zenodo CSV 
 | Notebook | Content |
 |----------|--------|
 | [`sustainable_mix_audit.ipynb`](sustainable_mix_audit.ipynb) | Small fixed corpus, `audit` binding, matplotlib panels (regime counts, predicted vs. observed, provenance summary). |
-| Striatus shell | [`_run_shell_demo.sh`](_run_shell_demo.sh): `optimize_shell_3d` → PNG frames → GIF + STL (`pip install './crates/umst-py[render]'`). After a run: `pytest notebooks/tests/test_print_ready.py -v` with `./crates/umst-py[render,tests]`. Optional: [`check_shell_artifact_budgets.sh`](check_shell_artifact_budgets.sh), [`check_shell_determinism.sh`](check_shell_determinism.sh). **Commit gate:** do not `git add` multi‑MB `notebooks/_artifacts/*.gif` / `*.stl` / `*.obj` unless you intend Track L ship (finite demo: run `check_shell_artifact_budgets.sh` and `test_print_ready.py` first); `iter_*.npy` under `examples/_artifacts/shell/` stays gitignored. |
+| Striatus shell | [`_run_shell_demo.sh`](_run_shell_demo.sh): `optimize_shell_3d` → PNG frames → GIF + STL (`pip install './crates/umst-py[render]'`). After a run: `pytest notebooks/tests/test_print_ready.py -v` with `./crates/umst-py[render,tests]`. Optional: [`check_shell_artifact_budgets.sh`](check_shell_artifact_budgets.sh), [`check_shell_determinism.sh`](check_shell_determinism.sh). **Commit gate:** do not `git add` multi‑MB `notebooks/_artifacts/*.gif` / `*.stl` / `*.obj` without artefact budgets + print-ready checks; `iter_*.npy` under `examples/_artifacts/shell/` stays gitignored. Gate semantics and pending close-out: [`../docs/Solver-Status.md`](../docs/Solver-Status.md). |
+| RC beam strut-and-tie | [`_run_beam_demo.sh`](_run_beam_demo.sh): [`optimize_rc_beam`](../crates/umst-concrete-cartridge/examples/optimize_rc_beam.rs) (default **32×8** grid, `UMST_BEAM_ITERS=90`, `UMST_BEAM_DUMP_STRIDE=3`, `UMST_BEAM_DUMP` on by default — set `0`/`false`/`off` to skip NPY dumps; NPY under `examples/_artifacts/beam/`) → [`render_beam_gif.py`](render_beam_gif.py) → `notebooks/_artifacts/beam_strut_and_tie.gif`. Optional renderer env: `UMST_BEAM_GIF_MAX_SIDE`, `UMST_BEAM_GIF_SUPERSAMPLE`, `UMST_BEAM_GIF_FRAME_MS`, `UMST_BEAM_GIF_HOLD_MS`, `UMST_BEAM_GIF_HOLD_FRAMES` (see script header / `render_beam_gif.py` module doc). Uses `numpy` + `pillow` + `svgwrite` + `cairosvg`; bootstraps `BEAM_DEMO_VENV` or `.venv_beam_gif`. If `cargo run … optimize_rc_beam` fails, falls back to [`beam_demo_synthetic_npys.py`](beam_demo_synthetic_npys.py). **Commit gate:** same `_artifacts` GIF hygiene as the Striatus shell row. |
 
 ## Run headless (repository root)
 
@@ -21,7 +22,7 @@ cd umst-concrete-cartridge
 
 Strict CI-style runs expect `jupyter` / `nbconvert` on `PATH` (see workflow). Dependencies: `matplotlib`, `pandas`, and an editable build of the extension (`pip install './crates/umst-py[notebook]'` or `maturin develop --extras notebook` from `crates/umst-py`).
 
-## Python / NumPy (Track L, shell demo)
+## Python / NumPy (shell demo)
 
 Use one virtual environment for **NumPy + PyVista + VTK** and the `umst-py` extension so ABI and wheel tags stay aligned (avoid mixing system Python NumPy with a different interpreter used for `maturin develop`).
 
@@ -49,9 +50,9 @@ After `source .venv/bin/activate`, confirm `which python3` matches the interpret
 
 GIF/STL tooling (`render_shell_gif.py`, `overlay_final_isostatics.py`): sets `pv.OFF_SCREEN = True` and `Plotter(off_screen=True)` — no GUI required. Prefer **PyVista ≥ 0.43 / VTK wheels** on Apple Silicon (arm64 VTK).
 
-**Track L / brief-aligned run (from repo root):** `_run_shell_demo.sh` exports defaults `UMST_SHELL_SELF_WEIGHT=0`, `UMST_SHELL_ITERS=200`, `UMST_SHELL_DUMP_ITER=0`, `UMST_SHELL_DUMP_STRIDE=10` (override as needed). Match the v0.4 brief one-liner with `UMST_SHELL_DUMP_ITER=1` and the same stride/iters. Optional stability knobs read by `optimize_shell_3d` (documented in `crates/umst-concrete-cartridge/examples/optimize_shell_3d.rs` and `docs/Solver-Status.md`): `UMST_SHELL_E_MIN_REL`, `UMST_SHELL_MAX_CG`, `UMST_SHELL_PCG`, `UMST_SHELL_HELM`, `UMST_SHELL_VOL_LOOP`, grid `UMST_SHELL_NX` / `UMST_SHELL_NY` / `UMST_SHELL_NZ`, `UMST_SHELL_VF`. Override tooling with `CARGO=cargo` / `PYTHON=python3` if needed.
+**Defaults, `UMST_SHELL_*` knobs, Track L regeneration, B8 / `UMST_REQUIRE_B8`, and swarm close-out registry:** [`../docs/Solver-Status.md`](../docs/Solver-Status.md) (when this checkout sits in MaOS-Workspace: [`../../umst-manifold/docs/MULTI_AGENT_GAP_CLOSURE_PLAN.md`](../../umst-manifold/docs/MULTI_AGENT_GAP_CLOSURE_PLAN.md)).
 
-**CI-fast smoke (Rust optimiser only — not Track L / B6 geometry):** `optimize_shell_3d` clamps `UMST_SHELL_NX` / `UMST_SHELL_NY` to **[6, 40]** and `UMST_SHELL_NZ` to **[2, 8]** — use a small grid and few iterations to exercise the example without the full 40×40×4 budget, e.g.
+**CI-fast smoke (small grid):** `optimize_shell_3d` clamps `UMST_SHELL_NX` / `UMST_SHELL_NY` to **[6, 40]** and `UMST_SHELL_NZ` to **[2, 8]** — e.g.
 
 ```bash
 cd umst-concrete-cartridge

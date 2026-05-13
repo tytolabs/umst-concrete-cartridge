@@ -1,0 +1,1 @@
+{"nx":40,"ny":40,"nz":4,"lx":4,"ly":4,"lz":0.1,"dx":0.1,"dy":0.1,"dz":0.025,"burn_seed":42,"iters":200,"symmetry_xy":true,"sym_period":20,"roof_x_ramp":true,"self_weight":false,"vol_in_loop":true,"dump_iter":false,"dump_stride":10,"density_init_jitter":0,"xy_rib_prior_amp":0.12}
