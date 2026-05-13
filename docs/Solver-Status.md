@@ -6,6 +6,23 @@
 
 **PROOF-STATUS (different stub contracts):** manifold [`PROOF-STATUS.md`](../../umst-manifold/docs/PROOF-STATUS.md) is a short solver→lane index (Track J3); this repo's [`PROOF-STATUS.md`](PROOF-STATUS.md) is generated from Rust `#[doc]` formal blocks (`proof_status_doc`).
 
+## Pending registry (canonical sources)
+
+**YAML close-out rows (authoritative):** [`MULTI_AGENT_GAP_CLOSURE_PLAN.md`](../../umst-manifold/docs/MULTI_AGENT_GAP_CLOSURE_PLAN.md) frontmatter `todos:` — update this section when that file’s `id` / `status` fields change.
+
+**Swarm dispatch (workspace layout only):** [`MAOS_V04_SWARM_TODO_2026_05_12.md`](../../MAOS_V04_SWARM_TODO_2026_05_12.md) — waves **A–E**, task IDs, and operator rules (avoid duplicating long bodies in `README.md`).
+
+### `MULTI_AGENT_GAP_CLOSURE_PLAN.md` — snapshot verified 2026-05-13
+
+| `id` | `status` in plan frontmatter | Notes |
+| --- | --- | --- |
+| `closeout-m1-b6` | `pending` | Full **B6** harness at Striatus scale (`shell_topology_rib_pattern_full_v04` / plan prose). |
+| `closeout-m1-b8` | `pending` | **`gates_track_b8_all_pass`** in committed `notebooks/_artifacts/striatus_shell_v0.4.print_ready.json`. |
+| `closeout-m1-l` | `completed-with-residual` | Track **L** artefacts per plan; Ring‑1 still gated on **B8** rollup (plan §Todo registry). |
+| `closeout-int-striatus` | `pending` | Coupled `scripts/verify_striatus_coupled_gates.sh` + rollup per plan. |
+
+**Wave D / E (from swarm pack §4, not re-specified here):** after **Wave C** (`phase2-b6-200outer`), **Wave D** runs `phase2-export-sidecar-true` then `phase3-striatus-strict`; **Wave E** is `phase5-final-ci` — see [`MAOS_V04_SWARM_TODO_2026_05_12.md`](../../MAOS_V04_SWARM_TODO_2026_05_12.md).
+
 **Track B6 (CI vs opt-in):**
 
 | Gate | Test | Command sketch |
