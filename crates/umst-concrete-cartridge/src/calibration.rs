@@ -351,7 +351,7 @@ impl Profile {
             if fa > m {
                 out.push(RegimeViolation {
                     field: "fly_ash_pct",
-                    message: format!("fly_ash_pct={} exceeds {}", fa, m),
+                    message: format!("fly_ash_pct={fa} exceeds {m}"),
                 });
             }
         }
@@ -359,7 +359,7 @@ impl Profile {
             if sf > m {
                 out.push(RegimeViolation {
                     field: "silica_fume_pct",
-                    message: format!("silica_fume_pct={} exceeds {}", sf, m),
+                    message: format!("silica_fume_pct={sf} exceeds {m}"),
                 });
             }
         }
@@ -367,7 +367,7 @@ impl Profile {
             if sf > m {
                 out.push(RegimeViolation {
                     field: "silica_fume_pct",
-                    message: format!("silica_fume_pct={} exceeds UHPC cap {}", sf, m),
+                    message: format!("silica_fume_pct={sf} exceeds UHPC cap {m}"),
                 });
             }
         }
