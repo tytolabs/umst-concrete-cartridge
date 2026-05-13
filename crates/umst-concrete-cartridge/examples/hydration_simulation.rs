@@ -57,9 +57,7 @@ fn main() {
     println!("  relative error    = {:.1}%", err * 100.0);
     assert!(
         err < 0.10,
-        "DoH at 28 d is {:.3}, expected within 10% of Powers 1948 ({:.3})",
-        alpha_28d,
-        powers_28d
+        "DoH at 28 d is {alpha_28d:.3}, expected within 10% of Powers 1948 ({powers_28d:.3})",
     );
 
     println!();

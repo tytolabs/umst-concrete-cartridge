@@ -209,49 +209,50 @@ fn main() -> anyhow::Result<()> {
         println!("| key | value |");
         println!("|-----|-------|");
         println!("| model_kind | {:?} |", p.model_section.kind);
-        println!("| regime.w_c_min | {:.4} |", p.regime.w_c_min);
-        println!("| regime.w_c_max | {:.4} |", p.regime.w_c_max);
-        println!(
-            "| regime.temperature_k_min | {:.4} |",
-            p.regime.temperature_k_min
-        );
-        println!(
-            "| regime.temperature_k_max | {:.4} |",
-            p.regime.temperature_k_max
-        );
-        println!("| regime.age_hours_min | {:.4} |", p.regime.age_hours_min);
-        println!("| regime.age_hours_max | {:.4} |", p.regime.age_hours_max);
+        let wmin = p.regime.w_c_min;
+        let wmax = p.regime.w_c_max;
+        println!("| regime.w_c_min | {wmin:.4} |");
+        println!("| regime.w_c_max | {wmax:.4} |");
+        let tmin = p.regime.temperature_k_min;
+        let tmax = p.regime.temperature_k_max;
+        println!("| regime.temperature_k_min | {tmin:.4} |");
+        println!("| regime.temperature_k_max | {tmax:.4} |");
+        let amin = p.regime.age_hours_min;
+        let amax = p.regime.age_hours_max;
+        println!("| regime.age_hours_min | {amin:.4} |");
+        println!("| regime.age_hours_max | {amax:.4} |");
         if let Some(x) = p.regime.fly_ash_pct_max {
-            println!("| regime.fly_ash_pct_max | {:.4} |", x);
+            println!("| regime.fly_ash_pct_max | {x:.4} |");
         }
         if let Some(x) = p.regime.silica_fume_pct_max {
-            println!("| regime.silica_fume_pct_max | {:.4} |", x);
+            println!("| regime.silica_fume_pct_max | {x:.4} |");
         }
         if let Some(x) = p.regime.scm_sum_min_pct {
-            println!("| regime.scm_sum_min_pct | {:.4} |", x);
+            println!("| regime.scm_sum_min_pct | {x:.4} |");
         }
-        println!("| powers.s_intrinsic | {:.4} |", p.powers.s_intrinsic);
-        println!("| powers.k_slag | {:.4} |", p.powers.k_slag);
-        println!("| powers.k_fly_ash | {:.4} |", p.powers.k_fly_ash);
-        println!("| powers.k_ref | {:.4} |", p.powers.k_ref);
-        println!("| powers.early_boost | {:.4} |", p.powers.early_boost);
+        let si = p.powers.s_intrinsic;
+        let ksl = p.powers.k_slag;
+        let kfa = p.powers.k_fly_ash;
+        let kr = p.powers.k_ref;
+        let eb = p.powers.early_boost;
+        println!("| powers.s_intrinsic | {si:.4} |");
+        println!("| powers.k_slag | {ksl:.4} |");
+        println!("| powers.k_fly_ash | {kfa:.4} |");
+        println!("| powers.k_ref | {kr:.4} |");
+        println!("| powers.early_boost | {eb:.4} |");
         if let Some(x) = p.acceptance.strength_mae_max {
-            println!("| acceptance.strength_mae_max | {:.6} |", x);
+            println!("| acceptance.strength_mae_max | {x:.6} |");
         }
         if let Some(x) = p.acceptance.strength_rmse_max {
-            println!("| acceptance.strength_rmse_max | {:.6} |", x);
+            println!("| acceptance.strength_rmse_max | {x:.6} |");
         }
         if let Some(x) = p.acceptance.strength_r2_min {
-            println!("| acceptance.strength_r2_min | {:.6} |", x);
+            println!("| acceptance.strength_r2_min | {x:.6} |");
         }
-        println!(
-            "| provenance.provenance_sha256 | {} |",
-            p.provenance.provenance_sha256
-        );
-        println!(
-            "| contract.verification_status | {} |",
-            p.contract.verification_status
-        );
+        let sha = &p.provenance.provenance_sha256;
+        println!("| provenance.provenance_sha256 | {sha} |");
+        let vstat = &p.contract.verification_status;
+        println!("| contract.verification_status | {vstat} |");
         println!();
     }
 

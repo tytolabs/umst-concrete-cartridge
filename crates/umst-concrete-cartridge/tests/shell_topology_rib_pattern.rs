@@ -423,8 +423,7 @@ fn run_rib_quick_metrics() -> RibMetrics {
         let loss_scalar = total_loss.clone().into_data().value[0];
         assert!(
             loss_scalar.is_finite(),
-            "step {it}: scaled surrogate must be finite, got {}",
-            loss_scalar
+            "step {it}: scaled surrogate must be finite, got {loss_scalar}",
         );
 
         let grads = total_loss.backward();

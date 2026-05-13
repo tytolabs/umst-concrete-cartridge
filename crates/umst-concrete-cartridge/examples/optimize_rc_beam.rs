@@ -98,7 +98,7 @@ fn print_density_map(density: Vec<f32>, nx: usize, ny: usize) {
             };
             row_str.push_str(char);
         }
-        println!("{}", row_str);
+        println!("{row_str}");
     }
     println!("-------------------------\n");
 }
@@ -354,7 +354,7 @@ fn main() {
     );
 
     let max_damage = damage_new.max().into_data().value[0];
-    println!("Maximum Crack Damage (d): {:.3}", max_damage);
+    println!("Maximum Crack Damage (d): {max_damage:.3}");
     if max_damage > 0.9 {
         println!("WARNING: Beam has cracked and failed structurally!");
     } else {

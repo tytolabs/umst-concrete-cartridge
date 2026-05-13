@@ -21,15 +21,13 @@ fn all_profiles_parse_and_bounds_positive() -> Result<(), Box<dyn Error>> {
         let p = Profile::load_bundled(id)?;
         assert!(
             p.regime.w_c_min < p.regime.w_c_max && p.regime.w_c_min >= 0.10,
-            "{} w/c bounds",
-            id
+            "{id} w/c bounds",
         );
         assert!(
             p.regime.temperature_k_min < p.regime.temperature_k_max,
-            "{} temperature bounds",
-            id
+            "{id} temperature bounds",
         );
-        assert!(p.powers.s_intrinsic > 0.0, "{} s_intrinsic", id);
+        assert!(p.powers.s_intrinsic > 0.0, "{id} s_intrinsic");
         if p.contract.verification_status == "Contract" {
             assert!(
                 p.acceptance.strength_mae_max.is_some(),

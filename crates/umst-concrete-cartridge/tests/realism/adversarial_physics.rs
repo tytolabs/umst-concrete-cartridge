@@ -40,8 +40,7 @@ fn assert_all_finite_2(t: Tensor<B, 2>, ctx: &str) {
     let v = data.value.as_slice();
     assert!(
         v.iter().all(|x| x.is_finite()),
-        "{ctx}: non-finite values in {:?}",
-        v
+        "{ctx}: non-finite values in {v:?}",
     );
 }
 
@@ -50,8 +49,7 @@ fn assert_all_finite_4(t: Tensor<B, 4>, ctx: &str) {
     let v = data.value.as_slice();
     assert!(
         v.iter().all(|x| x.is_finite()),
-        "{ctx}: non-finite values in {:?}",
-        v
+        "{ctx}: non-finite values in {v:?}",
     );
 }
 
@@ -124,8 +122,7 @@ fn tensor_engines_physical_sanity_under_adversarial_inputs() {
     let d_max = d_cl.into_data().value.iter().copied().fold(0_f32, f32::max);
     assert!(
         d_max < 1e-8 && d_max > 1e-20,
-        "expected sub-nanoscale D_Cl with ref=1e-12 m²/s, got {}",
-        d_max
+        "expected sub-nanoscale D_Cl with ref=1e-12 m²/s, got {d_max}",
     );
 
     // --- Printability ---

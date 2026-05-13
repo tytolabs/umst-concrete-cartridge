@@ -109,10 +109,9 @@ mod tests {
         let s = String::from_utf8(canonical_json_bytes(&raw).unwrap()).unwrap();
         assert!(
             s.starts_with("{\"a\":"),
-            "lexicographic key order broken: {}",
-            s
+            "lexicographic key order broken: {s}",
         );
-        assert!(s.contains("\"b\":2,\"m\":3"), "{}", s);
+        assert!(s.contains("\"b\":2,\"m\":3"), "{s}");
     }
 
     #[test]

@@ -143,9 +143,7 @@ mod tests {
             );
             assert!(
                 p0.abs() < 0.02,
-                "phase {:?}: expected P≈0 at V0, got {}",
-                phase,
-                p0
+                "phase {phase:?}: expected P≈0 at V0, got {p0}",
             );
         }
     }

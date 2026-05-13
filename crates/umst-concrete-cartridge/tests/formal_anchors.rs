@@ -456,10 +456,7 @@ fn walk_src() -> Result<Vec<Violation>, Box<dyn Error>> {
                     stack.push(pth);
                 } else {
                     let rel = pth.strip_prefix(workspace).unwrap_or_else(|_| {
-                        panic!(
-                            "walk_src path {:?} not under workspace root {:?}",
-                            pth, workspace
-                        )
+                        panic!("walk_src path {pth:?} not under workspace root {workspace:?}",)
                     });
                     let static_rel: &'static str =
                         Box::leak(rel.to_string_lossy().into_owned().into_boxed_str());

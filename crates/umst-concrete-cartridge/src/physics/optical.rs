@@ -232,16 +232,15 @@ mod tests {
         let epslw = radiative_cooling_emissivity(&prof, 0.05);
         assert!(
             (0.22..=0.38).contains(&rs),
-            "solar_reflectance={} expected ~0.25–0.35",
-            rs
+            "solar_reflectance={rs} expected ~0.25–0.35",
         );
-        assert!(a_uv > 0.65, "uv absorption={}", a_uv);
-        assert!(epslw > 0.85, "lwir emissivity={}", epslw);
+        assert!(a_uv > 0.65, "uv absorption={a_uv}");
+        assert!(epslw > 0.85, "lwir emissivity={epslw}");
     }
 
     #[test]
     fn paste_bulk_modulus_finite() {
         let k = paste_bulk_modulus_voigt_from_wc_gpa(0.4);
-        assert!(k > 5.0 && k < 40.0, "k={}", k);
+        assert!(k > 5.0 && k < 40.0, "k={k}");
     }
 }
