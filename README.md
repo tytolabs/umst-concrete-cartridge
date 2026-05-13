@@ -12,9 +12,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 A differentiable constitutive engine for cementitious materials, built to run on the [UMST manifold](https://github.com/tytolabs/umst-manifold). It provides a single Rust façade (with PyO3 and MCP bindings) for evaluating mix designs, predicting hydration kinetics, and running adjoint-based topology optimization for structural components.
 
-<p align="center">
-  <img src="docs/assets/beam_strut_and_tie.gif" alt="RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)" width="960" />
-</p>
+![RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)](./docs/assets/beam_strut_and_tie.gif)
 
 *The hero GIF is a 32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row, rendered to `notebooks/_artifacts/beam_strut_and_tie.gif` (viridis ρ, compliance strip, captions). It is meant for structural engineers and architects reading strut-and-tie–like load paths in the density field—same UMST/MaOS mechanics façade as the rest of the cartridge, not a separate production solver UI.*
 
