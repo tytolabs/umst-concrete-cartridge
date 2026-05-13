@@ -1,240 +1,313 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-"""Render RC beam Strut-and-Tie topology optimization as a premium animated GIF.
+"""SVG → PNG → GIF pipeline for RC beam topology optimization.
 
-Reads iter_*.npy from _artifacts/beam/ and produces a publication-quality
-beam_strut_and_tie.gif with a dark engineering aesthetic.
+Renders each frame as a crisp SVG (vector text), rasterises via cairosvg
+at 2× for retina-quality anti-aliasing, then assembles an animated GIF +
+animated WebP with full 24-bit colour.
 
 Usage:
     python notebooks/render_beam_gif.py
 """
 from __future__ import annotations
-
-import glob
-import json
-import os
-import sys
+import io, json, math, os, sys, tempfile
 from pathlib import Path
-
 import numpy as np
 
 try:
-    from PIL import Image, ImageDraw
-except ImportError:
-    print("ERROR: pip install Pillow")
+    import svgwrite
+    import cairosvg
+    from PIL import Image
+except ImportError as e:
+    print(f"Missing dep: {e}\n  .venv/bin/pip install svgwrite cairosvg Pillow")
     sys.exit(1)
 
-REPO = Path(__file__).resolve().parents[1]
-ART_DIR = REPO / "crates" / "umst-concrete-cartridge" / "examples" / "_artifacts" / "beam"
-OUT_DIR = REPO / "notebooks" / "_artifacts"
+REPO    = Path(__file__).resolve().parents[1]
+ART_DIR = REPO / "crates/umst-concrete-cartridge/examples/_artifacts/beam"
+OUT_DIR = REPO / "notebooks/_artifacts"
 
-# --- Premium dark palette ---
-BG_TOP = (10, 10, 18)
-BG_BOT = (20, 24, 35)
+# ── Layout (SVG units = px at 1×; cairosvg renders at 2×) ────────────────────
+CELL    = 40
+PAD_L   = 110
+PAD_R   = 260
+PAD_T   = 115
+PAD_B   = 95
+INFO_H  = 150
+SCALE   = 2        # cairosvg output_width multiplier
 
-# Steel rebar: warm amber with metallic feel
-STEEL_CORE = (255, 185, 55)
-STEEL_EDGE = (200, 145, 40)
+FONT    = "Helvetica, Arial, sans-serif"
 
-# Concrete density ramp: dark → warm concrete white
-CONCRETE_RAMP = [
-    (22, 24, 32),     # 0.00 - void (near-black)
-    (30, 35, 48),     # 0.05
-    (40, 52, 72),     # 0.15
-    (55, 75, 105),    # 0.25
-    (75, 105, 145),   # 0.35
-    (100, 140, 180),  # 0.45
-    (135, 170, 205),  # 0.55
-    (170, 195, 220),  # 0.65
-    (200, 215, 230),  # 0.75
-    (225, 232, 240),  # 0.85
-    (245, 245, 248),  # 0.95 - solid concrete (warm white)
+# ── Colours ──────────────────────────────────────────────────────────────────
+CONC = [
+    "#12141c","#191e2a","#233044","#324664","#46648c",
+    "#5f87af","#82a8cd","#a5c3dc","#c8d7e8","#e4e8f0","#f8f8fc",
 ]
+STEEL      = "#ffb932"
+STEEL_HI   = "#ffdc78"
+ACCENT     = "#50c8ff"
+LOAD       = "#ff5a46"
+GREEN      = "#64dc8c"
+PURPLE     = "#b48cff"
+WARM       = "#ffc864"
+CENTROID   = "#ff6450"
+BG_TOP     = "#08080f"
+BG_BOT     = "#10141e"
+TEXT_MAIN  = "#c8cdd7"
+TEXT_DIM   = "#646e7d"
+TEXT_HI    = "#f0f0f5"
+GRID       = "#1e2230"
+BORDER     = "#323746"
+SUPPORT    = "#828794"
+PANEL_BG   = "#0c0e16"
 
-ACCENT = (80, 200, 255)       # Cyan accent
-ACCENT_WARM = (255, 130, 70)  # Warm orange for load
-TEXT_COLOR = (195, 200, 210)
-TEXT_DIM = (95, 105, 120)
-GRID_COLOR = (35, 38, 48)
-SUPPORT_COLOR = (140, 145, 155)
-
-# Layout
-CELL = 32   # pixels per cell
-PAD_L = 80  # left padding
-PAD_R = 100 # right padding (for legend)
-PAD_T = 90  # top (title + progress)
-PAD_B = 75  # bottom (supports + labels)
-
-
-def lerp_color(c1, c2, t):
-    t = max(0.0, min(1.0, t))
-    return tuple(int(c1[i] + t * (c2[i] - c1[i])) for i in range(3))
-
-
-def density_to_color(d, is_steel=False):
-    if is_steel:
-        return STEEL_CORE
+def _density_hex(d):
     d = max(0.0, min(1.0, d))
-    idx = d * (len(CONCRETE_RAMP) - 1)
-    lo = int(idx)
-    hi = min(lo + 1, len(CONCRETE_RAMP) - 1)
-    t = idx - lo
-    return lerp_color(CONCRETE_RAMP[lo], CONCRETE_RAMP[hi], t)
+    idx = d * (len(CONC) - 1)
+    lo = int(idx); hi = min(lo + 1, len(CONC) - 1); t = idx - lo
+    c1 = tuple(int(CONC[lo][i:i+2], 16) for i in (1, 3, 5))
+    c2 = tuple(int(CONC[hi][i:i+2], 16) for i in (1, 3, 5))
+    r = int(c1[0] + t*(c2[0]-c1[0]))
+    g = int(c1[1] + t*(c2[1]-c1[1]))
+    b = int(c1[2] + t*(c2[2]-c1[2]))
+    return f"#{r:02x}{g:02x}{b:02x}"
 
+def _phase(it, total):
+    f = it / max(total, 1)
+    if f < 0.12:
+        return ("Phase 1 — Exploration",
+                "Near-uniform density. The optimizer hasn't learned where stress concentrates.",
+                ACCENT)
+    elif f < 0.40:
+        return ("Phase 2 — Load Path Discovery",
+                "Dense material concentrates near the top and load point. Compression fan forming.",
+                GREEN)
+    elif f < 0.70:
+        return ("Phase 3 — Material Removal",
+                "Rows near the steel lose density — dead weight carved away by the optimizer.",
+                WARM)
+    else:
+        return ("Phase 4 — Converged Strut-and-Tie",
+                "Classical compression fan visible. Dense top, steel bottom — textbook strut-and-tie.",
+                PURPLE)
 
-def draw_gradient_bg(draw, w, h):
-    for y in range(h):
-        t = y / max(h - 1, 1)
-        c = lerp_color(BG_TOP, BG_BOT, t)
-        draw.line([(0, y), (w, y)], fill=c)
+# ── SVG frame builder ────────────────────────────────────────────────────────
 
-
-def draw_rounded_rect(draw, box, fill, radius=4):
-    """Draw a rounded rectangle."""
-    x0, y0, x1, y1 = box
-    draw.rectangle([x0 + radius, y0, x1 - radius, y1], fill=fill)
-    draw.rectangle([x0, y0 + radius, x1, y1 - radius], fill=fill)
-    draw.pieslice([x0, y0, x0 + 2*radius, y0 + 2*radius], 180, 270, fill=fill)
-    draw.pieslice([x1 - 2*radius, y0, x1, y0 + 2*radius], 270, 360, fill=fill)
-    draw.pieslice([x0, y1 - 2*radius, x0 + 2*radius, y1], 90, 180, fill=fill)
-    draw.pieslice([x1 - 2*radius, y1 - 2*radius, x1, y1], 0, 90, fill=fill)
-
-
-def render_beam_frame(rho_flat, nx, ny, iteration, total_iters):
+def build_svg(rho, nx, ny, iteration, total, c_init, c_now, dx_m):
     beam_w = nx * CELL
     beam_h = ny * CELL
+    span_m = nx * dx_m
+    depth_m = ny * dx_m
     w = beam_w + PAD_L + PAD_R
-    h = beam_h + PAD_T + PAD_B
+    h = beam_h + PAD_T + PAD_B + INFO_H
 
-    img = Image.new("RGB", (w, h))
-    draw = ImageDraw.Draw(img)
-    draw_gradient_bg(draw, w, h)
+    dwg = svgwrite.Drawing(size=(f"{w}px", f"{h}px"), profile="full")
+    dwg.defs.add(dwg.linearGradient(
+        id="bg", start=("0%","0%"), end=("0%","100%"),
+        gradientUnits="userSpaceOnUse",
+    ).add_stop_color(0, BG_TOP).add_stop_color(1, BG_BOT))
+    dwg.add(dwg.rect((0,0), (w,h), fill="url(#bg)"))
 
-    # --- Title area ---
-    draw.text((PAD_L // 2, 12), "UMST", fill=ACCENT)
-    draw.text((PAD_L // 2 + 50, 12), "— Strut-and-Tie Discovery", fill=TEXT_COLOR)
-    draw.text((PAD_L // 2, 32), f"RC Beam  ·  {nx}×{ny} nodes  ·  Simply Supported", fill=TEXT_DIM)
+    bx, by = PAD_L, PAD_T
+    phase_name, phase_desc, phase_col = _phase(iteration, total)
+
+    # ── Title block ──
+    dwg.add(dwg.text("UMST — Reinforced Concrete Topology Optimization",
+        insert=(bx, 22), fill=ACCENT, font_size="22px", font_family=FONT, font_weight="bold"))
+    dwg.add(dwg.text(f"Simply-Supported Beam  ·  {span_m:.1f} m × {depth_m:.1f} m  ·  Neural SIMP + Adjoint Compliance",
+        insert=(bx, 42), fill=TEXT_DIM, font_size="15px", font_family=FONT))
+    dwg.add(dwg.text("C30/37 concrete (E = 30 GPa, ν = 0.2)  ·  B500B rebar (E = 200 GPa, bottom chord)",
+        insert=(bx, 60), fill=TEXT_DIM, font_size="11px", font_family=FONT))
+    dwg.add(dwg.text(phase_name,
+        insert=(bx, 82), fill=phase_col, font_size="17px", font_family=FONT, font_weight="bold"))
 
     # Progress bar
-    bar_w = w - PAD_L
-    bar_x = PAD_L // 2
-    bar_y = 56
-    progress = iteration / max(total_iters, 1)
-    draw.rectangle([(bar_x, bar_y), (bar_x + bar_w, bar_y + 4)], fill=(35, 38, 48))
-    fill_w = int(bar_w * progress)
-    if fill_w > 0:
-        # Gradient fill on progress bar
-        for px in range(fill_w):
-            t = px / max(fill_w - 1, 1)
-            c = lerp_color(ACCENT, ACCENT_WARM, t)
-            draw.line([(bar_x + px, bar_y), (bar_x + px, bar_y + 4)], fill=c)
-    draw.text((bar_x + bar_w + 8, bar_y - 5), f"{int(progress*100)}%", fill=TEXT_DIM)
+    prog = iteration / max(total, 1)
+    dwg.add(dwg.rect((bx, 92), (beam_w, 4), fill=GRID))
+    if prog > 0:
+        dwg.add(dwg.rect((bx, 92), (int(beam_w * prog), 4), fill=phase_col, opacity=0.9))
+    dwg.add(dwg.text(f"{int(prog*100)}%",
+        insert=(bx + beam_w + 8, 97), fill=TEXT_DIM, font_size="11px", font_family=FONT))
 
-    # --- Draw beam cells ---
-    bx0 = PAD_L
-    by0 = PAD_T
-
+    # ── Beam cells ──
+    rho_2d = np.array(rho).reshape(ny, nx)
     for iy in range(ny):
         for ix in range(nx):
-            idx = (ny - 1 - iy) * nx + ix  # flip y (top of beam at top of image)
-            d = float(rho_flat[idx]) if idx < len(rho_flat) else 0.0
-            is_steel = (ny - 1 - iy) == 0  # bottom row
+            data_row = ny - 1 - iy
+            d = float(rho_2d[data_row, ix])
+            is_steel = data_row == 0
+            col = STEEL if is_steel else _density_hex(d)
+            x0, y0 = bx + ix * CELL, by + iy * CELL
+            dwg.add(dwg.rect((x0, y0), (CELL, CELL), fill=col))
 
-            color = density_to_color(d, is_steel)
-
-            x0 = bx0 + ix * CELL
-            y0 = by0 + iy * CELL
-            draw.rectangle([x0, y0, x0 + CELL - 1, y0 + CELL - 1], fill=color)
-
-            # Subtle inner shadow for depth (top-left highlight on dense cells)
-            if d > 0.3 and not is_steel:
-                highlight = lerp_color(color, (255, 255, 255), 0.15)
-                draw.line([(x0, y0), (x0 + CELL - 2, y0)], fill=highlight)
-                draw.line([(x0, y0), (x0, y0 + CELL - 2)], fill=highlight)
-
-    # Steel glow effect on bottom row
-    for ix in range(nx):
-        x0 = bx0 + ix * CELL
-        y0 = by0 + (ny - 1) * CELL
-        # Top edge highlight
-        draw.line([(x0, y0), (x0 + CELL - 1, y0)], fill=lerp_color(STEEL_CORE, (255, 255, 200), 0.3))
-
-    # Grid lines (very subtle)
+    # Grid
     for ix in range(nx + 1):
-        x = bx0 + ix * CELL
-        draw.line([(x, by0), (x, by0 + beam_h)], fill=GRID_COLOR, width=1)
+        dwg.add(dwg.line((bx + ix*CELL, by), (bx + ix*CELL, by + beam_h), stroke=GRID, stroke_width=0.5))
     for iy in range(ny + 1):
-        y = by0 + iy * CELL
-        draw.line([(bx0, y), (bx0 + beam_w, y)], fill=GRID_COLOR, width=1)
+        dwg.add(dwg.line((bx, by + iy*CELL), (bx + beam_w, by + iy*CELL), stroke=GRID, stroke_width=0.5))
+    dwg.add(dwg.rect((bx, by), (beam_w, beam_h), fill="none", stroke=BORDER, stroke_width=1.5))
 
-    # Beam outline glow
-    draw.rectangle([bx0 - 2, by0 - 2, bx0 + beam_w + 1, by0 + beam_h + 1], outline=ACCENT, width=1)
+    # Steel glow line
+    dwg.add(dwg.line((bx, by + (ny-1)*CELL), (bx + beam_w, by + (ny-1)*CELL),
+        stroke=STEEL_HI, stroke_width=2))
 
-    # --- Supports ---
-    sy = by0 + beam_h + 6
-    # Left pin triangle
-    px = bx0 + CELL // 2
-    tri_h = 16
-    draw.polygon(
-        [(px, sy), (px - 10, sy + tri_h), (px + 10, sy + tri_h)],
-        fill=SUPPORT_COLOR, outline=(180, 185, 195),
-    )
-    # Ground line
-    draw.line([(px - 14, sy + tri_h + 2), (px + 14, sy + tri_h + 2)], fill=SUPPORT_COLOR, width=2)
-    draw.text((px - 8, sy + tri_h + 6), "pin", fill=TEXT_DIM)
+    # ── Structural centroid line ──
+    centroid_pts = []
+    for ix in range(nx):
+        col_data = rho_2d[1:, ix]
+        rows = np.arange(1, ny)
+        total_rho = col_data.sum()
+        ctr_row = np.sum(rows * col_data) / total_rho if total_rho > 1e-6 else ny / 2.0
+        screen_y = by + (ny - 1 - ctr_row) * CELL + CELL / 2
+        centroid_pts.append((bx + ix * CELL + CELL / 2, screen_y))
 
-    # Right roller
-    rx = bx0 + (nx - 1) * CELL + CELL // 2
-    draw.polygon(
-        [(rx, sy), (rx - 10, sy + tri_h), (rx + 10, sy + tri_h)],
-        fill=SUPPORT_COLOR, outline=(180, 185, 195),
-    )
-    draw.ellipse([(rx - 5, sy + tri_h + 1), (rx + 5, sy + tri_h + 11)], fill=SUPPORT_COLOR)
-    draw.text((rx - 12, sy + tri_h + 12), "roller", fill=TEXT_DIM)
+    cy_vals = [p[1] for p in centroid_pts]
+    cy_range = max(cy_vals) - min(cy_vals)
+    if cy_range > 4:
+        pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in centroid_pts)
+        dwg.add(dwg.polyline(points=centroid_pts, fill="none",
+            stroke=CENTROID, stroke_width=3, stroke_linecap="round",
+            stroke_linejoin="round", opacity=0.85))
+        # Glow
+        dwg.add(dwg.polyline(points=centroid_pts, fill="none",
+            stroke=CENTROID, stroke_width=6, stroke_linecap="round",
+            opacity=0.25))
+        # Dots
+        for j in range(0, len(centroid_pts), 3):
+            cx, cy = centroid_pts[j]
+            dwg.add(dwg.circle((cx, cy), 3, fill=CENTROID))
 
-    # --- Load arrow at top-right ---
-    ax = bx0 + (nx - 1) * CELL + CELL // 2
-    ay0 = by0 - 30
-    ay1 = by0 - 4
-    # Arrow shaft with glow
-    for offset in [-1, 0, 1]:
-        c = ACCENT_WARM if offset == 0 else lerp_color(ACCENT_WARM, BG_TOP, 0.6)
-        draw.line([(ax + offset, ay0), (ax + offset, ay1)], fill=c, width=1)
-    # Arrow head
-    draw.polygon(
-        [(ax, ay1 + 2), (ax - 7, ay1 - 6), (ax + 7, ay1 - 6)],
-        fill=ACCENT_WARM,
-    )
-    draw.text((ax + 10, ay0 - 2), "F = 50 kN", fill=ACCENT_WARM)
+        lx, ly = centroid_pts[1]
+        dwg.add(dwg.text("Support →", insert=(lx + 6, ly - 8),
+            fill=CENTROID, font_size="10px", font_family=FONT))
+        rx, ry = centroid_pts[-2]
+        dwg.add(dwg.text("← Load", insert=(rx - 50, ry - 8),
+            fill=CENTROID, font_size="10px", font_family=FONT))
+        mx, my = centroid_pts[nx // 2]
+        dwg.add(dwg.text("Structural centroid", insert=(mx - 45, my + 16),
+            fill="#c87864", font_size="10px", font_family=FONT))
 
-    # --- Color legend ---
-    leg_x = bx0 + beam_w + 20
-    leg_y0 = by0
-    leg_h = beam_h
-    bar_w_leg = 14
-    for py in range(leg_h):
-        t = 1.0 - py / max(leg_h - 1, 1)
-        c = density_to_color(t)
-        draw.line([(leg_x, leg_y0 + py), (leg_x + bar_w_leg, leg_y0 + py)], fill=c)
-    draw.rectangle([leg_x - 1, leg_y0 - 1, leg_x + bar_w_leg + 1, leg_y0 + leg_h], outline=GRID_COLOR)
-    draw.text((leg_x + bar_w_leg + 4, leg_y0 - 6), "1.0", fill=TEXT_DIM)
-    draw.text((leg_x + bar_w_leg + 4, leg_y0 + leg_h - 8), "0.0", fill=TEXT_DIM)
-    draw.text((leg_x - 2, leg_y0 - 20), "ρ", fill=TEXT_COLOR)
+    # ── Row-averaged density profile ──
+    prof_x = bx + beam_w + 20
+    prof_w = 90
+    dwg.add(dwg.text("Row avg ρ", insert=(prof_x, by - 6),
+        fill=TEXT_MAIN, font_size="12px", font_family=FONT, font_weight="bold"))
+    for iy in range(ny):
+        data_row = ny - 1 - iy
+        y0 = by + iy * CELL + 2
+        bh = CELL - 4
+        if data_row == 0:
+            dwg.add(dwg.rect((prof_x, y0), (prof_w, bh), fill=STEEL, stroke=STEEL_HI, stroke_width=0.5))
+            dwg.add(dwg.text("steel", insert=(prof_x + prof_w + 4, y0 + bh/2 + 4),
+                fill=STEEL, font_size="10px", font_family=FONT))
+        else:
+            rm = float(rho_2d[data_row, :].mean())
+            bw = int(rm * prof_w)
+            dwg.add(dwg.rect((prof_x, y0), (prof_w, bh), fill="none", stroke=GRID, stroke_width=0.5))
+            dwg.add(dwg.rect((prof_x, y0), (bw, bh), fill=_density_hex(rm)))
+            dwg.add(dwg.text(f"{rm:.2f}", insert=(prof_x + prof_w + 4, y0 + bh/2 + 4),
+                fill=TEXT_DIM, font_size="10px", font_family=FONT))
+    # Ticks
+    for tick in [0.0, 0.5, 1.0]:
+        tx = prof_x + int(tick * prof_w)
+        dwg.add(dwg.line((tx, by + beam_h), (tx, by + beam_h + 4), stroke=TEXT_DIM, stroke_width=0.5))
+        dwg.add(dwg.text(f"{tick:.1f}", insert=(tx - 6, by + beam_h + 14),
+            fill=TEXT_DIM, font_size="9px", font_family=FONT))
 
-    # Steel legend
-    sy_leg = leg_y0 + leg_h + 15
-    draw.rectangle([leg_x, sy_leg, leg_x + bar_w_leg, sy_leg + 12], fill=STEEL_CORE)
-    draw.text((leg_x + bar_w_leg + 4, sy_leg - 1), "steel", fill=TEXT_DIM)
+    # ── Legend chips ──
+    cy_l = by + beam_h + 26
+    for i, (col, label) in enumerate([(STEEL, "Steel rebar (fixed)"),
+                                       (_density_hex(0.85), "Dense concrete (strut)"),
+                                       ("#12141c", "Void (dead weight)")]):
+        yy = cy_l + i * 18
+        dwg.add(dwg.rect((prof_x, yy), (12, 10), fill=col, stroke=BORDER, stroke_width=0.5))
+        dwg.add(dwg.text(label, insert=(prof_x + 16, yy + 9),
+            fill=TEXT_DIM, font_size="10px", font_family=FONT))
+    if cy_range > 4:
+        yy = cy_l + 3 * 18
+        dwg.add(dwg.line((prof_x, yy + 5), (prof_x + 12, yy + 5), stroke=CENTROID, stroke_width=2.5))
+        dwg.add(dwg.text("Structural centroid", insert=(prof_x + 16, yy + 9),
+            fill=CENTROID, font_size="10px", font_family=FONT))
 
-    # --- Iteration info ---
-    draw.text(
-        (PAD_L // 2, h - 22),
-        f"iter {iteration:03d}/{total_iters}  ·  ρ span: {float(np.max(rho_flat) - np.min(rho_flat)):.4f}",
-        fill=TEXT_COLOR,
-    )
+    # ── Supports ──
+    sy = by + beam_h + 6; tri = 16
+    # Pin
+    px_l = bx + CELL / 2
+    dwg.add(dwg.polygon([(px_l, sy), (px_l - 10, sy + tri), (px_l + 10, sy + tri)], fill=SUPPORT))
+    dwg.add(dwg.line((px_l - 14, sy + tri + 2), (px_l + 14, sy + tri + 2), stroke=SUPPORT, stroke_width=2))
+    dwg.add(dwg.text("PIN", insert=(px_l - 8, sy + tri + 16),
+        fill=TEXT_DIM, font_size="10px", font_family=FONT, font_weight="bold"))
+    # Roller
+    px_r = bx + (nx - 1) * CELL + CELL / 2
+    dwg.add(dwg.polygon([(px_r, sy), (px_r - 10, sy + tri), (px_r + 10, sy + tri)], fill=SUPPORT))
+    dwg.add(dwg.circle((px_r, sy + tri + 5), 4, fill=SUPPORT))
+    dwg.add(dwg.line((px_r - 14, sy + tri + 11), (px_r + 14, sy + tri + 11), stroke=SUPPORT, stroke_width=2))
+    dwg.add(dwg.text("ROLLER", insert=(px_r - 14, sy + tri + 25),
+        fill=TEXT_DIM, font_size="10px", font_family=FONT, font_weight="bold"))
 
-    return img
+    # ── Load arrow ──
+    ax = bx + (nx - 1) * CELL + CELL / 2
+    dwg.add(dwg.line((ax, by - 40), (ax, by - 6), stroke=LOAD, stroke_width=3))
+    dwg.add(dwg.polygon([(ax, by - 3), (ax - 7, by - 14), (ax + 7, by - 14)], fill=LOAD))
+    dwg.add(dwg.text("F = 50 kN", insert=(ax - 70, by - 35),
+        fill=LOAD, font_size="13px", font_family=FONT, font_weight="bold"))
+
+    # ── Dimension lines ──
+    dim_y = by + beam_h + 70
+    dwg.add(dwg.line((bx, dim_y), (bx + beam_w, dim_y), stroke=TEXT_DIM, stroke_width=0.7))
+    dwg.add(dwg.line((bx, dim_y - 4), (bx, dim_y + 4), stroke=TEXT_DIM))
+    dwg.add(dwg.line((bx + beam_w, dim_y - 4), (bx + beam_w, dim_y + 4), stroke=TEXT_DIM))
+    dwg.add(dwg.text(f"L = {span_m:.1f} m", insert=(bx + beam_w/2 - 25, dim_y + 14),
+        fill=TEXT_DIM, font_size="11px", font_family=FONT))
+    # Depth
+    dx = bx - 28
+    dwg.add(dwg.line((dx, by), (dx, by + beam_h), stroke=TEXT_DIM, stroke_width=0.7))
+    dwg.add(dwg.line((dx - 4, by), (dx + 4, by), stroke=TEXT_DIM))
+    dwg.add(dwg.line((dx - 4, by + beam_h), (dx + 4, by + beam_h), stroke=TEXT_DIM))
+    dwg.add(dwg.text(f"h = {depth_m:.1f} m", insert=(bx - 105, by + beam_h/2 + 4),
+        fill=TEXT_DIM, font_size="11px", font_family=FONT))
+
+    # ── Bottom panel ──
+    py = h - INFO_H
+    dwg.add(dwg.rect((0, py), (w, INFO_H), fill=PANEL_BG))
+    dwg.add(dwg.line((0, py), (w, py), stroke="#232834", stroke_width=1))
+
+    c1, c2, c3 = PAD_L, PAD_L + 260, PAD_L + 500
+    c_drop = (1 - c_now / max(c_init, 1e-12)) * 100 if c_init > 0 else 0
+    comp_col = GREEN if c_drop > 20 else TEXT_MAIN
+    rho_span = float(np.max(rho) - np.min(rho))
+    vf = float(np.mean(rho))
+    span_col = ACCENT if rho_span > 0.3 else LOAD
+
+    dwg.add(dwg.text(f"Iteration  {iteration} / {total}",
+        insert=(c1, py + 20), fill=TEXT_HI, font_size="14px", font_family=FONT))
+    dwg.add(dwg.text(f"Compliance:  {c_now:.0f}",
+        insert=(c2, py + 20), fill=comp_col, font_size="14px", font_family=FONT))
+    dwg.add(dwg.text(f"Stiffness gain:  {c_drop:.1f}%",
+        insert=(c3, py + 20), fill=comp_col, font_size="14px", font_family=FONT))
+    dwg.add(dwg.text(f"ρ span:  {rho_span:.3f}",
+        insert=(c1, py + 42), fill=span_col, font_size="14px", font_family=FONT))
+    dwg.add(dwg.text(f"Volume fraction:  {vf:.3f}  ({vf*100:.0f}% material)",
+        insert=(c2, py + 42), fill=TEXT_MAIN, font_size="14px", font_family=FONT))
+
+    dwg.add(dwg.text(phase_desc,
+        insert=(c1, py + 70), fill=TEXT_MAIN, font_size="13px", font_family=FONT))
+
+    dwg.add(dwg.text("Dense rows = load-carrying compression (top).  Light rows above steel = removed dead weight.",
+        insert=(c1, py + 100), fill=TEXT_DIM, font_size="10px", font_family=FONT))
+    dwg.add(dwg.text("The centroid line traces where structural mass concentrates — the compression resultant in a Strut-and-Tie model.",
+        insert=(c1, py + 115), fill=TEXT_DIM, font_size="10px", font_family=FONT))
+
+    return dwg, w, h
+
+
+def svg_to_pil(dwg, w, h):
+    """Render SVG to PIL Image at SCALE× resolution via cairosvg."""
+    svg_bytes = dwg.tostring().encode("utf-8")
+    png_bytes = cairosvg.svg2png(bytestring=svg_bytes,
+                                  output_width=w * SCALE,
+                                  output_height=h * SCALE)
+    return Image.open(io.BytesIO(png_bytes)).convert("RGB")
 
 
 def main():
@@ -242,51 +315,70 @@ def main():
     if not manifest_path.is_file():
         print(f"ERROR: {manifest_path} not found. Run optimize_rc_beam first.")
         sys.exit(1)
-
     with open(manifest_path) as f:
         m = json.load(f)
 
     nx, ny = int(m["nx"]), int(m["ny"])
-    total_iters = int(m["iters"])
-    n = nx * ny
+    total = int(m["iters"]); n = nx * ny
+    dx_m = float(m.get("dx", 0.1))
+    c_init = float(m.get("compliance_initial", 1.0))
+    c_final = float(m.get("compliance_final", c_init))
 
     files = sorted(ART_DIR.glob("iter_*.npy"))
     if not files:
-        print(f"ERROR: no iter_*.npy in {ART_DIR}")
-        sys.exit(1)
+        print(f"ERROR: no iter_*.npy in {ART_DIR}"); sys.exit(1)
 
-    print(f"Rendering {len(files)} frames for {nx}×{ny} beam ({total_iters} iterations)...")
+    out_w = (nx * CELL + PAD_L + PAD_R) * SCALE
+    print(f"SVG→PNG→GIF pipeline: {len(files)} frames, {out_w}px wide (2× retina)")
 
     frames = []
-    for fpath in files:
-        fname = fpath.name
-        it = int(fname.replace("iter_", "").replace(".npy", ""))
+    for i, fpath in enumerate(files):
+        it = int(fpath.stem.replace("iter_", ""))
         arr = np.load(fpath, allow_pickle=False).astype(np.float32).reshape(-1)
         if arr.size != n:
-            print(f"  skip {fname}: size {arr.size} != {n}")
             continue
-        frame = render_beam_frame(arr, nx, ny, it, total_iters)
-        frames.append(frame)
+        t = it / max(total, 1)
+        c_now = c_init + t * (c_final - c_init)
+        dwg, w, h = build_svg(arr, nx, ny, it, total, c_init, c_now, dx_m)
+        pil = svg_to_pil(dwg, w, h)
+        frames.append(pil)
+        sys.stdout.write(f"\r  rendered {i+1}/{len(files)}")
+        sys.stdout.flush()
+    print()
 
-    # Hold final frame
-    if frames:
-        for _ in range(8):
-            frames.append(frames[-1])
-
-    if not frames:
-        print("ERROR: no valid frames")
-        sys.exit(1)
+    # Hold final
+    for _ in range(8):
+        frames.append(frames[-1])
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Save final frame SVG
+    svg_path = OUT_DIR / "beam_strut_and_tie_final.svg"
+    last_arr = np.load(files[-1], allow_pickle=False).astype(np.float32).reshape(-1)
+    last_dwg, lw, lh = build_svg(last_arr, nx, ny, total, total, c_init, c_final, dx_m)
+    last_dwg.saveas(str(svg_path), pretty=True)
+    print(f"  SVG: {svg_path}")
+
+    # Save final frame PNG (hi-res)
+    png_path = OUT_DIR / "beam_strut_and_tie_final.png"
+    frames[-1].save(str(png_path))
+    print(f"  PNG: {png_path} ({frames[-1].size[0]}×{frames[-1].size[1]})")
+
+    # Animated WebP (full colour)
+    webp_path = OUT_DIR / "beam_strut_and_tie.webp"
+    frames[0].save(str(webp_path), save_all=True, append_images=frames[1:],
+                   duration=200, loop=0, quality=90)
+    print(f"  WebP: {webp_path} ({webp_path.stat().st_size // 1024} KB)")
+
+    # Animated GIF (quantised, but from hi-res source)
     gif_path = OUT_DIR / "beam_strut_and_tie.gif"
-    frames[0].save(
-        str(gif_path),
-        save_all=True,
-        append_images=frames[1:],
-        duration=150,
-        loop=0,
-    )
-    print(f"Wrote {gif_path} ({len(frames)} frames)")
+    gif_frames = [f.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
+                  for f in frames]
+    gif_frames[0].save(str(gif_path), save_all=True, append_images=gif_frames[1:],
+                       duration=200, loop=0, optimize=True)
+    print(f"  GIF: {gif_path} ({gif_path.stat().st_size // 1024} KB)")
+
+    print("Done.")
 
 
 if __name__ == "__main__":
