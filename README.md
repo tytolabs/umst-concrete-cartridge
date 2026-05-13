@@ -36,6 +36,46 @@ With **`solver-experimental`** disabled (default), `ConcreteCartridge::compute_t
 
 Root **`Dockerfile`** / **`docker-compose.yml`** package the MCP service for container deployment.
 
+## Example tasks
+
+- **CLI predict (stdin JSON):** `echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict` — needs `umst` on `PATH` (`cargo install --path crates/umst-cli`).
+- **CLI audit (CSV pipe):** `head -n2 datasets/dataset_d1.csv | umst --profile uci_d1 audit`.
+- **Workspace tests (Rust):** `cargo test --workspace` at repo root (CI also runs `python3 scripts/mcp_smoke.py` and `cargo clippy --workspace --all-targets --features solver-experimental,render -- -D warnings`; see [`.github/workflows/rust.yml`](.github/workflows/rust.yml)).
+- **Hydration example (default features):** `cargo run -p umst-concrete-cartridge --example hydration_simulation`.
+- **Striatus / RC demos (heavy, CPU):** `cargo run --release -p umst-concrete-cartridge --example optimize_rc_beam --features solver-experimental` and the small shell smoke in [`notebooks/README.md`](notebooks/README.md) (`UMST_SHELL_NX=6` … `optimize_shell_3d` with `solver-experimental render`).
+- **Python + notebooks:** `pip install './crates/umst-py[notebook]'` then `./notebooks/run_all.sh` from repo root.
+- **Editable bindings (maturin):** `cd crates/umst-py && maturin develop --release --extras notebook` (or `maturin develop --extras notebook` without `--release` for faster iteration).
+- **MCP smoke (CI parity):** `python3 scripts/mcp_smoke.py` from repo root (drives the stdio MCP server the same way CI does).
+- **MCP stdio server:** `cargo run -p umst-mcp` — tools and Docker mirror in [`crates/umst-mcp/README.md`](crates/umst-mcp/README.md).
+
+## Surfaces & entrypoints
+
+| Surface | Best for | Copy-paste | Prerequisites |
+|--------|----------|------------|-----------------|
+| **Rust library** (`umst-concrete-cartridge`) | Striatus hooks, constitutive + manifold composition in Rust | `cargo build -p umst-concrete-cartridge` / `cargo test -p umst-concrete-cartridge` | **Rust 1.88** ([`rust-toolchain.toml`](rust-toolchain.toml)); pulls [`umst-manifold`](https://github.com/tytolabs/umst-manifold) from git `main`. |
+| **Cargo examples** | End-to-end demos | `cargo run -p umst-concrete-cartridge --example hydration_simulation` (default); `… optimize_rc_beam --features solver-experimental`; `… optimize_shell_3d --features 'solver-experimental render'` | Examples that need **`solver-experimental`** / **`render`** are declared in [`crates/umst-concrete-cartridge/Cargo.toml`](crates/umst-concrete-cartridge/Cargo.toml). |
+| **CLI** (`umst`, `umst-canonical`) | Scripting, CI contracts, canonical JSON | `cargo install --path crates/umst-cli` then `umst --help` | Same Rust toolchain; bins defined in [`crates/umst-cli/Cargo.toml`](crates/umst-cli/Cargo.toml). |
+| **Python** (`umst_concrete_cartridge`) | Notebooks, pandas pipelines, pytest | `pip install './crates/umst-py[notebook]'` or `cd crates/umst-py && maturin develop --extras notebook` | Python **≥ 3.10** ([`crates/umst-py/pyproject.toml`](crates/umst-py/pyproject.toml)); optional **`[render]`** / **`[tests]`** extras for shell tooling / `pytest`. |
+| **Docker** | MCP image / compose deploy | `docker compose build` then `docker compose run --rm umst-mcp` | Docker engine; [`Dockerfile`](Dockerfile) builds `umst-mcp` release binary; [`docker-compose.yml`](docker-compose.yml) mounts `./calibration` read-only. |
+| **MCP** | IDE and agent integrations over stdio | `cargo run -p umst-mcp` (host) or compose command above | JSON-RPC lines on stdin/stdout; tool list in [`crates/umst-mcp/README.md`](crates/umst-mcp/README.md). |
+
+**Manifold-only:** differentiable substrate, solver lanes, and `IScienceCartridge` host APIs live in **[`umst-manifold`](https://github.com/tytolabs/umst-manifold)** — no PyO3/MCP there. This repo owns the concrete cartridge façade plus CLI/Python/MCP/Docker packaging.
+
+## Choose your path
+
+- **Library author (Rust):** Work in `crates/umst-concrete-cartridge`; align manifold features with [`docs/Solver-Status.md`](docs/Solver-Status.md) and the upstream [manifold solver table](https://github.com/tytolabs/umst-manifold/blob/main/docs/Solver-Status.md).
+- **Application engineer:** Prefer **`umst` CLI** for quick JSON/CSV contracts, then **`umst-py`** when you need notebooks or Python tests.
+- **Researcher / repro:** [`notebooks/README.md`](notebooks/README.md) for headless notebook runs and shell/RC artefact gates; [`docs/Validation.md`](docs/Validation.md) and [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md) for science narrative.
+- **Integrator / agent host:** Run **`umst-mcp`** via `cargo run -p umst-mcp` locally or **`docker compose`** for the same binary in a distroless image; point clients at the stdio transport documented in [`crates/umst-mcp/README.md`](crates/umst-mcp/README.md).
+
+## For agents
+
+- **Repo root:** `umst-concrete-cartridge/` checkout — run `cargo`, `docker compose`, and `pip` paths relative to this directory unless a sub-crate README specifies `crates/umst-py`.
+- **Read first:** [`README.md`](README.md), [`crates/umst-mcp/README.md`](crates/umst-mcp/README.md), [`scripts/mcp_smoke.py`](scripts/mcp_smoke.py), [`notebooks/README.md`](notebooks/README.md), [`docs/Solver-Status.md`](docs/Solver-Status.md), [`.github/workflows/rust.yml`](.github/workflows/rust.yml), [`.github/workflows/docker.yml`](.github/workflows/docker.yml), [`.github/workflows/notebook.yml`](.github/workflows/notebook.yml).
+- **Safe, no-GPU defaults:** `cargo test --workspace`, `python3 scripts/mcp_smoke.py`, `cargo run -p umst-concrete-cartridge --example hydration_simulation`, `echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict` (with CLI installed), `pip install './crates/umst-py[notebook]'` + `./notebooks/run_all.sh`, `docker compose build`.
+- **If you want X → run Y:** JSON strength scratch → `umst … predict`; CSV sanity → `umst … audit`; Python import smoke → `pip install './crates/umst-py[notebook]'` then `python3 -c "import umst_concrete_cartridge"`; MCP tool calls → `cargo run -p umst-mcp` and drive `umst_predict` / `umst_audit` per [`crates/umst-mcp/README.md`](crates/umst-mcp/README.md); solver-heavy concrete demos → add `--features solver-experimental` (and `render` for `optimize_shell_3d`).
+- **Before editing:** read [`docs/WireSchemas.md`](docs/WireSchemas.md) / [`docs/Solver-Status.md`](docs/Solver-Status.md) before changing `schema/`, calibration JSON, or manifold feature forwards; run `cargo clippy --workspace --all-targets --features solver-experimental,render -- -D warnings` to mirror Linux CI.
+
 ## Feature flags (cartridge)
 
 Declared in [`crates/umst-concrete-cartridge/Cargo.toml`](crates/umst-concrete-cartridge/Cargo.toml); names mirror the manifold.
