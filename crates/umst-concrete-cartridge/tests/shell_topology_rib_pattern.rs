@@ -273,7 +273,9 @@ fn xy_top_slice_variance(rho: &[f32], nx: usize, ny: usize, nz: usize) -> f32 {
 }
 
 /// Volume mean of **`4ρ(1−ρ)`** on **`ρ_bar`** `[1,N,1]` (same statistic as [`greyness_mean`] on flat **`ρ`**).
-fn mean_greyness_tensor<B: AutodiffBackend<FloatElem = f32>>(rho_bar: Tensor<B, 3>) -> Tensor<B, 1> {
+fn mean_greyness_tensor<B: AutodiffBackend<FloatElem = f32>>(
+    rho_bar: Tensor<B, 3>,
+) -> Tensor<B, 1> {
     let [batch, n, c] = rho_bar.dims();
     assert_eq!((batch, c), (1, 1));
     let count = n.max(1) as f32;
@@ -522,13 +524,8 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         .unwrap_or(1e-3_f32)
         .clamp(1e-9, 1.0);
 
-    let (
-        grey_lambda,
-        xy_var_lambda,
-        heaviside_beta0,
-        density_init_jitter,
-        xy_rib_prior_amp,
-    ) = parse_umst_shell_b6_aux_env();
+    let (grey_lambda, xy_var_lambda, heaviside_beta0, density_init_jitter, xy_rib_prior_amp) =
+        parse_umst_shell_b6_aux_env();
     let heaviside_beta_max = env::var("UMST_SHELL_HEAVISIDE_BETA_MAX")
         .ok()
         .and_then(|s| s.parse().ok())
