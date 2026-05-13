@@ -4,8 +4,16 @@
 """SVG → PNG → GIF pipeline for RC beam topology optimization.
 
 Renders each frame as a crisp SVG (vector text), rasterises via cairosvg
-at 2× for retina-quality anti-aliasing, then assembles an animated GIF +
-animated WebP with full 24-bit colour.
+at configurable supersample for retina-quality anti-aliasing, then assembles
+an animated GIF + animated WebP with full 24-bit colour.
+
+Environment (optional, read in ``main()``):
+
+* ``UMST_BEAM_GIF_FRAME_MS`` — per-frame duration for GIF/WebP (default **200**).
+* ``UMST_BEAM_GIF_HOLD_FRAMES`` — duplicate copies of the final frame at the end (default **8**).
+* ``UMST_BEAM_GIF_HOLD_MS`` — if set, duplicated hold frames use this duration (ms); else they use ``UMST_BEAM_GIF_FRAME_MS``.
+* ``UMST_BEAM_GIF_SUPERSAMPLE`` — integer ≥1 passed to cairosvg as width/height multiplier vs SVG px (default **2**).
+* ``UMST_BEAM_GIF_MAX_SIDE`` — if set, downscale each raster frame so max(width,height) ≤ this value (aspect preserved).
 
 Usage:
     python notebooks/render_beam_gif.py
@@ -301,13 +309,39 @@ def build_svg(rho, nx, ny, iteration, total, c_init, c_now, dx_m):
     return dwg, w, h
 
 
-def svg_to_pil(dwg, w, h):
-    """Render SVG to PIL Image at SCALE× resolution via cairosvg."""
+def svg_to_pil(dwg, w, h, supersample: int):
+    """Render SVG to PIL Image at ``supersample``× resolution via cairosvg."""
+    ss = max(1, int(supersample))
     svg_bytes = dwg.tostring().encode("utf-8")
-    png_bytes = cairosvg.svg2png(bytestring=svg_bytes,
-                                  output_width=w * SCALE,
-                                  output_height=h * SCALE)
+    png_bytes = cairosvg.svg2png(
+        bytestring=svg_bytes,
+        output_width=w * ss,
+        output_height=h * ss,
+    )
     return Image.open(io.BytesIO(png_bytes)).convert("RGB")
+
+
+def _env_int(name: str, default: int, *, minimum: int = 0) -> int:
+    raw = os.environ.get(name)
+    if raw is None or not str(raw).strip():
+        return max(minimum, default)
+    try:
+        return max(minimum, int(raw))
+    except ValueError:
+        return max(minimum, default)
+
+
+def _maybe_cap_max_side(im: Image.Image, max_side: int | None) -> Image.Image:
+    if max_side is None or max_side <= 0:
+        return im
+    w, h = im.size
+    m = max(w, h)
+    if m <= max_side:
+        return im
+    scale = max_side / float(m)
+    nw = max(1, int(round(w * scale)))
+    nh = max(1, int(round(h * scale)))
+    return im.resize((nw, nh), Image.LANCZOS)
 
 
 def main():
@@ -317,6 +351,25 @@ def main():
         sys.exit(1)
     with open(manifest_path) as f:
         m = json.load(f)
+
+    frame_ms = _env_int("UMST_BEAM_GIF_FRAME_MS", 200, minimum=1)
+    hold_frames = _env_int("UMST_BEAM_GIF_HOLD_FRAMES", 8, minimum=0)
+    hold_ms_raw = os.environ.get("UMST_BEAM_GIF_HOLD_MS")
+    if hold_ms_raw is not None and str(hold_ms_raw).strip():
+        try:
+            hold_ms = max(1, int(hold_ms_raw))
+        except ValueError:
+            hold_ms = frame_ms
+    else:
+        hold_ms = frame_ms
+    supersample = _env_int("UMST_BEAM_GIF_SUPERSAMPLE", SCALE, minimum=1)
+    max_side_raw = os.environ.get("UMST_BEAM_GIF_MAX_SIDE")
+    max_side = None
+    if max_side_raw is not None and str(max_side_raw).strip():
+        try:
+            max_side = max(1, int(max_side_raw))
+        except ValueError:
+            max_side = None
 
     nx, ny = int(m["nx"]), int(m["ny"])
     total = int(m["iters"]); n = nx * ny
@@ -328,8 +381,11 @@ def main():
     if not files:
         print(f"ERROR: no iter_*.npy in {ART_DIR}"); sys.exit(1)
 
-    out_w = (nx * CELL + PAD_L + PAD_R) * SCALE
-    print(f"SVG→PNG→GIF pipeline: {len(files)} frames, {out_w}px wide (2× retina)")
+    out_w = (nx * CELL + PAD_L + PAD_R) * supersample
+    print(
+        f"SVG→PNG→GIF pipeline: {len(files)} frames, {out_w}px wide ({supersample}×), "
+        f"frame_ms={frame_ms}, hold_frames={hold_frames}, hold_ms={hold_ms}"
+    )
 
     frames = []
     for i, fpath in enumerate(files):
@@ -340,14 +396,15 @@ def main():
         t = it / max(total, 1)
         c_now = c_init + t * (c_final - c_init)
         dwg, w, h = build_svg(arr, nx, ny, it, total, c_init, c_now, dx_m)
-        pil = svg_to_pil(dwg, w, h)
+        pil = _maybe_cap_max_side(svg_to_pil(dwg, w, h, supersample), max_side)
         frames.append(pil)
         sys.stdout.write(f"\r  rendered {i+1}/{len(files)}")
         sys.stdout.flush()
     print()
 
-    # Hold final
-    for _ in range(8):
+    n_content = len(frames)
+    # Hold final (duplicate raster frames for end pause)
+    for _ in range(hold_frames):
         frames.append(frames[-1])
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -364,18 +421,51 @@ def main():
     frames[-1].save(str(png_path))
     print(f"  PNG: {png_path} ({frames[-1].size[0]}×{frames[-1].size[1]})")
 
+    n_body = n_content
+    n_hold = hold_frames
+    webp_durations = [frame_ms] * n_body + [hold_ms] * n_hold
+    if len(webp_durations) != len(frames):
+        webp_durations = [frame_ms] * len(frames)
+
     # Animated WebP (full colour)
     webp_path = OUT_DIR / "beam_strut_and_tie.webp"
-    frames[0].save(str(webp_path), save_all=True, append_images=frames[1:],
-                   duration=200, loop=0, quality=90)
+    try:
+        frames[0].save(
+            str(webp_path),
+            save_all=True,
+            append_images=frames[1:],
+            duration=webp_durations,
+            loop=0,
+            quality=90,
+        )
+    except TypeError:
+        frames[0].save(
+            str(webp_path),
+            save_all=True,
+            append_images=frames[1:],
+            duration=frame_ms,
+            loop=0,
+            quality=90,
+        )
     print(f"  WebP: {webp_path} ({webp_path.stat().st_size // 1024} KB)")
 
     # Animated GIF (quantised, but from hi-res source)
     gif_path = OUT_DIR / "beam_strut_and_tie.gif"
-    gif_frames = [f.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
-                  for f in frames]
-    gif_frames[0].save(str(gif_path), save_all=True, append_images=gif_frames[1:],
-                       duration=200, loop=0, optimize=True)
+    gif_frames = [
+        f.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
+        for f in frames
+    ]
+    gif_durations = [frame_ms] * n_body + [hold_ms] * n_hold
+    if len(gif_durations) != len(gif_frames):
+        gif_durations = [frame_ms] * len(gif_frames)
+    gif_frames[0].save(
+        str(gif_path),
+        save_all=True,
+        append_images=gif_frames[1:],
+        duration=gif_durations,
+        loop=0,
+        optimize=True,
+    )
     print(f"  GIF: {gif_path} ({gif_path.stat().st_size // 1024} KB)")
 
     print("Done.")
