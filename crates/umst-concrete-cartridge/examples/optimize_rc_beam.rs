@@ -16,9 +16,9 @@
 //! **`E_{\min}=10^{-3}E_0`** are used for the adjoint bar network (the demo’s story is the **mask**, not
 //! a separate 200 GPa steel constitutive branch in the surrogate).
 //!
-//! **Iteration dumps (for [`notebooks/render_beam_gif.py`](../../../notebooks/render_beam_gif.py)):** set **`UMST_BEAM_DUMP=1`**
-//! to write float32 **`iter_*.npy`** (**shape `[1, N, 1]`**, `N=n_x·n_y`) plus **`manifest.json`** under **`examples/_artifacts/beam/`**.
-//! Optional **`UMST_BEAM_DUMP_STRIDE`** (default **5**, ≥1); **`UMST_BEAM_ITERS`** caps epochs (default **50**).
+//! **Iteration dumps (for [`notebooks/render_beam_gif.py`](../../../notebooks/render_beam_gif.py)):** dumps are **on by default** (`UMST_BEAM_DUMP=0` / `false` to skip).
+//! Writes float32 **`iter_*.npy`** (**shape `[1, N, 1]`**, `N=n_x·n_y`) plus a **`manifest.json`** with grid, stride, compliance stats, and frame epoch list under **`examples/_artifacts/beam/`**.
+//! **`UMST_BEAM_DUMP_STRIDE`** (default **3**, ≥1); **`UMST_BEAM_ITERS`** (default **90**, ≥1).
 //!
 //! **End-to-end GIF:** from repo root, `bash notebooks/_run_beam_demo.sh` runs this example then the renderer
 //! (no synthetic NPY fallback when the optimiser completes successfully).
@@ -106,18 +106,30 @@ fn print_density_map(density: Vec<f32>, nx: usize, ny: usize) {
 fn main() {
     println!("=== UMST Reinforced Concrete Beam Optimization ===");
 
-    let dump_beam = env::var("UMST_BEAM_DUMP")
-        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-        .unwrap_or(false);
+    let dump_beam = match env::var("UMST_BEAM_DUMP") {
+        Err(_) => true,
+        Ok(ref s) if s.trim().is_empty() => true,
+        Ok(ref s)
+            if s == "0" || s.eq_ignore_ascii_case("false") || s.eq_ignore_ascii_case("off") =>
+        {
+            false
+        }
+        Ok(ref s) => {
+            s == "1"
+                || s.eq_ignore_ascii_case("true")
+                || s.eq_ignore_ascii_case("yes")
+                || s.eq_ignore_ascii_case("on")
+        }
+    };
     let dump_stride = env::var("UMST_BEAM_DUMP_STRIDE")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(5usize)
+        .unwrap_or(3usize)
         .max(1usize);
     let epochs: usize = env::var("UMST_BEAM_ITERS")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(50usize)
+        .unwrap_or(90usize)
         .max(1usize);
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -125,8 +137,8 @@ fn main() {
 
     let device = Default::default();
     let batch = 1usize;
-    let nx = 20usize;
-    let ny = 5usize;
+    let nx = 32usize;
+    let ny = 8usize;
     let n_nodes = nx * ny;
     let dx = 0.1_f32; // 10cm grid
 
@@ -193,8 +205,8 @@ fn main() {
 
     // 5. AI constraints (rebar corridor): bottom row fixed at ρ=1, non-editable.
     let mut editable_mask_data = vec![1.0_f32; batch * n_nodes]; // 1.0 = AI can edit
-    for x in 0..nx {
-        editable_mask_data[x] = 0.0_f32; // AI cannot remove steel
+    for slot in &mut editable_mask_data[..nx] {
+        *slot = 0.0_f32; // AI cannot remove steel
     }
     let editable_mask = Tensor::from_data(
         Data::new(editable_mask_data, Shape::new([batch, n_nodes, 1])),
@@ -236,6 +248,29 @@ fn main() {
 
     println!("Starting Strut-and-Tie discovery...");
 
+    let log_every = if epochs <= 48 {
+        2usize
+    } else {
+        (epochs / 28).max(3)
+    };
+    let map_milestones: Vec<usize> = {
+        let mut v = vec![1usize, epochs];
+        if epochs > 2 {
+            v.push(epochs / 3);
+        }
+        if epochs > 4 {
+            v.push((2 * epochs) / 3);
+        }
+        v.sort_unstable();
+        v.dedup();
+        v
+    };
+
+    let mut dump_epochs: Vec<usize> = Vec::new();
+    let mut compliance_initial: Option<f32> = None;
+    let mut compliance_best = f32::MAX;
+    let mut compliance_final = 0.0_f32;
+
     // 7. Training Loop
     for epoch in 1..=epochs {
         // Forward Pass: Ask AI to guess shape
@@ -272,19 +307,27 @@ fn main() {
         let comp_val = c_raw;
         let vol_val = current_volume_fraction.clone().into_data().value[0];
 
-        if epoch % 5 == 0 || epoch == 1 {
-            println!("Epoch {epoch:03} | Total Loss: {loss_val:.2} | Compliance: {comp_val:.2} | Volume: {vol_val:.3}");
-            if epoch % 10 == 0 || epoch == epochs {
-                let density_vec = rho.clone().into_data().value;
-                print_density_map(density_vec, nx, ny);
-            }
+        if epoch == 1 {
+            compliance_initial = Some(comp_val);
+        }
+        compliance_best = compliance_best.min(comp_val);
+        compliance_final = comp_val;
+
+        if epoch == 1 || epoch == epochs || epoch % log_every == 0 {
+            println!("Epoch {epoch:03}/{epochs:03} | loss {loss_val:.2} | c {comp_val:.2} | c_min {compliance_best:.2} | vol {vol_val:.3}");
+        }
+        if map_milestones.binary_search(&epoch).is_ok() {
+            let density_vec = rho.clone().into_data().value;
+            print_density_map(density_vec, nx, ny);
         }
 
         if dump_beam && (epoch == 1 || epoch % dump_stride == 0 || epoch == epochs) {
             let v = rho.clone().into_data().value;
             let fname = format!("iter_{epoch:03}.npy");
             let path = art_dir.join(fname);
-            write_npy_f32(&path, &v, &[1, n_nodes, 1]).unwrap_or_else(|e| panic!("write {path:?}: {e}"));
+            write_npy_f32(&path, &v, &[1, n_nodes, 1])
+                .unwrap_or_else(|e| panic!("write {path:?}: {e}"));
+            dump_epochs.push(epoch);
         }
 
         // Backward Pass
@@ -303,7 +346,12 @@ fn main() {
 
     // Zero-strain placeholder for fracture wiring in this example (full THMC–mechanics coupling not exercised here).
     let strain_zero_placeholder = Tensor::<B, 4>::zeros([batch, n_nodes, 3, 3], &device);
-    let damage_new = fracture.update_damage(strain_zero_placeholder, damage_old, gc_bn1, edges_b1.clone());
+    let damage_new = fracture.update_damage(
+        strain_zero_placeholder,
+        damage_old,
+        gc_bn1,
+        edges_b1.clone(),
+    );
 
     let max_damage = damage_new.max().into_data().value[0];
     println!("Maximum Crack Damage (d): {:.3}", max_damage);
@@ -314,13 +362,45 @@ fn main() {
     }
 
     if dump_beam {
+        let c0 = compliance_initial.unwrap_or(compliance_final);
+        let frames_csv = dump_epochs
+            .iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+        let vol_tgt = topopt.volume_target;
+        let p_simp = topopt.penalization;
         let manifest = format!(
-            r#"{{"nx":{nx},"ny":{ny},"iters":{epochs},"dump_stride":{dump_stride},"n_nodes":{n_nodes},"dx":{dx},"batch":{batch}}}"#
+            concat!(
+                "{{",
+                "\"schema\":\"umst_beam_dump_v2\",",
+                "\"nx\":{nx},\"ny\":{ny},",
+                "\"n_nodes\":{n_nodes},\"dx\":{dx},\"batch\":{batch},",
+                "\"iters\":{epochs},\"dump_stride\":{dump_stride},",
+                "\"n_frames\":{n_frames},\"frame_epochs\":[{frames_csv}],",
+                "\"compliance_initial\":{c0:.8},\"compliance_final\":{cf:.8},\"compliance_best\":{cb:.8},",
+                "\"e0_pa\":{e0},\"nu\":0.3,\"volume_target\":{vol_tgt},\"simp_p\":{p_simp},",
+                "\"n_edges\":{n_edges}",
+                "}}"
+            ),
+            nx = nx,
+            ny = ny,
+            n_nodes = n_nodes,
+            dx = dx,
+            batch = batch,
+            epochs = epochs,
+            dump_stride = dump_stride,
+            n_frames = dump_epochs.len(),
+            frames_csv = frames_csv,
+            c0 = c0,
+            cf = compliance_final,
+            cb = compliance_best,
+            e0 = e0_concrete,
+            vol_tgt = vol_tgt,
+            p_simp = p_simp,
+            n_edges = n_edges,
         );
         fs::write(art_dir.join("manifest.json"), manifest).expect("write beam manifest.json");
-        println!(
-            "wrote {} (manifest + iter_*.npy)",
-            art_dir.display()
-        );
+        println!("wrote {} (manifest + iter_*.npy)", art_dir.display());
     }
 }
