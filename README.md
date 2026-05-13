@@ -10,52 +10,70 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-A differentiable constitutive engine for cementitious materials, built to run on the [UMST manifold](https://github.com/tytolabs/umst-manifold). It provides a single Rust façade (with PyO3 and MCP bindings) for evaluating mix designs, predicting hydration kinetics, and running adjoint-based topology optimization for structural components.
+**UMST Concrete Cartridge** is the differentiable constitutive and calibration layer for cementitious materials, built to mount on **[UMST Manifold](https://github.com/tytolabs/umst-manifold)**. The workspace ships a Rust library (**Burn** + **`burn-ndarray`**), a CLI, **PyO3** bindings, and an **MCP** server so the same physics and data contracts surface in notebooks, services, and agent workflows. `ConcreteCartridge` supplies mix-to-field closures; the manifold supplies DEC operators, equilibrium and adjoint mechanics, fracture and transport kernels, and topology evolution—composed through explicit **Cargo features** that forward the manifold’s **`solver-stable` / `solver-research` / `solver-experimental`** lanes.
 
 <p align="center">
   <img src="docs/assets/beam_strut_and_tie.gif" alt="RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)" width="960" />
 </p>
 
-*The hero GIF is a 32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row, rendered to `notebooks/_artifacts/beam_strut_and_tie.gif` (viridis ρ, compliance strip, captions). It is meant for structural engineers and architects reading strut-and-tie–like load paths in the density field—same UMST/MaOS mechanics façade as the rest of the cartridge, not a separate production solver UI.*
+*32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row; viridis density ρ, compliance strip, captions — rendered to `notebooks/_artifacts/beam_strut_and_tie.gif` via the same mechanics façade as the rest of the cartridge.*
 
-## How to Use the Two Repositories Together
+## Composition with the manifold
 
-The UMST ecosystem is split into two halves by design:
-- **`umst-manifold`** provides the domain-agnostic PDE solvers, Discrete Exterior Calculus (DEC) operators, and topology optimization routines.
-- **`umst-concrete-cartridge`** (this repo) provides the material science. It holds the constitutive equations, hydration kinetics, and empirical calibration profiles.
+- **[`umst-manifold`](https://github.com/tytolabs/umst-manifold)** (git dependency on `main`) provides graph/mesh operators, solver implementations, and the **`IScienceCartridge`** host API.
+- **This repo** holds hydration kinetics, empirical calibration profiles, Striatus-class shell demos, print-ready export pipelines, and tests that lock cartridge–manifold wiring.
 
-**Workflow:** You load the `ConcreteCartridge` into the Manifold. The manifold asks the cartridge for material properties (like strength, porosity, or temperature response) at specific points, and the manifold handles solving the global physics (heat diffusion, structural mechanics) across the entire geometry.
+With **`solver-experimental`** disabled (default), `ConcreteCartridge::compute_topology` follows the heat-graph Laplacian path; enabling **`solver-experimental`** pulls the full manifold solver union so examples such as **`optimize_rc_beam`** and **`optimize_shell_3d`** compile and run with phase-field, adjoint, and shell-specific hooks documented in-repo.
 
-## Overview
+## Workspace layout
 
-This repository packages material science formulas into a computational cartridge. It is intended for structural engineers wiring mix-design tools, researchers reproducing calibration corpora, and operators packaging agent-facing MCP tools. 
+| Crate | Role |
+|-------|------|
+| `crates/umst-concrete-cartridge` | Library façade, constitutive modules, topology helpers, Striatus examples. |
+| `crates/umst-cli` | Binaries `umst`, `umst-canonical`. |
+| `crates/umst-py` | Python bindings (`pip install './crates/umst-py[notebook]'`). |
+| `crates/umst-mcp` | Model Context Protocol server for agent-facing tools. |
 
-Shell topology capabilities, the Striatus artefact contract, and print-ready gates are documented in detail in **[`docs/Solver-Status.md`](docs/Solver-Status.md)** and **[`docs/Striatus.md`](docs/Striatus.md)**.
+Root **`Dockerfile`** / **`docker-compose.yml`** package the MCP service for container deployment.
 
-## Quick CLI Usage
+## Feature flags (cartridge)
 
-You can use the CLI to predict physical properties from mix parameters:
+Declared in [`crates/umst-concrete-cartridge/Cargo.toml`](crates/umst-concrete-cartridge/Cargo.toml); names mirror the manifold.
+
+| Feature | Effect |
+|---------|--------|
+| `solver-stable` | Forwards `umst-manifold/solver-stable`. |
+| `solver-research` | Forwards `umst-manifold/solver-research`. |
+| `solver-experimental` | Forwards `umst-manifold/solver-experimental` (stable ∪ research). |
+| Granular forwards | e.g. `photonics-fdfd`, `electrochemistry-pnp`, `mechanics-adjoint`, `statistical-mechanics-vinet` — single-kernel pulls. |
+| `blas-accelerate` | Apple Accelerate linking for `burn-ndarray` (and manifold). |
+| `mac-fast` | `solver-experimental` + `render` + `blas-accelerate` — local M-series throughput bundle. |
+| `render` | Striatus / shell demo renderer hook for `optimize_shell_3d` (artefact layout + visualization). |
+
+Authoritative solver ↔ verification narrative: [`docs/Solver-Status.md`](docs/Solver-Status.md) here (Striatus, gates, runbooks) with the **master solver table** in [`umst-manifold/docs/Solver-Status.md`](https://github.com/tytolabs/umst-manifold/blob/main/docs/Solver-Status.md). Striatus artefact semantics: [`docs/Striatus.md`](docs/Striatus.md).
+
+## Quick CLI
+
 ```bash
 echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict
 ```
 
-Or audit a dataset against the formal calibration bounds:
 ```bash
 head -n2 datasets/dataset_d1.csv | umst --profile uci_d1 audit
 ```
 
-## Python & Notebooks
+Install: `cargo install --path crates/umst-cli`.
 
-To use the Python bindings locally for headless notebooks or scripting:
+## Python and notebooks
+
 ```bash
 cd umst-concrete-cartridge
 pip install './crates/umst-py[notebook]'
 ```
-*See [`notebooks/README.md`](notebooks/README.md) for detailed Python usage.*
 
-## Build and Test (Rust)
+[`notebooks/README.md`](notebooks/README.md) covers notebook workflows.
 
-From the repository root:
+## Build and test (Rust)
 
 ```bash
 cd umst-concrete-cartridge
@@ -63,48 +81,34 @@ cargo build --workspace
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 ```
-*Install the CLI locally: `cargo install --path crates/umst-cli`.*
 
-**Toolchain:** Rust **1.88** is pinned in [`rust-toolchain.toml`](rust-toolchain.toml). Use `rustup default 1.88` to ensure CI parity.
-**CPU Acceleration (macOS):** `cargo build --workspace --features blas-accelerate` enables Accelerate linking via `burn-ndarray`. 
+**Toolchain:** **1.88** in [`rust-toolchain.toml`](rust-toolchain.toml) — aligns with manifold CI and optional **`--all-features`** MSRV paths.  
+**CPU acceleration (macOS):** `cargo build --workspace --features blas-accelerate`.
 
-## Surfaces & Ecosystem
-
-| Surface | Location | Notes |
-|--------|----------|--------|
-| **Library** | `crates/umst-concrete-cartridge` | Core façade and constitutive physics modules. |
-| **CLI** | `crates/umst-cli` | Standalone binaries (`umst`, `umst-canonical`). |
-| **Python** | `crates/umst-py` | PyO3 bindings for prediction and auditing. |
-| **MCP** | `crates/umst-mcp` | Model Context Protocol integration. |
-| **Docker** | `Dockerfile`, `docker-compose.yml` | Containerized MCP service. |
-
-## Bundled Calibration Profiles
-
-The cartridge ships with built-in profiles calibrated against empirical datasets:
+## Bundled calibration profiles
 
 | Id | Notes |
-|----|--------|
+|----|-------|
 | `default` | Baseline heuristic bundle. |
 | `uci_d1` | UCI concrete strength corpus (`datasets/dataset_d1.csv`). |
-| `zenodo_ndt`, `zenodo_sonreb`, `zenodo_rh` | Mirrors of Zenodo record [14921019](https://zenodo.org/records/14921019). |
-| `uhpc`, `selfheal` | Boundary profiles (verification status tests). |
+| `zenodo_ndt`, `zenodo_sonreb`, `zenodo_rh` | Zenodo record [14921019](https://zenodo.org/records/14921019). |
+| `uhpc`, `selfheal` | Boundary profiles exercised in verification tests. |
 | `highscm` | High-SCM / alternative binder regime. |
 
-*See [`docs/SSOT.json`](docs/SSOT.json) and [`datasets/PROVENANCE.md`](datasets/PROVENANCE.md) for exact dataset provenance.*
+Provenance: [`docs/SSOT.json`](docs/SSOT.json), [`datasets/PROVENANCE.md`](datasets/PROVENANCE.md).
 
-## Documentation Reference
+## Documentation
 
-- **Constitutive Equations:** [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md)
+- **Constitutive equations:** [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md)
 - **Validation:** [`docs/Validation.md`](docs/Validation.md)
-- **Wire Schemas:** [`docs/WireSchemas.md`](docs/WireSchemas.md)
-- **Formal Status & Anchors:** [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md), [`docs/FormalProvenance.md`](docs/FormalProvenance.md)
+- **Wire schemas:** [`docs/WireSchemas.md`](docs/WireSchemas.md)
+- **Formal anchors / generated proof status:** [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md), [`docs/FormalProvenance.md`](docs/FormalProvenance.md)
 
 ## Citation
 
-Please refer to [`CITATION.cff`](CITATION.cff) or the repository URL for software citations.
+[`CITATION.cff`](CITATION.cff) and the repository URL.
 
-## Contributing & License
+## Contributing and license
 
-Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Security: [`SECURITY.md`](SECURITY.md).
-Released under the [MIT License](LICENSE).
-*© 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO.*
+[`CONTRIBUTING.md`](CONTRIBUTING.md), [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md), [`SECURITY.md`](SECURITY.md).  
+Released under the [MIT License](LICENSE). © 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO.
