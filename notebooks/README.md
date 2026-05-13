@@ -50,7 +50,7 @@ After `source .venv/bin/activate`, confirm `which python3` matches the interpret
 
 GIF/STL tooling (`render_shell_gif.py`, `overlay_final_isostatics.py`): sets `pv.OFF_SCREEN = True` and `Plotter(off_screen=True)` — no GUI required. Prefer **PyVista ≥ 0.43 / VTK wheels** on Apple Silicon (arm64 VTK).
 
-**Defaults, `UMST_SHELL_*` knobs, Track L regeneration, B8 / `UMST_REQUIRE_B8`, and swarm close-out registry:** [`../docs/Solver-Status.md`](../docs/Solver-Status.md) (when this checkout sits in MaOS-Workspace: [`../../umst-manifold/docs/MULTI_AGENT_GAP_CLOSURE_PLAN.md`](../../umst-manifold/docs/MULTI_AGENT_GAP_CLOSURE_PLAN.md)).
+**Defaults, `UMST_SHELL_*` knobs, Track L regeneration, B8 / `UMST_REQUIRE_B8`, and swarm close-out registry:** [`../docs/Solver-Status.md`](../docs/Solver-Status.md). With **`umst-manifold`** as a sibling directory (same parent as this repository): [`../../umst-manifold/docs/MULTI_AGENT_GAP_CLOSURE_PLAN.md`](../../umst-manifold/docs/MULTI_AGENT_GAP_CLOSURE_PLAN.md).
 
 **CI-fast smoke (small grid):** `optimize_shell_3d` clamps `UMST_SHELL_NX` / `UMST_SHELL_NY` to **[6, 40]** and `UMST_SHELL_NZ` to **[2, 8]** — e.g.
 

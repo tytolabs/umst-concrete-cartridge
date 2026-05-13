@@ -45,7 +45,7 @@ crates/umst-concrete-cartridge/examples/_artifacts/beam/
 
 # Local research / audit memos not yet promoted to tracked docs
 docs/Category-of-Material-Updates.md
-docs/MAOS_PENDING_TRACK1_AUDIT.md
+docs/PENDING_TRACK1_AUDIT.md
 docs/STRIATUS_JFNK_INTEGRATION_SURVEY.md
 docs/VRAM.md
 docs/verification/
