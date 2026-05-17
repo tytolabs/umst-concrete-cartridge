@@ -348,10 +348,12 @@ To expand this ecosystem to new physical domains, developers and agents do not n
 - **Closed-loop printing without prayer.** The CBF rejects trajectories that violate localized yield or buckling limits *during* extrusion, returning Cartesian corrections to the IK engine in real time. Slump failures degrade from catastrophic to gracefully aborted.
 - **Surfaces match audience.** CLI for material scientists, PyO3 for designers, MCP for agentic workflows, FFI for systems integrators — one engine, four idiomatic entry points.
 
-### What we learned building it
-- **The hardest constraint was admissibility, not accuracy.** Across the 18,146 mixes audited, 82.4% of conventional baseline recipes violated at least one physical or chemical envelope. Forcing 100% admissibility through the gate reshaped the optimizer's discovered Pareto front substantially.
-- **Calibration discipline beats model complexity.** The DFT-anchored profiles plus checked-in `results/canonical/table_per_dataset_metrics.csv` make every regression honest. Adding solver sophistication without that scaffold would have produced unreproducible numbers.
-- **Industrial integration is a documentation problem.** Most field friction came from URDF/IK conventions and CAD-side Python ABIs, not the physics — hence the explicit surface table and the MCP off-loading path.
+### What surprised us
+- **Most published concrete recipes already break physics.** Of 18,146 audited mixes from public datasets, 82.4% violate at least one physical or chemical envelope. The industry treats published mixes as ground truth; we treated them as inputs to gate, and the optimizer's discovered Pareto front shifted substantially once admissibility was hard-required, not optimized-toward.
+- **The cement literature is full of regressions wearing physics' clothes.** Many "constitutive" models in published papers fit a curve through experimental data and call it a law. Anchoring back to Pellenq / Vinet / DFT was the only way to keep new mixes — biochar, recycled coarse aggregate, blast-furnace slag — from collapsing the predictor.
+- **Print-time gating beats upstream simulation.** Slump and buckling physics evolves faster than any pre-print planner can replan. Returning Cartesian gradients (Δx, Δy, Δz) from the runtime to the IK engine *during* extrusion changed slump failures from catastrophic to gracefully aborted — which is the difference between a wasted print and a wasted morning.
+- **Industrial resistance is supplier-shaped, not math-shaped.** Plants don't refuse better mixes because they doubt the physics; they refuse because their aggregate supplier doesn't ship a 50% RCA blend. The manufacturer brief had to lead with cost reduction, not carbon or admissibility — and that turned out to be the long-term carbon argument anyway.
+- **Admissibility-first generalizes; accuracy-first overfits.** Models optimized for MAE on UCI / Zenodo slices broke on out-of-distribution mixes. Models gated by admissibility extrapolated cleanly, because the gate is the same physics in every regime — there is no out-of-distribution in the gate's frame.
 
 In practice, the cartridge is a runtime: mixes and print paths that violate the physical envelope are blocked before they reach the field.
 
