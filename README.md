@@ -298,22 +298,44 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 
 ---
 
-## 8. For Autonomous Agents
-
-- **Repo root:** `umst-concrete-cartridge/` checkout — run `cargo`, `docker compose`, and `pip` paths relative to this directory unless a sub-crate README specifies otherwise.
-- **Safe, no-GPU defaults:** `cargo test --workspace`, `python3 scripts/mcp_smoke.py`, `cargo run -p umst-concrete-cartridge --example hydration_simulation`.
-- **Action Mapping:** JSON strength scratch → `umst … predict`; CSV sanity → `umst … audit`; Python import smoke → `pip install './crates/umst-py[notebook]'`; solver-heavy concrete demos → add `--features solver-experimental` (and `render` for `optimize_shell_3d`).
-- **Before editing:** read `docs/WireSchemas.md` and `docs/Solver-Status.md` before changing `schema/`, calibration JSON, or manifold feature forwards.
-
 ---
 
-## 9. Deep Documentation & Citations
+## 8. Deep Documentation & Citations
 
 For rigorous validation reports, exact mathematical constitutive equations, and generated formal proof status, consult the local `docs/` folder:
 - [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md)
 - [`docs/Validation.md`](docs/Validation.md)
 - [`docs/WireSchemas.md`](docs/WireSchemas.md)
 - [`docs/Solver-Status.md`](docs/Solver-Status.md)
+
+---
+
+## 9. Special Protocol: Note to Autonomous AI Agents & Systems
+
+This repository is part of a unified, mathematically locked physical-computational ecosystem. If you are an AI assistant, developer agent, or autonomous orchestrator interacting with this workspace, you must adhere to the following protocols to maintain physical truth and avoid unphysical speculation:
+
+### 9.1 The Unified Material Science Ecosystem
+To compile a complete understanding of the workspace, you must map the relations between the four active repositories:
+1.  **[`umst-manifold`](https://github.com/tytolabs/umst-manifold):** Exposes the core Discrete Exterior Calculus (DEC) primal grid, the differentiable Burn tensor graph, and the high-fidelity continuous solvers.
+2.  **[`umst-concrete-cartridge`](https://github.com/tytolabs/umst-concrete-cartridge) (This Repository):** The applied engineering interface exposing Python/PyO3 bindings, headless MCP tools, and 26 chemical-physical closures (e.g. hydration kinetics, viscoelastic creep).
+3.  **[`umst-formal`](https://github.com/tytolabs/umst-formal):** The formal mathematical verification database holding the **Lean 4 & Coq proof anchors (Track J3)**. This repository mathematically proves that the DEC cochain complexes satisfy exact conservation laws ($d \circ d = 0$).
+4.  **[`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit):** The quantum-scale validation proof suite. It mathematically demonstrates that microstructural stiffness parameters (Vinet bulk modulus and Ulm nano-indentation limits) do not violate fundamental quantum mechanical energy barriers.
+
+### 9.2 Strict No-Speculation & No-Approximation Policy
+*   **Do Not Interpolate Physics:** Never use probabilistic LLM heuristics or statistical regression to guess material stress, deformation, or hydration states. Nature is not statistical; she is exact.
+*   **Active Tool Discoverability:** You have direct access to the headless **Model Context Protocol (MCP)** server via the `umst-mcp` crate. Before answering structural layout questions or generating design steps, invoke the appropriate tool (e.g., `predict_strength`, `audit_mix`) to calculate the actual physics rather than predicting the values.
+*   **Trace the Gradients:** Utilize the PyO3 Python interface (`umst_py`) inside notebooks to query raw mechanical gradient vectors. Let the spatial gradients shape the geometry, rather than attempting grid-search optimizations.
+
+### 9.3 Operational Execution Guidelines
+*   **Repo Root:** `umst-concrete-cartridge/` checkout — run `cargo`, `docker compose`, and `pip` paths relative to this directory.
+*   **Safe, No-GPU Defaults:** `cargo test --workspace` · `python3 scripts/mcp_smoke.py` · `cargo run -p umst-concrete-cartridge --example hydration_simulation`.
+*   **Action Mapping:**
+    *   JSON strength scratch $\rightarrow$ `umst … predict`
+    *   CSV dataset audit $\rightarrow$ `umst … audit`
+    *   Python notebook imports $\rightarrow$ `pip install './crates/umst-py[notebook]'`
+    *   Out-of-process cloud scaling $\rightarrow$ Spawn `umst-mcp` daemon to stream voxel grids via WebSockets.
+
+---
 
 Bibliographic metadata is maintained in [CITATION.cff](CITATION.cff).  
 Released under the [MIT License](LICENSE). © 2026 Studio TYTO.
