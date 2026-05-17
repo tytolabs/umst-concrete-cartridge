@@ -159,6 +159,14 @@ umst-concrete-cartridge/
 
 The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 distinct, differentiable constitutive models. These map microscopic chemical reactions and pore physics directly onto the spatial mechanical tensor states.
 
+| Applied Closure | Governing Physical Mechanism | Active Code Module | Engineering Output / Metric | Dynamic Optimization Benefit |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Nanoscale Slurry & ITZ** | Colloidal DLVO stability & Interfacial Weakness | `itz.rs` & `colloidal.rs` | Local ITZ mechanical stiffness reduction ($E_{\text{ITZ}}$), slurry separation distance ($D$). | Direct optimization of aggregate surface bonding to prevent microstructural shearing. |
+| **2. Creep & Drying Shrinkage** | Kelvin-Voigt Creep Chains & Capillary Tension | `creep.rs` & `shrinkage.rs` | Long-term viscoelastic compliance ($J(t, t_0)$), capillary drying shrinkage strain ($\varepsilon_{\text{sh}}$). | Automated design of columns and slabs that balance long-term deflections with environmental humidity. |
+| **3. Calcite Crystallization** | Calcium Carbonate Calcite Precipitation | `self_heal.rs` | Autonomous crack calcite healing mass accumulation ($m_{\text{calcite}}$) over water channels. | Designing concrete structures that automatically seal internal cracks, extending service lifespan. |
+| **4. 3D Concrete Printability** | Thixotropic Buildability & Column Buckling | `printability.rs` | Printed layers thixotropic yield buildup ($\tau_y$), spatial elastic buckling loads ($P_{\text{buckling}}$). | Gradient-corrected robotic deposition print speeds to prevent structural layer collapse. |
+| **5. Carbonation & LCA GWP** | Dynamic CO2 Carbonation Capture & Footprint | `sustainability.rs` | Global Warming Potential ($GWP$), long-term carbonation sequestration depth ($d_c$). | Disclosing the absolute Pareto-optima balancing structural structural strength with dynamic carbon footprints. |
+
 <details>
 <summary><b>1. Nanoscale DLVO Slurry & ITZ Boundary Mechanics</b> (Early Mixing & Weakness Layers)</summary>
 
