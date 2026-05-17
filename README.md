@@ -108,7 +108,20 @@ This cartridge exposes its physical equations through multiple programmatic surf
 
 ---
 
-## 3. Exhaustive Architecture Topology
+## 3. Industrial CAD/CAM/CAE Pipeline Integration
+
+The cartridge is engineered to interface directly with industry-standard design, engineering, and manufacturing suites. Because it exposes a native C-callable API (`extern "C"`), Python bindings, and a headless MCP JSON-RPC server, it bridges the gap between digital CAD geometry and physical fabrication loops:
+
+| Category & Software | Integration Vector | Industrial Workflow Impact |
+| :--- | :--- | :--- |
+| **BIM & Generative Design** <br> *Autodesk Revit / Dynamo* | **.NET P/Invoke / C-FFI** <br> Dynamo Zero-Touch nodes link directly to the native compiled library (`.dll`), or query the local `umst-mcp` daemon via async C# HttpClient. | **Early-Stage Carbon & Strength Auditing:** Generative structural components automatically evaluate hydration kinetics and localized GWP footprints during design layout, preventing unbuildable geometric allocations. |
+| **Advanced FEM & Multiphysics** <br> *Abaqus / ANSYS / COMSOL* | **C-Callable UMAT/VUMAT** <br> Compiled with standard C-bindings (`extern "C"`), Abaqus UMAT/VUMAT subroutines query the 64-channel Unified Material State Tensor at individual integration points. | **Deterministic Material Modeling:** Replaces soft empirical approximations with thermodynamically consistent, DFT-anchored stress-strain evolution curves during massive structural simulation. |
+| **Robotic CAM & CNC Extrusion** <br> *Klipper / ROS2 / Slicers* | **Asynchronous ROS2 Nodes / MCP** <br> Print controllers query the `umst-mcp` server asynchronously over TCP sockets or standard JSON-RPC. | **Closed-Loop Extrusion Control:** Robotic printers adjust travel velocity, extrusion feed rates, and auxiliary curing states dynamically based on the local wet-mix shear yield stress. |
+| **Material PLM Databases** <br> *Ansys Granta MI / Siemens Teamcenter* | **Headless CLI Piping (`umst audit`)** <br> Automated material auditing scripts parse tabular CSV raw mix inputs, streaming verification telemetry back to PLM repositories. | **Verified Sustainable Procurement:** Ingests batch supplier datasets to dynamically verify material performance compliance and structural footprint records across global projects. |
+
+---
+
+## 4. Exhaustive Architecture Topology
 
 The codebase exposes the underlying physics through four distinct, elegant surfaces.
 
@@ -137,7 +150,7 @@ umst-concrete-cartridge/
 
 ---
 
-## 4. Quick Start (Time to Value < 60 Seconds)
+## 5. Quick Start (Time to Value < 60 Seconds)
 
 ### Surface A: The CLI (For massive dataset audits)
 ```bash
@@ -176,7 +189,7 @@ docker compose run --rm umst-mcp
 
 ---
 
-## 5. Build, Test, and CI Parity (For Integrators)
+## 6. Build, Test, and CI Parity (For Integrators)
 
 ```bash
 cd umst-concrete-cartridge
@@ -201,7 +214,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 
 ---
 
-## 6. For Autonomous Agents
+## 7. For Autonomous Agents
 
 - **Repo root:** `umst-concrete-cartridge/` checkout — run `cargo`, `docker compose`, and `pip` paths relative to this directory unless a sub-crate README specifies otherwise.
 - **Safe, no-GPU defaults:** `cargo test --workspace`, `python3 scripts/mcp_smoke.py`, `cargo run -p umst-concrete-cartridge --example hydration_simulation`.
@@ -210,7 +223,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 
 ---
 
-## 7. Deep Documentation & Citations
+## 8. Deep Documentation & Citations
 
 For rigorous validation reports, exact mathematical constitutive equations, and generated formal proof status, consult the local `docs/` folder:
 - [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md)
