@@ -10,7 +10,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-> *Hydration thermodynamics, multi-phase moisture transport, and structural stress evolution are governed by deterministic constitutive chemistry. The UMST Concrete Cartridge models these physical interactions directly, mapping localized reaction states to spatial mechanical parameters for physical optimization.*
+> *When water meets cement, it is not a spreadsheet calculation; it is a physical transformation. Nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a structure that bears our world. If the internal temperature or chemistry is wrong, the material will crack. We do not guess how this happens based on past tests; we calculate the actual chemical reactions and forces that shape the material from the inside out.*
 
 **UMST Concrete Cartridge** is the applied specialization of the [UMST Manifold](https://github.com/tytolabs/umst-manifold). It provides the differentiable constitutive equations, empirical calibration, and deployment surfaces for cementitious materials. 
 
@@ -26,7 +26,7 @@ The library exposes a thermodynamically-gated, gradient-based design engine to o
 
 ## 1. Physical and Chemical Formulations
 
-Material optimization is grounded in localized physical-chemical equations. The system calculates mechanical state changes directly from microscopic chemical reactions:
+To optimize a structural mix, we must follow the physical processes that govern its life cycle. The engine calculates mechanical properties by simulating the chemical reactions occurring at the microscopic scale:
 
 - **No Guessing at the Nanoscale:** Our baseline stiffness tensors are anchored in **Pellenq's 2009 Vinet bulk modulus and Ulm nano-indentation**. The pressure-volume relation is derived from:
   
