@@ -10,23 +10,23 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-> *"A cement mix is not an optimization problem you can solve with soft heuristic models or carbon offset sheets. The chemical reaction of hydration produces heat, crystallizes C-S-H gel, and cracks the matrix if the spatial constraints or temperature states are wrong. We did not build a neural network to guess these properties. We built a library that calculates the exact constitutive equations."*
+> *Hydration thermodynamics, multi-phase moisture transport, and structural stress evolution are governed by deterministic constitutive chemistry. The UMST Concrete Cartridge models these physical interactions directly, mapping localized reaction states to spatial mechanical parameters for physical optimization.*
 
 **UMST Concrete Cartridge** is the applied specialization of the [UMST Manifold](https://github.com/tytolabs/umst-manifold). It provides the differentiable constitutive equations, empirical calibration, and deployment surfaces for cementitious materials. 
 
-This is not a speculative LLM wrapper. This is a thermodynamically-gated, gradient-based design engine that can optimize a concrete mix's carbon footprint, assess the buildability of a 3D-printed structure, and automatically evolve the topology of a load-bearing shell—all while strictly obeying the laws of physics.
+The library exposes a thermodynamically-gated, gradient-based design engine to optimize concrete mixes, assess buildability states in robotic manufacturing, and execute spatial shell topology optimizations under strict physical boundary constraints.
 
 <p align="center">
   <img src="docs/assets/beam_strut_and_tie.gif" alt="RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)" width="960" />
 </p>
 
-*32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row. The yellow density (ρ) shows exactly where the AI decided to place material, guided entirely by mechanical force gradients—rendered via the mechanics façade.*
+*32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row. The yellow density (ρ) shows exactly where the engine placed material, guided entirely by mechanical force gradients—rendered via the mechanics façade.*
 
 ---
 
 ## 1. Physical and Chemical Formulations
 
-If you want to optimize a material, you must respect its physical limitations. We do not use neural networks to "guess" how concrete behaves based on macro-scale crushing tests. We calculate it.
+Material optimization is grounded in localized physical-chemical equations. The system calculates mechanical state changes directly from microscopic chemical reactions:
 
 - **No Guessing at the Nanoscale:** Our baseline stiffness tensors are anchored in **Pellenq's 2009 Vinet bulk modulus and Ulm nano-indentation**. The pressure-volume relation is derived from:
   
