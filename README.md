@@ -353,11 +353,6 @@ To expand this ecosystem to new physical domains, developers and agents do not n
 - **Calibration discipline beats model complexity.** The DFT-anchored profiles plus checked-in `results/canonical/table_per_dataset_metrics.csv` make every regression honest. Adding solver sophistication without that scaffold would have produced unreproducible numbers.
 - **Industrial integration is a documentation problem.** Most field friction came from URDF/IK conventions and CAD-side Python ABIs, not the physics — hence the explicit surface table and the MCP off-loading path.
 
-### Forward path
-- **Next constitutive closures (Term 3):** biochar / carbon-sequestering concrete, GBFS (blast-furnace slag) compositions, and recycled coarse aggregate (RCA) for 3D printing — each lands as a new profile under the existing `IScienceCartridge` contract.
-- **Validation expansion:** broaden the canonical metrics table beyond the UCI/Zenodo slice, and publish a third-party reproducibility pack (notebooks + datasets + expected outputs).
-- **Pilot deployment:** the manufacturer brief (see [`MaOS-Research/04_PROJECTS/maos-collaboration-pitch/`](https://github.com/tytolabs)) targets a plant-level pilot pairing $M40 + 50\%$ RAC mixes against a baseline batch. The cartridge is the engine; the next milestone is a printed beam validated against the prediction.
-
 In practice, the cartridge is a runtime: mixes and print paths that violate the physical envelope are blocked before they reach the field.
 
 ---
