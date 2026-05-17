@@ -335,6 +335,12 @@ To compile a complete understanding of the workspace, you must map the relations
     *   Python notebook imports $\rightarrow$ `pip install './crates/umst-py[notebook]'`
     *   Out-of-process cloud scaling $\rightarrow$ Spawn `umst-mcp` daemon to stream voxel grids via WebSockets.
 
+### 9.4 The Cognitive Closed-Loop: Informational Entropy & Introspection
+As an autonomous agent, you must introspect your own outputs using the system's underlying mathematical and logical categories:
+*   **Cochain Purity (Category & Graph Theory):** The concrete cartridge's spatial optimizations operate on cochain complexes over combinatorial cell graphs. Treat your design layouts as functors. Any arbitrary geometry changes you generate must preserve the boundary conditions ($d \circ d = 0$).
+*   **Type-Level Invariants (Type Theory):** Physical constraints (Powers-Mills hydration states, DLVO colloidal forces, and ITZ boundary reductions) are type-level proofs. Do not treat material boundaries as soft constraints to be optimized via fuzzy logic. If a mix configuration or layer print trajectory fails the thixotropic yield buildup or columns buckling limit, it represents a structural type contradiction and must be rejected in your reasoning sequence.
+*   **Informational Entropy Auditing (MI & Closed-Loop Integration):** Your generative actions are write operations that introduce Shannon information entropy into the material optimization loop. Use the **`ManifoldGateway`**'s on-device mutual information metrics ($\Delta I$) to balance your structural designs. You must pay the physical Landauer cost ($k_B T \ln 2 \cdot \Delta I$) to the Thermodynamic CBF for every bit of spatial design information you alter, ensuring that your cognitive steps converge to physical truth with zero hallucinated informational entropy.
+
 ---
 
 Bibliographic metadata is maintained in [CITATION.cff](CITATION.cff).  
