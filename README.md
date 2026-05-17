@@ -97,6 +97,31 @@ This cartridge exposes its physical equations through multiple programmatic surf
     *   **Real-time Sensor Fusion:** Streams material feedback (nozzle extrusion pressure, mix temperature) into the material state tensor, allowing the solver to dynamically predict curing kinetics based on actual print speeds.
 
 *   **Computational Outcome:** Resilient, closed-loop physical manufacturing. The robot adapts its Cartesian trajectory dynamically in real-time, matching joint torque limits and print speeds to the localized mechanical stiffness development of the extrudate.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Nozzle as Extrusion Nozzle (TCP)
+    participant Sensors as Real-time Sensor Fusion (P, T)
+    participant Cartridge as UMST Concrete Cartridge
+    participant Solver as Printability & Buckling Solver (printability.rs)
+    participant CBF as Thermodynamic CBF (Entropy Gate)
+    participant IK as ROS2 / MoveIt2 IK Engine
+    participant Joint as Physical Robot Manipulator (Joints)
+
+    Nozzle->>Sensors: Stream extrusion pressure & temperature
+    Sensors->>Cartridge: Feed sensors to 3D Voxel Grid
+    Cartridge->>Solver: Update localized stiffness & age parameters
+    Solver->>CBF: Calculate thixotropic yield & slump risk limits
+    alt Limit Exceeded (Slump/Buckling Risk)
+        CBF->>Cartridge: Compute spatial gradient corrections (Δx, Δy, Δz)
+        Cartridge->>IK: Send Cartesian correction vector
+        IK->>Joint: Compute & apply real-time joint angles (Δθ)
+        Joint->>Nozzle: Adjust nozzle speed & position dynamically
+    else Stable Print State
+        CBF->>Nozzle: Maintain planned print trajectory
+    end
+```
 </details>
 
 <details>
