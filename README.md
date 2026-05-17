@@ -61,11 +61,19 @@ This cartridge exposes its physical equations through multiple programmatic surf
 <details>
 <summary><b>1. Spatial Topologies & Structural Design</b> (Architects, Computational Designers)</summary>
 
-*   **Integration Surface:** Python & Geometry Nodes.
+*   **Integration Surfaces:** Python Component APIs, Geometry Nodes, and standard Network Sockets.
 
-*   **Mathematical Pipeline:** Uses the PyO3 bindings (`umst-py`) to map localized hydration, mechanical strength, and stiffness fields directly onto CAD interfaces (Rhino/Grasshopper, FreeCAD, Blender) via Signed Distance Fields (SDFs).
+*   **Native In-Process Pipeline (Option A: `umst-py` via PyO3):**
+    *   **Rhino/Grasshopper:** Utilizes CPython 3.9+ components inside Grasshopper (Rhino 8+) to import the compiled `.pyd` or `.so` binary module. It processes mesh voxelization maps directly within the GH document, converting analytical geometries to raw Signed Distance Fields (SDFs) and mapping localized structural stiffness arrays back to GH Mesh components.
+    *   **Blender:** Imports `umst_py` directly within scripted Geometry Nodes or custom python add-ons, evaluating high-resolution voxel grids concurrently via memory sharing (`ndarray` buffer pointers) to dynamically adjust sub-surf displacement modifiers.
+    *   **FreeCAD:** FreeCAD macro scripts import `umst_py` to run structural optimizations against the active document's OpenCASCADE topological shapes (Part/PartDesign features), bypassing slow internal FEM meshes.
 
-*   **Computational Outcome:** Real-time geometric optimization where internal mix densities and local wall thicknesses are automatically scaled to satisfy structural strength limits under gravity.
+*   **Asynchronous Out-of-Process Pipeline (Option B: MCP over WebSocket / TCP):**
+    *   **Mechanism:** Lightweight CAD scripts or custom C# components initiate a local or remote WebSocket/stdio connection to the headless `umst-mcp` server. 
+    *   **Benefits:** Offloads compute-heavy physical solver calculations (hydration thermodynamic kinetics and Voigt-Cauchy stress tensors) completely from the CAD package's main UI thread. This prevents viewport freezing, scales to cloud compute instances, and bypasses nested Python environment/DLL dependency version mismatches.
+    *   **Execution:** JSON-RPC messages stream the structural voxel arrays to `umst-mcp`, returning continuous gradient vectors and density updates directly back into CAD parameters.
+
+*   **Computational Outcome:** Real-time geometric optimization where internal material densities, local wall thicknesses, and rebar channels are dynamically scaled to satisfy structural limits under gravity.
 </details>
 
 <details>
