@@ -10,7 +10,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-> *"We enjoy pretending we can negotiate with chemistry using spreadsheets and carbon offsets. But a cement particle does not read our balance sheets. It reacts, generates heat, crystallizes, and eventually cracks—completely indifferent to our plans. We didn't build an AI to guess the outcome. We simply built an engine that calculates the physical chemistry that has already been decided."*
+> *"A cement mix is not an optimization problem you can solve with soft heuristic models or carbon offset sheets. The chemical reaction of hydration produces heat, crystallizes C-S-H gel, and cracks the matrix if the spatial constraints or temperature states are wrong. We did not build a neural network to guess these properties. We built a library that calculates the exact constitutive equations."*
 
 **UMST Concrete Cartridge** is the applied specialization of the [UMST Manifold](https://github.com/tytolabs/umst-manifold). It provides the differentiable constitutive equations, empirical calibration, and deployment surfaces for cementitious materials. 
 
