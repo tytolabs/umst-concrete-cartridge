@@ -87,13 +87,16 @@ This cartridge exposes its physical equations through multiple programmatic surf
 </details>
 
 <details>
-<summary><b>3. Robotic Manufacturing & 3D Printing</b> (Robotics Engineers, Agentic Designers)</summary>
+<summary><b>3. Robotic Manufacturing & 3D Printing</b> (Robotics Engineers, Physical AI Architects)</summary>
 
-*   **Integration Surface:** Model Context Protocol (MCP) Server.
+*   **Integration Surface:** ROS2 Nodes (C++/Python) and Model Context Protocol (MCP) WebSocket Server.
 
-*   **Mathematical Pipeline:** Connects agentic control loops and ROS pipelines directly to the exact solvers over standard stdio using JSON-RPC.
+*   **Robotic & Kinematic Pipeline:**
+    *   **URDF Geometry Mapping:** The physical nozzle tool-center-point (TCP) and robot bounding meshes are defined via Unified Robot Description Format (URDF). Forward Kinematics (FK), calculated via `tf2` transforms, maps the dynamic spatial position of the nozzle directly to active coordinates in the UMST 3D voxel grid.
+    *   **Closed-Loop Trajectory Correction (IK):** When the Thermodynamic Control Barrier Function (CBF) detects localized shear yield limits or structural slump risks, the engine computes spatial gradient adjustments ($\Delta x, \Delta y, \Delta z$). These Cartesian correction vectors are passed directly to the robot's Inverse Kinematics (IK) engine (e.g., `MoveIt2` or analytical IK solvers) to compute real-time joint-angle modifications ($\Delta \theta$) on the physical manipulators (6-DOF arms, modular gantries).
+    *   **Real-time Sensor Fusion:** Streams material feedback (nozzle extrusion pressure, mix temperature) into the material state tensor, allowing the solver to dynamically predict curing kinetics based on actual print speeds.
 
-*   **Computational Outcome:** Closed-loop printing control where the robot continuously queries local hydration states and shear yield stress, preventing material collapse by adjusting print velocity or material feed rates.
+*   **Computational Outcome:** Resilient, closed-loop physical manufacturing. The robot adapts its Cartesian trajectory dynamically in real-time, matching joint torque limits and print speeds to the localized mechanical stiffness development of the extrudate.
 </details>
 
 <details>
