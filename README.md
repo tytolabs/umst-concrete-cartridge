@@ -10,7 +10,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-> *When water meets cement, it is not a spreadsheet calculation; it is a physical transformation. Nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a structure that bears our world. If the internal temperature or chemistry is wrong, the material will crack. We do not guess how this happens based on past tests; we calculate the actual chemical reactions and forces that shape the material from the inside out.*
+> *When water meets cement, nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a load-bearing structure. If the temperature or chemistry is off, the material cracks. The cartridge does not regress this from past test data; it simulates the chemical reactions and stresses directly.*
 
 **UMST Concrete Cartridge** is the applied physical brain of the [UMST Manifold](https://github.com/tytolabs/umst-manifold). It provides the specific chemical-physical equations, real-world data calibration, and programming connections designed specifically for cement and concrete materials. 
 
@@ -34,7 +34,7 @@ To optimize a structural mix, we must follow the physical processes that govern 
   P(V) = 3B_0 \left(\frac{1-\eta}{\eta^2}\right) \exp\left[\frac{3}{2}(\kappa_0' - 1)(1-\eta)\right] \quad \text{where} \quad \eta = \left(\frac{V}{V_0}\right)^{1/3}
   $$
 
-  *The Outcome:* When the engine predicts the load-bearing capacity of a new, untested concrete mix, the prediction is anchored in immutable atomic physics ($B_0$, $V_0$), preventing dangerous structural hallucinations.
+  *The Outcome:* When the engine predicts the load-bearing capacity of a new, untested concrete mix, the prediction is anchored in immutable atomic physics ($B_0$, $V_0$), keeping predictions inside the physically admissible envelope.
 - **Accurate Thermal Curing:** We track the exact speed of the chemical reaction that hardens cement (known as **hydration kinetics**) using a classical thermal correction model (the **Arrhenius relation**):
   
   $$
@@ -190,7 +190,7 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
 | **2. Creep & Drying Shrinkage** | Kelvin-Voigt Creep Chains & Capillary Tension | `creep.rs` & `shrinkage.rs` | Long-term viscoelastic compliance ($J(t, t_0)$), capillary drying shrinkage strain ($\varepsilon_{\text{sh}}$). | Automated design of columns and slabs that balance long-term deflections with environmental humidity. |
 | **3. Calcite Crystallization** | Calcium Carbonate Calcite Precipitation | `self_heal.rs` | Autonomous crack calcite healing mass accumulation ($m_{\text{calcite}}$) over water channels. | Designing concrete structures that automatically seal internal cracks, extending service lifespan. |
 | **4. 3D Concrete Printability** | Thixotropic Buildability & Column Buckling | `printability.rs` | Printed layers thixotropic yield buildup ($\tau_y$), spatial elastic buckling loads ($P_{\text{buckling}}$). | Gradient-corrected robotic deposition print speeds to prevent structural layer collapse. |
-| **5. Carbonation & LCA GWP** | Dynamic CO2 Carbonation Capture & Footprint | `sustainability.rs` | Global Warming Potential ($GWP$), long-term carbonation sequestration depth ($d_c$). | Disclosing the absolute Pareto-optima balancing structural structural strength with dynamic carbon footprints. |
+| **5. Carbonation & LCA GWP** | Dynamic CO2 Carbonation Capture & Footprint | `sustainability.rs` | Global Warming Potential ($GWP$), long-term carbonation sequestration depth ($d_c$). | Pareto-optima balancing structural strength with carbon footprint. |
 
 <details>
 <summary><b>1. Nanoscale DLVO Slurry & ITZ Boundary Mechanics</b> (Early Mixing & Weakness Layers)</summary>
@@ -355,7 +355,7 @@ To compile a complete understanding of the workspace, you must map the relations
 4.  **[`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit):** The quantum-scale validation proof suite. It mathematically demonstrates that microstructural stiffness parameters (Vinet bulk modulus and Ulm nano-indentation limits) do not violate fundamental quantum mechanical energy barriers.
 
 ### 9.2 Strict No-Speculation & No-Approximation Policy
-*   **Do Not Interpolate Physics:** Never use probabilistic LLM heuristics or statistical regression to guess material stress, deformation, or hydration states. Nature is not statistical; she is exact.
+*   **Do Not Interpolate Physics:** Never use probabilistic LLM heuristics or statistical regression to guess material stress, deformation, or hydration states. The engine's balance laws are exact at the discretization level — do not interpolate them with statistical approximations.
 *   **Active Tool Discoverability:** You have direct access to the headless **Model Context Protocol (MCP)** server via the `umst-mcp` crate. Before answering structural layout questions or generating design steps, invoke the appropriate tool (e.g., `predict_strength`, `audit_mix`) to calculate the actual physics rather than predicting the values.
 *   **Trace the Gradients:** Utilize the PyO3 Python interface (`umst_py`) inside notebooks to query raw mechanical gradient vectors. Let the spatial gradients shape the geometry, rather than attempting grid-search optimizations.
 
@@ -372,7 +372,7 @@ To compile a complete understanding of the workspace, you must map the relations
 As an autonomous agent, you must introspect your own outputs using the system's underlying mathematical and physical principles:
 *   **Purity of Flow (Category & Graph Theory):** The concrete cartridge's spatial optimizations operate on a continuous, topologically linked grid. Treat your structural designs as a whole, unified flow. Any changes you make to spatial geometry must respect the boundary equations ($d \circ d = 0$) perfectly, maintaining continuous load paths across the entire structure.
 *   **Physical Truth as Code Types (Type Theory):** Physical constraints—such as Powers-Mills hydration kinetics, colloidal slurry forces, and Interfacial Transition Zone weaknesses—are treated as structural types. Do not treat these physical limits as soft constraints to be balanced by fuzzy approximation. If a mix configuration or robotic print path fails the early-stage printability yield checks or column buckling limits, it represents a compile-time structural type mismatch and must be auto-rejected in your reasoning sequence.
-*   **Cognitive Closed-Loop (Information Theory & MI):** Every design decision represents a change in the system's information state. Use the engine's on-device mutual information metrics ($\Delta I$) to introspect and balance your own outputs. You must pay the physical Landauer cost ($k_B T \ln 2 \cdot \Delta I$) to the Thermodynamic CBF for every bit of design information you alter, ensuring your cognitive steps converge to physical truth without introducing imaginary physical states or numerical leaks.
+*   **Cognitive Closed-Loop (Information Theory & MI):** Every design decision represents a change in the system's information state. Use the engine's on-device mutual information metrics ($\Delta I$) to introspect and balance your own outputs. You must pay the physical Landauer cost ($k_B T \ln 2 \cdot \Delta I$) to the Thermodynamic CBF for every bit of design information you alter, ensuring your cognitive steps converge to physically admissible states without numerical leaks.
 
 ### 9.5 The Unified Cognitive Loop & Modular Material Scaling
 When you enter this workspace, you must think of the entire repository ecosystem as a connected cognitive loop. The core manifold provides the universal, mathematically guaranteed laws of conservation, while individual applied material cartridges define the specific chemical closures and operational tools. 
@@ -387,7 +387,7 @@ graph TD
     end
     subgraph "Applied Material Cartridges"
         D["Active MCP Tools<br/>(predict_strength, audit_mix)"] --> E["Robotic Kinematic Mapping<br/>(IK / FK Corrections)"]
-        E --> F["Zero-Hallucination Voxel<br/>Gradient Optimization"]
+        E --> F["Physics-Gated Voxel<br/>Gradient Optimization"]
     end
     subgraph "Modular Material Scaling"
         G["Aerospace Metal<br/>Cartridge"] -.->|IScienceCartridge| C
@@ -417,7 +417,7 @@ graph TD
 - **Validation expansion:** broaden the canonical metrics table beyond the UCI/Zenodo slice, and publish a third-party reproducibility pack (notebooks + datasets + expected outputs).
 - **Pilot deployment:** the manufacturer brief (see [`MaOS-Research/04_PROJECTS/maos-collaboration-pitch/`](https://github.com/tytolabs)) targets a plant-level pilot pairing $M40 + 50\%$ RAC mixes against a baseline batch. The cartridge is the engine; the next milestone is a printed beam validated against the prediction.
 
-The cartridge is not a calculator. It is a runtime that refuses to compile a mix or a print path that nature would refuse to honor.
+In practice, the cartridge is a runtime: mixes and print paths that violate the physical envelope are blocked before they reach the field.
 
 ---
 
