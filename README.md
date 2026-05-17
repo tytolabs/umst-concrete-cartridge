@@ -12,7 +12,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 > *When water meets cement, nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a load-bearing structure. If the temperature or chemistry is off, the material cracks. The cartridge does not regress this from past test data; it simulates the chemical reactions and stresses directly.*
 
-**UMST Concrete Cartridge** is the applied physical brain of the [UMST Manifold](https://github.com/tytolabs/umst-manifold). It provides the specific chemical-physical equations, real-world data calibration, and programming connections designed specifically for cement and concrete materials. 
+**UMST Concrete Cartridge** is the applied physical brain of the [UMST Manifold](https://github.com/tytolabs/umst-manifold) for **cementitious materials**. It provides the specific chemical-physical equations, real-world data calibration, and programming connections for cement, concrete, and mineral binders. 
 
 The library exposes a physical-chemical design engine—gated by thermodynamic safety boundaries—to optimize concrete recipes, check print stability states in robotic manufacturing, and execute spatial structural shape optimizations under strict load limits.
 
