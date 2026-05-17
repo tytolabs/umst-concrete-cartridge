@@ -155,7 +155,86 @@ umst-concrete-cartridge/
 
 ---
 
-## 5. Quick Start (Time to Value < 60 Seconds)
+## 5. Constitutive Chemistry & Durability Closures
+
+The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 distinct, differentiable constitutive models. These map microscopic chemical reactions and pore physics directly onto the spatial mechanical tensor states.
+
+<details>
+<summary><b>1. Nanoscale DLVO Slurry & ITZ Boundary Mechanics</b> (Early Mixing & Weakness Layers)</summary>
+
+*   **Physical Concept:** Before concrete hardens, it is a colloidal slurry. The forces between tiny cement/silica particles govern how the wet mix flows. As it hardens, the boundary layers surrounding aggregates—the Interfacial Transition Zones (ITZ)—form a zone of mechanical weakness because of their higher porosity.
+*   **Exact Tensor Formulation:** DLVO forces calculate early-stage slurry colloidal stability by summing electrostatic repulsion ($V_R$) and van der Waals attraction ($V_A$). The ITZ layer scales local mechanical stiffness via local porosity:
+    
+    ```math
+    V_{\text{total}} = V_R + V_A = 2\pi\epsilon R \psi_0^2 \ln\left(1 + e^{-\kappa D}\right) - \frac{A_H R}{12 D}
+    ```
+    
+    ```math
+    E_{\text{ITZ}} = E_{\text{paste}} \cdot \left( \frac{1 - \phi_{\text{ITZ}}}{1 - \phi_{\text{paste}}} \right)^m
+    ```
+    
+    Where $\psi_0$ is surface potential, $\kappa^{-1}$ is Debye length, $A_H$ is the Hamaker constant, $D$ is separation distance, and $\phi$ is the localized volume fraction of porosity.
+</details>
+
+<details>
+<summary><b>2. Long-term Creep Compliance & Capillary Shrinkage</b> (Viscoelastic Aging & Drying)</summary>
+
+*   **Physical Concept:** Concrete undergoes two key long-term deformations. First, **creep**—the gradual, permanent bending under a sustained mechanical load over months. Second, **drying shrinkage**—the shrinking and cracking that occurs as moisture evaporates from microscopic capillary pores.
+*   **Exact Tensor Formulation:** Models creep compliance $J(t, t_0)$ via a Kelvin-Voigt chain and shrinkage strain $\epsilon_{\text{sh}}$ via Kelvin-Laplace capillary tension:
+    
+    ```math
+    J(t, t_0) = \frac{1}{E_0} + \sum_{i=1}^k \frac{1}{E_i} \left( 1 - e^{-(t-t_0)/\tau_i} \right)
+    ```
+    
+    ```math
+    \epsilon_{\text{sh}}(t) = \epsilon_{\infty} \cdot \left( 1 - \text{RH}(t)^n \right) \quad \text{where} \quad P_{\text{cap}} = - \frac{\rho R T}{M} \ln(\text{RH})
+    ```
+    
+    Where $t_0$ is the age at loading, $\tau_i$ are relaxation times, and $P_{\text{cap}}$ is internal capillary tension.
+</details>
+
+<details>
+<summary><b>3. Calcite Crystallization & Self-Healing Kinetics</b> (Autonomous Repair)</summary>
+
+*   **Physical Concept:** Micro-cracks inside concrete can repair themselves over time. When water penetrates a crack, it reacts with unhydrated cement particles and dissolved carbon dioxide, precipitating calcium carbonate crystals that physically bridge and seal the crack.
+*   **Exact Tensor Formulation:** Simulates the localized deposition rate of precipitated calcite ($m_{\text{calcite}}$) along crack surfaces based on moisture transport:
+    
+    ```math
+    \frac{d m_{\text{calcite}}}{d t} = k_{\text{precip}} \cdot a_{\text{crack}} \cdot \left( \frac{[\text{Ca}^{2+}][\text{CO}_3^{2-}]}{K_{sp}} - 1 \right) \cdot \theta(\text{RH} - \text{RH}_{\text{crit}})
+    ```
+    
+    Where $k_{\text{precip}}$ is kinetic rate, $a_{\text{crack}}$ is local crack surface area, $K_{sp}$ is the calcite solubility product, and $\theta$ is a Heaviside unit step function limiting precipitation to active moisture channels.
+</details>
+
+<details>
+<summary><b>4. Robotic Printability & Buckling Limit Envelopes</b> (3D Concrete Printing)</summary>
+
+*   **Physical Concept:** In 3D concrete printing, the printed layers must support their own weight without collapsing or buckling. The material must gain yield strength quickly enough to support the growing weight of the subsequent layers.
+*   **Exact Tensor Formulation:** Evaluates printed layer buildability by tracking yield stress development ($\tau_y$) over print age ($t$) and calculating structural elastic buckling limits:
+    
+    ```math
+    \tau_y(t) = \tau_{y0} + R_{\text{th}} \cdot t \quad \Longrightarrow \quad P_{\text{buckling}} = \frac{\pi^2 E(t) I}{4 H(t)^2}
+    ```
+    
+    Where $\tau_{y0}$ is initial yield stress, $R_{\text{th}}$ is the structuration rate (thixotropic buildup), $E(t)$ is aging Young’s modulus, $I$ is moment of inertia, and $H(t)$ is total height of the printed element.
+</details>
+
+<details>
+<summary><b>5. Global Warming Potential (GWP) & Dynamic Sequestration</b> (Carbon Life-Cycle)</summary>
+
+*   **Physical Concept:** Concrete production emits carbon dioxide, but over its lifetime, the exposed surfaces naturally absorb carbon dioxide back from the atmosphere. The engine tracks both the initial footprint and the long-term carbon capture rate.
+*   **Exact Tensor Formulation:** Calculates dynamic net carbon footprint by subtracting dynamic carbonation (sequestration) from the initial GWP:
+    
+    ```math
+    \text{Net CO}_2(t) = \sum w_i g_i - \int_A \int_0^x C_{\text{seq}} \cdot \text{erfc}\left(\frac{x}{2\sqrt{D_{\text{CO}_2} t}}\right) \, dx \, dA
+    ```
+    
+    Where $w_i$ is constituent mass, $g_i$ is unit carbon intensity, $D_{\text{CO}_2}$ is carbon dioxide diffusion coefficient in carbonated concrete, and $C_{\text{seq}}$ is maximum carbon capture capacity per unit volume.
+</details>
+
+---
+
+## 6. Quick Start (Time to Value < 60 Seconds)
 
 ### Surface A: The CLI (For massive dataset audits)
 ```bash
@@ -194,7 +273,7 @@ docker compose run --rm umst-mcp
 
 ---
 
-## 6. Build, Test, and CI Parity (For Integrators)
+## 7. Build, Test, and CI Parity (For Integrators)
 
 ```bash
 cd umst-concrete-cartridge
@@ -215,11 +294,11 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 | `solver-research` | Forwards `umst-manifold/solver-research` (Cutting edge kernels). |
 | `solver-experimental` | `stable` ∪ `research`. Used for the heavy RC beam and shell optimizations. |
 | `mac-fast` | `solver-experimental` + `render` + `blas-accelerate` — local M-series throughput bundle. |
-| `render` | Striatus / shell demo renderer hook for `optimize_shell_3d` (visualizes the artefact). |
+| `render` | Striatus / shell demo renderer hook for `optimize_shell_3d` (visualizes the work). |
 
 ---
 
-## 7. For Autonomous Agents
+## 8. For Autonomous Agents
 
 - **Repo root:** `umst-concrete-cartridge/` checkout — run `cargo`, `docker compose`, and `pip` paths relative to this directory unless a sub-crate README specifies otherwise.
 - **Safe, no-GPU defaults:** `cargo test --workspace`, `python3 scripts/mcp_smoke.py`, `cargo run -p umst-concrete-cartridge --example hydration_simulation`.
@@ -228,7 +307,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 
 ---
 
-## 8. Deep Documentation & Citations
+## 9. Deep Documentation & Citations
 
 For rigorous validation reports, exact mathematical constitutive equations, and generated formal proof status, consult the local `docs/` folder:
 - [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md)
