@@ -24,7 +24,7 @@ This is not a speculative LLM wrapper. This is a thermodynamically-gated, gradie
 
 ---
 
-## 1. The Physical Truth Behind the Code
+## 1. Physical and Chemical Formulations
 
 If you want to optimize a material, you must respect its physical limitations. We do not use neural networks to "guess" how concrete behaves based on macro-scale crushing tests. We calculate it.
 
@@ -104,18 +104,18 @@ The codebase exposes the underlying physics through four distinct, elegant surfa
 umst-concrete-cartridge/
 ├── Cargo.toml                   # The workspace manifest linking the physics to the surfaces.
 ├── crates/
-│   ├── umst-concrete-cartridge/ # 1. The Core Rust Library: Where the physical truth lives.
+│   ├── umst-concrete-cartridge/ # 1. The Core Rust Library: Constitutive chemistry and mechanical models.
 │   │   ├── src/core/            # ConcreteCartridge implementing the Manifold's IScienceCartridge.
 │   │   ├── src/physics/         # 26 constitutive closures (calculating hydration, strength, cost, GWP).
 │   │   └── examples/            # Native Rust demos (optimize_shell_3d, hydration_simulation).
 │   ├── umst-cli/                # 2. The Bash Surface: Fast, pipeline-ready tools.
 │   │   └── src/main.rs          # Binaries for `umst predict`, `umst audit` (Dataset verification).
-│   ├── umst-py/                 # 3. The Data Science Surface: Bridging Rust truth to Python tooling.
+│   ├── umst-py/                 # 3. The Data Science Surface: PyO3 bindings for Python and Jupyter.
 │   │   └── src/lib.rs           # PyO3 bindings so Jupyter and Blender can access the math.
 │   └── umst-mcp/                # 4. The Agentic Surface: Real-time intuition for AI and Robotics.
 │       └── src/main.rs          # JSON-RPC server exposing tools directly to Cursor, Claude, or ROS.
 ├── calibration/                 # 7 bundled empirical profiles anchoring predictions to reality (UCI, Zenodo).
-├── datasets/                    # Ground-truth CSV files for auditing and reproducibility.
+├── datasets/                    # Reference CSV datasets for mix validation.
 ├── schema/                      # Deterministic JSON schemas guaranteeing data contracts don't mutate.
 ├── notebooks/                   # Jupyter notebooks providing pandas pipelines and visual plots.
 ├── scripts/                     # Acceptance and deterministic validation scripts.
