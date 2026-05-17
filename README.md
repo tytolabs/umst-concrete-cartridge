@@ -54,44 +54,48 @@ If you want to optimize a material, you must respect its physical limitations. W
 
 ---
 
-## 2. Who Are You? (Domain Navigation Matrix)
+## 2. Cross-Domain Integration Specifications
 
-We do not force you into a proprietary GUI. The intelligence here acts as a "headless" engine designed to integrate flawlessly into your existing worldview.
+This cartridge exposes its physical equations through multiple programmatic surfaces to seamlessly integrate into your specific development environment:
 
 <details>
-<summary><b>1. The Form-Finders (Architects, Designers, DIY Tinkerers)</b></summary>
+<summary><b>1. Spatial Topologies & Structural Design</b> (Architects, Computational Designers)</summary>
 
-**Your Goal:** You want to design non-standard spatial topologies and freeform structural geometry, but you need mathematically rigorous verification of their structural load-bearing capacity under gravity.
-**Your Surface:** Python & Geometry Nodes.
-**How it Composes:** Use our PyO3 bindings (`umst-py`) to inject exact hydration chemistry and mechanical strength equations directly into your CAD-level workflows (Rhino/Grasshopper, FreeCAD, Blender) using Signed Distance Fields (SDFs).
-**The Outcome:** You define the external boundary envelope; the solver automatically evaluates the interior stress and stiffness fields to ensure strict physical structural integrity.
+*   **Integration Surface:** Python & Geometry Nodes.
+
+*   **Mathematical Pipeline:** Uses the PyO3 bindings (`umst-py`) to map localized hydration, mechanical strength, and stiffness fields directly onto CAD interfaces (Rhino/Grasshopper, FreeCAD, Blender) via Signed Distance Fields (SDFs).
+
+*   **Computational Outcome:** Real-time geometric optimization where internal mix densities and local wall thicknesses are automatically scaled to satisfy structural strength limits under gravity.
 </details>
 
 <details>
-<summary><b>2. The Material Masters (Material Researchers, Industrial Suppliers)</b></summary>
+<summary><b>2. Material Auditing & Mix Optimization</b> (Material Researchers, Suppliers)</summary>
 
-**Your Goal:** You are testing thousands of new, eco-friendly concrete mixes and need to audit their viability against global standards.
-**Your Surface:** The Command Line Interface (`umst-cli`).
-**How it Composes:** Use the `umst audit` command on massive CSV datasets of your mix designs. The engine tests them against our DFT-anchored calibration profiles.
-**The Outcome:** Instant, scientifically valid tabular summaries of your entire dataset's strength and carbon potential, without pouring a single physical sample.
+*   **Integration Surface:** Command Line Interface (`umst-cli`).
+
+*   **Mathematical Pipeline:** Leverages the `umst audit` pipeline on large-scale dataset inputs, matching empirical properties against DFT-anchored calibration profiles.
+
+*   **Computational Outcome:** Automated, high-throughput verification of compressive strength ($f_c$) development curves, hydration heat profiles, and GWP footprints across batch CSV entries.
 </details>
 
 <details>
-<summary><b>3. The Autonomous Agents (AI Architects, Robot Systems Designers)</b></summary>
+<summary><b>3. Robotic Manufacturing & 3D Printing</b> (Robotics Engineers, Agentic Designers)</summary>
 
-**Your Goal:** You are building robotic systems that 3D-print concrete, and the robot needs physical intuition.
-**Your Surface:** The Model Context Protocol (MCP) Server.
-**How it Composes:** Connect your multi-agent system directly to the engine over standard stdio using the JSON-RPC MCP server. 
-**The Outcome:** Your robot can query the physical stability of an extrusion path *in real-time*. If the path will cause the wet concrete to slump or fail, the Manifold's gradients guide the robot back to safety.
+*   **Integration Surface:** Model Context Protocol (MCP) Server.
+
+*   **Mathematical Pipeline:** Connects agentic control loops and ROS pipelines directly to the exact solvers over standard stdio using JSON-RPC.
+
+*   **Computational Outcome:** Closed-loop printing control where the robot continuously queries local hydration states and shear yield stress, preventing material collapse by adjusting print velocity or material feed rates.
 </details>
 
 <details>
-<summary><b>4. The Engineers (Structural & Civil Engineers, Systems Architects)</b></summary>
+<summary><b>4. Structural Verification & Systems Integration</b> (Structural & Civil Engineers, Systems Architects)</summary>
 
-**Your Goal:** You need rigorous validation, code-level integration, and safety guarantees.
-**Your Surface:** The Core Rust Library.
-**How it Composes:** Compile the `umst-concrete-cartridge` directly into your stack. Leverage the explicit `solver-stable` and `solver-experimental` Cargo feature flags to control exactly which physics kernels are active.
-**The Outcome:** A deterministic, deeply verifiable library that executes Striatus-class shell optimizations and full Voigt-Cauchy equilibrium balances at C-level speeds.
+*   **Integration Surface:** Core C-Callable Rust Library.
+
+*   **Mathematical Pipeline:** Embeds the native `umst-concrete-cartridge` package directly, managing solver domains via cargo features (`solver-stable` vs `solver-experimental`).
+
+*   **Computational Outcome:** Deterministic, low-latency execution of Voigt-Cauchy stress tensors, multi-species transport modeling, and spatial shell optimizations at compilation-level execution speeds.
 </details>
 
 ---
