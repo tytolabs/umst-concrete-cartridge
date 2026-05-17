@@ -55,10 +55,10 @@ We do not force you into a proprietary GUI. The intelligence here acts as a "hea
 <details>
 <summary><b>📐 1. The Form-Finders (Architects, Designers, DIY Tinkerers)</b></summary>
 
-**Your Goal:** You want to design wild, organic, unreinforced concrete shells, but you need to know if they will actually stand up to gravity.
+**Your Goal:** You want to design non-standard spatial topologies and freeform structural geometry, but you need mathematically rigorous verification of their structural load-bearing capacity under gravity.
 **Your Surface:** Python & Geometry Nodes.
-**How it Composes:** Use our PyO3 bindings (`umst-py`) to inject exact hydration and strength physics directly into your Rhino/Grasshopper, FreeCAD, or Blender workflows using SDFs (Signed Distance Fields).
-**The Outcome:** You design the beautiful shape; our engine quietly reshapes the unseen internal structure to ensure it obeys physics.
+**How it Composes:** Use our PyO3 bindings (`umst-py`) to inject exact hydration chemistry and mechanical strength equations directly into your CAD-level workflows (Rhino/Grasshopper, FreeCAD, Blender) using Signed Distance Fields (SDFs).
+**The Outcome:** You define the external boundary envelope; the solver automatically evaluates the interior stress and stiffness fields to ensure strict physical structural integrity.
 </details>
 
 <details>
@@ -135,8 +135,12 @@ head -n2 datasets/dataset_d1.csv | umst --profile uci_d1 audit
 
 ### Surface B: Python & Notebooks (For data scientists and CAD integration)
 ```bash
-# Install the exact Rust physics as a Python package
+# Compile and install the Rust physics library as a local Python package
+# Requires a functional Rust 1.88+ environment. Activates Maturin compilation.
 pip install './crates/umst-py[notebook]'
+
+# For local virtualenv development, Maturin develop is the preferred compilation path:
+# cd crates/umst-py && maturin develop --release --extras notebook
 
 # Run the Jupyter sustainability audit suite
 ./notebooks/run_all.sh
