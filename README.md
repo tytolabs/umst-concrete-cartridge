@@ -9,6 +9,9 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Notebook](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml)
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+[![Built on UMST Manifold](https://img.shields.io/badge/built_on-UMST_Manifold-2d3436)](https://github.com/tytolabs/umst-manifold)
+
+> Release notes in [CHANGELOG.md](CHANGELOG.md).
 
 > *When water meets cement, nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a load-bearing structure. If the temperature or chemistry is off, the material cracks. The cartridge does not regress this from past test data; it simulates the chemical reactions and stresses directly.*
 
@@ -378,6 +381,14 @@ New physical domains plug in by implementing **`IScienceCartridge`** — no mani
 - **Admissibility-first generalizes; accuracy-first overfits.** Models optimized for MAE on UCI / Zenodo slices broke on out-of-distribution mixes. Models gated by admissibility extrapolated cleanly, because the gate is the same physics in every regime — there is no out-of-distribution in the gate's frame.
 
 In practice, the cartridge is a runtime: mixes and print paths that violate the physical envelope are blocked before they reach the field.
+
+---
+
+### Related
+
+- [**UMST Manifold**](https://github.com/tytolabs/umst-manifold) — core DEC substrate and thermodynamic gate this cartridge mounts on
+- [**UMST Formal**](https://github.com/tytolabs/umst-formal) — Lean 4 / Coq proof anchors (Track J3) for the conservation laws
+- [**UMST Formal Double-Slit**](https://github.com/tytolabs/umst-formal-double-slit) — quantum-information proofs anchoring the Thermodynamic CBF
 
 ---
 
