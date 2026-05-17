@@ -10,7 +10,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-> *"The thermodynamics of hydration do not negotiate with human optimism. Nature has no interest in our carbon accounting; she only counts the exact entropy of the reaction. To optimize a material that bears our world, we must first learn to speak to it in its native language—the unforgiving stoichiometry of calcium-silicate-hydrate. We built an engine that simply calculates the math she has already written."*
+> *"We enjoy pretending we can negotiate with chemistry using spreadsheets and carbon offsets. But a cement particle does not read our balance sheets. It reacts, generates heat, crystallizes, and eventually cracks—completely indifferent to our plans. We didn't build an AI to guess the outcome. We simply built an engine that calculates the physical chemistry that has already been decided."*
 
 **UMST Concrete Cartridge** is the applied specialization of the [UMST Manifold](https://github.com/tytolabs/umst-manifold). It provides the differentiable constitutive equations, empirical calibration, and deployment surfaces for cementitious materials. 
 
