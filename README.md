@@ -10,7 +10,11 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-**UMST Concrete Cartridge** is the differentiable constitutive and calibration layer for cementitious materials, built to mount on **[UMST Manifold](https://github.com/tytolabs/umst-manifold)**. The workspace ships a Rust library (**Burn** + **`burn-ndarray`**), a CLI, **PyO3** bindings, and an **MCP** server so the same physics and data contracts surface in notebooks, services, and agent workflows. `ConcreteCartridge` supplies mix-to-field closures; the manifold supplies DEC operators, equilibrium and adjoint mechanics, fracture and transport kernels, and topology evolution—composed through explicit **Cargo features** that forward the manifold’s **`solver-stable` / `solver-research` / `solver-experimental`** lanes.
+> *"The universe does not care about your startup's pitch deck; entropy always wins. We built an AI that understands this. It does not guess. It computes the inevitable."*
+
+**UMST Concrete Cartridge** is the applied specialization of the [UMST Manifold](https://github.com/tytolabs/umst-manifold). It provides the differentiable constitutive equations, empirical calibration, and deployment surfaces for cementitious materials. 
+
+This is not a speculative LLM wrapper. This is a thermodynamically-gated, gradient-based design engine that can optimize a concrete mix's carbon footprint, assess the buildability of a 3D-printed structure, and evolve the topology of a load-bearing shell—all while strictly obeying the laws of physics.
 
 <p align="center">
   <img src="docs/assets/beam_strut_and_tie.gif" alt="RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)" width="960" />
@@ -18,21 +22,47 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 *32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row; viridis density ρ, compliance strip, captions — rendered to `notebooks/_artifacts/beam_strut_and_tie.gif` via the same mechanics façade as the rest of the cartridge.*
 
-## Composition with the manifold
+## The Physical Truth Behind the Code
 
-- **[`umst-manifold`](https://github.com/tytolabs/umst-manifold)** (git dependency on `main`) provides graph/mesh operators, solver implementations, and the **`IScienceCartridge`** host API.
-- **This repo** holds hydration kinetics, empirical calibration profiles, Striatus-class shell demos, print-ready export pipelines, and tests that lock cartridge–manifold wiring.
+We anchor every claim in mathematical and physical truth.
+- **No Guessing at the Nanoscale:** Our Young's moduli are derived from Pellenq's 2009 Vinet bulk modulus and Ulm & Constantinides nano-indentation.
+- **Accurate Kinetics:** We use Powers/Mills hydration kinetics with Arrhenius temperature corrections. The gradients flow directly through the hydration tensor w.r.t mix fractions.
+- **Sustainability as a Computable Metric:** We compute Global Warming Potential (GWP) via differentiable tensor dot products against unit cost factors, enabling true Pareto-frontier optimization for carbon-negative concrete.
 
-With **`solver-experimental`** disabled (default), `ConcreteCartridge::compute_topology` follows the heat-graph Laplacian path; enabling **`solver-experimental`** pulls the full manifold solver union so examples such as **`optimize_rc_beam`** and **`optimize_shell_3d`** compile and run with phase-field, adjoint, and shell-specific hooks documented in-repo.
+## Interoperability: We Play Nice
 
-## Workspace layout
+We do not force you into a proprietary GUI. The intelligence here acts as a "headless" engine designed to integrate flawlessly into your existing, industry-standard workflows.
 
-| Crate | Role |
-|-------|------|
-| `crates/umst-concrete-cartridge` | Library façade, constitutive modules, topology helpers, Striatus examples. |
-| `crates/umst-cli` | Binaries `umst`, `umst-canonical`. |
-| `crates/umst-py` | Python bindings (`pip install './crates/umst-py[notebook]'`). |
-| `crates/umst-mcp` | Model Context Protocol server for agent-facing tools. |
+- **Architects & Designers (Rhino/Grasshopper, FreeCAD, Blender):** Use our Python bindings (`umst-py`) to inject exact hydration and strength physics directly into your geometry nodes or SDF/F-rep workflows.
+- **Autonomous Agents & Robotics:** Connect your multi-agent systems directly to the engine via the **Model Context Protocol (MCP)** server. Your agent can query the physical stability of an extrusion path in real-time.
+- **Material Scientists:** Use the `umst` CLI to audit massive CSV datasets of mix designs against our DFT-anchored calibration profiles.
+
+## Exhaustive Architecture Topology
+
+The codebase exposes the underlying physics through four distinct, elegant surfaces.
+
+```text
+umst-concrete-cartridge/
+├── Cargo.toml
+├── crates/
+│   ├── umst-concrete-cartridge/ # 1. The Core Rust Library
+│   │   ├── src/core/            # ConcreteCartridge implementing IScienceCartridge
+│   │   ├── src/physics/         # 26 constitutive closures (hydration, strength, optical, cost, sustainability)
+│   │   └── examples/            # Native Rust demos (optimize_shell_3d, hydration_simulation)
+│   ├── umst-cli/                # 2. The Bash/Scripting Surface
+│   │   └── src/main.rs          # Binaries for `umst predict`, `umst audit`, `umst certify`
+│   ├── umst-py/                 # 3. The Data Science Surface (Python/Jupyter)
+│   │   └── src/lib.rs           # PyO3 bindings exposing the exact Rust physics
+│   └── umst-mcp/                # 4. The Agentic Surface (Model Context Protocol)
+│       └── src/main.rs          # JSON-RPC server exposing tools to Cursor/Claude
+├── calibration/                 # 7 bundled empirical profiles (UCI, Zenodo, etc.)
+├── datasets/                    # Ground-truth CSV files for auditing and repro
+├── schema/                      # Deterministic JSON schemas for mix and result contracts
+├── notebooks/                   # Jupyter notebooks bridging Python with rendering scripts
+├── scripts/                     # Acceptance and deterministic validation scripts
+├── Dockerfile                   # Distroless container deployment for the MCP server
+└── docker-compose.yml           # Instant MCP spin-up
+```
 
 Root **`Dockerfile`** / **`docker-compose.yml`** package the MCP service for container deployment.
 
