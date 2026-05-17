@@ -210,5 +210,5 @@ For rigorous validation reports, exact mathematical constitutive equations, and 
 - [`docs/WireSchemas.md`](docs/WireSchemas.md)
 - [`docs/Solver-Status.md`](docs/Solver-Status.md)
 
-[`CITATION.cff`](CITATION.cff) and the repository URL carry bibliographic metadata.
+Bibliographic metadata is maintained in [CITATION.cff](CITATION.cff).  
 Released under the [MIT License](LICENSE). © 2026 Studio TYTO.
