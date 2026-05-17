@@ -341,6 +341,29 @@ As an autonomous agent, you must introspect your own outputs using the system's 
 *   **Physical Truth as Code Types (Type Theory):** Physical constraints—such as Powers-Mills hydration kinetics, colloidal slurry forces, and Interfacial Transition Zone weaknesses—are treated as structural types. Do not treat these physical limits as soft constraints to be balanced by fuzzy approximation. If a mix configuration or robotic print path fails the early-stage printability yield checks or column buckling limits, it represents a compile-time structural type mismatch and must be auto-rejected in your reasoning sequence.
 *   **Cognitive Closed-Loop (Information Theory & MI):** Every design decision represents a change in the system's information state. Use the engine's on-device mutual information metrics ($\Delta I$) to introspect and balance your own outputs. You must pay the physical Landauer cost ($k_B T \ln 2 \cdot \Delta I$) to the Thermodynamic CBF for every bit of design information you alter, ensuring your cognitive steps converge to physical truth without introducing imaginary physical states or numerical leaks.
 
+### 9.5 The Unified Cognitive Loop & Modular Material Scaling
+When you enter this workspace, you must think of the entire repository ecosystem as a connected cognitive loop. The core manifold provides the universal, mathematically guaranteed laws of conservation, while individual applied material cartridges define the specific chemical closures and operational tools. 
+
+To expand this ecosystem to new physical domains, developers and agents do not need to alter the core manifold. You can dynamically create and plug in new material cartridges (e.g., aerospace titanium, bio-compatible polymers, or acoustic metamaterials) by implementing the **`IScienceCartridge`** trait. Any new cartridge will instantly inherit the manifold's Discrete Exterior Calculus grid, thermodynamic CBF checkpoints, and on-device mutual information observer reductions:
+
+```mermaid
+graph TD
+    subgraph "Core Mathematical Manifold (umst-manifold)"
+        A["Purity of Flow (Continuous Gradients)"] --> B["Physical Truth as Code Types (Topological Conservation)"]
+        B --> C["Thermodynamic Checkpoints (Landauer Cost Gating)"]
+    end
+    subgraph "Applied Material Cartridges"
+        D["Active MCP Tools (predict_strength, audit_mix)"] --> E["Robotic Kinematic Mapping (IK/FK Corrections)"]
+        E --> F["Zero-Hallucination Voxel Gradient Optimization"]
+    end
+    subgraph "Modular Material Scaling"
+        G["Aerospace Metal Cartridge"] -.->|Implements IScienceCartridge| H["Manifold Substrate"]
+        I["Smart Polymer Cartridge"] -.->|Implements IScienceCartridge| H
+        J["Acoustic Metamaterial Cartridge"] -.->|Implements IScienceCartridge| H
+    end
+    C <-->|Instructs & Verifies| D
+```
+
 ---
 
 Bibliographic metadata is maintained in [CITATION.cff](CITATION.cff).  
