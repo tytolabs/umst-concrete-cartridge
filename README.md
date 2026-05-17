@@ -102,11 +102,13 @@ This cartridge exposes its physical equations through multiple programmatic surf
 <details>
 <summary><b>4. Structural Verification & Systems Integration</b> (Structural & Civil Engineers, Systems Architects)</summary>
 
-*   **Integration Surface:** Core C-Callable Rust Library.
+*   **Integration Surface:** Core C-Callable Rust Library (`extern "C"`) and high-performance FFI dynamic linking.
 
-*   **Mathematical Pipeline:** Embeds the native `umst-concrete-cartridge` package directly, managing solver domains via cargo features (`solver-stable` vs `solver-experimental`).
+*   **Architectural Benefits:** Direct memory linking allows zero-copy passing of tensor structures between host memory and the cartridge using native C pointer layouts—avoiding serialization overhead completely. Granular compilation gates (`solver-stable` vs `solver-experimental`) guarantee that critical production systems only execute verified, mathematically locked physics solvers while allowing research environments to concurrently test experimental kinetics blocks.
 
-*   **Computational Outcome:** Deterministic, low-latency execution of Voigt-Cauchy stress tensors, multi-species transport modeling, and spatial shell optimizations at compilation-level execution speeds.
+*   **Cross-Domain Synergy:** Integrates micro-scale cementitious chemistry (Powers-Mills hydration envelopes and C-S-H nanoscale crystallization kinetics) directly into macro-scale structural mechanical solvers. As the chemical reaction proceeds, the localized degree of hydration ($DoH$) directly scales the Young's Modulus and Voigt-Cauchy stiffness tensor, forming a tight physical-chemical coupling loop.
+
+*   **Computational Outcome & Improvement Potential:** Deterministic, low-latency execution of stress tensors, multi-species transport modeling, and spatial shell optimizations at compilation-level execution speeds. Future performance updates target direct transition of inner-loop spatial solvers to parallel GPU compute shaders (`wgpu` feature lane) as compiler-level JIT blocks are patched.
 </details>
 
 ---
