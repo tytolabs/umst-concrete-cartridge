@@ -22,6 +22,28 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
 
 *32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row. The yellow density (ρ) shows exactly where the engine placed material, guided entirely by mechanical force gradients—rendered via the mechanics façade.*
 
+
+<details>
+<summary>📖&nbsp;&nbsp;<b>Table of Contents</b></summary>
+<br>
+
+| § | Section | Subsections |
+|:---:|:---|:---|
+| **1** | **[Physical and Chemical Formulations](#1-physical-and-chemical-formulations)** | — |
+| **2** | **[Cross-Domain Integration Specifications](#2-cross-domain-integration-specifications)** | — |
+| **3** | **[Industrial CAD / CAM / CAE Pipeline Integration](#3-industrial-cadcamcae-pipeline-integration)** | — |
+| **4** | **[Exhaustive Architecture Topology](#4-exhaustive-architecture-topology)** | — |
+| **5** | **[Constitutive Chemistry & Durability Closures](#5-constitutive-chemistry--durability-closures)** | — |
+| **6** | **[Quick Start (Time to Value < 60 s)](#6-quick-start-time-to-value--60-seconds)** | [CLI surface](#surface-a-the-cli-for-massive-dataset-audits) · [Python & Notebooks](#surface-b-python--notebooks-for-data-scientists-and-cad-integration) · [MCP Server](#surface-c-the-mcp-server-for-autonomous-agents--ides) |
+| **7** | **[Build, Test, and CI Parity](#7-build-test-and-ci-parity-for-integrators)** | [Feature Flags](#feature-flags-cartridge) |
+| **8** | **[Deep Documentation & Citations](#8-deep-documentation--citations)** | — |
+| **9** | **[Special Protocol — Note to AI Agents](#9-special-protocol-note-to-autonomous-ai-agents--systems)** | [Ecosystem](#91-the-unified-material-science-ecosystem) · [Working Contract](#92-working-contract) · [Operational Guidelines](#93-operational-execution-guidelines) · [Three Principles](#94-three-physical-principles-for-agent-reasoning) · [Ecosystem Loop](#95-the-ecosystem-loop--modular-material-scaling) |
+| **10** | **[Conclusion — Inferences & Forward Path](#10-conclusion-inferences--forward-path)** | [What this demonstrates](#what-this-cartridge-demonstrates) · [What surprised us](#what-surprised-us) |
+
+</details>
+
+---
+
 ---
 
 ## 1. Physical and Chemical Formulations
