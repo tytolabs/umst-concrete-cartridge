@@ -30,30 +30,90 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
 
 <!-- readme:table-of-contents -->
 <details>
-<summary><b>Table of contents</b> (click to expand)</summary>
+<summary><b>Table of contents</b> (detailed map + read checklist)</summary>
 <br>
 
-| Section | Subsections & jumps |
+**Top-level map**
+
+| Block | Jump |
 |:---|:---|
-| **Foundations** | |
-| [1. Physical & chemical formulations](#1-physical-and-chemical-formulations) | [1.1 On the UMST carrier](#11-mounting-on-the-umst-carrier) · [1.2 Grounding contract](#12-grounding-contract-derived-constants-and-second-law-composition) |
-| [2. Cross-domain integration](#2-cross-domain-integration-specifications) | *Per-audience blocks are collapsible under §2.* |
-| [3. Industrial CAD/CAM/CAE](#3-industrial-cadcamcae-pipeline-integration) | |
-| [4. Architecture topology](#4-exhaustive-architecture-topology) | [Tree (collapsible)](#4-exhaustive-architecture-topology) |
-| [5. Constitutive closures](#5-constitutive-chemistry--durability-closures) | *Closure deep-dives are collapsible under §5.* |
-| **Operations & integration** | |
-| [6. Quick start](#6-quick-start-time-to-value--60-seconds) | [CLI](#surface-a-the-cli-for-massive-dataset-audits) · [Python / notebooks](#surface-b-python--notebooks-for-data-scientists-and-cad-integration) · [MCP](#surface-c-the-mcp-server-for-autonomous-agents--ides) |
-| [7. Build, test, CI](#7-build-test-and-ci-parity-for-integrators) | [Feature flags](#feature-flags-cartridge) |
-| [8. Deep documentation](#8-deep-documentation--citations) | |
-| **Protocol & conclusion** | |
-| [9. Note to AI agents](#9-special-protocol-note-to-autonomous-ai-agents--systems) | [9.1 Ecosystem](#91-the-unified-material-science-ecosystem) · [9.2 Contract](#92-working-contract) · [9.3 Operations](#93-operational-execution-guidelines) · [9.4 Principles](#94-three-physical-principles-for-agent-reasoning) · [9.5 Loop](#95-the-ecosystem-loop--modular-material-scaling) |
-| [10. Conclusion](#10-conclusion-inferences--forward-path) | [Demonstrates](#what-this-cartridge-demonstrates) · [Surprised us](#what-surprised-us) |
-| [Related repositories](#related) | |
+| Foundations | [§1](#1-physical-and-chemical-formulations) · [§2](#2-cross-domain-integration-specifications) |
+| Integration & layout | [§3](#3-industrial-cadcamcae-pipeline-integration) · [§4](#4-exhaustive-architecture-topology) · [§5](#5-constitutive-chemistry--durability-closures) |
+| Operations | [§6](#6-quick-start-time-to-value--60-seconds) · [§7](#7-build-test-and-ci-parity-for-integrators) · [§8](#8-deep-documentation--citations) |
+| Agents & wrap-up | [§9](#9-special-protocol-note-to-autonomous-ai-agents--systems) · [§10](#10-conclusion-inferences--forward-path) · [Related](#related) |
+
+**Detailed checklist** — tick as you read (subsections link to headings; collapsible blocks without their own anchors are listed under the parent §).
+
+- [ ] [§1 Physical and Chemical Formulations](#1-physical-and-chemical-formulations)
+  - [ ] [1.1 Mounting on the UMST carrier](#11-mounting-on-the-umst-carrier)
+  - [ ] [1.2 Grounding contract: derived constants and second-law composition](#12-grounding-contract-derived-constants-and-second-law-composition)
+  - [ ] In-§1 narrative bullets — nanoscale / Arrhenius curing / DFT baselines / differentiable GWP *(under §1, no sub-anchors)*
+- [ ] [§2 Cross-Domain Integration Specifications](#2-cross-domain-integration-specifications)
+  - [ ] *Dropdown* — Spatial Topologies & Structural Design (Rhino / Blender / FreeCAD / MCP)
+  - [ ] *Dropdown* — Material Auditing & Mix Optimization (`umst-cli`)
+  - [ ] *Dropdown* — Robotic Manufacturing & 3D Printing (scope + kinematic story + sequence diagram)
+  - [ ] *Dropdown* — Structural Verification & Systems Integration (C ABI / FFI)
+- [ ] [§3 Industrial CAD/CAM/CAE Pipeline Integration](#3-industrial-cadcamcae-pipeline-integration)
+  - [ ] Integration table (BIM · FEM · Robotic CAM · PLM rows)
+- [ ] [§4 Exhaustive Architecture Topology](#4-exhaustive-architecture-topology)
+  - [ ] *Dropdown* — Repository tree (`umst-concrete-cartridge/` paths)
+- [ ] [§5 Constitutive Chemistry & Durability Closures](#5-constitutive-chemistry--durability-closures)
+  - [ ] Summary closure table (nanoscale → GWP rows)
+  - [ ] *Dropdown* — Nanoscale DLVO & ITZ
+  - [ ] *Dropdown* — Creep & capillary shrinkage
+  - [ ] *Dropdown* — Calcite & self-healing
+  - [ ] *Dropdown* — Robotic printability & buckling
+  - [ ] *Dropdown* — GWP & dynamic sequestration
+- [ ] [§6 Quick start (~60 s)](#6-quick-start-time-to-value--60-seconds)
+  - [ ] *Dropdown* — Copy-paste: CLI, Python, MCP
+  - [ ] [Surface A: The CLI](#surface-a-the-cli-for-massive-dataset-audits)
+  - [ ] [Surface B: Python & Notebooks](#surface-b-python--notebooks-for-data-scientists-and-cad-integration)
+  - [ ] [Surface C: The MCP Server](#surface-c-the-mcp-server-for-autonomous-agents--ides)
+- [ ] [§7 Build, Test, and CI Parity (For Integrators)](#7-build-test-and-ci-parity-for-integrators)
+  - [ ] *Dropdown* — Integrator commands & feature matrix
+  - [ ] [Feature Flags (Cartridge)](#feature-flags-cartridge)
+- [ ] [§8 Deep Documentation & Citations](#8-deep-documentation--citations)
+  - [ ] Linked docs list (`Constitutive-Equations`, `Validation`, `WireSchemas`, `Solver-Status`)
+- [ ] [§9 Special Protocol: Note to Autonomous AI Agents & Systems](#9-special-protocol-note-to-autonomous-ai-agents--systems)
+  - [ ] [9.1 The Unified Material Science Ecosystem](#91-the-unified-material-science-ecosystem)
+  - [ ] [9.2 Working Contract](#92-working-contract)
+  - [ ] [9.3 Operational Execution Guidelines](#93-operational-execution-guidelines)
+  - [ ] [9.4 Three Physical Principles for Agent Reasoning](#94-three-physical-principles-for-agent-reasoning)
+  - [ ] [9.5 The Ecosystem Loop & Modular Material Scaling](#95-the-ecosystem-loop--modular-material-scaling)
+- [ ] [§10 Conclusion: Inferences & Forward Path](#10-conclusion-inferences--forward-path)
+  - [ ] [What this cartridge demonstrates](#what-this-cartridge-demonstrates) *(italic lead-in + bullets)*
+  - [ ] [What surprised us](#what-surprised-us)
+- [ ] [Related](#related)
 
 <details>
-<summary><b>Jump tags</b> (anchors for agents & deep links)</summary>
+<summary><b>Jump tags & anchors</b> (copy for deep links)</summary>
 
-`#1-physical-and-chemical-formulations` · `#2-cross-domain-integration-specifications` · `#3-industrial-cadcamcae-pipeline-integration` · `#4-exhaustive-architecture-topology` · `#5-constitutive-chemistry--durability-closures` · `#6-quick-start-time-to-value--60-seconds` · `#7-build-test-and-ci-parity-for-integrators` · `#8-deep-documentation--citations` · `#9-special-protocol-note-to-autonomous-ai-agents--systems` · `#10-conclusion-inferences--forward-path` · `#related`
+```
+#1-physical-and-chemical-formulations
+#11-mounting-on-the-umst-carrier
+#12-grounding-contract-derived-constants-and-second-law-composition
+#2-cross-domain-integration-specifications
+#3-industrial-cadcamcae-pipeline-integration
+#4-exhaustive-architecture-topology
+#5-constitutive-chemistry--durability-closures
+#6-quick-start-time-to-value--60-seconds
+#surface-a-the-cli-for-massive-dataset-audits
+#surface-b-python--notebooks-for-data-scientists-and-cad-integration
+#surface-c-the-mcp-server-for-autonomous-agents--ides
+#7-build-test-and-ci-parity-for-integrators
+#feature-flags-cartridge
+#8-deep-documentation--citations
+#9-special-protocol-note-to-autonomous-ai-agents--systems
+#91-the-unified-material-science-ecosystem
+#92-working-contract
+#93-operational-execution-guidelines
+#94-three-physical-principles-for-agent-reasoning
+#95-the-ecosystem-loop--modular-material-scaling
+#10-conclusion-inferences--forward-path
+#what-this-cartridge-demonstrates
+#what-surprised-us
+#related
+```
 
 </details>
 
