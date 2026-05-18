@@ -5,6 +5,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # UMST Concrete Cartridge: The Applied Intelligence
 
+<!-- readme:status -->
 [![CI — Rust](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
 [![Notebook](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml)
 [![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
@@ -25,27 +26,34 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
 
 *32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row. The yellow density (ρ) shows exactly where the engine placed material, guided entirely by mechanical force gradients—rendered via the mechanics façade.*
 
-
+<!-- readme:table-of-contents -->
 <details>
-<summary><b>Table of Contents</b></summary>
+<summary><b>Table of contents</b> (click to expand)</summary>
 <br>
 
-| Section | Subsections |
+| Section | Subsections & jumps |
 |:---|:---|
 | **Foundations** | |
-| [1. Physical and Chemical Formulations](#1-physical-and-chemical-formulations) | |
-| [2. Cross-Domain Integration Specifications](#2-cross-domain-integration-specifications) | |
-| [3. Industrial CAD/CAM/CAE Pipeline Integration](#3-industrial-cadcamcae-pipeline-integration) | |
-| [4. Exhaustive Architecture Topology](#4-exhaustive-architecture-topology) | |
-| [5. Constitutive Chemistry & Durability Closures](#5-constitutive-chemistry--durability-closures) | |
-| **Operations & Integration** | |
-| [6. Quick Start (Time to Value < 60 Seconds)](#6-quick-start-time-to-value--60-seconds) | [CLI surface](#surface-a-the-cli-for-massive-dataset-audits) · [Python & Notebooks](#surface-b-python--notebooks-for-data-scientists-and-cad-integration) · [MCP Server](#surface-c-the-mcp-server-for-autonomous-agents--ides) |
-| [7. Build, Test, and CI Parity](#7-build-test-and-ci-parity-for-integrators) | [Feature Flags](#feature-flags-cartridge) |
-| [8. Deep Documentation & Citations](#8-deep-documentation--citations) | |
-| **Protocol & Conclusion** | |
-| [9. Special Protocol: Note to AI Agents](#9-special-protocol-note-to-autonomous-ai-agents--systems) | [Ecosystem](#91-the-unified-material-science-ecosystem) · [Working Contract](#92-working-contract) · [Operational Guidelines](#93-operational-execution-guidelines) · [Three Principles](#94-three-physical-principles-for-agent-reasoning) · [Ecosystem Loop](#95-the-ecosystem-loop--modular-material-scaling) |
-| [10. Conclusion: Inferences & Forward Path](#10-conclusion-inferences--forward-path) | [What this cartridge demonstrates](#what-this-cartridge-demonstrates) · [What surprised us](#what-surprised-us) |
+| [1. Physical & chemical formulations](#1-physical-and-chemical-formulations) | [1.1 On the UMST carrier](#11-mounting-on-the-umst-carrier) |
+| [2. Cross-domain integration](#2-cross-domain-integration-specifications) | *Per-audience blocks are collapsible under §2.* |
+| [3. Industrial CAD/CAM/CAE](#3-industrial-cadcamcae-pipeline-integration) | |
+| [4. Architecture topology](#4-exhaustive-architecture-topology) | [Tree (collapsible)](#4-exhaustive-architecture-topology) |
+| [5. Constitutive closures](#5-constitutive-chemistry--durability-closures) | *Closure deep-dives are collapsible under §5.* |
+| **Operations & integration** | |
+| [6. Quick start](#6-quick-start-time-to-value--60-seconds) | [CLI](#surface-a-the-cli-for-massive-dataset-audits) · [Python / notebooks](#surface-b-python--notebooks-for-data-scientists-and-cad-integration) · [MCP](#surface-c-the-mcp-server-for-autonomous-agents--ides) |
+| [7. Build, test, CI](#7-build-test-and-ci-parity-for-integrators) | [Feature flags](#feature-flags-cartridge) |
+| [8. Deep documentation](#8-deep-documentation--citations) | |
+| **Protocol & conclusion** | |
+| [9. Note to AI agents](#9-special-protocol-note-to-autonomous-ai-agents--systems) | [9.1 Ecosystem](#91-the-unified-material-science-ecosystem) · [9.2 Contract](#92-working-contract) · [9.3 Operations](#93-operational-execution-guidelines) · [9.4 Principles](#94-three-physical-principles-for-agent-reasoning) · [9.5 Loop](#95-the-ecosystem-loop--modular-material-scaling) |
+| [10. Conclusion](#10-conclusion-inferences--forward-path) | [Demonstrates](#what-this-cartridge-demonstrates) · [Surprised us](#what-surprised-us) |
 | [Related repositories](#related) | |
+
+<details>
+<summary><b>Jump tags</b> (anchors for agents & deep links)</summary>
+
+`#1-physical-and-chemical-formulations` · `#2-cross-domain-integration-specifications` · `#3-industrial-cadcamcae-pipeline-integration` · `#4-exhaustive-architecture-topology` · `#5-constitutive-chemistry--durability-closures` · `#6-quick-start-time-to-value--60-seconds` · `#7-build-test-and-ci-parity-for-integrators` · `#8-deep-documentation--citations` · `#9-special-protocol-note-to-autonomous-ai-agents--systems` · `#10-conclusion-inferences--forward-path` · `#related`
+
+</details>
 
 </details>
 
@@ -54,6 +62,10 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
 ---
 
 ## 1. Physical and Chemical Formulations
+
+### 1.1 Mounting on the UMST carrier
+
+This cartridge implements **`IScienceCartridge`** on the [UMST Manifold](https://github.com/tytolabs/umst-manifold) and reads/writes the **UMST carrier** — the unified per-voxel state bundle described in the manifold README as an **[extensible pipeline](https://github.com/tytolabs/umst-manifold#2-unified-material-state-pipeline-umst-carrier)** (64 scalar **lanes** in today’s default tensor layout; lane semantics stay versioned with `schema/` and crate releases). Nothing here assumes a fixed “64 forever”; it assumes a **stable contract** between mix JSON, Rust tensors, and CI.
 
 To optimize a structural mix, we must follow the physical processes that govern its life cycle. The engine calculates mechanical properties by simulating the chemical reactions occurring at the microscopic scale:
 
@@ -145,7 +157,7 @@ The cartridge is engineered to interface directly with industry-standard design,
 | Category & Software | Integration Vector | Industrial Workflow Impact |
 | :--- | :--- | :--- |
 | **BIM & Generative Design** <br> *Autodesk Revit / Dynamo* | **.NET P/Invoke / C-FFI** <br> Dynamo Zero-Touch nodes link directly to the native compiled library (`.dll`), or query the local `umst-mcp` daemon via async C# HttpClient. | **Early-Stage Carbon & Strength Auditing:** Generative structural components automatically evaluate hydration kinetics and localized GWP footprints during design layout, preventing unbuildable geometric allocations. |
-| **Advanced FEM & Multiphysics** <br> *Abaqus / ANSYS / COMSOL* | **C-Callable UMAT/VUMAT** <br> Compiled with standard C-bindings (`extern "C"`), Abaqus UMAT/VUMAT subroutines query the 64-channel Unified Material State Tensor at individual integration points. | **Deterministic Material Modeling:** Replaces soft empirical approximations with thermodynamically consistent, DFT-anchored stress-strain evolution curves during massive structural simulation. |
+| **Advanced FEM & Multiphysics** <br> *Abaqus / ANSYS / COMSOL* | **C-Callable UMAT/VUMAT** <br> Compiled with standard C-bindings (`extern "C"`), Abaqus UMAT/VUMAT subroutines query the **64-lane UMST carrier** at individual integration points (unified material state tensor; see manifold §2). | **Deterministic Material Modeling:** Replaces soft empirical approximations with thermodynamically consistent, DFT-anchored stress-strain evolution curves during massive structural simulation. |
 | **Robotic CAM & CNC Extrusion** <br> *Klipper / ROS2 / Slicers* | **Asynchronous ROS2 Nodes / MCP** <br> Print controllers query the `umst-mcp` server asynchronously over TCP sockets or standard JSON-RPC. | **Closed-Loop Extrusion Control:** Robotic printers receive feed-rate and curing-state adjustments per gating cycle, sized to the local wet-mix shear yield stress (cycle latency tracks the printability solver). |
 | **Material PLM Databases** <br> *Ansys Granta MI / Siemens Teamcenter* | **Headless CLI Piping (`umst audit`)** <br> Automated material auditing scripts parse tabular CSV raw mix inputs, streaming verification telemetry back to PLM repositories. | **Verified Sustainable Procurement:** Ingests batch supplier datasets to dynamically verify material performance compliance and structural footprint records across global projects. |
 
@@ -154,6 +166,9 @@ The cartridge is engineered to interface directly with industry-standard design,
 ## 4. Exhaustive Architecture Topology
 
 The codebase exposes the underlying physics through four distinct, elegant surfaces.
+
+<details>
+<summary><b>Repository tree</b> (paths & surfaces)</summary>
 
 ```text
 umst-concrete-cartridge/
@@ -177,6 +192,8 @@ umst-concrete-cartridge/
 ├── Dockerfile                   # Distroless container deployment for the MCP server.
 └── docker-compose.yml           # Isolated MCP spin-up.
 ```
+
+</details>
 
 ---
 
@@ -255,6 +272,9 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
 
 ## 6. Quick Start (Time to Value < 60 Seconds)
 
+<details>
+<summary><b>Copy-paste: CLI, Python, MCP</b></summary>
+
 ### Surface A: The CLI (For massive dataset audits)
 ```bash
 # 1. Install the CLI from source
@@ -290,9 +310,14 @@ docker compose build
 docker compose run --rm umst-mcp
 ```
 
+</details>
+
 ---
 
 ## 7. Build, Test, and CI Parity (For Integrators)
+
+<details>
+<summary><b>Integrator commands & feature matrix</b></summary>
 
 ```bash
 cd umst-concrete-cartridge
@@ -315,7 +340,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 | `mac-fast` | `solver-experimental` + `render` + `blas-accelerate` — local M-series throughput bundle. |
 | `render` | Striatus / shell demo renderer hook for `optimize_shell_3d` (visualizes the work). |
 
----
+</details>
 
 ---
 
@@ -372,7 +397,7 @@ New physical domains plug in by implementing **`IScienceCartridge`** — no mani
 ## 10. Conclusion: Inferences & Forward Path
 
 ### What this cartridge demonstrates
-- **A physics-bound concrete brain on commodity hardware.** Hydration kinetics, Vinet bulk modulus, viscoplastic yield, and carbon accounting all resolve through the same UMST state tensor, gated by a thermodynamic CBF. Predictions are anchored in atomic-scale physics rather than dataset-fit regressions, which removes the dominant failure mode of ML-based mix designers: confident extrapolation into unphysical regions.
+- **A physics-bound concrete brain on commodity hardware.** Hydration kinetics, Vinet bulk modulus, viscoplastic yield, and carbon accounting all resolve through the same **UMST carrier** / state tensor, gated by a thermodynamic CBF. Predictions are anchored in atomic-scale physics rather than dataset-fit regressions, which removes the dominant failure mode of ML-based mix designers: confident extrapolation into unphysical regions.
 - **Differentiable carbon is a real design lever.** Because <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;GWP(\mathbf{w})%20=%20\mathbf{w}%20\cdot%20\mathbf{g}"><img alt="GWP(\mathbf{w}) = \mathbf{w} \cdot \mathbf{g}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;GWP(\mathbf{w})%20=%20\mathbf{w}%20\cdot%20\mathbf{g}" style="vertical-align:middle"></picture> is wired into the same gradient graph as mechanical compliance, the optimizer descends a true mix–shape Pareto front rather than enumerating point alternatives.
 - **Closed-loop printing without prayer.** The CBF rejects trajectories that violate localized yield or buckling limits each gating cycle, returning Cartesian corrections to the IK engine. Useful as long as the printability-solver cycle stays below the layer-deposition interval — sub-second on small grids today. Slump failures degrade from catastrophic to gracefully aborted within that envelope.
 - **Surfaces match audience.** CLI for material scientists, PyO3 for designers, MCP for agentic workflows, FFI for systems integrators — one engine, four idiomatic entry points.
