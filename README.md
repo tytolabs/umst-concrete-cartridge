@@ -46,7 +46,7 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
 
 - [§1 Physical and Chemical Formulations](#1-physical-and-chemical-formulations)
   - [1.1 Mounting on the UMST carrier](#11-mounting-on-the-umst-carrier)
-  - [1.2 Grounding contract: derived constants and second-law composition](#12-grounding-contract-derived-constants-and-second-law-composition)
+  - [1.2 Grounding contract: derived, measured, and grounded constants](#12-grounding-contract-derived-measured-and-grounded-constants)
   - In-§1 narrative bullets (nanoscale, Arrhenius, DFT, GWP) — no sub-anchors
 - [§2 Cross-Domain Integration Specifications](#2-cross-domain-integration-specifications)
   - *(collapsible)* Spatial Topologies & Structural Design
@@ -93,7 +93,7 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 ```
 #1-physical-and-chemical-formulations
 #11-mounting-on-the-umst-carrier
-#12-grounding-contract-derived-constants-and-second-law-composition
+#12-grounding-contract-derived-measured-and-grounded-constants
 #2-cross-domain-integration-specifications
 #3-industrial-cadcamcae-pipeline-integration
 #4-exhaustive-architecture-topology
@@ -131,9 +131,15 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 
 This cartridge implements **`IScienceCartridge`** on the [UMST Manifold](https://github.com/tytolabs/umst-manifold) and reads/writes the **UMST carrier** — the unified per-voxel state bundle described in the manifold README as an **[extensible pipeline](https://github.com/tytolabs/umst-manifold#2-unified-material-state-pipeline-umst-carrier)** (64 scalar **lanes** in today’s default tensor layout; lane semantics stay versioned with `schema/` and crate releases). Nothing here assumes a fixed “64 forever”; it assumes a **stable contract** between mix JSON, Rust tensors, and CI.
 
-### 1.2 Grounding contract: derived constants and second-law composition
+### 1.2 Grounding contract: derived, measured, and grounded constants
 
-**Every constant is derived or grounded.** Arrhenius prefactors, activation energies, Vinet moduli, GWP intensities **g_i**, and calibration anchors enter through **named sources**: DFT-backed profiles in mix JSON, bundled **`calibration/`** tables tied to UCI / Zenodo and cited literature, and explicit uncertainty bands in [`docs/Validation.md`](docs/Validation.md) and [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md). Empirical numbers are **not** free mid-training knobs—they carry **provenance** (which dataset, which paper, which schema version). If a value is fit, the fit range and admissibility envelope are part of the contract the audit tools enforce.
+**Every constant is derived, measured, or grounded in truth — not a silent knob.** The same obligation class as [UMST Manifold §1.4](https://github.com/tytolabs/umst-manifold#14-grounding-contract-constants-proofs-and-second-law-composition), applied to cementitious closures:
+
+- **Derived** — Arrhenius forms, Vinet bulk modulus, GWP linear mix rule **g_i**, and other coefficients that follow from constitutive structure and dimensional analysis once material inputs are fixed.
+- **Measured** — Nano-indentation, UCI / Zenodo / ASTM-style benchmarks, site **`w` / `h` bead logs**, and rows in bundled **`calibration/`** profiles and **`datasets/`** CSVs matched by [`tests/calibration/dataset_metrics.rs`](tests/calibration/dataset_metrics.rs) (record *what* was measured, *where*, and under which schema version).
+- **Grounded** — DFT-backed anchors in mix JSON, literature-cited parameters in [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md), explicit uncertainty bands in [`docs/Validation.md`](docs/Validation.md), and CI regression pins so drift is visible.
+
+Empirical numbers are **not** free mid-training knobs: they carry **provenance** (dataset, paper, profile TOML). If a value is fit, the fit range and admissibility envelope are part of the contract **`umst audit`** and related tools enforce.
 
 **Physics scales by composition under the second law.** Constitutive closures (hydration, creep, printability, carbonation, …) do not run as a grab bag of heuristics: they **compose into the same UMST carrier** the manifold integrates, and **admissible trajectories** are those the manifold’s **thermodynamic gate** accepts—local dissipation and entropy production stay in the inequality class inherited from the manifold’s **Clausius–Duhem** formulation ([manifold §1.2](https://github.com/tytolabs/umst-manifold#12-the-thermodynamic-gate)). Stacking chemistry + mechanics + transport means **re-applying that contract at each composed step**, not weakening it at the cartridge boundary.
 
@@ -441,7 +447,7 @@ Four active repositories make up the stack:
 
 ### 9.2 Working Contract
 *   **No statistical interpolation of physics.** Material stress, deformation, and hydration states come from the solvers — not from heuristics or regression.
-*   **Ground every constant; respect second-law composition.** Follow [§1.2](#12-grounding-contract-derived-constants-and-second-law-composition): trace coefficients to calibration, literature, or DFT anchors; never weaken the manifold’s thermodynamic admissibility when composing closures.
+*   **Ground every constant; respect second-law composition.** Follow [§1.2](#12-grounding-contract-derived-measured-and-grounded-constants): trace coefficients to a **derivation, measurement record, or named calibration/literature/DFT anchor**; never weaken the manifold’s thermodynamic admissibility when composing closures.
 *   **Call the MCP tools.** The headless **Model Context Protocol** server in the `umst-mcp` crate exposes `predict_strength`, `audit_mix`, and related tools. Use them to compute the answer rather than predict it.
 *   **Follow the gradients.** The PyO3 interface (`umst_py`) exposes raw mechanical gradient vectors inside notebooks. Let spatial gradients shape the geometry instead of running grid-searches.
 
