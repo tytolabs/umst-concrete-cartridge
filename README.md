@@ -423,7 +423,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 | `render` | Striatus / shell demo renderer hook for `optimize_shell_3d` (visualizes the work). |
 | `manifold-gate` | Forwards `umst-manifold/manifold-gate` — host transition gate traits for predict-path parity (no duplicate CD math in cartridge). |
 | `manifold-manifest` | Forwards `umst-manifold/manifold-manifest` — typed `UmstManifest` façade (same git pin as core dep). |
-| `manifest-bridge` | `manifold-gate` + manifold `manifest-bridge` — re-export `umst_manifold::manifest::*`; `predict` runs manifold `umst.gate.cd_transition` (no duplicate CD math). **CI (G-02):** dedicated `manifest-bridge` test job in [`rust.yml`](.github/workflows/rust.yml) against git-pinned manifold — **no** workspace `[patch]`. |
+| `manifest-bridge` | `manifold-gate` + manifold `manifest-bridge` — re-export `umst_manifold::manifest::*`; `predict` runs manifold `umst.gate.cd_transition` (no duplicate CD math). **CI (G-02, closed):** `manifest-bridge` test step in [`rust.yml`](.github/workflows/rust.yml) against git-pinned manifold — **no** workspace `[patch]`. |
 | `ros2-contract` | Forwards `umst-manifold/ros2-contract` — serde ROS DTOs (`umst_manifold::ros`); no runtime ROS in cartridge. |
 
 **Manifold pin:** `umst-manifold` git **`rev = fe22437`** ([`fe224371…`](https://github.com/tytolabs/umst-manifold/commit/fe22437)) — W8 manifest API on upstream `main`; cartridge inherits **119-module** catalog lock SSOT from that revision.

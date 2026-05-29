@@ -5,8 +5,10 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # Formal grounding audit — `umst-concrete-cartridge`
 
-**Date:** 2026-05-21  
+**Date:** 2026-05-21 (stack pins verified **2026-05-29**)  
 **Scope:** Map cartridge formal-documentation surfaces to manifold `catalog_id`s; verify the predict façade delegates Clausius–Duhem (CD) transition checks to `umst-manifold`; state a scaling pattern for what this repo should vs should not own.
+
+**Pins (doc truth):** [`umst-manifold` @ `fe22437`](https://github.com/tytolabs/umst-manifold/commit/fe22437) (W8 published on upstream `main`); cartridge integration/docs @ [`6742fa3`](https://github.com/tytolabs/umst-concrete-cartridge/commit/6742fa3) (G-02 `manifest-bridge` CI on git dep only — **no** workspace `[patch]`).
 
 **SSOT references**
 
@@ -189,7 +191,7 @@ Integration test (`tests/manifest_bridge_catalog_grounding.rs`) pins the **`mani
 | Witness envelope | `witness_catalog_quickcheck_ok()` and `WitnessCatalog::from_embedded()` parse |
 | Traceability | Each default `catalog_id` appears in sibling `umst-manifold/docs/claims-vs-proofs.md` and `GateUnificationSpec.md` |
 
-**Skip rule (today):** if `../../../umst-manifold` is absent, the test **returns immediately** (cartridge-only GHA may not exercise grounding until refactored). **G-02 intent:** assert embedded lock digest + default `catalog_id` against the **git-pinned** `umst-manifold` crate with **no** sibling path — monorepo checkouts still run the full `claims-vs-proofs.md` / `GateUnificationSpec.md` cross-check when the sibling tree is present.
+**G-02 (closed):** core grounding always runs against the **git-pinned** `umst-manifold` embed (lock digest, bundle SHA-256, `module_count` **119**, witness quickcheck) — **no** workspace `[patch]` and **no** early return. **Optional sibling skip:** if `../../../umst-manifold` is absent (clean-clone GHA), only the extra monorepo checks are skipped (`claims-vs-proofs.md`, `GateUnificationSpec.md`, Lean `catalog.json` basename cross-check); those run when the sibling tree is present.
 
 ---
 
@@ -233,7 +235,7 @@ Use this when adding domains (e.g. asphalt, geopolymers) or new cartridges.
 | Wave | Status | What shipped |
 |------|--------|----------------|
 | **W8** | **Done** on [`umst-manifold` @ `fe22437`](https://github.com/tytolabs/umst-manifold/commit/fe22437) | `manifest`, `manifest-bridge`, gate evaluators, **119-module** `catalog.lock.json` on upstream `main` |
-| **G-02** | **In-repo** (cartridge) | `umst-manifold` git **`rev = fe22437`** in `crates/umst-concrete-cartridge/Cargo.toml`; **no** workspace `[patch]`; [`rust.yml`](../.github/workflows/rust.yml) **`manifest-bridge tests (pinned umst-manifold)`** step |
+| **G-02** | **Closed** (cartridge @ [`6742fa3`](https://github.com/tytolabs/umst-concrete-cartridge/commit/6742fa3), 2026-05-29) | `umst-manifold` git **`rev = fe22437`** in `crates/umst-concrete-cartridge/Cargo.toml`; **no** workspace `[patch]`; [`rust.yml`](../.github/workflows/rust.yml) **`manifest-bridge tests (pinned umst-manifold)`** step |
 
 **Default-feature** workspace jobs still omit `manifest-bridge` on `predict` (tensor physics + regime hyperbox only). **G-02** exercises CD gate + catalog grounding on the pinned git dependency:
 
@@ -251,7 +253,7 @@ cargo test -p umst-concrete-cartridge --features manifest-bridge
 |-----|------|----------------|
 | Default `predict` skips CD gate | Inadmissible transitions possible in production default builds | Opt in `manifest-bridge` for predict-path CD gate; G-02 CI already tests the feature matrix on git `fe22437` |
 | `formal_anchor` vs `catalog_id` | Operators may assume URI equality | Mapping table § Mechanised anchors; optional `gate_catalog_id` on certify/MCP when `manifest-bridge` is on |
-| Proposed `umst.cartridge.concrete.{regime,acceptance_band,jennings_gel}` | Not in `traceability.rs` / gate registry | Add `GateUnificationSpec` + `claims-vs-proofs` rows (W8); Lean modules **digest-attested** via 119-export pin — promote slugs without another lock bump if export unchanged |
+| Proposed `umst.cartridge.concrete.{regime,acceptance_band,jennings_gel}` | Not in `traceability.rs` / gate registry | Add `GateUnificationSpec` + `claims-vs-proofs` rows (slug promotion; W8 catalog lock already shipped); Lean modules **digest-attested** via **119-export** pin — promote without another lock bump if export unchanged |
 | `thermodynamic_mix` not on predict path | Mix filter only in HTTP/orchestrator | Wire `EmbodiedOrchestrator` if dual-run policy needed in cartridge |
 | `umst.cartridge.concrete.policy` | Name suggests cartridge owns policy | Policy literals only; transition SSOT remains `umst.gate.cd_transition` |
 

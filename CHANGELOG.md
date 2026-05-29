@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Documentation:** `README.md` and [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md) — **119-module** catalog SSOT, manifold pin **`fe22437`**, W8 done / **G-02** git-only `manifest-bridge` CI (no workspace `[patch]`); corrected lock bundle SHA-256 `1d0d1ed6…`.
+- **Documentation:** [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md) — G-02 skip-rule prose matches `manifest_bridge_catalog_grounding` (git-embed checks always run; sibling doc cross-checks optional); pins **`6742fa3`** / **`fe22437`** recorded.
 
 ### Added (continued)
 
