@@ -703,6 +703,8 @@ fn main() {
     let sw_json = if use_self_weight { "true" } else { "false" };
     let vol_json = if vol_in_loop { "true" } else { "false" };
     let dump_json = if dump_iter { "true" } else { "false" };
+    // Track-L sidecar JSON: hydrate with [`crate::facade::manifest::UmstManifest`] when serde typing is wired
+    // (`cargo --features manifest-bridge` once `tytolabs/umst-manifold` exports `umst_manifold::manifest::UmstManifest`).
     let manifest = format!(
         r#"{{"nx":{nx},"ny":{ny},"nz":{nz},"lx":{lx},"ly":{ly},"lz":{lz},"dx":{dx},"dy":{dy},"dz":{dz},"burn_seed":42,"iters":{iterations},"symmetry_xy":{sym_json},"sym_period":{sym_period},"roof_x_ramp":{roof_json},"self_weight":{sw_json},"vol_in_loop":{vol_json},"dump_iter":{dump_json},"dump_stride":{dump_stride},"density_init_jitter":{density_init_jitter},"xy_rib_prior_amp":{xy_rib_prior_amp}}}"#
     );

@@ -99,12 +99,64 @@ fn parse_tagged_doc_lines(lines: &[String]) -> BTreeMap<String, String> {
                 | "formal_envelope"
                 | "formal_form"
                 | "formal_anchor_rationale"
+                | "catalog_id"
         ) {
             continue;
         }
         map.insert(key.to_string(), rest.trim().to_string());
     }
     map
+}
+
+/// `lean://umst-formal/…` URI → manifold `catalog_id` (see `docs/FORMAL_GROUNDING_AUDIT.md`).
+const MECHANISED_ANCHOR_CATALOG_IDS: &[(&str, &str)] = &[
+    (
+        "lean://umst-formal/Lean/Gate.lean#Admissible",
+        "umst.gate.cd_transition",
+    ),
+    (
+        "lean://umst-formal/Lean/Powers.lean#PowersState",
+        "thermodynamic_mix",
+    ),
+    (
+        "lean://umst-formal/Lean/Powers.lean#S_intrinsic",
+        "thermodynamic_mix",
+    ),
+    (
+        "lean://umst-formal/Lean/Powers.lean#powers_monotone",
+        "thermodynamic_mix",
+    ),
+    (
+        "lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime",
+        "umst.cartridge.concrete.regime",
+    ),
+    (
+        "lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration",
+        "umst.cartridge.concrete.acceptance_band",
+    ),
+    (
+        "lean://umst-formal/Lean/OrderStatisticsBand.lean#p25_p75_admissibility",
+        "umst.cartridge.concrete.acceptance_band",
+    ),
+    (
+        "lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone",
+        "umst.cartridge.concrete.jennings_gel",
+    ),
+    (
+        "lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz",
+        "umst.gate.cd_transition",
+    ),
+    (
+        "lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy",
+        "umst.gate.landauer_cbf",
+    ),
+];
+
+fn expected_catalog_id_for_mechanised_anchor(anchor: &str) -> Option<&'static str> {
+    MECHANISED_ANCHOR_CATALOG_IDS
+        .iter()
+        .find(|(a, _)| *a == anchor)
+        .map(|(_, id)| *id)
 }
 
 fn validate_mechanised_axioms(ax: &str) -> Result<(), String> {
@@ -182,6 +234,26 @@ fn validate_formal_block(map: &BTreeMap<String, String>, symbol: &str) -> Result
             }
             let ax = map.get("formal_axioms").map(String::as_str).unwrap_or("");
             validate_mechanised_axioms(ax)?;
+            let Some(expected) = expected_catalog_id_for_mechanised_anchor(anchor) else {
+                return Err(format!(
+                    "{symbol}: Mechanised lean:// anchor not in FORMAL_GROUNDING_AUDIT map: `{anchor}`"
+                ));
+            };
+            let got = map
+                .get("catalog_id")
+                .map(String::as_str)
+                .unwrap_or("")
+                .trim();
+            if got.is_empty() {
+                return Err(format!(
+                    "{symbol}: Mechanised requires `/// catalog_id:` (expected `{expected}`)"
+                ));
+            }
+            if got != expected {
+                return Err(format!(
+                    "{symbol}: catalog_id `{got}` must match audit map `{expected}` for `{anchor}`"
+                ));
+            }
         }
         "Structural" => {
             if anchor.trim() != "STRUCTURAL" {

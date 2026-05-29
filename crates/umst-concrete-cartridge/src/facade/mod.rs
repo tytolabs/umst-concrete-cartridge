@@ -3,6 +3,14 @@
 
 //! Transport-facing wire types and pure prediction helpers (**serde** only, no **`serde_json`**).
 //! Parsing JSON blobs into [`MixSpecWire`] stays in **`umst-cli`** / **`umst-py`**.
+//!
+//! ## Topology **`manifest.json`**
+//!
+//! Examples under `examples/` write sidecar manifests for Striatus / beam pipelines. Hydrate typed
+//! envelopes via [`manifest::UmstManifest`] with **`manifest-bridge`** (forwards `umst_manifold::manifest`
+//! over workspace `[patch]` to sibling `umst-manifold`). With **`manifest-bridge`**, `predict` also runs
+//! [`UmstManifest::default_transition_gate`] (Clausius–Duhem SSOT in manifold; no duplicate thermo math here).
+//! Default builds use the façade [`manifest`] serde shim so `cargo ...` stays green against the pinned git manifold.
 
 use burn::tensor::Tensor;
 use burn_ndarray::NdArray;
@@ -19,6 +27,38 @@ use crate::pipeline::{
     physical_result_from_report, run_full_physics_pipeline, PhysicsPipelineReport,
 };
 use umst_manifold::core::traits::PhysicalResult;
+
+#[cfg(feature = "manifest-bridge")]
+use manifest::UmstManifest;
+#[cfg(feature = "manifest-bridge")]
+use umst_manifold::gate::{ThermodynamicState, TransitionGateEvaluator};
+
+/// Sidecar manifests for topology / Track **`manifest.json`** (wire-only; [**no duplicated thermodynamics**](crate::physics::thermo)).
+///
+/// ## `manifest-bridge`
+///
+/// Forward this crate's **`manifest-bridge`** once the pinned **`umst-manifold`** exposes
+/// **`umst_manifold::manifest`**, then this module becomes **`pub use umst_manifold::manifest::*`**.
+///
+/// Until then (**default** builds), callers use the local serde mirror tagged with **`schema_version`**
+/// so JSON remains round-trippable without pulling unshipped manifold paths.
+pub mod manifest {
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Forwards manifold manifest types when `manifest-bridge` is enabled.
+    #[cfg(feature = "manifest-bridge")]
+    pub use umst_manifold::manifest::*;
+
+    #[cfg(not(feature = "manifest-bridge"))]
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Local serde mirror until `manifest-bridge` pins manifold wire types.
+    #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
+    pub struct UmstManifest {
+        #[serde(default)]
+        pub schema_version: Option<String>,
+    }
+}
 
 /// formal_anchor: literature://wire-schema-result-v1
 /// formal_status: Literature
@@ -48,6 +88,7 @@ pub enum PredictionWireVersion {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 /// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+/// catalog_id: umst.cartridge.concrete.regime
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 pub struct WaterCementRatio(f32);
@@ -76,6 +117,7 @@ impl WaterCementRatio {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 /// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+/// catalog_id: umst.cartridge.concrete.regime
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 pub struct TemperatureK(f32);
@@ -295,6 +337,8 @@ pub struct PredictOptions {
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Bundle of physical tensors plus calibration metadata returned by [`predict`] / [`predict_with_options`].
+///
+/// Topology exporters correlate tensor outputs against disk **`manifest.json`**; hydrate with [`manifest::UmstManifest`] when serde typing is wired (**`manifest-bridge`** + bumped manifold).
 pub struct PredictBundle {
     pub physical: PhysicalResult<FacadeBackend>,
     pub warnings: Vec<String>,
@@ -354,6 +398,30 @@ fn profile_axioms_for_wire(profile: &Profile) -> Vec<String> {
     axioms
 }
 
+/// Host Clausius–Duhem transition gate via [`UmstManifest::default_transition_gate`] (manifold SSOT; no duplicated thermo math).
+#[cfg(feature = "manifest-bridge")]
+fn enforce_manifold_transition_gate(
+    profile: &Profile,
+    row: &homog::MixRow,
+) -> Result<(), FacadeError> {
+    let (w_c_eff, alpha, temp_c) = homog::mix_hydration_state(profile, row)?;
+    let temp_k = f64::from(temp_c) + 273.15;
+    let w_c = f64::from(w_c_eff);
+    let s_intrinsic = f64::from(profile.powers.s_intrinsic);
+    let old = ThermodynamicState::from_mix_calibrated(w_c, 0.0, temp_k, s_intrinsic);
+    let new = ThermodynamicState::from_mix_calibrated(w_c, f64::from(alpha), temp_k, s_intrinsic);
+    let dt_s = f64::from((row.age_days * 24.0 * 3600.0).max(1.0));
+    let mut gate = UmstManifest::default().default_transition_gate;
+    let verdict = gate.check_transition_host(&old, &new, dt_s);
+    if verdict.admissible {
+        Ok(())
+    } else {
+        Err(FacadeError::Tensor(
+            "thermodynamic transition gate rejected (umst.gate.cd_transition)",
+        ))
+    }
+}
+
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Natural transformation φ ∘ F ∘ ψ over the cartridge functor (facade orchestration entry).
@@ -399,6 +467,9 @@ pub fn predict_with_options(
         spec.target_age_hours,
         spec.temperature_k.value(),
     );
+
+    #[cfg(feature = "manifest-bridge")]
+    enforce_manifold_transition_gate(profile, &row)?;
 
     let layout = fractions_from_mix_row(&row, spec.aggregate_volume_fraction);
     let device = burn_ndarray::NdArrayDevice::default();
@@ -484,6 +555,9 @@ pub fn predict_from_mix_row(
     let violations =
         profile.regime_check_scalars(w_cm, temperature_k, age_hours, fly_pct, scm_silica_slot_pct);
     let warnings: Vec<String> = violations.iter().map(|v| v.to_string()).collect();
+
+    #[cfg(feature = "manifest-bridge")]
+    enforce_manifold_transition_gate(profile, row)?;
 
     let layout = fractions_from_mix_row(row, aggregate_volume_fraction);
     let device = burn_ndarray::NdArrayDevice::default();
@@ -972,6 +1046,39 @@ mod optical_audit_tests {
         let audit = build_optical_audit_v1();
         assert_eq!(audit.schema_version, "optical.v1");
         assert_eq!(audit.profile, "plain_portland");
+    }
+}
+
+#[cfg(test)]
+mod manifest_facade_tests {
+    #[cfg(not(feature = "manifest-bridge"))]
+    #[test]
+    fn shim_manifest_constructible_without_manifold_wire() {
+        let _ = super::manifest::UmstManifest::default();
+    }
+}
+
+#[cfg(all(test, feature = "manifest-bridge"))]
+mod manifest_bridge_gate_facade_tests {
+    use super::*;
+    use crate::calibration::Profile;
+
+    #[test]
+    fn predict_runs_umst_manifest_transition_gate_for_in_regime_mix() {
+        let profile = Profile::load_bundled("uci_d1").expect("uci_d1 profile");
+        let spec = MixSpec {
+            w_c: WaterCementRatio::try_from(0.45).expect("w/c"),
+            temperature_k: TemperatureK::try_from(293.15).expect("temp"),
+            superplasticiser_pct: 0.0,
+            silica_fume_pct: 0.0,
+            fly_ash_pct: 0.0,
+            aggregate_volume_fraction: 0.65,
+            target_age_hours: 672.0,
+            profile_name: "default".to_string(),
+        };
+        let _bundle = predict(&profile, &spec).expect("predict with manifest-bridge gate");
+        let manifest = manifest::UmstManifest::default();
+        assert!(!manifest.dual_run);
     }
 }
 

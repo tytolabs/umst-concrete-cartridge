@@ -30,7 +30,7 @@ The cartridge classifies each public Rust symbol into exactly one of five bucket
 
 | Status | `formal_anchor` | Required lines |
 |--------|-----------------|----------------|
-| Mechanised | `lean://umst-formal/Lean/...#lemma` | `formal_axioms` ∈ {`NONE`, `physicalSecondLaw`} |
+| Mechanised | `lean://umst-formal/Lean/...#lemma` | `catalog_id` (manifold slug per `docs/FORMAL_GROUNDING_AUDIT.md`); `formal_axioms` ∈ {`NONE`, `physicalSecondLaw`} |
 | Structural | `STRUCTURAL` | `formal_anchor_rationale` |
 | Empirical | `empirical://datasets/<file>.csv` | `formal_dataset`, `formal_citation`, `formal_envelope` |
 | Literature | `literature://<slug>` | `formal_citation`, `formal_form` |

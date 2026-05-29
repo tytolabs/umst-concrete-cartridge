@@ -21,6 +21,7 @@ struct Row {
     symbol: String,
     status: String,
     anchor: String,
+    catalog_id: String,
     note: String,
 }
 
@@ -71,6 +72,7 @@ fn parse_map(lines: &[String]) -> BTreeMap<String, String> {
                 | "formal_envelope"
                 | "formal_form"
                 | "formal_anchor_rationale"
+                | "catalog_id"
         ) {
             continue;
         }
@@ -133,6 +135,7 @@ fn push_row(
         symbol,
         status,
         anchor,
+        catalog_id: map.get("catalog_id").cloned().unwrap_or_default(),
         note: note_from_map(&map),
     });
 }
@@ -318,14 +321,24 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 
     for bucket in order {
         md.push_str(&format!("## {bucket}\n\n"));
-        md.push_str("| Symbol | File | formal_anchor | Citation / envelope / rationale |\n");
-        md.push_str("|--------|------|---------------|-----------------------------------|\n");
+        md.push_str(
+            "| Symbol | File | formal_anchor | catalog_id | Citation / envelope / rationale |\n",
+        );
+        md.push_str(
+            "|--------|------|---------------|------------|-----------------------------------|\n",
+        );
         for r in rows.iter().filter(|x| x.status == bucket) {
             let note = r.note.replace('|', "\\|");
             let anch = r.anchor.replace('|', "\\|");
+            let cid = r.catalog_id.replace('|', "\\|");
             md.push_str(&format!(
-                "| `{}` | `{}:{}` | `{}` | {} |\n",
-                r.symbol, r.file, r.line, anch, note
+                "| `{}` | `{}:{}` | `{}` | {} | {} |\n",
+                r.symbol,
+                r.file,
+                r.line,
+                anch,
+                if cid.is_empty() { "—" } else { &cid },
+                note
             ));
         }
         md.push('\n');

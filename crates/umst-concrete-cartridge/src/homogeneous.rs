@@ -137,6 +137,7 @@ pub fn mix_hydration_state(
 }
 
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 pub fn powers_compressive_strength_mpa(
@@ -188,6 +189,7 @@ pub fn powers_compressive_strength_mpa(
 }
 
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 pub fn compressive_strength_mpa(profile: &Profile, row: &MixRow) -> Result<f32, HomogeneousError> {
@@ -196,6 +198,7 @@ pub fn compressive_strength_mpa(profile: &Profile, row: &MixRow) -> Result<f32, 
 }
 
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 pub fn degree_of_hydration_alpha(profile: &Profile, row: &MixRow) -> Result<f32, HomogeneousError> {
@@ -203,6 +206,7 @@ pub fn degree_of_hydration_alpha(profile: &Profile, row: &MixRow) -> Result<f32,
 }
 
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 #[must_use]
@@ -252,6 +256,7 @@ pub fn embodied_co2_kg_per_m3(
 }
 
 /// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+/// catalog_id: umst.cartridge.concrete.regime
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 #[must_use]

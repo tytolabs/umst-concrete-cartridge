@@ -21,8 +21,3 @@ authors = [
     "Santosh Prabhu Shenbagamoorthy",
 ]
 repository = "https://github.com/tytolabs/umst-concrete-cartridge"
-
-# Crates depend on `umst-manifold` via `git` + `branch = "main"`. For a local sibling checkout,
-# add `[patch."https://github.com/tytolabs/umst-manifold.git"]` with `path = "..."` in
-# `.cargo/config.toml` here (gitignored) — do not commit a `[patch]` with `../umst-manifold`
-# in this file or GitHub Actions cannot resolve the dependency.

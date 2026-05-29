@@ -39,11 +39,20 @@ blas-accelerate = ["burn-ndarray/blas-accelerate", "umst-manifold/blas-accelerat
 mac-fast = ["solver-experimental", "render", "blas-accelerate"]
 # Striatus-class shell demo (`optimize_shell_3d`): NPY artefact layout + renderer hook (binary still solver-only).
 render = []
+# Re-export typed [`UmstManifest`] from sibling-patched **`umst-manifold`** (`umst_manifold::manifest`).
+# Default (**off**) keeps CI on the pinned git manifold.
+# Typed `UmstManifest` + predict-path transition gate (no duplicate CD math in cartridge).
+manifest-bridge = ["umst-manifold/manifest-bridge", "manifold-gate"]
+# Thin façade forwards (requires matching `umst-manifold` revision or local `[patch]`).
+manifold-manifest = ["umst-manifold/manifold-manifest"]
+manifold-gate = ["umst-manifold/manifold-gate"]
+# Optional ROS serde DTOs (no runtime ROS dep); forwards `umst_manifold::ros` when enabled.
+ros2-contract = ["umst-manifold/ros2-contract"]
 
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
 burn-ndarray = "0.13.0"
-umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "main" }
+umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "fe2243716112f2504b063e55eb1e15e97ced4bdc" }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 time = "=0.3.40"
@@ -61,6 +70,11 @@ walkdir = "2.5"
 [lib]
 name = "umst_concrete_cartridge"
 path = "src/lib.rs"
+
+[[test]]
+name = "manifest_bridge_catalog_grounding"
+path = "tests/manifest_bridge_catalog_grounding.rs"
+required-features = ["manifest-bridge"]
 
 [[test]]
 name = "formal_anchors"

@@ -42,6 +42,7 @@ pub fn paste_csh_youngs_moduli_gpa() -> (f32, f32) {
 /// Upgraded to the absolute SOTA: Jennings CM-II (Colloidal Model of C-S-H)
 /// coupled with Ulm & Constantinides (2004) nano-indentation continuum micromechanics.
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 pub struct StrengthEngine<B: Backend> {
@@ -58,6 +59,7 @@ impl<B: Backend> StrengthEngine<B> {
     /// * `air_content` - Entrapped/entrained air volume fraction
     /// * `intrinsic_strength` - Intrinsic scaling factor for the specific cement chemistry (MPa)
     /// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+    /// catalog_id: thermodynamic_mix
     /// formal_status: Mechanised
     /// formal_axioms: physicalSecondLaw
     pub fn compute_strength_jennings(

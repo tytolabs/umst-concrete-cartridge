@@ -370,6 +370,8 @@ fn main() {
             .join(",");
         let vol_tgt = topopt.volume_target;
         let p_simp = topopt.penalization;
+        // Artefact **`manifest.json`**: typed envelope lives in [`crate::facade::manifest::UmstManifest`]
+        // after enabling **`manifest-bridge`** plus a manifold revision that publishes `manifest::UmstManifest`.
         let manifest = format!(
             concat!(
                 "{{",

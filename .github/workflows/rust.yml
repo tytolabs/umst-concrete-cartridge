@@ -92,6 +92,9 @@ jobs:
       - name: Run tests (workspace)
         run: cargo test --workspace --verbose
 
+      - name: manifest-bridge tests (pinned umst-manifold)
+        run: cargo test -p umst-concrete-cartridge --features manifest-bridge --verbose
+
       - name: MCP stdio smoke
         run: python3 scripts/mcp_smoke.py
 

@@ -39,6 +39,7 @@ pub use pipeline::run_full_physics_pipeline;
 /// formal_status: NONE
 /// formal_anchor_rationale: JSON envelope for staged tensor outputs.
 pub use pipeline::PhysicsPipelineReport;
+
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Scalar digest accompanying report JSON.
@@ -57,3 +58,20 @@ pub use pipeline::PipelineStageStatus;
 /// formal_form: "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape."
 /// formal_anchor_rationale: Wire consumers pin report JSON against this version field.
 pub use pipeline::PHYSICS_PIPELINE_SCHEMA_VERSION;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports host transition gate traits when `manifold-gate` is enabled.
+#[cfg(feature = "manifold-gate")]
+pub use umst_manifold::gate::{
+    GateEvaluator, ThermodynamicTransitionEvaluator, TransitionGateEvaluator,
+};
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports manifold deployment manifest when `manifold-manifest` is enabled.
+#[cfg(feature = "manifold-manifest")]
+pub use umst_manifold::manifest::UmstManifest;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports manifold ROS serde DTOs when `ros2-contract` is enabled.
+#[cfg(feature = "ros2-contract")]
+pub use umst_manifold::ros;

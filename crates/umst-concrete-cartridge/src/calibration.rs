@@ -38,6 +38,7 @@ pub enum ModelKind {
 }
 
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 #[derive(Debug, Clone, Deserialize)]
@@ -51,6 +52,7 @@ pub struct PowersGelParameters {
 }
 
 /// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// catalog_id: umst.gate.cd_transition
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 #[derive(Debug, Clone, Deserialize)]
@@ -77,6 +79,7 @@ pub struct ProvenanceFormal {
 }
 
 /// formal_anchor: lean://umst-formal/Lean/Powers.lean#S_intrinsic
+/// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 #[derive(Debug, Clone, Deserialize)]
@@ -122,6 +125,7 @@ pub struct CalibrationProvenance {
 }
 
 /// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration
+/// catalog_id: umst.cartridge.concrete.acceptance_band
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 #[derive(Debug, Clone, Deserialize)]
@@ -156,6 +160,7 @@ pub struct CalibrationModelSection {
 }
 
 /// formal_anchor: lean://umst-formal/Lean/OrderStatisticsBand.lean#p25_p75_admissibility
+/// catalog_id: umst.cartridge.concrete.acceptance_band
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -303,6 +308,7 @@ impl Profile {
     }
 
     /// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+    /// catalog_id: umst.cartridge.concrete.regime
     /// formal_status: Mechanised
     /// formal_axioms: NONE
     ///
@@ -388,6 +394,7 @@ impl Profile {
 }
 
 /// formal_anchor: lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime
+/// catalog_id: umst.cartridge.concrete.regime
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 ///

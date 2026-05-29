@@ -7,6 +7,7 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Computes initial and final setting kinetics (Vicant penetration mapping)
 /// dynamically across the spatial manifold based on local temperature and chemistry.
 /// formal_anchor: lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz
+/// catalog_id: umst.gate.cd_transition
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 pub struct SetTimeEngine<B: Backend> {
@@ -28,6 +29,7 @@ impl<B: Backend> SetTimeEngine<B> {
     /// * `cement_c3s` - C3S content fraction (typically ~0.55)
     #[allow(clippy::too_many_arguments)]
     /// formal_anchor: lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz
+    /// catalog_id: umst.gate.cd_transition
     /// formal_status: Mechanised
     /// formal_axioms: NONE
     pub fn compute_setting_time(

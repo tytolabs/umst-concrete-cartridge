@@ -9,6 +9,7 @@ use umst_manifold::core::tensors::MixTensor;
 /// Because it is composed purely of `burn` tensor operations, the gradient of the hydration
 /// degree with respect to the input mix fractions can be computed natively.
 /// formal_anchor: lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone
+/// catalog_id: umst.cartridge.concrete.jennings_gel
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 pub fn compute_hydration_degree<B: Backend>(

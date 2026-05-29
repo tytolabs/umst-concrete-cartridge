@@ -18,6 +18,8 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 **UMST Concrete Cartridge** is the applied physical brain of the [UMST Manifold](https://github.com/tytolabs/umst-manifold) for **cementitious materials**. It provides the specific chemical-physical equations, real-world data calibration, and programming connections for cement, concrete, and mineral binders.
 
+**Stack thread:** [`umst-formal-double-slit`](../umst-formal-double-slit) + [`umst-formal`](../umst-formal) Lean catalogs merged into a **119-module** unified export → [`umst-manifold`](../umst-manifold) `artifacts/catalog.lock.json` digest pin + thermodynamic witnesses → **this cartridge** (`IScienceCartridge`, CLI, PyO3, MCP). Philosophy: [manifold GOD_GRADE_WITNESS_LADDER §](../umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md#proof-library--gate-law--mi-envelope--no-rust-axioms).
+
 The library exposes a physical-chemical design engine—gated by thermodynamic safety boundaries—to optimize concrete recipes, **evaluate print-stability and deposition physics in simulation**, and execute spatial structural shape optimizations under strict load limits. **Studio TYTO has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
 
 **Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here.
@@ -419,6 +421,14 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 | `solver-experimental` | `stable` ∪ `research`. Used for the heavy RC beam and shell optimizations. |
 | `mac-fast` | `solver-experimental` + `render` + `blas-accelerate` — local M-series throughput bundle. |
 | `render` | Striatus / shell demo renderer hook for `optimize_shell_3d` (visualizes the work). |
+| `manifold-gate` | Forwards `umst-manifold/manifold-gate` — host transition gate traits for predict-path parity (no duplicate CD math in cartridge). |
+| `manifold-manifest` | Forwards `umst-manifold/manifold-manifest` — typed `UmstManifest` façade (same git pin as core dep). |
+| `manifest-bridge` | `manifold-gate` + manifold `manifest-bridge` — re-export `umst_manifold::manifest::*`; `predict` runs manifold `umst.gate.cd_transition` (no duplicate CD math). **CI (G-02):** dedicated `manifest-bridge` test job in [`rust.yml`](.github/workflows/rust.yml) against git-pinned manifold — **no** workspace `[patch]`. |
+| `ros2-contract` | Forwards `umst-manifold/ros2-contract` — serde ROS DTOs (`umst_manifold::ros`); no runtime ROS in cartridge. |
+
+**Manifold pin:** `umst-manifold` git **`rev = fe22437`** ([`fe224371…`](https://github.com/tytolabs/umst-manifold/commit/fe22437)) — W8 manifest API on upstream `main`; cartridge inherits **119-module** catalog lock SSOT from that revision.
+
+**Stack verify (monorepo):** from [`umst-manifold`](../umst-manifold), `bash scripts/verify_umst_stack.sh` (optional `UMST_REQUIRE_FORMAL_EXPORT=1`). Cartridge parity: `cargo test -p umst-concrete-cartridge --features manifest-bridge` (matches GHA).
 
 </details>
 
@@ -431,6 +441,9 @@ For rigorous validation reports, exact mathematical constitutive equations, and 
 - [`docs/Validation.md`](docs/Validation.md)
 - [`docs/WireSchemas.md`](docs/WireSchemas.md)
 - [`docs/Solver-Status.md`](docs/Solver-Status.md)
+- [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md) — cement-specific proof/trace table
+
+**Manifold formal stack (shared):** **119-module** unified Lean export pinned on [`umst-manifold`](../umst-manifold) @ [`fe22437`](https://github.com/tytolabs/umst-manifold/commit/fe22437) (`artifacts/catalog.lock.json`, upstream digest `0697014f…`). Fiber pins record **69** (`umst-formal-double-slit`) + **62** (`umst-formal`) before merge — the runtime contract is the **composed** digest, not either fiber alone. Traceability: [`umst-manifold/docs/claims-vs-proofs.md`](../umst-manifold/docs/claims-vs-proofs.md); witness philosophy [§](../umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md#proof-library--gate-law--mi-envelope--no-rust-axioms). Verify: `bash ../umst-manifold/scripts/verify_umst_stack.sh` ([`umst-manifold/docs/VERIFY.md`](../umst-manifold/docs/VERIFY.md)); workspace index [`VERIFY.md`](../VERIFY.md). Deep cartridge ↔ gate mapping: [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md).
 
 ---
 

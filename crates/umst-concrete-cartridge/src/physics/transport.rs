@@ -22,6 +22,7 @@ impl<B: Backend> TransportEngine<B> {
     /// * `wc_ratio` - Water/Cement ratio tensor [Batch, Depth, Height, Width]
     /// * `degree_hydration` (alpha) - Degree of hydration [Batch, Depth, Height, Width]
     /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+    /// catalog_id: thermodynamic_mix
     /// formal_status: Mechanised
     /// formal_axioms: NONE
     pub fn compute_capillary_porosity(
@@ -50,6 +51,7 @@ impl<B: Backend> TransportEngine<B> {
     /// * `capillary_porosity` - Computed porosity tensor
     /// * `ref_diffusivity` - Reference diffusivity scalar tensor
     /// formal_anchor: lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy
+    /// catalog_id: umst.gate.landauer_cbf
     /// formal_status: Mechanised
     /// formal_axioms: NONE
     pub fn compute_chloride_diffusivity(
