@@ -17,8 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`manifest-bridge`** optional feature on `umst-concrete-cartridge`: forwards `umst_manifold::manifest` types from git-pinned **`umst-manifold`** (`rev = fe22437`); `predict` can run the manifold gate bundle when enabled (see manifold [`docs/GateUnificationSpec.md`](../umst-manifold/docs/GateUnificationSpec.md) and [`docs/VERIFY.md`](../umst-manifold/docs/VERIFY.md)).
-- **G-02 (intended / in-repo):** GitHub Actions runs `cargo test -p umst-concrete-cartridge --features manifest-bridge` on the **git dependency only** — no workspace `[patch]` to sibling manifold (see [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md)).
+- **G-02 (closed 2026-05-29):** GitHub Actions runs `cargo test -p umst-concrete-cartridge --features manifest-bridge` on the **git dependency only** — no workspace `[patch]` to sibling manifold (see [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md)).
 - Cross-link to unified catalog lock digest **`0697014f…`** (**119** Lean modules, dual-pin merge) in manifold `artifacts/catalog.lock.json`; fiber pin **`c1d9ba2a…`** (**69** modules, `umst-formal-double-slit`) retained for provenance only; coverage audit (when published): [`../umst-manifold/docs/CATALOG_COVERAGE_AUDIT.md`](../umst-manifold/docs/CATALOG_COVERAGE_AUDIT.md).
+
+### Changed
+
+- **Documentation:** `README.md` and [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md) — **119-module** catalog SSOT, manifold pin **`fe22437`**, W8 done / **G-02** git-only `manifest-bridge` CI (no workspace `[patch]`); corrected lock bundle SHA-256 `1d0d1ed6…`.
+
+### Added (continued)
+
 - Striatus-class shell topology demo: `optimize_shell_3d` (with `solver-experimental` + `render`), `shell_demo_smoke`, Z2×Z2 symmetry helper in `print_ready::symmetry`, and driver `notebooks/_run_shell_demo.sh`.
 - PyVista render pipeline (`render_shell_gif.py`, `overlay_final_isostatics.py`, `stitch_gif.py`), STL export (`export_print_ready.py`), and `notebooks/tests/test_print_ready.py`.
 - Documentation pack `docs/Striatus.md` and `docs/References.bib`; README hero embed for `notebooks/_artifacts/striatus_emergence.gif`; optional `crates/umst-py[render]` extra in `pyproject.toml`.

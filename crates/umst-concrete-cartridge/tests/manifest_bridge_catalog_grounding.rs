@@ -3,7 +3,7 @@
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! With **`manifest-bridge`**, default manifest gate `catalog_id`s must trace to the manifold
-//! embedded catalog lock digest (sibling-patched `umst-manifold` only).
+//! embedded catalog lock digest (git-pinned `umst-manifold`; no workspace `[patch]` required).
 
 use std::path::PathBuf;
 
@@ -32,7 +32,7 @@ const MECHANISED_LEAN_MODULE_BASENAMES: &[&str] = &[
     "MeasurementCost",
 ];
 
-/// Workspace `[patch]` target: `../umst-manifold` from `umst-concrete-cartridge/`.
+/// Optional monorepo sibling for doc-file cross-checks (not required in GHA).
 fn sibling_umst_manifold_root() -> Option<PathBuf> {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../umst-manifold");
     root.join("Cargo.toml").is_file().then_some(root)
@@ -44,13 +44,6 @@ fn default_manifest_gate_catalog_ids(manifest: &UmstManifest) -> Vec<&'static st
 
 #[test]
 fn manifest_default_gate_catalog_ids_resolve_embedded_catalog_digest() {
-    let Some(manifold_root) = sibling_umst_manifold_root() else {
-        eprintln!(
-            "manifest_bridge_catalog_grounding: skip — sibling umst-manifold not on disk (no workspace [patch])"
-        );
-        return;
-    };
-
     let manifest = UmstManifest::default();
     let catalog_ids = default_manifest_gate_catalog_ids(&manifest);
 
@@ -96,6 +89,21 @@ fn manifest_default_gate_catalog_ids_resolve_embedded_catalog_digest() {
         "runtime catalog_lock_bundle_sha256_hex must match documented R0 pin"
     );
 
+    assert!(
+        witness_catalog_quickcheck_ok(),
+        "embedded witness catalog quickcheck must pass"
+    );
+    let witness = WitnessCatalog::from_embedded().expect("embedded witness catalog parses");
+    assert_eq!(witness.version, 1);
+
+    // Optional monorepo-only cross-checks (skipped in clean-clone CI).
+    let Some(manifold_root) = sibling_umst_manifold_root() else {
+        eprintln!(
+            "manifest_bridge_catalog_grounding: git-dep core checks OK; skip sibling doc/Lean checks"
+        );
+        return;
+    };
+
     let formal_root = manifold_root
         .parent()
         .map(|p| p.join("umst-formal-double-slit"));
@@ -116,13 +124,6 @@ fn manifest_default_gate_catalog_ids_resolve_embedded_catalog_digest() {
             "manifest_bridge_catalog_grounding: skip Lean module basename check — umst-formal-double-slit not sibling to manifold"
         );
     }
-
-    assert!(
-        witness_catalog_quickcheck_ok(),
-        "embedded witness catalog quickcheck must pass"
-    );
-    let witness = WitnessCatalog::from_embedded().expect("embedded witness catalog parses");
-    assert_eq!(witness.version, 1);
 
     let claims_path = manifold_root.join("docs/claims-vs-proofs.md");
     let claims = std::fs::read_to_string(&claims_path).unwrap_or_else(|e| {

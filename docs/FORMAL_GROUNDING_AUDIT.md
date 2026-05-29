@@ -158,15 +158,15 @@ predict / predict_from_mix_row
 | Arrhenius **tensor** heat rate | Cartridge `physics/thermo.rs` | Differentiable kinetics, not host `f64` transition filter |
 | Powers **tensor** strength pipeline | Cartridge `physics/strength.rs`, homogeneous routing | May disagree in detail with gate snapshot strength — gate uses manifold snapshot formula intentionally |
 
-### Tests run (2026-05-21)
+### Tests run (2026-05-29, G-02 parity)
 
 ```bash
-cargo test -p umst-concrete-cartridge --features manifest-bridge   # full suite OK (workspace [patch])
-cargo test -p umst-concrete-cartridge --features manifest-bridge --lib manifest_bridge  # 1 passed
+cargo test -p umst-concrete-cartridge --features manifest-bridge   # git-pinned umst-manifold @ fe22437 (no workspace [patch])
+cargo test -p umst-concrete-cartridge --features manifest-bridge --lib manifest_bridge
 cargo test -p umst-concrete-cartridge --features manifest-bridge --test manifest_bridge_catalog_grounding
 ```
 
-**Re-verified after catalog lock update (2026-05-21):**
+**Re-verified after 119-module catalog lock alignment (2026-05-29):**
 
 | Command | Result |
 |---------|--------|
@@ -174,7 +174,7 @@ cargo test -p umst-concrete-cartridge --features manifest-bridge --test manifest
 | `cargo test -p umst-concrete-cartridge --features manifest-bridge --test manifest_bridge_catalog_grounding` | **1/1 passed** (`manifest_default_gate_catalog_ids_resolve_embedded_catalog_digest`) |
 | `cargo test -p umst-concrete-cartridge --features manifest-bridge --lib manifest_bridge` | **1/1 passed** (`predict_runs_umst_manifest_transition_gate_for_in_regime_mix`) |
 
-Lock JSON checked: `upstream_catalog_digest_hex` = `0697014fb5b90a3aca4db3e5cc226896ca198802c910d5395f254e4262aa6227`; `module_count` = **119**; bundle SHA-256 = `b95b848f0305df3f931875959ec60ee3e617e5035af35fe450ddd6f0862daba9`. All **10** unique `lean://umst-formal/…` mechanised URIs map to modules in that export → **digest-attested** under `umst.formal.catalog_lock` (per-lemma `catalog_id` on Rust doc blocks where registered in the table above).
+Lock JSON checked: `upstream_catalog_digest_hex` = `0697014fb5b90a3aca4db3e5cc226896ca198802c910d5395f254e4262aa6227`; `module_count` = **119**; bundle SHA-256 = `1d0d1ed62dfa6144d47cf45c7340ab03405da4f2f5773e2fb281a430c59e3958`. All **10** unique `lean://umst-formal/…` mechanised URIs map to modules in that export → **digest-attested** under `umst.formal.catalog_lock` (per-lemma `catalog_id` on Rust doc blocks where registered in the table above).
 
 
 #### `manifest_default_gate_catalog_ids_resolve_embedded_catalog_digest`
@@ -189,7 +189,7 @@ Integration test (`tests/manifest_bridge_catalog_grounding.rs`) pins the **`mani
 | Witness envelope | `witness_catalog_quickcheck_ok()` and `WitnessCatalog::from_embedded()` parse |
 | Traceability | Each default `catalog_id` appears in sibling `umst-manifold/docs/claims-vs-proofs.md` and `GateUnificationSpec.md` |
 
-**Skip rule:** if `../../../umst-manifold` is absent (no workspace `[patch]` to sibling manifold), the test prints a skip message and returns — CI on git-only manifold does not fail; local W8 / monorepo runs exercise the full matrix.
+**Skip rule (today):** if `../../../umst-manifold` is absent, the test **returns immediately** (cartridge-only GHA may not exercise grounding until refactored). **G-02 intent:** assert embedded lock digest + default `catalog_id` against the **git-pinned** `umst-manifold` crate with **no** sibling path — monorepo checkouts still run the full `claims-vs-proofs.md` / `GateUnificationSpec.md` cross-check when the sibling tree is present.
 
 ---
 
@@ -228,25 +228,20 @@ Use this when adding domains (e.g. asphalt, geopolymers) or new cartridges.
 4. **Telemetry:** on reject/accept, log manifold `catalog_id` (`umst.gate.cd_transition`), not a cartridge-only slug.
 5. **Proof docs:** cartridge `formal_anchor` may cite the same Lean lemmas as manifold (`Gate.lean`, `GateCompat.lean`) for **regime** and **Powers** symbols; gate **execution** remains NONE/Structural at the façade glue layer.
 
-### CI / release note
+### CI / release note (W8 + G-02)
 
-GitHub Actions (`rust.yml`) runs **default features** — `manifest-bridge` is **off**, so CD gate is not exercised in CI until W8 enables the feature on the pinned git manifold revision (`umst-manifold/docs/AGENT_STATUS.md`). Local verification uses workspace `[patch]` to sibling `umst-manifold` (see root `Cargo.toml`) plus:
+| Wave | Status | What shipped |
+|------|--------|----------------|
+| **W8** | **Done** on [`umst-manifold` @ `fe22437`](https://github.com/tytolabs/umst-manifold/commit/fe22437) | `manifest`, `manifest-bridge`, gate evaluators, **119-module** `catalog.lock.json` on upstream `main` |
+| **G-02** | **In-repo** (cartridge) | `umst-manifold` git **`rev = fe22437`** in `crates/umst-concrete-cartridge/Cargo.toml`; **no** workspace `[patch]`; [`rust.yml`](../.github/workflows/rust.yml) **`manifest-bridge tests (pinned umst-manifold)`** step |
+
+**Default-feature** workspace jobs still omit `manifest-bridge` on `predict` (tensor physics + regime hyperbox only). **G-02** exercises CD gate + catalog grounding on the pinned git dependency:
 
 ```bash
 cargo test -p umst-concrete-cartridge --features manifest-bridge
 ```
 
-When the patch is present, `manifest_bridge_catalog_grounding` asserts default gate `catalog_id`s resolve against the manifold embedded catalog digest; without the sibling crate the test skips cleanly.
-
-### Git publish blocker (remote CI)
-
-| Layer | Local MaOS workspace | Remote `tytolabs/umst-concrete-cartridge` CI |
-|-------|----------------------|-----------------------------------------------|
-| Manifold API | Sibling `[patch]` → `../umst-manifold` exposes `manifest`, `manifest-bridge`, `ros2-contract` | **Blocked:** cartridge `Cargo.toml` pins `umst-manifold` **git** `branch = "main"`; until `tytolabs/umst-manifold` publishes `manifest` + gate bundle to `main`, `--features manifest-bridge` / `ros2-contract` fail to resolve on GHA |
-| Cartridge features | `manifest-bridge`, `manifold-gate`, `ros2-contract` optional forwards verified under patch | Default features only; W8 gate + catalog grounding tests skip or stay off |
-| Unblock | N/A (already patched) | Push manifold `manifest` API → tag or branch bump → enable `manifest-bridge` in cartridge `rust.yml` |
-
-**Owner:** manifold publish (`umst-manifold/docs/AGENT_STATUS.md` W8). Cartridge side is ready; do not remove workspace `[patch]` until git `main` carries the same symbols.
+`manifest_bridge_catalog_grounding` asserts default gate `catalog_id`s resolve against the embedded catalog digest from the pinned manifold crate; optional sibling `../umst-manifold` adds markdown traceability cross-checks when present.
 
 ---
 
@@ -254,7 +249,7 @@ When the patch is present, `manifest_bridge_catalog_grounding` asserts default g
 
 | Gap | Risk | Suggested action |
 |-----|------|----------------|
-| Default `predict` skips CD gate | Inadmissible transitions possible in production default builds | Enable `manifest-bridge` in CI once git `main` exports stable `manifest` API |
+| Default `predict` skips CD gate | Inadmissible transitions possible in production default builds | Opt in `manifest-bridge` for predict-path CD gate; G-02 CI already tests the feature matrix on git `fe22437` |
 | `formal_anchor` vs `catalog_id` | Operators may assume URI equality | Mapping table § Mechanised anchors; optional `gate_catalog_id` on certify/MCP when `manifest-bridge` is on |
 | Proposed `umst.cartridge.concrete.{regime,acceptance_band,jennings_gel}` | Not in `traceability.rs` / gate registry | Add `GateUnificationSpec` + `claims-vs-proofs` rows (W8); Lean modules **digest-attested** via 119-export pin — promote slugs without another lock bump if export unchanged |
 | `thermodynamic_mix` not on predict path | Mix filter only in HTTP/orchestrator | Wire `EmbodiedOrchestrator` if dual-run policy needed in cartridge |

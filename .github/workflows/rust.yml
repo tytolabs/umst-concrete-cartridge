@@ -39,8 +39,7 @@ jobs:
           echo "OK: README.md has $lines lines"
 
   # Required job: build the library + run tests.
-  # The Cargo.toml fetches umst-manifold from GitHub (`branch = "main"`); the manifold
-  # repository must be public before this job goes green.
+  # `umst-manifold` is git-pinned (`rev = fe22437`); manifest-bridge tests run without workspace `[patch]`.
   build-test:
     name: build & test (ndarray backend)
     runs-on: ubuntu-latest
