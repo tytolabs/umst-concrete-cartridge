@@ -21,3 +21,7 @@ authors = [
     "Santosh Prabhu Shenbagamoorthy",
 ]
 repository = "https://github.com/tytolabs/umst-concrete-cartridge"
+
+# Local dev: live manifold edits on feat/proxy-loop (CI uses git rev pin only).
+[patch.crates-io]
+umst-manifold = { path = "../umst-manifold" }

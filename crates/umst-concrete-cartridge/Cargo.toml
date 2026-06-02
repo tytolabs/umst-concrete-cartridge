@@ -48,6 +48,10 @@ manifold-manifest = ["umst-manifold/manifold-manifest"]
 manifold-gate = ["umst-manifold/manifold-gate"]
 # Optional ROS serde DTOs (no runtime ROS dep); forwards `umst_manifold::ros` when enabled.
 ros2-contract = ["umst-manifold/ros2-contract"]
+# Virtual stack + extrusion proxies (Roussel / Bingham drivers); default off.
+virtual-proxies = ["solver-research", "umst-manifold/rheology-bingham"]
+# Track A/B optimisation loop: manifest CD + virtual proxies + local manifold patch.
+proxy-loop = ["manifest-bridge", "virtual-proxies"]
 
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
