@@ -8,8 +8,6 @@
 pub mod calibration;
 pub mod calibration_fit;
 pub mod calibration_metrics;
-#[cfg(feature = "virtual-proxies")]
-pub mod proxies;
 pub mod core;
 pub mod formulas;
 pub mod homogeneous;
@@ -17,6 +15,8 @@ pub mod mix_layout;
 pub mod physics;
 /// Tensor engine orchestration (`compute_all`) and MCP/CLI capsules.
 pub mod pipeline;
+#[cfg(feature = "virtual-proxies")]
+pub mod proxies;
 
 /// formal_anchor: NONE
 /// formal_status: NONE

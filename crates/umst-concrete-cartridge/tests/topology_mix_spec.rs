@@ -30,7 +30,10 @@ fn mix_spec_tensor_differs_from_regime_midpoint() {
     let b = nominal_mix_tensor_for_topology::<B>(&profile, &dev);
     let va = a.fractions.clone().into_data().value;
     let vb = b.fractions.clone().into_data().value;
-    assert_ne!(va, vb, "explicit mix spec should differ from regime midpoint layout");
+    assert_ne!(
+        va, vb,
+        "explicit mix spec should differ from regime midpoint layout"
+    );
 }
 
 #[test]
@@ -54,7 +57,6 @@ fn topology_report_uses_nominal_mix_when_set() {
         "topology pipeline should reflect explicit nominal mix"
     );
 
-    let cart =
-        ConcreteCartridge::<B>::with_profile(profile).with_topology_nominal(nominal);
+    let cart = ConcreteCartridge::<B>::with_profile(profile).with_topology_nominal(nominal);
     assert!(cart.topology_nominal.is_some());
 }

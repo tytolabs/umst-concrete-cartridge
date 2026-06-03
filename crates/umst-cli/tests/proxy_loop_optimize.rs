@@ -40,8 +40,12 @@ fn optimize_printable_window_passes_dual_gate() -> Result<(), Box<dyn Error>> {
         sidecar["dual_gate"]["passes"].as_bool().unwrap_or(false),
         "proposed mix should pass dual gate: {sidecar}"
     );
-    assert!(sidecar["dual_gate"]["printability_ok"].as_bool().unwrap_or(false));
-    assert!(sidecar["dual_gate"]["thermodynamic_ok"].as_bool().unwrap_or(false));
+    assert!(sidecar["dual_gate"]["printability_ok"]
+        .as_bool()
+        .unwrap_or(false));
+    assert!(sidecar["dual_gate"]["thermodynamic_ok"]
+        .as_bool()
+        .unwrap_or(false));
 
     fs::remove_file(&tmp).ok();
     Ok(())

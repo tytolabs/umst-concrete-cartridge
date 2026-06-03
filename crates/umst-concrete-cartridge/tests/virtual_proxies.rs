@@ -18,7 +18,10 @@ fn virtual_extrusion_prefers_printable_window() {
     let in_band = virtual_extrusion::virtual_extrusion_score(270.0, 0.7);
     let too_low = virtual_extrusion::virtual_extrusion_score(50.0, 0.2);
     let too_high = virtual_extrusion::virtual_extrusion_score(2_000.0, 0.2);
-    assert!(in_band > too_low && in_band > too_high, "in-band τ₀ should win");
+    assert!(
+        in_band > too_low && in_band > too_high,
+        "in-band τ₀ should win"
+    );
     assert!(in_band >= 0.5 && in_band <= 1.0);
 }
 

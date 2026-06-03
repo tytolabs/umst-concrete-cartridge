@@ -210,15 +210,17 @@ pub fn optimize_mix(
             optimize_w_c_for_strength(profile, base, target as f32, steps)
         }
         #[cfg(feature = "proxy-loop")]
-        OptimizeField::YieldStressPa | OptimizeField::Extrudability | OptimizeField::PrintableWindow => {
+        OptimizeField::YieldStressPa
+        | OptimizeField::Extrudability
+        | OptimizeField::PrintableWindow => {
             optimize_proxy_loop(profile, base, field, target, steps)
         }
         #[cfg(not(feature = "proxy-loop"))]
-        OptimizeField::YieldStressPa | OptimizeField::Extrudability | OptimizeField::PrintableWindow => {
-            Err(CliError::UnsupportedOptimizeTarget(
-                "proxy-loop target requires --features proxy-loop".into(),
-            ))
-        }
+        OptimizeField::YieldStressPa
+        | OptimizeField::Extrudability
+        | OptimizeField::PrintableWindow => Err(CliError::UnsupportedOptimizeTarget(
+            "proxy-loop target requires --features proxy-loop".into(),
+        )),
     }
 }
 
@@ -274,8 +276,7 @@ pub fn proposed_next_mix_value(
         OptimizeField::PrintableWindow => "printable_window",
         OptimizeField::CompressiveStrengthMpa => "compressive_strength_mpa",
     };
-    let (proposed, summary, verdict) =
-        coordinate_descent_optimize(profile, base, objective, steps);
+    let (proposed, summary, verdict) = coordinate_descent_optimize(profile, base, objective, steps);
     let doc = proposed_next_mix_json(profile, base, &proposed, &summary, &verdict, label, steps);
     Ok(serde_json::to_value(&doc)?)
 }

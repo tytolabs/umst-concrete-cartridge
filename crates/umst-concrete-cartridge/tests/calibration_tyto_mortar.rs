@@ -49,12 +49,7 @@ fn predict_s1_calibrated_tau_in_measured_band() {
         calibrated >= lo && calibrated <= hi,
         "calibrated τ₀={calibrated} outside [{lo}, {hi}] (raw={raw_tau})"
     );
-    let wire_tau = bundle
-        .physical
-        .free_energy
-        .clone()
-        .into_data()
-        .value[1];
+    let wire_tau = bundle.physical.free_energy.clone().into_data().value[1];
     assert!(
         (wire_tau - calibrated).abs() < 1e-3,
         "physical_result τ should match calibrated value"

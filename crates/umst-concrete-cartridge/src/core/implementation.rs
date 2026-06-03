@@ -219,10 +219,7 @@ impl<B: Backend<FloatElem = f32>> ConcreteCartridge<B> {
     /// formal_status: NONE
     /// formal_anchor_rationale: Avoids silent regime-midpoint surrogate when a design is known.
     #[must_use]
-    pub fn with_topology_nominal(
-        mut self,
-        nominal: crate::pipeline::TopologyNominalMix,
-    ) -> Self {
+    pub fn with_topology_nominal(mut self, nominal: crate::pipeline::TopologyNominalMix) -> Self {
         self.topology_nominal = Some(nominal);
         self
     }
@@ -278,12 +275,11 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
         let dev = features.device();
         let n_nodes = features.dims()[0];
 
-        let pipeline_report =
-            crate::pipeline::physical_summary::topology_pipeline_report::<B>(
-                &self.profile,
-                &dev,
-                self.topology_nominal,
-            );
+        let pipeline_report = crate::pipeline::physical_summary::topology_pipeline_report::<B>(
+            &self.profile,
+            &dev,
+            self.topology_nominal,
+        );
         let solver_pr =
             crate::pipeline::physical_result_from_report(&self.profile, &pipeline_report, &dev);
         let (fc_mpa, tau_pa, gwp, w_c_eff, alpha_ref, k_ic) =

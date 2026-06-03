@@ -13,12 +13,16 @@ use serde::Serialize;
 
 use crate::calibration::Profile;
 use crate::calibration_fit::calibrated_tau0_pa;
-use crate::facade::{predict_with_options, FacadeBackend, MixSpec, PredictOptions, WaterCementRatio};
+use crate::facade::{
+    predict_with_options, FacadeBackend, MixSpec, PredictOptions, WaterCementRatio,
+};
 use crate::mix_layout;
 use crate::physics::printability::PrintabilityEngine;
 use crate::pipeline::dual_gate::{evaluate_dual_gate, DualGateVerdict};
 use crate::pipeline::physical_summary::nominal_mix_tensor_for_mix_spec;
-use crate::pipeline::{run_full_physics_pipeline, PhysicsPipelineSummary, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO};
+use crate::pipeline::{
+    run_full_physics_pipeline, PhysicsPipelineSummary, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
+};
 
 /// Serializable next-mix proposal for the experiment loop (`proposed_next_mix.json`).
 /// formal_anchor: NONE
@@ -298,23 +302,41 @@ fn update_bisection_bounds(
     match objective {
         TrackAObjective::YieldStressPa(target) => {
             if summary.rheology_yield_stress_pa > target {
-                SearchBounds { lo: mid, hi: bounds.hi }
+                SearchBounds {
+                    lo: mid,
+                    hi: bounds.hi,
+                }
             } else {
-                SearchBounds { lo: bounds.lo, hi: mid }
+                SearchBounds {
+                    lo: bounds.lo,
+                    hi: mid,
+                }
             }
         }
         TrackAObjective::Extrudability(target) => {
             if summary.printability_extrudability > target {
-                SearchBounds { lo: bounds.lo, hi: mid }
+                SearchBounds {
+                    lo: bounds.lo,
+                    hi: mid,
+                }
             } else {
-                SearchBounds { lo: mid, hi: bounds.hi }
+                SearchBounds {
+                    lo: mid,
+                    hi: bounds.hi,
+                }
             }
         }
         TrackAObjective::PrintableWindow => {
             if summary.rheology_yield_stress_pa > PRINTABLE_TAU_HI {
-                SearchBounds { lo: mid, hi: bounds.hi }
+                SearchBounds {
+                    lo: mid,
+                    hi: bounds.hi,
+                }
             } else {
-                SearchBounds { lo: bounds.lo, hi: mid }
+                SearchBounds {
+                    lo: bounds.lo,
+                    hi: mid,
+                }
             }
         }
     }
@@ -351,8 +373,7 @@ fn objective_score(
 fn mix_with_axis(base: &MixSpec, axis: SearchAxis, value: f32) -> MixSpec {
     match axis {
         SearchAxis::WaterCement => MixSpec {
-            w_c: WaterCementRatio::try_from(f64::from(value.clamp(0.10, 1.0)))
-                .unwrap_or(base.w_c),
+            w_c: WaterCementRatio::try_from(f64::from(value.clamp(0.10, 1.0))).unwrap_or(base.w_c),
             ..base.clone()
         },
         SearchAxis::Superplasticiser => MixSpec {

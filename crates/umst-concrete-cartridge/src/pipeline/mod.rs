@@ -24,9 +24,8 @@ pub use orchestrator::run_full_physics_pipeline;
 /// formal_status: NONE
 /// formal_anchor_rationale: Topology / predict policy maps from pipeline report.
 pub use physical_summary::{
-    nominal_mix_tensor_for_mix_spec, nominal_mix_tensor_for_topology,
-    physical_result_from_report, topology_pipeline_headlines, topology_pipeline_report,
-    TopologyNominalMix,
+    nominal_mix_tensor_for_mix_spec, nominal_mix_tensor_for_topology, physical_result_from_report,
+    topology_pipeline_headlines, topology_pipeline_report, TopologyNominalMix,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE

@@ -202,9 +202,11 @@ fn run_optimize(
             .map_err(|e| anyhow::anyhow!("{e}"))?;
         let sidecar_text =
             serde_json::to_string_pretty(&sidecar).context("serialize proposed_next_mix JSON")?;
-        fs::write(&path, sidecar_text)
-            .with_context(|| format!("write {}", path.display()))?;
-        eprintln!("info: wrote proposed_next_mix sidecar to {}", path.display());
+        fs::write(&path, sidecar_text).with_context(|| format!("write {}", path.display()))?;
+        eprintln!(
+            "info: wrote proposed_next_mix sidecar to {}",
+            path.display()
+        );
     }
 
     #[cfg(not(feature = "proxy-loop"))]

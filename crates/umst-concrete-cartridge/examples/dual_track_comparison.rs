@@ -5,9 +5,7 @@ use std::time::Instant;
 
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::facade::{MixSpec, TemperatureK, WaterCementRatio};
-use umst_concrete_cartridge::pipeline::{
-    coordinate_descent_optimize, TrackAObjective,
-};
+use umst_concrete_cartridge::pipeline::{coordinate_descent_optimize, TrackAObjective};
 
 fn s1_base_mix() -> MixSpec {
     MixSpec {
@@ -28,12 +26,8 @@ fn main() {
 
     println!("=== Track A: coordinate descent + dual gate (shippable) ===");
     let t0 = Instant::now();
-    let (proposed_a, summary_a, gate_a) = coordinate_descent_optimize(
-        &profile,
-        &base,
-        TrackAObjective::PrintableWindow,
-        20,
-    );
+    let (proposed_a, summary_a, gate_a) =
+        coordinate_descent_optimize(&profile, &base, TrackAObjective::PrintableWindow, 20);
     let dt_a = t0.elapsed();
     println!(
         "  proposed w_c={:.3} sp={:.2}% τ₀={:.1} Pa extr={:.3} gate_pass={} ({:.1?})",

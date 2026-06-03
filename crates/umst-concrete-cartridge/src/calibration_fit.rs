@@ -52,11 +52,7 @@ pub fn apply_tau0_calibration(predicted_pa: f32, block: Option<&RheologyCalibrat
 /// formal_citation: "In-house Tyto mortar yield proxy calibration"
 /// formal_envelope: "tests/calibration_tyto_mortar.rs"
 #[must_use]
-pub fn fit_theta_tau0_single_mix(
-    predicted_pa: f32,
-    measured_lo: f32,
-    measured_hi: f32,
-) -> f32 {
+pub fn fit_theta_tau0_single_mix(predicted_pa: f32, measured_lo: f32, measured_hi: f32) -> f32 {
     if !predicted_pa.is_finite() || predicted_pa <= 1.0 {
         return 1.0;
     }
