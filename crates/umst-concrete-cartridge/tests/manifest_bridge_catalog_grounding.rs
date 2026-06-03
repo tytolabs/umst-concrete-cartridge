@@ -16,10 +16,10 @@ use umst_manifold::runtime::catalog::{
 
 /// Pinned in `umst-manifold/artifacts/catalog.lock.json` (119-module unified export).
 const EXPECTED_UPSTREAM_CATALOG_DIGEST_HEX: &str =
-    "0697014fb5b90a3aca4db3e5cc226896ca198802c910d5395f254e4262aa6227";
+    "4524ed218634fcbe716d76a0948b7ab01c0ee03a8bc36c31f2ba31798713e02d";
 /// SHA-256 of verbatim `umst-manifold/artifacts/catalog.lock.json` (v2 dual-pin lock file).
 const EXPECTED_CATALOG_LOCK_BUNDLE_SHA256_HEX: &str =
-    "6638faf782c68fa62a006dc13484745c66d452678b1407360561100f8c628a8d";
+    "7373928faaf79f87b997bd465e21b1669fcf107cf81ce4d8c91f74e14d37fec7";
 
 /// Lean modules cited by cartridge mechanised `formal_anchor` blocks (FORMAL_GROUNDING_AUDIT).
 const MECHANISED_LEAN_MODULE_BASENAMES: &[&str] = &[
