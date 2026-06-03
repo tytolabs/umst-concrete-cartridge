@@ -5,33 +5,86 @@
 //!
 //! This is **control-policy**, not a thermodynamic identity:
 //! - `free_energy[..,0]` = Jennings tensor strength headline (MPa).
-//! - `free_energy[..,1]` = YODEL yield stress (Pa).
+//! - `free_energy[..,1]` = YODEL yield stress (Pa) after θ calibration ([`crate::calibration_fit`]).
 //! - `dissipation[..,0]` = tensor-route hydration degree α (`physics::hydration`).
 //! - `safety_margin[..,0]` = homogeneous admissibility margin using the **same** α and effective w/c.
 //! - `cost[..,0]` = sustainability embodied carbon (kg CO₂-eq / m³).
 //!
-//! formal_anchor: NONE
-//! formal_status: NONE
-//! formal_anchor_rationale: Orchestrator summary only; differentiable potentials live in manifold adapters, not duplicated here.
+//! Differentiable potentials live in manifold adapters; this module is pure assembly (no duplicate CD).
 
 use burn::tensor::{backend::Backend, Data, Shape, Tensor};
 use umst_manifold::core::tensors::MixTensor;
 use umst_manifold::core::traits::PhysicalResult;
 
 use crate::calibration::Profile;
+use crate::calibration_fit::calibrated_tau0_pa;
 use crate::homogeneous::mix_row_from_scalar_spec;
 use crate::mix_layout::{fractions_from_mix_row, mix_tensor_from_layout};
 use crate::pipeline::report::PhysicsPipelineReport;
 
+/// Scalar recipe for topology nominal-mix when an explicit design is known (avoids regime midpoint).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Decouples `core` from `facade::MixSpec` while sharing mix_layout semantics.
+#[derive(Debug, Clone, Copy)]
+pub struct TopologyNominalMix {
+    pub w_c: f32,
+    pub superplasticiser_pct: f32,
+    pub fly_ash_pct: f32,
+    pub silica_fume_pct: f32,
+    pub aggregate_volume_fraction: f32,
+    pub target_age_hours: f32,
+    pub temperature_k: f32,
+}
+
+impl From<&crate::facade::MixSpec> for TopologyNominalMix {
+    fn from(s: &crate::facade::MixSpec) -> Self {
+        Self {
+            w_c: s.w_c.value(),
+            superplasticiser_pct: s.superplasticiser_pct,
+            fly_ash_pct: s.fly_ash_pct,
+            silica_fume_pct: s.silica_fume_pct,
+            aggregate_volume_fraction: s.aggregate_volume_fraction,
+            target_age_hours: s.target_age_hours,
+            temperature_k: s.temperature_k.value(),
+        }
+    }
+}
+
 /// Single-run nominal-mix [`PhysicsPipelineReport`] for topology (avoids duplicate `run_full_physics_pipeline` calls).
-/// formal_anchor / formal_status omitted (`pub(crate)` — not part of public façade ledger).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: When `nominal` is set, uses caller recipe instead of regime midpoint.
 #[must_use]
-pub(crate) fn topology_pipeline_report<B: Backend<FloatElem = f32>>(
+pub fn topology_pipeline_report<B: Backend<FloatElem = f32>>(
     profile: &Profile,
     device: &B::Device,
+    nominal: Option<TopologyNominalMix>,
 ) -> PhysicsPipelineReport {
-    let mix: MixTensor<B> = nominal_mix_tensor_for_topology::<B>(profile, device);
+    let mix: MixTensor<B> = match nominal {
+        Some(n) => mix_tensor_from_topology_nominal::<B>(profile, n, device),
+        None => nominal_mix_tensor_for_topology::<B>(profile, device),
+    };
     super::run_full_physics_pipeline::<B>(profile, &mix)
+}
+
+fn mix_tensor_from_topology_nominal<B: Backend<FloatElem = f32>>(
+    profile: &Profile,
+    n: TopologyNominalMix,
+    device: &B::Device,
+) -> MixTensor<B> {
+    let row = mix_row_from_scalar_spec(
+        profile,
+        n.w_c,
+        n.superplasticiser_pct,
+        n.fly_ash_pct,
+        n.silica_fume_pct,
+        n.aggregate_volume_fraction,
+        n.target_age_hours,
+        n.temperature_k,
+    );
+    let layout = fractions_from_mix_row(&row, n.aggregate_volume_fraction);
+    mix_tensor_from_layout(&layout, device)
 }
 
 #[must_use]
@@ -60,7 +113,10 @@ pub fn physical_result_from_report<B: Backend<FloatElem = f32>>(
     device: &B::Device,
 ) -> PhysicalResult<B> {
     let fc = report.summary.strength_jennings_mpa;
-    let tau = report.summary.rheology_yield_stress_pa;
+    let tau = calibrated_tau0_pa(
+        report.summary.rheology_yield_stress_pa,
+        profile.rheology_calibration.as_ref(),
+    );
     let alpha = report.summary.hydration_alpha;
     let gwp = report.summary.sustainability_gwp_kg_co2_m3;
     let w_c_eff = report.summary.effective_water_cement_ratio;
@@ -86,11 +142,35 @@ pub fn physical_result_from_report<B: Backend<FloatElem = f32>>(
     }
 }
 
+/// Build [`MixTensor`] from an explicit [`crate::facade::MixSpec`] (caller recipe, not regime midpoint).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Shared layout path for predict and topology when recipe is known.
+#[must_use]
+pub fn nominal_mix_tensor_for_mix_spec<B: Backend<FloatElem = f32>>(
+    profile: &Profile,
+    spec: &crate::facade::MixSpec,
+    device: &B::Device,
+) -> MixTensor<B> {
+    let w_c = spec.w_c.value();
+    let sp_pct = spec.superplasticiser_pct;
+    let fly_pct = spec.fly_ash_pct;
+    let silica_pct = spec.silica_fume_pct;
+    let phi = spec.aggregate_volume_fraction;
+    let age_h = spec.target_age_hours;
+    let temp_k = spec.temperature_k.value();
+    let row = mix_row_from_scalar_spec(
+        profile, w_c, sp_pct, fly_pct, silica_pct, phi, age_h, temp_k,
+    );
+    let layout = fractions_from_mix_row(&row, phi);
+    mix_tensor_from_layout(&layout, device)
+}
+
 /// Regime-centered nominal [`MixTensor`] when topology receives only a [`UnifiedMaterialStateTensor`](umst_manifold::core::tensors::UnifiedMaterialStateTensor)
 /// (no explicit recipe). Uses profile `[regime]` midpoints and conservative SCM splits from optional caps.
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Deterministic surrogate mix so staged tensor engines (`StrengthEngine`, fracture headline, sustainability) match `compute_all` semantics.
+/// formal_anchor_rationale: Deterministic surrogate mix so staged tensor engines match `compute_all` semantics.
 #[must_use]
 pub fn nominal_mix_tensor_for_topology<B: Backend<FloatElem = f32>>(
     profile: &Profile,
@@ -131,5 +211,5 @@ pub fn topology_pipeline_headlines<B: Backend<FloatElem = f32>>(
     profile: &Profile,
     device: &B::Device,
 ) -> (f32, f32, f32, f32, f32, f32) {
-    topology_pipeline_headlines_from_report(&topology_pipeline_report::<B>(profile, device))
+    topology_pipeline_headlines_from_report(&topology_pipeline_report::<B>(profile, device, None))
 }

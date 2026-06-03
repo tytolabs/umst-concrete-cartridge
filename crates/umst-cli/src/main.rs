@@ -62,6 +62,9 @@ enum Command {
         steps: usize,
         #[arg(long, value_name = "FILE")]
         input: Option<PathBuf>,
+        /// Write Track A `proposed_next_mix.json` sidecar (requires `proxy-loop` feature).
+        #[arg(long, value_name = "PATH")]
+        output: Option<PathBuf>,
     },
     Schema {
         #[command(subcommand)]
@@ -178,7 +181,13 @@ fn print_prediction(
     Ok(())
 }
 
-fn run_optimize(profile: &Profile, base: MixSpec, target_raw: String, steps: usize) -> Result<()> {
+fn run_optimize(
+    profile: &Profile,
+    base: MixSpec,
+    target_raw: String,
+    steps: usize,
+    output: Option<PathBuf>,
+) -> Result<()> {
     let (field, target_val) =
         cli::parse_optimize_target(&target_raw).map_err(|e| anyhow::anyhow!("{e}"))?;
     let tuned = cli::optimize_mix(profile, &base, field, target_val, steps)
@@ -186,6 +195,25 @@ fn run_optimize(profile: &Profile, base: MixSpec, target_raw: String, steps: usi
     let out = cli::serialize_mix_spec(&tuned).map_err(|e| anyhow::anyhow!("{e}"))?;
     let text = serde_json::to_string_pretty(&out).context("serialize mix JSON")?;
     println!("{text}");
+
+    #[cfg(feature = "proxy-loop")]
+    if let Some(path) = output {
+        let sidecar = cli::proposed_next_mix_value(profile, &base, field, target_val, steps)
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
+        let sidecar_text =
+            serde_json::to_string_pretty(&sidecar).context("serialize proposed_next_mix JSON")?;
+        fs::write(&path, sidecar_text).with_context(|| format!("write {}", path.display()))?;
+        eprintln!(
+            "info: wrote proposed_next_mix sidecar to {}",
+            path.display()
+        );
+    }
+
+    #[cfg(not(feature = "proxy-loop"))]
+    if output.is_some() {
+        anyhow::bail!("--output requires building umst with --features proxy-loop");
+    }
+
     Ok(())
 }
 
@@ -306,6 +334,7 @@ fn main() -> ExitCode {
             input,
             target,
             steps,
+            output,
         } => {
             let globals = &root.globals;
             if globals.profile_file.is_none()
@@ -341,7 +370,8 @@ fn main() -> ExitCode {
                     return ExitCode::from(1);
                 }
             };
-            run_optimize(&profile, base, target.clone(), *steps).map_err(|e| e.to_string())
+            run_optimize(&profile, base, target.clone(), *steps, output.clone())
+                .map_err(|e| e.to_string())
         }
         Command::Audit {
             input,

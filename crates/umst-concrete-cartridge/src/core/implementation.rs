@@ -187,6 +187,8 @@ fn thmc_state_from_umst<B: Backend<FloatElem = f32>>(
 pub struct ConcreteCartridge<B: Backend> {
     /// Active calibration profile (`compute_all` hydration margin + intrinsic strength scale).
     pub profile: Profile,
+    /// When set, [`IScienceCartridge::compute_topology`] uses this recipe instead of regime midpoint.
+    pub topology_nominal: Option<crate::pipeline::TopologyNominalMix>,
     _backend: std::marker::PhantomData<B>,
 }
 
@@ -207,8 +209,19 @@ impl<B: Backend<FloatElem = f32>> ConcreteCartridge<B> {
     pub fn with_profile(profile: Profile) -> Self {
         Self {
             profile,
+            topology_nominal: None,
             _backend: std::marker::PhantomData,
         }
+    }
+
+    /// Pin topology headline mix to an explicit recipe ([`TopologyNominalMix`] / [`MixSpec`] conversion).
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Avoids silent regime-midpoint surrogate when a design is known.
+    #[must_use]
+    pub fn with_topology_nominal(mut self, nominal: crate::pipeline::TopologyNominalMix) -> Self {
+        self.topology_nominal = Some(nominal);
+        self
     }
 
     /// formal_anchor: NONE
@@ -262,8 +275,11 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
         let dev = features.device();
         let n_nodes = features.dims()[0];
 
-        let pipeline_report =
-            crate::pipeline::physical_summary::topology_pipeline_report::<B>(&self.profile, &dev);
+        let pipeline_report = crate::pipeline::physical_summary::topology_pipeline_report::<B>(
+            &self.profile,
+            &dev,
+            self.topology_nominal,
+        );
         let solver_pr =
             crate::pipeline::physical_result_from_report(&self.profile, &pipeline_report, &dev);
         let (fc_mpa, tau_pa, gwp, w_c_eff, alpha_ref, k_ic) =

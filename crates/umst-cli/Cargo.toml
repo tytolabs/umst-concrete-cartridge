@@ -15,6 +15,8 @@ publish = false
 
 [features]
 default = []
+proxy-loop = ["umst-concrete-cartridge/proxy-loop"]
+manifest-bridge = ["umst-concrete-cartridge/manifest-bridge"]
 blas-accelerate = [
     "umst-concrete-cartridge/blas-accelerate",
     "burn-ndarray/blas-accelerate",
@@ -27,7 +29,7 @@ path = "src/lib.rs"
 
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
-umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", branch = "main" }
+umst-manifold = { workspace = true }
 burn = { version = "0.13.0", default-features = false }
 burn-ndarray = "0.13.0"
 clap = { version = "4.5", features = ["derive"] }
@@ -92,3 +94,8 @@ path = "tests/calibration/dataset_metrics.rs"
 [[test]]
 name = "calibration_ssot_row_counts"
 path = "tests/calibration/ssot_row_counts.rs"
+
+[[test]]
+name = "proxy_loop_optimize"
+path = "tests/proxy_loop_optimize.rs"
+required-features = ["proxy-loop"]

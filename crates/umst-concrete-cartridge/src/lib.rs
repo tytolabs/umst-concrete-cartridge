@@ -6,6 +6,7 @@
 #![allow(clippy::doc_lazy_continuation)]
 
 pub mod calibration;
+pub mod calibration_fit;
 pub mod calibration_metrics;
 pub mod core;
 pub mod formulas;
@@ -14,6 +15,8 @@ pub mod mix_layout;
 pub mod physics;
 /// Tensor engine orchestration (`compute_all`) and MCP/CLI capsules.
 pub mod pipeline;
+#[cfg(feature = "virtual-proxies")]
+pub mod proxies;
 
 /// formal_anchor: NONE
 /// formal_status: NONE

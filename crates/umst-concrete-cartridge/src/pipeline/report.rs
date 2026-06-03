@@ -90,6 +90,8 @@ pub struct PhysicsPipelineSummary {
     pub thermo_adiabatic_rise_proxy_c: f32,
     pub chloride_diffusivity_m2_s: f32,
     pub printability_buildability: f32,
+    pub printability_extrudability: f32,
+    pub rheology_plastic_viscosity_pa_s: f32,
     pub itz_thickness_microns: f32,
     pub fracture_toughness_k_ic_mpa_sqrt_m: f32,
     pub sustainability_gwp_kg_co2_m3: f32,
