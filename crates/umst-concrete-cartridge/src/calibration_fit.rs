@@ -105,13 +105,13 @@ mod tests {
     fn theta_brackets_measured_band() {
         let theta = fit_theta_tau0_single_mix(2000.0, 800.0, 1200.0);
         let calibrated = 2000.0 * theta;
-        assert!(calibrated >= 800.0 && calibrated <= 1200.0);
+        assert!((800.0..=1200.0).contains(&calibrated));
     }
 
     #[test]
     fn theta_scales_down_overshot_yodel() {
         let theta = fit_theta_tau0_single_mix(1_862_763.0, 180.0, 360.0);
         let calibrated = 1_862_763.0 * theta;
-        assert!(calibrated >= 180.0 && calibrated <= 360.0);
+        assert!((180.0..=360.0).contains(&calibrated));
     }
 }

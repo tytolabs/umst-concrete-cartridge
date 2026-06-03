@@ -153,11 +153,11 @@ pub fn nominal_mix_tensor_for_mix_spec<B: Backend<FloatElem = f32>>(
     device: &B::Device,
 ) -> MixTensor<B> {
     let w_c = spec.w_c.value();
-    let sp_pct = spec.superplasticiser_pct as f32;
-    let fly_pct = spec.fly_ash_pct as f32;
-    let silica_pct = spec.silica_fume_pct as f32;
-    let phi = spec.aggregate_volume_fraction as f32;
-    let age_h = spec.target_age_hours as f32;
+    let sp_pct = spec.superplasticiser_pct;
+    let fly_pct = spec.fly_ash_pct;
+    let silica_pct = spec.silica_fume_pct;
+    let phi = spec.aggregate_volume_fraction;
+    let age_h = spec.target_age_hours;
     let temp_k = spec.temperature_k.value();
     let row = mix_row_from_scalar_spec(
         profile, w_c, sp_pct, fly_pct, silica_pct, phi, age_h, temp_k,

@@ -63,7 +63,7 @@ impl DualGateVerdict {
 /// formal_envelope: "tests/printability.rs"
 #[must_use]
 pub fn printability_window_ok(tau_y_pa: f32, extrudability: f32) -> bool {
-    let in_band = tau_y_pa >= PRINTABLE_TAU_LO && tau_y_pa <= PRINTABLE_TAU_HI;
+    let in_band = (PRINTABLE_TAU_LO..=PRINTABLE_TAU_HI).contains(&tau_y_pa);
     let extr_ok = extrudability.is_finite() && extrudability >= 0.35;
     in_band && extr_ok
 }
@@ -103,7 +103,6 @@ pub fn printability_with_virtual_proxies(summary: &PhysicsPipelineSummary) -> bo
 pub fn thermodynamic_ok(profile: &Profile, spec: &MixSpec) -> bool {
     let opts = PredictOptions {
         compare_homogeneous: true,
-        ..PredictOptions::default()
     };
     predict_with_options(profile, spec, opts).is_ok()
 }
