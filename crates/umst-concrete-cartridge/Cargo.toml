@@ -60,7 +60,7 @@ umst-manifold = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 time = "0.3.47"
-bincode = "=2.0.0-rc.3"
+bincode = "=3.0.0"
 rand = "0.8"
 tracing = "0.1"
 tracing-subscriber = "0.3"
