@@ -55,7 +55,7 @@ proxy-loop = ["manifest-bridge", "virtual-proxies"]
 
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
-burn-ndarray = "0.13.0"
+burn-ndarray = "0.21.0"
 umst-manifold = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
