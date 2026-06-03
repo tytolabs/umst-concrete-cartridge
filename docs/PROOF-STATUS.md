@@ -101,8 +101,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `RheologyCalibrationBlock` | `crates/umst-concrete-cartridge/src/calibration_fit.rs:11` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
 | `apply_tau0_calibration` | `crates/umst-concrete-cartridge/src/calibration_fit.rs:36` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
 | `fit_theta_tau0_single_mix` | `crates/umst-concrete-cartridge/src/calibration_fit.rs:48` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
-| `effective_theta_tau0` | `crates/umst-concrete-cartridge/src/calibration_fit.rs:70` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
-| `calibrated_tau0_pa` | `crates/umst-concrete-cartridge/src/calibration_fit.rs:92` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
+| `effective_theta_tau0` | `crates/umst-concrete-cartridge/src/calibration_fit.rs:66` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
+| `calibrated_tau0_pa` | `crates/umst-concrete-cartridge/src/calibration_fit.rs:88` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
 | `hydration_degree_calibrated` | `crates/umst-concrete-cartridge/src/formulas.rs:24` | `empirical://datasets/hydration-kinetics-calibration-grid.v1.csv` | — | "Mills (1966) ultimate cap with stretched-exponential √t kinetics and Arrhenius temperature factor (calibrated multipliers from profile TOML)" \| "tests/hydration.rs::powers_doh_envelope" |
 | `yield_stress_pa` | `crates/umst-concrete-cartridge/src/homogeneous.rs:217` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "Roussel (2018) Cem. Concr. Res. 112, 76; Château, Ovarlez & Trung (2008) J. Rheol. 52, 489" \| "tests/printability.rs" |
 | `ColloidalEngine` | `crates/umst-concrete-cartridge/src/physics/colloidal.rs:6` | `empirical://datasets/dataset_d1.csv` | — | "Flatt & Bowen (2007) J. Am. Ceram. Soc. 89, 1244 (YODEL)" \| "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); DLVO pathway exercised under tests/realism/adversarial_physics.rs" |
@@ -129,8 +129,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `compute_healing_potential` | `crates/umst-concrete-cartridge/src/physics/self_heal.rs:67` | `empirical://datasets/dataset_selfheal.csv` | — | "Edvardsen (1999) ACI Mater. J. 96, 448" \| "Boundary profile (no [acceptance] strength gate); paired CSV still listed in dataset_metrics skip — healing kinetics exercised under tests/realism/adversarial_physics.rs" |
 | `ShrinkageEngine` | `crates/umst-concrete-cartridge/src/physics/shrinkage.rs:8` | `empirical://datasets/dataset_d1.csv` | — | "Bažant et al. (2015) Mater. Struct. 48, 753 (B4 shrinkage model)" \| "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); Bažant–Baweja shrinkage pathway exercised under tests/shrinkage.rs + adversarial harness" |
 | `compute_autogenous_shrinkage` | `crates/umst-concrete-cartridge/src/physics/shrinkage.rs:21` | `empirical://datasets/dataset_d1.csv` | — | "Bažant et al. (2015) Mater. Struct. 48, 753 (B4 shrinkage model)" \| "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); Bažant–Baweja shrinkage pathway exercised under tests/shrinkage.rs + adversarial harness" |
-| `calibrated_yield_stress_pa` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:80` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
-| `coordinate_descent_optimize` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:199` | `empirical://datasets/cli-optimize-wc-bisection.v1.csv` | — | "Proxy-loop coordinate descent envelope (CLI tests)" \| "crates/umst-cli/tests/proxy_loop_optimize.rs" |
+| `calibrated_yield_stress_pa` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:84` | `empirical://datasets/printability-rheology-yield-proxy.v1.csv` | — | "In-house Tyto mortar yield proxy calibration" \| "tests/calibration_tyto_mortar.rs" |
+| `coordinate_descent_optimize` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:203` | `empirical://datasets/cli-optimize-wc-bisection.v1.csv` | — | "Proxy-loop coordinate descent envelope (CLI tests)" \| "crates/umst-cli/tests/proxy_loop_optimize.rs" |
 
 ## Literature
 
@@ -200,8 +200,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `serialize_prediction` | `crates/umst-cli/src/cli.rs:115` | `NONE` | — | JSON-serialise glue; no physical claim. |
 | `serialize_mix_spec` | `crates/umst-cli/src/cli.rs:151` | `NONE` | — | JSON-serialise glue. |
 | `parse_optimize_target` | `crates/umst-cli/src/cli.rs:183` | `NONE` | — | String-parse glue for `FIELD=VALUE` optimise CLI syntax. |
-| `proposed_next_mix_value` | `crates/umst-cli/src/cli.rs:245` | `NONE` | — | Track A sidecar for experiment loop. |
-| `optimize_mix_with_gate` | `crates/umst-cli/src/cli.rs:283` | `NONE` | — | CLI driver; gate semantics from `pipeline::dual_gate`. |
+| `proposed_next_mix_value` | `crates/umst-cli/src/cli.rs:247` | `NONE` | — | Track A sidecar for experiment loop. |
+| `optimize_mix_with_gate` | `crates/umst-cli/src/cli.rs:284` | `NONE` | — | CLI driver; gate semantics from `pipeline::dual_gate`. |
 | `bool_and` | `crates/umst-concrete-cartridge/src/burn_compat.rs:8` | `NONE` | — | Burn-version compatibility shim for boolean tensor AND across crate semver skew. |
 | `ProvenanceFormal` | `crates/umst-concrete-cartridge/src/calibration.rs:70` | `NONE` | — | Serde lift of TOML `[provenance.formal]`; `status` string is file metadata (may include Boundary scope), not a Rust `formal_status` bucket. |
 | `CalibrationProvenance` | `crates/umst-concrete-cartridge/src/calibration.rs:103` | `NONE` | — | Dataset and Zenodo citation bundle parsed from TOML only; no Lean witness on this serde container — see `docs/FormalAnchors.md` “Future formal links” for manifold adjoint context. |
@@ -215,7 +215,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `new` | `crates/umst-concrete-cartridge/src/core/implementation.rs:196` | `NONE` | — | Deterministic bundled baseline when callers omit explicit calibration. |
 | `with_profile` | `crates/umst-concrete-cartridge/src/core/implementation.rs:204` | `NONE` | — | Avoids silently mixing heterogeneous tensor kinetics with unrelated gel-space coefficients. |
 | `with_topology_nominal` | `crates/umst-concrete-cartridge/src/core/implementation.rs:217` | `NONE` | — | Avoids silent regime-midpoint surrogate when a design is known. |
-| `apply_topology_result_to_umst` | `crates/umst-concrete-cartridge/src/core/implementation.rs:230` | `NONE` | — | Mutable UMST merge path for topology tensors; proof witnesses remain caller-owned. |
+| `apply_topology_result_to_umst` | `crates/umst-concrete-cartridge/src/core/implementation.rs:227` | `NONE` | — | Mutable UMST merge path for topology tensors; proof witnesses remain caller-owned. |
 | `ConcreteCartridge` | `crates/umst-concrete-cartridge/src/core/mod.rs:6` | `NONE` | — | Re-export; classification follows the underlying symbol. |
 | `apply_physics_to_umst` | `crates/umst-concrete-cartridge/src/core/mod.rs:10` | `NONE` | — | Forwards manifold UMST write-back helper used after topology physics. |
 | `IScienceCartridge, MixTensor, PhysicalResult` | `crates/umst-concrete-cartridge/src/core/mod.rs:14` | `NONE` | — | Forwards manifold cartridge façade trait and tensor bundles. |
@@ -270,12 +270,12 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `passes` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:50` | `NONE` | — | Equal-weight AND of printability and thermodynamic legs. |
 | `printability_from_summary` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:71` | `NONE` | — | Summary-scalar wrapper over [`printability_window_ok`]. |
 | `printability_with_virtual_proxies` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:82` | `NONE` | — | Lazy AND of summary band + Roussel stack/extrusion surrogates. |
-| `evaluate_dual_gate` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:111` | `NONE` | — | Track A composite gate; legs carry individual anchors. |
+| `evaluate_dual_gate` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:110` | `NONE` | — | Track A composite gate; legs carry individual anchors. |
 | `evaluate_dual_gate, DualGateVerdict, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:15` | `NONE` | — | Re-export dual-gate verdict for MCP/CLI Track A. |
 | `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:19` | `NONE` | — | Stable import path for staged tensor physics. |
 | `nominal_mix_tensor_for_mix_spec, nominal_mix_tensor_for_topology, physical_result_from_report, topology_pipeline_headlines, topology_pipeline_report, TopologyNominalMix` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:23` | `NONE` | — | Topology / predict policy maps from pipeline report. |
-| `PhysicsPipelineReport, PhysicsPipelineSummary, PipelineStageRecord, PipelineStageStatus, PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:31` | `NONE` | — | JSON envelope types for MCP/CLI audit trails. |
-| `coordinate_descent_optimize, evaluate_mix_dual_gate, proposed_next_mix_json, ProposedNextMix, TrackAObjective` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:39` | `NONE` | — | Track A coordinate-descent + proposed mix JSON assembly. |
+| `PhysicsPipelineReport, PhysicsPipelineSummary, PipelineStageRecord, PipelineStageStatus, PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:30` | `NONE` | — | JSON envelope types for MCP/CLI audit trails. |
+| `coordinate_descent_optimize, evaluate_mix_dual_gate, proposed_next_mix_json, ProposedNextMix, TrackAObjective` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:38` | `NONE` | — | Track A coordinate-descent + proposed mix JSON assembly. |
 | `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/pipeline/orchestrator.rs:125` | `NONE` | — | Cartridge functor composition root exercised by tooling + tests. |
 | `TopologyNominalMix` | `crates/umst-concrete-cartridge/src/pipeline/physical_summary.rs:25` | `NONE` | — | Decouples `core` from `facade::MixSpec` while sharing mix_layout semantics. |
 | `topology_pipeline_report` | `crates/umst-concrete-cartridge/src/pipeline/physical_summary.rs:54` | `NONE` | — | When `nominal` is set, uses caller recipe instead of regime midpoint. |
@@ -291,14 +291,14 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `fail` | `crates/umst-concrete-cartridge/src/pipeline/report.rs:67` | `NONE` | — | Propagates panics-avoiding error strings for observability. |
 | `PhysicsPipelineSummary` | `crates/umst-concrete-cartridge/src/pipeline/report.rs:79` | `NONE` | — | Human/tooling digest; not a substitute for full tensor fields. |
 | `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/pipeline/report.rs:105` | `NONE` | — | Cartridge-local rich JSON envelope parallel to manifold tensors. |
-| `ProposedNextMix` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:23` | `NONE` | — | Wire envelope for Track A CLI; physics claims live on nested gate fields. |
-| `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:38` | `NONE` | — | Mix JSON mirror without newtype wrappers for serde output. |
-| `DualGateWire` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:53` | `NONE` | — | Dual-gate audit block for proposed mix JSON sidecar. |
-| `summary_with_calibrated_tau` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:94` | `NONE` | — | Applies θ bias before dual-gate printability leg. |
-| `evaluate_mix_dual_gate` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:152` | `NONE` | — | Track A scoring helper; gate semantics from `dual_gate`. |
-| `TrackAObjective` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:169` | `NONE` | — | Track A optimise targets mirrored from CLI `OptimizeField`. |
-| `proposed_next_mix_json` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:365` | `NONE` | — | JSON sidecar assembly for Track A CLI. |
-| `thermodynamic_gate_ok` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:396` | `NONE` | — | Thin wrapper for comparison example Track A path. |
+| `ProposedNextMix` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:27` | `NONE` | — | Wire envelope for Track A CLI; physics claims live on nested gate fields. |
+| `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:42` | `NONE` | — | Mix JSON mirror without newtype wrappers for serde output. |
+| `DualGateWire` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:57` | `NONE` | — | Dual-gate audit block for proposed mix JSON sidecar. |
+| `summary_with_calibrated_tau` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:98` | `NONE` | — | Applies θ bias before dual-gate printability leg. |
+| `evaluate_mix_dual_gate` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:156` | `NONE` | — | Track A scoring helper; gate semantics from `dual_gate`. |
+| `TrackAObjective` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:173` | `NONE` | — | Track A optimise targets mirrored from CLI `OptimizeField`. |
+| `proposed_next_mix_json` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:386` | `NONE` | — | JSON sidecar assembly for Track A CLI. |
+| `thermodynamic_gate_ok` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:417` | `NONE` | — | Thin wrapper for comparison example Track A path. |
 | `extrusion_tensor_score` | `crates/umst-concrete-cartridge/src/proxies/virtual_extrusion.rs:30` | `NONE` | — | Headline scalar from pipeline printability stage. |
 | `virtual_extrusion_score` | `crates/umst-concrete-cartridge/src/proxies/virtual_extrusion.rs:43` | `NONE` | — | Combines τ₀ band with tensor extrudability headline. |
 | `virtual_stack_score` | `crates/umst-concrete-cartridge/src/proxies/virtual_stack.rs:30` | `NONE` | — | Normalized score from [`roussel_min_yield_pa`]; not a standalone Lean witness. |
