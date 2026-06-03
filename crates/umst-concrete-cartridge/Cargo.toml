@@ -54,7 +54,7 @@ virtual-proxies = ["solver-research", "umst-manifold/rheology-bingham"]
 proxy-loop = ["manifest-bridge", "virtual-proxies"]
 
 [dependencies]
-burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
+burn = { version = "=0.21.0", default-features = false, features = ["autodiff", "ndarray", "train"] }
 burn-ndarray = "0.13.0"
 umst-manifold = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
