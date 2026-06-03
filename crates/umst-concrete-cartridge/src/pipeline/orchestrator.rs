@@ -88,6 +88,24 @@ fn scm_mass_fraction(row: &MixRow) -> f32 {
     (row.slag_kg_m3 + row.fly_ash_kg_m3) / b
 }
 
+/// Mix-faithful YODEL inputs from collapsed layout (φ from solids + w/c, f_σ knocked by SP).
+#[must_use]
+fn yodel_inputs_from_layout(
+    layout: &[f32; MIX_FEATURE_COUNT],
+    w_c_eff: f32,
+) -> (f32, f32, f32, f32) {
+    let agg_vf = layout[IDX_AGGREGATE_VOLUME_FRACTION].clamp(0.0, 0.90);
+    // Higher w/c → wetter paste → lower effective solid fraction in YODEL packing term.
+    let wc_knock = (w_c_eff / 0.45_f32).clamp(0.65, 1.35);
+    let phi = ((1.0 - agg_vf) / wc_knock).clamp(0.15, 0.55);
+    let phi_m = 0.74_f32;
+    let d50 = 50e-6_f32;
+    let cement = layout[IDX_CEMENT_KG_M3].max(1.0);
+    let sp_frac = (layout[IDX_SUPERPLASTICIZER_KG_M3] / cement).clamp(0.0, 0.05);
+    let f_sigma = 50.0_f32 * (1.0 - 0.35 * (sp_frac / 0.01).min(1.0));
+    (phi, phi_m, d50, f_sigma)
+}
+
 fn t01<B: Backend<FloatElem = f32>>(v: f32, device: &B::Device) -> Tensor<B, 2> {
     Tensor::from_data(Data::new(vec![v], Shape::new([1, 1])), device)
 }
@@ -164,13 +182,29 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     let dlvo_min = min_f32_rank4(dlvo_col);
     stages.push(PipelineStageRecord::ok("colloidal_dlvo"));
 
-    let phi = Tensor::from_data(Data::new(vec![0.35_f32], Shape::new([1, 1, 1, 1])), &dev);
-    let phi_m = Tensor::from_data(Data::new(vec![0.74_f32], Shape::new([1, 1, 1, 1])), &dev);
-    let d50 = Tensor::from_data(Data::new(vec![50e-6_f32], Shape::new([1, 1, 1, 1])), &dev);
-    let f_sigma = Tensor::from_data(Data::new(vec![50.0_f32], Shape::new([1, 1, 1, 1])), &dev);
-    let tau_y = RheologyEngine::<B>::compute_yield_stress_yodel(phi, phi_m, d50, f_sigma);
+    let (phi_s, phi_m_s, d50_s, f_sigma_s) = yodel_inputs_from_layout(&layout, w_c_eff);
+    let phi = Tensor::from_data(Data::new(vec![phi_s], Shape::new([1, 1, 1, 1])), &dev);
+    let phi_m = Tensor::from_data(Data::new(vec![phi_m_s], Shape::new([1, 1, 1, 1])), &dev);
+    let d50 = Tensor::from_data(Data::new(vec![d50_s], Shape::new([1, 1, 1, 1])), &dev);
+    let f_sigma = Tensor::from_data(Data::new(vec![f_sigma_s], Shape::new([1, 1, 1, 1])), &dev);
+    let tau_y = RheologyEngine::<B>::compute_yield_stress_yodel(
+        phi.clone(),
+        phi_m.clone(),
+        d50.clone(),
+        f_sigma.clone(),
+    );
     let tau_scalar = tau_y.into_data().value.into_iter().fold(0_f32, f32::max);
+    let eta_intrinsic = Tensor::from_data(Data::new(vec![2.5_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let eta_fluid = Tensor::from_data(Data::new(vec![0.001_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let eta_plastic = RheologyEngine::<B>::compute_chateau_ovarlez(
+        phi.clone(),
+        phi_m.clone(),
+        eta_intrinsic,
+        eta_fluid,
+    );
+    let eta_scalar = min_f32_rank4(eta_plastic);
     stages.push(PipelineStageRecord::ok("rheology_yodel"));
+    stages.push(PipelineStageRecord::ok("rheology_chateau_ovarlez"));
 
     let temp_c_4 = Tensor::from_data(
         Data::new(vec![row.temperature_c], Shape::new([1, 1, 1, 1])),
@@ -189,18 +223,21 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     let d_scalar = min_f32_rank4(d_cl.clone());
     stages.push(PipelineStageRecord::ok("transport_chloride"));
 
+    let tau_for_print = tau_scalar.max(50.0_f32);
     let build = PrintabilityEngine::<B>::compute_buildability(
-        t4_scalar(120.0, &dev),
+        t4_scalar(tau_for_print, &dev),
         t4_scalar(w_c_eff, &dev),
         80.0,
     );
     let build_scalar = min_f32_rank4(build);
+    let pump_pa = (tau_for_print * 0.85).max(45.0);
     let extr = PrintabilityEngine::<B>::compute_extrudability(
-        t4_scalar(350.0, &dev),
-        t4_scalar(45.0, &dev),
+        t4_scalar(tau_for_print, &dev),
+        t4_scalar(pump_pa, &dev),
         16.0,
         120.0,
     );
+    let extr_scalar = min_f32_rank4(extr.clone());
     if extr
         .into_data()
         .value
@@ -400,9 +437,11 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
             porosity_capillary: porosity_scalar,
             strength_jennings_mpa: fc_scalar,
             rheology_yield_stress_pa: tau_scalar,
+            rheology_plastic_viscosity_pa_s: eta_scalar,
             thermo_adiabatic_rise_proxy_c: thermo_rise,
             chloride_diffusivity_m2_s: d_scalar,
             printability_buildability: build_scalar,
+            printability_extrudability: extr_scalar,
             itz_thickness_microns: itz_mic,
             fracture_toughness_k_ic_mpa_sqrt_m: k_ic_scalar,
             sustainability_gwp_kg_co2_m3: gwp_scalar,

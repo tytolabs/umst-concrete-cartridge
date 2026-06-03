@@ -19,7 +19,7 @@ const EXPECTED_UPSTREAM_CATALOG_DIGEST_HEX: &str =
     "0697014fb5b90a3aca4db3e5cc226896ca198802c910d5395f254e4262aa6227";
 /// SHA-256 of verbatim `umst-manifold/artifacts/catalog.lock.json` (v2 dual-pin lock file).
 const EXPECTED_CATALOG_LOCK_BUNDLE_SHA256_HEX: &str =
-    "1d0d1ed62dfa6144d47cf45c7340ab03405da4f2f5773e2fb281a430c59e3958";
+    "6638faf782c68fa62a006dc13484745c66d452678b1407360561100f8c628a8d";
 
 /// Lean modules cited by cartridge mechanised `formal_anchor` blocks (FORMAL_GROUNDING_AUDIT).
 const MECHANISED_LEAN_MODULE_BASENAMES: &[&str] = &[

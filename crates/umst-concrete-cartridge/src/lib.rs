@@ -6,7 +6,10 @@
 #![allow(clippy::doc_lazy_continuation)]
 
 pub mod calibration;
+pub mod calibration_fit;
 pub mod calibration_metrics;
+#[cfg(feature = "virtual-proxies")]
+pub mod proxies;
 pub mod core;
 pub mod formulas;
 pub mod homogeneous;

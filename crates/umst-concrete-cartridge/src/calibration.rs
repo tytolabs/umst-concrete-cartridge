@@ -5,6 +5,7 @@
 //! Bundled calibration profiles (`calibration/*.toml`): provenance, regime bounds, Powers parameters,
 //! and verification contract metadata lifted from prototype-2a (Zenodo 18940933) SSOT JSON (see [`calibration/SCHEMA.md`](../../../calibration/SCHEMA.md)).
 
+use crate::calibration_fit::RheologyCalibrationBlock;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
@@ -25,6 +26,7 @@ pub const BUNDLED_PROFILE_IDS: &[&str] = &[
     "uhpc",
     "highscm",
     "selfheal",
+    "tyto_mortar",
 ];
 
 /// formal_anchor: STRUCTURAL
@@ -199,6 +201,8 @@ pub struct Profile {
     pub powers: PowersGelParameters,
     pub acceptance: AcceptanceBlock,
     pub contract: ContractBlock,
+    /// Optional single-mix τ₀ bias (`[rheology_calibration]` in TOML).
+    pub rheology_calibration: Option<RheologyCalibrationBlock>,
 }
 
 /// formal_anchor: STRUCTURAL
@@ -303,6 +307,7 @@ impl Profile {
             powers,
             acceptance: raw.acceptance,
             contract: raw.contract,
+            rheology_calibration: raw.rheology_calibration,
             bundle_id,
         }
     }
@@ -437,6 +442,7 @@ fn bundled_toml_source(name: &str) -> Result<&'static str, CalibrationError> {
         "uhpc" => include_str!("../../../calibration/profiles/uhpc.v1.toml"),
         "highscm" => include_str!("../../../calibration/profiles/highscm.v1.toml"),
         "selfheal" => include_str!("../../../calibration/profiles/selfheal.v1.toml"),
+        "tyto_mortar" => include_str!("../../../calibration/profiles/tyto_mortar.v1.toml"),
         _ => return Err(CalibrationError::UnknownBundledProfile(name.to_string())),
     };
     Ok(s)
@@ -452,6 +458,8 @@ pub(crate) struct TomlCalibration {
     #[serde(default)]
     acceptance: AcceptanceBlock,
     contract: ContractBlock,
+    #[serde(default)]
+    rheology_calibration: Option<RheologyCalibrationBlock>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -492,5 +500,9 @@ pub fn profile_descriptions() -> HashMap<&'static str, &'static str> {
     m.insert("uhpc", "Ultra-high performance concrete (Boundary)");
     m.insert("highscm", "High SCM blends (Contract on paired CSV)");
     m.insert("selfheal", "Self-healing specialty mix (Boundary)");
+    m.insert(
+        "tyto_mortar",
+        "Tyto S1 proxy-rheology mortar (θ calibration, printable window)",
+    );
     m
 }

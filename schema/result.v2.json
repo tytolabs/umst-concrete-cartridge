@@ -71,7 +71,9 @@
     },
     "warnings": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": {
+        "type": "string"
+      },
       "description": "Non-empty when operating outside the active profile regime (no silent extrapolation)"
     },
     "schema_version": {
@@ -105,19 +107,19 @@
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0,
-          "description": "Broadband solar reflectance (400–700 nm Simpson + diffuse fraction)."
+          "description": "Broadband solar reflectance (400\u2013700 nm Simpson + diffuse fraction)."
         },
         "uv_absorption": {
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0,
-          "description": "Photocatalytic UV absorption at 365 nm (Beer–Lambert)."
+          "description": "Photocatalytic UV absorption at 365 nm (Beer\u2013Lambert)."
         },
         "lwir_emissivity": {
           "type": "number",
           "minimum": 0.0,
           "maximum": 1.0,
-          "description": "Sky-window emissivity (Kirchhoff at ~10.5 μm)."
+          "description": "Sky-window emissivity (Kirchhoff at ~10.5 \u03bcm)."
         },
         "thickness_m": {
           "type": "number",
@@ -133,6 +135,14 @@
           "const": "optical.v1"
         }
       }
+    },
+    "printability_buildability": {
+      "type": "number",
+      "description": "Printability buildability scalar from tensor pipeline (dimensionless)."
+    },
+    "printability_extrudability": {
+      "type": "number",
+      "description": "Printability extrudability scalar from tensor pipeline (dimensionless)."
     }
   }
 }

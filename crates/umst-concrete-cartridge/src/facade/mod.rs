@@ -898,6 +898,10 @@ pub struct PredictionWireV2 {
     pub axioms: Vec<String>,
     pub warnings: Vec<String>,
     pub schema_version: &'static str,
+    /// Roussel buildability scalar from staged printability engine (collapsed batch).
+    pub printability_buildability: f64,
+    /// Extrudability scalar from staged printability engine (collapsed batch).
+    pub printability_extrudability: f64,
     /// Track H3 (v0.4): optical metadata from [`crate::physics::optical`] (Fresnel + Simpson-integrated
     /// solar reflectance, photocatalytic UV absorption, sky-window emissivity) at a default
     /// 50-mm thickness. Computed from the plain-Portland anchor profile; future versions will
@@ -977,12 +981,16 @@ pub fn prediction_wire_v2(bundle: &PredictBundle) -> Result<PredictionWireV2, Fa
     let alpha = tensor_element_at(pr.dissipation.clone(), 0, 0)?;
     let gwp = tensor_element_at(pr.cost.clone(), 0, 0)?;
     let safety = tensor_element_at(pr.safety_margin.clone(), 0, 0)?;
+    let build = bundle.physics_pipeline.summary.printability_buildability;
+    let extr = bundle.physics_pipeline.summary.printability_extrudability;
     Ok(PredictionWireV2 {
         compressive_strength_mpa: f64::from(fc),
         yield_stress_pa: f64::from(tau),
         degree_of_hydration: f64::from(alpha),
         gwp_kg_co2_eq_per_m3: f64::from(gwp),
         safety_margin: f64::from(safety),
+        printability_buildability: f64::from(build),
+        printability_extrudability: f64::from(extr),
         calibration_profile: bundle.calibration_profile.clone(),
         calibration_model: bundle.calibration_model.clone(),
         formal_anchor: bundle.formal_anchor.clone(),

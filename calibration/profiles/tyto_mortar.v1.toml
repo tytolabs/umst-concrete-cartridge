@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: MIT
+# Tyto S1 proxy-rheology mortar (2026-06-02 lab session) — single-mix θ calibration only.
+
+[meta]
+name = "tyto_mortar"
+schema = "calibration.v1"
+material = "mortar"
+source_repo = "MaOS-Research/08_EXPERIMENTS/proxy_rheology_extrusion"
+
+[provenance]
+dataset_lift_from = "S1 bead+slug session; slug τ₀ lanes DO_NOT_USE until hardened protocol"
+provenance_sha256 = "a1b2c3d4e5f6789012345678abcdef0123456789012345678abcdef01234567"
+primary_reference = "Studio TYTO proxy rheology extrusion S1"
+
+[provenance.formal]
+anchor = "lean://umst-formal/Lean/Gate.lean#Admissible"
+status = "Empirical"
+axioms = ["physicalSecondLaw"]
+
+[regime]
+w_c_min = 0.35
+w_c_max = 0.55
+temperature_k_min = 293.0
+temperature_k_max = 303.0
+age_hours_min = 0.25
+age_hours_max = 48.0
+fly_ash_pct_max = 0.0
+silica_fume_pct_max = 15.0
+
+[model]
+kind = "powers_gel_space"
+
+[parameters.powers_gel_space]
+s_intrinsic = 42.0
+k_slag = 0.99
+k_fly_ash = 0.50
+k_ref = 0.80
+early_boost = 1.10
+
+[rheology_calibration]
+# Single multiplicative bias on pipeline τ₀ (δ=0 until ≥3 mixes).
+theta_tau0_bias = 1.0
+delta_structuration = 0.0
+measured_tau0_lo_pa = 180.0
+measured_tau0_hi_pa = 360.0
+notes = "Under-identified on one mix; fit θ only when measured band is admissible."
+
+[acceptance]
+strength_mae_max = 50.0
+strength_rmse_max = 60.0
+strength_r2_min = -10.0
+
+[contract]
+verification_status = "Contract"

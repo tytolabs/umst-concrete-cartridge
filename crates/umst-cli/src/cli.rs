@@ -158,9 +158,12 @@ pub fn serialize_mix_spec(spec: &MixSpec) -> Result<Value, CliError> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_anchor_rationale: Exhaustive enum of optimisation targets for the CLI bisection driver.
+/// formal_anchor_rationale: Exhaustive enum of optimisation targets for the CLI bisection / coordinate-descent driver.
 pub enum OptimizeField {
     CompressiveStrengthMpa,
+    YieldStressPa,
+    Extrudability,
+    PrintableWindow,
 }
 
 impl TryFrom<&str> for OptimizeField {
@@ -169,6 +172,9 @@ impl TryFrom<&str> for OptimizeField {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "compressive_strength_mpa" => Ok(Self::CompressiveStrengthMpa),
+            "yield_stress_pa" => Ok(Self::YieldStressPa),
+            "extrudability" => Ok(Self::Extrudability),
+            "printable_window" => Ok(Self::PrintableWindow),
             _ => Err(CliError::UnsupportedOptimizeTarget(value.to_string())),
         }
     }
@@ -203,7 +209,94 @@ pub fn optimize_mix(
         OptimizeField::CompressiveStrengthMpa => {
             optimize_w_c_for_strength(profile, base, target as f32, steps)
         }
+        #[cfg(feature = "proxy-loop")]
+        OptimizeField::YieldStressPa | OptimizeField::Extrudability | OptimizeField::PrintableWindow => {
+            optimize_proxy_loop(profile, base, field, target, steps)
+        }
+        #[cfg(not(feature = "proxy-loop"))]
+        OptimizeField::YieldStressPa | OptimizeField::Extrudability | OptimizeField::PrintableWindow => {
+            Err(CliError::UnsupportedOptimizeTarget(
+                "proxy-loop target requires --features proxy-loop".into(),
+            ))
+        }
     }
+}
+
+#[cfg(feature = "proxy-loop")]
+fn optimize_proxy_loop(
+    profile: &Profile,
+    base: &MixSpec,
+    field: OptimizeField,
+    target: f64,
+    steps: usize,
+) -> Result<MixSpec, CliError> {
+    use umst_concrete_cartridge::pipeline::{coordinate_descent_optimize, TrackAObjective};
+
+    let objective = match field {
+        OptimizeField::YieldStressPa => TrackAObjective::YieldStressPa(target as f32),
+        OptimizeField::Extrudability => TrackAObjective::Extrudability(target as f32),
+        OptimizeField::PrintableWindow => TrackAObjective::PrintableWindow,
+        OptimizeField::CompressiveStrengthMpa => unreachable!(),
+    };
+    let (mix, _, _) = coordinate_descent_optimize(profile, base, objective, steps);
+    Ok(mix)
+}
+
+/// Build `proposed_next_mix.json` value when `proxy-loop` is enabled.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Track A sidecar for experiment loop.
+#[cfg(feature = "proxy-loop")]
+pub fn proposed_next_mix_value(
+    profile: &Profile,
+    base: &MixSpec,
+    field: OptimizeField,
+    target: f64,
+    steps: usize,
+) -> Result<serde_json::Value, CliError> {
+    use umst_concrete_cartridge::pipeline::{
+        coordinate_descent_optimize, proposed_next_mix_json, TrackAObjective,
+    };
+
+    let objective = match field {
+        OptimizeField::YieldStressPa => TrackAObjective::YieldStressPa(target as f32),
+        OptimizeField::Extrudability => TrackAObjective::Extrudability(target as f32),
+        OptimizeField::PrintableWindow => TrackAObjective::PrintableWindow,
+        OptimizeField::CompressiveStrengthMpa => {
+            return Err(CliError::UnsupportedOptimizeTarget(
+                "compressive_strength_mpa".into(),
+            ));
+        }
+    };
+    let label = match field {
+        OptimizeField::YieldStressPa => "yield_stress_pa",
+        OptimizeField::Extrudability => "extrudability",
+        OptimizeField::PrintableWindow => "printable_window",
+        OptimizeField::CompressiveStrengthMpa => "compressive_strength_mpa",
+    };
+    let (proposed, summary, verdict) =
+        coordinate_descent_optimize(profile, base, objective, steps);
+    let doc = proposed_next_mix_json(profile, base, &proposed, &summary, &verdict, label, steps);
+    Ok(serde_json::to_value(&doc)?)
+}
+
+/// Dual-gate wrapper around [`optimize_mix`] (Track A proxy-loop).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: CLI driver; gate semantics from `pipeline::dual_gate`.
+#[cfg(feature = "proxy-loop")]
+pub fn optimize_mix_with_gate(
+    profile: &Profile,
+    base: &MixSpec,
+    field: OptimizeField,
+    target: f64,
+    steps: usize,
+) -> Result<(MixSpec, bool), CliError> {
+    use umst_concrete_cartridge::pipeline::evaluate_mix_dual_gate;
+
+    let mix = optimize_mix(profile, base, field, target, steps)?;
+    let (_, verdict) = evaluate_mix_dual_gate(profile, &mix);
+    Ok((mix, verdict.passes()))
 }
 
 fn optimize_w_c_for_strength(
