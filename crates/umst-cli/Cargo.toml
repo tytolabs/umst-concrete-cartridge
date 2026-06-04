@@ -44,7 +44,7 @@ ryu = "1.0"
 approx = "0.5"
 assert_cmd = "2.0"
 predicates = "3.1"
-jsonschema = "0.26"
+jsonschema = "0.46"
 rand = "0.8"
 
 [[bin]]
