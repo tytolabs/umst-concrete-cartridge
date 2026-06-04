@@ -426,7 +426,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 | `manifest-bridge` | `manifold-gate` + manifold `manifest-bridge` — re-export `umst_manifold::manifest::*`; `predict` runs manifold `umst.gate.cd_transition` (no duplicate CD math). **CI (G-02, closed):** `manifest-bridge` test step in [`rust.yml`](.github/workflows/rust.yml) against git-pinned manifold — **no** workspace `[patch]`. |
 | `ros2-contract` | Forwards `umst-manifold/ros2-contract` — serde ROS DTOs (`umst_manifold::ros`); no runtime ROS in cartridge. |
 
-**Manifold pin:** `umst-manifold` git **`rev = fe22437`** ([`fe224371…`](https://github.com/tytolabs/umst-manifold/commit/fe22437)) — W8 manifest API on upstream `main`; cartridge inherits **119-module** catalog lock SSOT from that revision.
+**Manifold pin:** `umst-manifold` git **`rev = a8e2496`** ([`a8e2496b…`](https://github.com/tytolabs/umst-manifold/commit/a8e2496)) — proxy-loop manifest API on upstream `main`; cartridge inherits **119-module** catalog lock SSOT from that revision.
 
 **Stack verify (monorepo):** from [`umst-manifold`](../umst-manifold), `bash scripts/verify_umst_stack.sh` (optional `UMST_REQUIRE_FORMAL_EXPORT=1`). Cartridge parity: `cargo test -p umst-concrete-cartridge --features manifest-bridge` (matches GHA).
 
@@ -443,7 +443,7 @@ For rigorous validation reports, exact mathematical constitutive equations, and 
 - [`docs/Solver-Status.md`](docs/Solver-Status.md)
 - [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md) — cement-specific proof/trace table
 
-**Manifold formal stack (shared):** **119-module** unified Lean export pinned on [`umst-manifold`](../umst-manifold) @ [`fe22437`](https://github.com/tytolabs/umst-manifold/commit/fe22437) (`artifacts/catalog.lock.json`, upstream digest `0697014f…`). Fiber pins record **69** (`umst-formal-double-slit`) + **62** (`umst-formal`) before merge — the runtime contract is the **composed** digest, not either fiber alone. Traceability: [`umst-manifold/docs/claims-vs-proofs.md`](../umst-manifold/docs/claims-vs-proofs.md); witness philosophy [§](../umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md#proof-library--gate-law--mi-envelope--no-rust-axioms). Verify: `bash ../umst-manifold/scripts/verify_umst_stack.sh` ([`umst-manifold/docs/VERIFY.md`](../umst-manifold/docs/VERIFY.md)); workspace index [`VERIFY.md`](../VERIFY.md). Deep cartridge ↔ gate mapping: [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md).
+**Manifold formal stack (shared):** **119-module** unified Lean export pinned on [`umst-manifold`](../umst-manifold) @ [`a8e2496`](https://github.com/tytolabs/umst-manifold/commit/a8e2496) (`artifacts/catalog.lock.json`, upstream digest `4524ed21…`). Fiber pins record **69** (`umst-formal-double-slit`) + **62** (`umst-formal`) before merge — the runtime contract is the **composed** digest, not either fiber alone. Traceability: [`umst-manifold/docs/claims-vs-proofs.md`](../umst-manifold/docs/claims-vs-proofs.md); witness philosophy [§](../umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md#proof-library--gate-law--mi-envelope--no-rust-axioms). Verify: `bash ../umst-manifold/scripts/verify_umst_stack.sh` ([`umst-manifold/docs/VERIFY.md`](../umst-manifold/docs/VERIFY.md)); workspace index [`VERIFY.md`](../VERIFY.md). Deep cartridge ↔ gate mapping: [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md).
 
 ---
 
