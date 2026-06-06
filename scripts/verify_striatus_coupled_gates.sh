@@ -12,7 +12,7 @@
 #   3) `pytest notebooks/tests/test_print_ready.py` — Track L sidecar / STL feasibility.
 #   4) `python3 scripts/check_solver_status.py` — cartridge shim forwards to
 #      `../umst-manifold/scripts/check_solver_status.py` with this repo's `docs/Solver-Status.md` and
-#      manifold `--root` (exits 0 with stderr note if sibling missing). Contract: `CI_GAP_NOTES.md`
+#      manifold `--root` (exits 0 with stderr note if sibling missing).
 #      § *Cartridge ↔ manifold contract* in `umst-manifold/docs/`.
 #
 # Optional: UMST_REQUIRE_B8=1  →  pytest fails if gates_track_b8_all_pass is false (Ring‑1 honesty).
