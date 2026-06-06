@@ -20,6 +20,12 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 **Stack thread:** [`umst-formal-double-slit`](../umst-formal-double-slit) + [`umst-formal`](../umst-formal) Lean catalogs merged into a **119-module** unified export → [`umst-manifold`](../umst-manifold) `artifacts/catalog.lock.json` digest pin + thermodynamic witnesses → **this cartridge** (`IScienceCartridge`, CLI, PyO3, MCP). Philosophy: [manifold GOD_GRADE_WITNESS_LADDER §](../umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md#proof-library--gate-law--mi-envelope--no-rust-axioms).
 
+### What this is, in plain words
+
+Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through a **hard thermodynamic gate** (the reduced Clausius–Duhem inequality): conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.
+
+This **concrete cartridge** is the part that knows cement. It supplies the real chemical-physical equations for hydration, rheology, and load-bearing behaviour, calibrated against real data, and plugs into the manifold through the `IScienceCartridge` port. So instead of curve-fitting past tests, it simulates the reactions and stresses directly — and any recipe or shape it proposes has already cleared the same thermodynamic gate that guards every other material domain.
+
 The library exposes a physical-chemical design engine—gated by thermodynamic safety boundaries—to optimize concrete recipes, **evaluate print-stability and deposition physics in simulation**, and execute spatial structural shape optimizations under strict load limits. **Studio TYTO has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
 
 **Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here.
