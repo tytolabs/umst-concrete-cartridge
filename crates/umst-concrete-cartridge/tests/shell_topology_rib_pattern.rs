@@ -401,6 +401,7 @@ struct RibMetrics {
 }
 
 /// Striatus **40×40×4** acceptance runs must use `cargo test --release` (not debug `dev`).
+#[allow(unused_variables)]
 fn assert_striatus_release_profile(tag: &str) {
     #[cfg(debug_assertions)]
     panic!(
