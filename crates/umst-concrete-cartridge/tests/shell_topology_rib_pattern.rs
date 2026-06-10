@@ -28,8 +28,8 @@ use burn::tensor::{
 };
 use burn_ndarray::NdArray;
 use umst_manifold::ai::topology::{
-    BetaContinuation, ContinuationSchedule, HeavisideProjection, TopologyOptimizer,
-    VolumeProjection,
+    BetaContinuation, ContinuationSchedule, HeavisideProjection, PlateauBetaContinuation,
+    TopologyOptimizer, VolumeEtaProjection, VolumeProjection,
 };
 use umst_manifold::physics::adjoint::{AdjointCompliance, SimpElasticMaterial};
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
@@ -605,12 +605,17 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     };
 
     let helm = HelmholtzFilter::new((2.0 * dx.min(dy).min(dz)).max(1e-6), 240, 1e-7);
-    // Only **`UMST_SHELL_HELM=1`** enables the graph filter on the tape. Avoid `v != "0"` here:
-    // `UMST_SHELL_HELM=` (empty assignment) yields `Ok("")`, which would incorrectly enable Helmholtz
-    // and hit Burn 0.13 scatter backward limits at Striatus N.
-    let helm_on = matches!(env::var("UMST_SHELL_HELM").as_deref(), Ok("1"));
+    // Full harness defaults **Helmholtz on** via straight-through ([`HelmholtzFilter::apply_straight_through`]).
+    // Set **`UMST_SHELL_HELM=0`** to disable; **`UMST_SHELL_HELM=1`** is an explicit alias for on.
+    let helm_on = !matches!(env::var("UMST_SHELL_HELM").as_deref(), Ok("0"));
+    let use_vol_bisect = matches!(env::var("UMST_SHELL_VOL_BISECT").as_deref(), Ok("1"))
+        || env::var("UMST_SHELL_VOL_BISECT").is_err();
+    let metrics_on = matches!(env::var("UMST_SHELL_METRICS").as_deref(), Ok("1"));
+    let plateau_beta = PlateauBetaContinuation::new(5, 0.008);
     let mut proj = HeavisideProjection::new(heaviside_beta0, 0.5);
     let vol_proj = VolumeProjection::new(target_vf, 48);
+    let vol_eta = VolumeEtaProjection::new(48, 1e-4);
+    let mut greyness_hist: Vec<f32> = Vec::new();
 
     let e0 = 200e6_f32;
     let material = ElasticMaterial {
@@ -663,12 +668,13 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let mut adam_skipped = 0usize;
 
     for it in 1..=iterations {
-        let beta = BetaContinuation::beta(
+        let base_beta = BetaContinuation::beta(
             it.saturating_sub(1),
             iter_total,
             heaviside_beta0,
-            heaviside_beta_max,
+            heaviside_beta_max.max(64.0),
         );
+        let beta = plateau_beta.effective_beta(base_beta, &greyness_hist, heaviside_beta_max.max(64.0));
         proj.set_beta(beta);
 
         let mut rho_raw = opt
@@ -684,17 +690,28 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
                 .clamp(0.0, 1.0);
         }
         let rho_tilde = if helm_on {
-            helm.apply(rho_raw.clone(), edges_b1.clone(), dx_f)
+            helm.apply_straight_through(rho_raw.clone(), edges_b1.clone(), dx_f)
                 .reshape([1, n, 1])
         } else {
             rho_raw.clone()
         };
-        let rho_mid = proj.project(rho_tilde).reshape([1, n, 1]);
-        let rho_bar = if vol_in_loop {
+        let rho_mid = proj.project(rho_tilde.clone()).reshape([1, n, 1]);
+        let rho_bar = if use_vol_bisect {
+            vol_eta
+                .project(rho_tilde.reshape([1, n, 1]), beta, target_vf)
+                .reshape([1, n, 1])
+        } else if vol_in_loop {
             vol_proj.project(rho_mid.clone()).reshape([1, n, 1])
         } else {
             rho_mid.clone()
         };
+        if metrics_on && (it % 20 == 0 || it == iterations) {
+            let pre = greyness_mean(&rho_mid.into_data().value);
+            let post = greyness_mean(&rho_bar.clone().into_data().value);
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} greyness_pre_vol={pre:.6} greyness_post_vol={post:.6} beta={beta:.3} helm_on={helm_on} vol_bisect={use_vol_bisect}"
+            );
+        }
 
         let bf = if use_self_weight {
             sw_cfg.body_force(rho_bar.clone()).add(live_force.clone())
@@ -721,6 +738,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         );
 
         last_rho = rho_bar.clone().into_data().value;
+        greyness_hist.push(greyness_mean(&last_rho));
 
         if it == 1 {
             assert!(
