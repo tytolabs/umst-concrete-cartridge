@@ -37,8 +37,18 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix the same comm
 | Date | Env (highlights) | `greyness_pre_vol` @ outer 40 | `greyness_post_vol` @ outer 40 | Gate greyness | Result |
 |------|------------------|-------------------------------|--------------------------------|---------------|--------|
 | 2026-05-11 | 200 outers, λ-shift `VolumeProjection` | — | ~0.51 | 0.51 | **FAIL** (historical) |
-| 2026-06-10 | smoke 40, `UMST_SHELL_VOL_BISECT=0`, `UMST_SHELL_HELM=0`, `UMST_SHELL_METRICS=1` | 0.993 | 0.510 | 0.510 | smoke — **H1**: λ-shift post-vol → uniform grey at VF (≈ `4·vf·(1−vf)`) |
-| 2026-06-10 | smoke 40, `UMST_SHELL_VOL_BISECT=1`, `UMST_SHELL_HELM=0`, `UMST_SHELL_METRICS=1` | 0.993 | 0.510 | 0.510 | smoke — η-bisection alone unchanged at 40 outers (field still uniform) |
+| 2026-06-10 | smoke 40, `UMST_SHELL_VOL_BISECT=0`, `UMST_SHELL_HELM=0`, `UMST_SHELL_METRICS=1` | 0.993 | 0.510 | 0.510 | smoke — **H1 REFUTED**: pre_vol≈1 ⇒ uniform ρ≈0.5 **before** projection; post 0.510=`4·vf·(1−vf)` degenerate constant field |
+| 2026-06-10 | smoke 40, `UMST_SHELL_VOL_BISECT=1`, `UMST_SHELL_HELM=0`, `UMST_SHELL_METRICS=1` | 0.993 | 0.510 | 0.510 | smoke — identical post_vol ⇒ projector choice irrelevant on constant field |
+| 2026-06-10 | **aborted** @ outer 20, 200 planned, `UMST_SHELL_HELM=0`, η-bisect on | 1.000 | 0.844 | — | **ABORT** — pre_vol≥0.95, Adam NaN skips; would land ~0.51 / `xy_var≈0` (same as 2026-05-11) |
+
+**H4 diagnosis (2026-06-10, `UMST_SHELL_H4_DIAG=1`):** primary hypothesis — compliance adjoint / sensitivity pathology at Striatus N. Instrumentation logs per-outer `sens_l2`, `sens_var`, `pcg_iter`, `pcg_rel_res`, `eq_rel_res`, `xy_var`, `adam_skipped` (see harness). **H1 REFUTED:** `greyness_pre_vol≈0.99` is uniform ρ≈0.5 **before** projection; post 0.510=`4·vf·(1−vf)` is degenerate constant-field signature (identical under λ-shift and η-bisect). **λ_g forbidden** for this failure mode.
+
+| Scale | outer | `rho_raw` | `pcg_rel_res` | `eq_rel_res` | `xy_var` | `adam_skip` |
+|-------|-------|-----------|---------------|--------------|----------|-------------|
+| quick 9×8×2 (healthy CI) | 24/24 | [0.489,0.493] | **1.1e9** | **1.1e9** | 3.1e-5 | 0 |
+| full 40×40×4 | 20/20 | [0.501,0.501] | **7.1e9** | **7.1e9** | 0 | 1/20 |
+
+First divergent metric at Striatus scale: **forward PCG never meets tolerance** (`pcg_iter` pinned at cap; `pcg_rel_res` ≫ 1). Discrete `sens_l2` explodes accordingly; field stays uniform → no rib signal. Next: harden bar-network PCG / conditioning (`UMST_SHELL_MAX_CG`, `E_min`, preconditioner) before any λ_g.
 
 **`gates_track_b8` path (Track L / B8 rollup):** boolean **`gates_track_b8_all_pass`** lives in **`notebooks/_artifacts/striatus_shell_v0.4.print_ready.json`** (repo root **`umst-concrete-cartridge/`**). It is emitted by **`notebooks/export_print_ready.py`**; **`notebooks/tests/test_print_ready.py`** (or **`python notebooks/test_print_ready.py`**) reads the same field — **`test_print_ready_track_b8_topology_gates`** **skips** when false unless **`UMST_REQUIRE_B8=1`**. **Profiling:** peak GPU VRAM or unified-memory figures are **not** part of default CI or this status table — cite them only from an explicit profiling task or hardware note. Optional log template: [`VRAM.md`](VRAM.md).
 

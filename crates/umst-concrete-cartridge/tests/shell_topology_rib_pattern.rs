@@ -20,7 +20,7 @@ use std::cell::Cell;
 use std::env;
 
 use burn::backend::Autodiff;
-use burn::module::{Module, ModuleMapper, ParamId};
+use burn::module::{AutodiffModule, Module, ModuleMapper, ModuleVisitor, ParamId};
 use burn::optim::{AdamConfig, GradientsParams, Optimizer};
 use burn::tensor::{
     backend::{AutodiffBackend, Backend as BackendTrait},
@@ -31,7 +31,9 @@ use umst_manifold::ai::topology::{
     BetaContinuation, ContinuationSchedule, HeavisideProjection, PlateauBetaContinuation,
     TopologyOptimizer, VolumeEtaProjection, VolumeProjection,
 };
-use umst_manifold::physics::adjoint::{AdjointCompliance, SimpElasticMaterial};
+use umst_manifold::physics::adjoint::{
+    AdjointCompliance, AdjointComplianceDiagnostics, SimpElasticMaterial,
+};
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
 use umst_manifold::physics::mechanics::SelfWeightConfig;
 use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
@@ -233,6 +235,77 @@ fn greyness_mean(rho: &[f32]) -> f32 {
     rho.iter().map(|&r| 4.0 * r * (1.0 - r)).sum::<f32>() / n
 }
 
+fn h4_diag_enabled() -> bool {
+    matches!(env::var("UMST_SHELL_H4_DIAG").as_deref(), Ok("1"))
+}
+
+fn vec_l2_norm(v: &[f32]) -> f32 {
+    v.iter().map(|x| x * x).sum::<f32>().sqrt()
+}
+
+fn vec_spatial_variance(v: &[f32]) -> f32 {
+    let n = v.len().max(1) as f32;
+    let mean = v.iter().sum::<f32>() / n;
+    v.iter().map(|x| (x - mean).powi(2)).sum::<f32>() / n
+}
+
+fn rho_raw_range(rho: &[f32]) -> (f32, f32, f32) {
+    let (min, max) = rho
+        .iter()
+        .fold((f32::INFINITY, f32::NEG_INFINITY), |(lo, hi), &x| {
+            (lo.min(x), hi.max(x))
+        });
+    let mean = rho.iter().sum::<f32>() / rho.len().max(1) as f32;
+    (min, max, mean)
+}
+
+fn autodiff_param_grad_l2<M: AutodiffModule<B>>(grads: &GradientsParams, module: &M) -> f32 {
+    struct Visitor<'a> {
+        gp: &'a GradientsParams,
+        sum_sq: f32,
+    }
+    impl ModuleVisitor<B> for Visitor<'_> {
+        fn visit_float<const D: usize>(&mut self, id: &ParamId, _tensor: &Tensor<B, D>) {
+            if let Some(g) = self.gp.get::<B, D>(id) {
+                let vals = g.clone().into_data().value;
+                self.sum_sq += vals.iter().map(|&x| x * x).sum::<f32>();
+            }
+        }
+    }
+    let mut visitor = Visitor {
+        gp: grads,
+        sum_sq: 0.0,
+    };
+    module.visit(&mut visitor);
+    visitor.sum_sq.sqrt()
+}
+
+fn log_h4_outer(
+    tag: &str,
+    outer: usize,
+    outer_total: usize,
+    rho_raw: &[f32],
+    diag: &AdjointComplianceDiagnostics,
+    grad_l2: f32,
+    adam_skipped: usize,
+    xy_var: f32,
+    loss_scalar: f32,
+) {
+    let (rmin, rmax, rmean) = rho_raw_range(rho_raw);
+    let sens = &diag.nodal_sensitivity;
+    eprintln!(
+        "{tag}: H4 outer {outer}/{outer_total} rho_raw=[{rmin:.6},{rmax:.6}] mean={rmean:.6} \
+sens_l2={:.6} sens_var={:.6} pcg_iter={} pcg_rel_res={:.3e} eq_rel_res={:.3e} \
+grad_l2={:.6} adam_skipped={adam_skipped} xy_var={xy_var:.6} loss={loss_scalar:.6}",
+        vec_l2_norm(sens),
+        vec_spatial_variance(sens),
+        diag.pcg.iterations,
+        diag.pcg.rel_residual,
+        diag.equilibrium_rel_residual,
+        grad_l2,
+    );
+}
+
 fn xy_plane_variance(rho: &[f32], nx: usize, ny: usize, nz: usize) -> f32 {
     let nx1 = nx + 1;
     let ny1 = ny + 1;
@@ -396,10 +469,12 @@ fn run_rib_quick_metrics() -> RibMetrics {
     let mut c0 = f32::NAN;
     let mut c1 = f32::NAN;
 
+    let h4 = h4_diag_enabled();
     for it in 0..iterations.max(1) {
-        let rho_raw = opt.density_net.forward_batched(coords_norm.clone());
+        let rho_raw_t = opt.density_net.forward_batched(coords_norm.clone());
+        let rho_raw_vec = rho_raw_t.clone().into_data().value;
         // Helmholtz is skipped on the Burn AD tape here (scatter-shaped backward quirks on some 3-D grids).
-        let rho_bar = proj.project(rho_raw);
+        let rho_bar = proj.project(rho_raw_t);
 
         let (surrogate, c_raw) = AdjointCompliance::forward_and_loss(
             rho_bar.clone(),
@@ -412,6 +487,22 @@ fn run_rib_quick_metrics() -> RibMetrics {
             &cg,
             cross_section_area,
         );
+        let h4_bundle = if h4 {
+            Some(AdjointCompliance::forward_loss_with_diagnostics(
+                rho_bar.clone(),
+                edges_inner.clone(),
+                coords_n3.clone(),
+                boundary_inner.clone(),
+                live_inner.clone(),
+                damage_z.clone(),
+                simp_mat,
+                &cg,
+                cross_section_area,
+            )
+            .2)
+        } else {
+            None
+        };
 
         if it == 0 {
             comp_scale = c_raw.max(1e-12);
@@ -426,6 +517,21 @@ fn run_rib_quick_metrics() -> RibMetrics {
             "step {it}: scaled surrogate must be finite, got {loss_scalar}",
         );
 
+        if let Some(ref diag) = h4_bundle {
+            let rho_mid_vec = rho_bar.clone().into_data().value;
+            let xy_v = xy_top_slice_variance(&rho_mid_vec, nx, ny, nz);
+            log_h4_outer(
+                "shell_topology_rib_pattern_quick",
+                it + 1,
+                iterations.max(1),
+                &rho_raw_vec,
+                diag,
+                f32::NAN,
+                0,
+                xy_v,
+                loss_scalar,
+            );
+        }
         let grads = total_loss.backward();
         let gp = GradientsParams::from_grads(grads, &opt.density_net);
         opt.density_net = adam.step(0.005, opt.density_net, gp);
@@ -612,6 +718,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let use_vol_bisect = matches!(env::var("UMST_SHELL_VOL_BISECT").as_deref(), Ok("1"))
         || env::var("UMST_SHELL_VOL_BISECT").is_err();
     let metrics_on = matches!(env::var("UMST_SHELL_METRICS").as_deref(), Ok("1"));
+    let h4_diag = h4_diag_enabled();
     let plateau_beta = PlateauBetaContinuation::new(5, 0.008);
     let mut proj = HeavisideProjection::new(heaviside_beta0, 0.5);
     let vol_proj = VolumeProjection::new(target_vf, 48);
@@ -727,17 +834,37 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             p: p_act,
             e_min: material.e_min,
         };
+        let rho_raw_vec = rho_raw.clone().into_data().value;
+        let bf_inner = bf.inner();
         let (surrogate, c_raw) = AdjointCompliance::forward_and_loss(
             rho_bar.clone(),
             edges_inner.clone(),
             coords_n3_inner.clone(),
             boundary_inner.clone(),
-            bf.inner(),
+            bf_inner.clone(),
             damage_z.clone(),
             simp_mat,
             &cg_cfg,
             cross_section_area,
         );
+        let h4_bundle = if h4_diag {
+            Some(
+                AdjointCompliance::forward_loss_with_diagnostics(
+                    rho_bar.clone(),
+                    edges_inner.clone(),
+                    coords_n3_inner.clone(),
+                    boundary_inner.clone(),
+                    bf_inner,
+                    damage_z.clone(),
+                    simp_mat,
+                    &cg_cfg,
+                    cross_section_area,
+                )
+                .2,
+            )
+        } else {
+            None
+        };
 
         last_rho = rho_bar.clone().into_data().value;
         greyness_hist.push(greyness_mean(&last_rho));
@@ -765,6 +892,22 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
 
         let loss_scalar = total_loss.clone().into_data().value[0];
         if loss_scalar.is_nan() || loss_scalar.is_infinite() {
+            if h4_diag {
+                if let Some(ref diag) = h4_bundle {
+                    let xy_v = xy_plane_variance(&last_rho, nx, ny, nz);
+                    log_h4_outer(
+                        "shell_topology_rib_pattern_full_v04",
+                        it,
+                        iter_total,
+                        &rho_raw_vec,
+                        diag,
+                        f32::NAN,
+                        adam_skipped,
+                        xy_v,
+                        loss_scalar,
+                    );
+                }
+            }
             adam_skipped += 1;
             eprintln!(
                 "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} skipped Adam (non-finite loss={loss_scalar})"
@@ -772,6 +915,22 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
             continue;
         }
 
+        if h4_diag {
+            if let Some(ref diag) = h4_bundle {
+                let xy_v = xy_plane_variance(&last_rho, nx, ny, nz);
+                log_h4_outer(
+                    "shell_topology_rib_pattern_full_v04",
+                    it,
+                    iter_total,
+                    &rho_raw_vec,
+                    diag,
+                    f32::NAN,
+                    adam_skipped,
+                    xy_v,
+                    loss_scalar,
+                );
+            }
+        }
         let grads = total_loss.backward();
         let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
         opt.density_net = adam.step(0.005, opt.density_net, grads_params);
