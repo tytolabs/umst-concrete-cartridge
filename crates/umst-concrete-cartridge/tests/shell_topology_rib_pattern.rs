@@ -8,7 +8,7 @@
 //! **Track B6 (v0.4)** — `shell_topology_rib_pattern`: Striatus-class gates ([`composer_prompts/v0.4_solver_completion_no_namesakes.md`](../../../../composer_prompts/v0.4_solver_completion_no_namesakes.md) §B6).
 //!
 //! - [`shell_topology_rib_pattern_quick`]: CI — compact **0.8×0.8×0.1** m slab, coords **\([-1,1]^3\)** (same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs)), default **9×8×2** cells when all `UMST_SHELL_{NX,NY,NZ,ITERS}` are unset, gentle roof **x-ramp** \(r=0.2\) at **50 Pa**, Heaviside \(\beta=10\). **Helmholtz is omitted on the Burn AD tape**; [`VolumeProjection`] after Adam. Default **24** steps. Gates: VF ±15%, top-face variance of Heaviside \(\hat\rho\) \(> 2\times 10^{-5}\) (full B6: \(>0.1\) on final \(\rho\)); greyness not asserted on quick path; compliance ratio bounded.
-//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Open roadmap item:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). Append **`--nocapture`** for one **`pre-gate metrics`** line (**`vf`**, **`greyness`**, **`g_uni`**, **`xy_var_z_avg`**, **`c0`**, **`c1`**, **`adam_skipped`**, **`UMST_SHELL_GREY_LAMBDA`**, **`UMST_SHELL_XY_VAR_LAMBDA`**, **`UMST_SHELL_HEAVISIDE_BETA0`**). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release**, and the **optimisation** does not satisfy the brief greyness / compliance gates unless you run the full **200** outers — the Rust test **skips** those acceptance asserts when **`UMST_SHELL_RIB_FULL_ITERS` < 200** (finite compliance + loose VF band only). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **only** literal **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape (an empty `UMST_SHELL_HELM=` must **not** enable — older `!= \"0\"` parsing turned it on and tripped scatter backward at Striatus N); default **off**. **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **off** / unset — traction + roof pressure; set **`1`** for gravity), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`** — same semantics as the example. **Multi-term outer loss (experimental):** **`UMST_SHELL_GREY_LAMBDA`** adds **`λ_g·mean(4ρ(1−ρ))`** on **post–volume-projection** **`ρ_bar`** (same grey statistic as the gate); **`UMST_SHELL_XY_VAR_LAMBDA`** adds **`-λ_{xy}·Var_{xy}(\bar\rho)`** where **`Var_{xy}`** is the **z-averaged** column variance (matches the **`xy_plane_variance`** gate on **`ρ`**). **`UMST_SHELL_HEAVISIDE_BETA0`** / **`UMST_SHELL_HEAVISIDE_BETA_MAX`** override Heaviside log-continuation endpoints (defaults **1** and **32**). Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
+//! - [`shell_topology_rib_pattern_full_v04`]: `#[ignore]` — **40×40×4**, **200** iters, **seed 42**. **Open roadmap item:** full Striatus-scale B6 stays off default CI (same opt-in pattern as manifold long/`#[ignore]` gates). **Run:** set **`UMST_SHELL_RIB_PATTERN=1`**, then `cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored` (**`--release` before `--`**; flags after `--` go to the test harness, not rustc). Append **`--nocapture`** for one **`pre-gate metrics`** line (**`vf`**, **`greyness`**, **`g_uni`**, **`xy_var_z_avg`**, **`c0`**, **`c1`**, **`adam_skipped`**, **`UMST_SHELL_GREY_LAMBDA`**, **`UMST_SHELL_XY_VAR_LAMBDA`**, **`UMST_SHELL_HEAVISIDE_BETA0`**). **Subset / smoke:** **`UMST_SHELL_RIB_FULL_ITERS`** (default **200**, clamped **1…200**) shortens the Adam outer loop; **one** outer still runs the full **40×40×4** forward + backward and can take **many CPU minutes** in `--release**, and the **optimisation** does not satisfy the brief greyness / compliance gates unless you run the full **200** outers — the Rust test **skips** those acceptance asserts when **`UMST_SHELL_RIB_FULL_ITERS` < 200** (finite compliance + loose VF band only). **Helmholtz:** same as [`optimize_shell_3d`](../examples/optimize_shell_3d.rs) — **only** literal **`UMST_SHELL_HELM=1`** enables the graph filter on the Burn tape (an empty `UMST_SHELL_HELM=` must **not** enable — older `!= \"0\"` parsing turned it on and tripped scatter backward at Striatus N); default **off**. **Full-harness parity with `optimize_shell_3d`:** **`UMST_SHELL_SELF_WEIGHT`** (default **on** — Bruyneel–Duysinx self-weight on **`ρ_bar`** plus roof traction; set **`0`** to disable), **`UMST_SHELL_VOL_LOOP`** (default **on**; **`0`** skips in-loop volume projection), **`UMST_SHELL_MAX_CG`**, **`UMST_SHELL_PCG`**, **`UMST_SHELL_E_MIN_REL`** — same semantics as the example. **Multi-term outer loss (experimental):** **`UMST_SHELL_GREY_LAMBDA`** adds **`λ_g·mean(4ρ(1−ρ))`** on **post–volume-projection** **`ρ_bar`** (same grey statistic as the gate); **`UMST_SHELL_XY_VAR_LAMBDA`** adds **`-λ_{xy}·Var_{xy}(\bar\rho)`** where **`Var_{xy}`** is the **z-averaged** column variance (matches the **`xy_plane_variance`** gate on **`ρ`**). **`UMST_SHELL_HEAVISIDE_BETA0`** / **`UMST_SHELL_HEAVISIDE_BETA_MAX`** override Heaviside log-continuation endpoints (defaults **1** and **32**). Non-finite **iter 1** raw compliance **panics** immediately (PCG / conditioning root). Quick-path sizing env **`UMST_SHELL_*`** applies only to [`shell_topology_rib_pattern_quick`], not the full grid defaults (**40³** slab is fixed in the full harness).
 //!
 //! **Q1-hex PCG (B6 H4, 2026-06-10):** forward+adjoint use [`AdjointComplianceQ1Hex`] (continuum SIMP on the extruded grid). Bar-network ground structure was retired after mechanism probes on **9×8×2**; see [`Solver-Status.md`](../../docs/Solver-Status.md).
 //!
@@ -475,11 +475,51 @@ struct RibMetrics {
     pcg_iters: usize,
     pcg_rel_res: f32,
     eq_rel_res: f32,
-    /// Last-outer density-net grad L2 (smoke gate 1).
+    /// Last-outer density-net grad L2.
     last_grad_l2: f32,
+    /// Peak density-net grad L2 across Adam outers (smoke gate 1).
+    max_grad_l2: f32,
     /// Last-outer `ρ_raw` range (smoke gate 3).
     last_rho_raw_min: f32,
     last_rho_raw_max: f32,
+    /// Effective Heaviside β on the last outer (continuation schedule).
+    last_outer_beta: f32,
+    target_vf: f32,
+    roof_ramp_on: bool,
+    roof_ramp_strength: f32,
+    /// Mean nodal `ρ` per z-layer on final `ρ_bar` (see [`rho_z_layer_profile`]).
+    z_profile: String,
+}
+
+fn log_striatus_acceptance_line(tag: &str, nx: usize, ny: usize, nz: usize, m: &RibMetrics) {
+    eprintln!(
+        "{tag}: acceptance diag \
+UMST_SHELL_ROOF_RAMP={} ramp_strength={:.3} target_vf={:.4} vf_final={:.6} vf_err={:+.6} \
+GREYNESS={:.6} z_rho_mean={} xy_var={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
+max_grad_l2={:.6} eq_rel={:.3e}",
+        if m.roof_ramp_on { 1 } else { 0 },
+        m.roof_ramp_strength,
+        m.target_vf,
+        m.vf,
+        m.vf - m.target_vf,
+        m.greyness,
+        m.z_profile,
+        m.xy_var,
+        m.c0,
+        m.c1,
+        m.last_outer_beta,
+        m.max_grad_l2,
+        m.eq_rel_res,
+    );
+    if m.greyness < 0.05 && m.last_outer_beta < 8.0 {
+        eprintln!(
+            "{tag}: greyness sanity — greyness={:.4} at beta={:.3}: Heaviside cannot sharpen this \
+far at low beta; field is already near-binary from DensityNet. Confirm vf_final vs target_vf \
+(η-bisection); binary-at-wrong-volume is a silent failure mode.",
+            m.greyness,
+            m.last_outer_beta
+        );
+    }
 }
 
 /// Striatus **40×40×4** acceptance runs must use `cargo test --release` (not debug `dev`).
@@ -719,8 +759,14 @@ fn run_rib_quick_metrics() -> RibMetrics {
         pcg_rel_res: final_diag.pcg.rel_residual,
         eq_rel_res: final_diag.equilibrium_rel_residual,
         last_grad_l2: f32::NAN,
+        max_grad_l2: f32::NAN,
         last_rho_raw_min: f32::NAN,
         last_rho_raw_max: f32::NAN,
+        last_outer_beta: f32::NAN,
+        target_vf: target_vf,
+        roof_ramp_on: true,
+        roof_ramp_strength: 0.2,
+        z_profile: String::new(),
     }
     .also_pcg_gate("shell_topology_rib_pattern_quick", pcg_tol)
 }
@@ -738,6 +784,60 @@ fn parse_full_rib_adam_iters() -> usize {
         .and_then(|s| s.parse().ok())
         .unwrap_or(200)
         .clamp(1, 200)
+}
+
+/// Heaviside β and SIMP‑\(p\) continuation use this denominator even when
+/// [`parse_full_rib_adam_iters`] shortens the smoke subset — otherwise β ramps to
+/// \(\beta_{\max}\) in ~20 steps and saturates `ρ_mid` AD (artifact, not a path bug).
+const STRIATUS_B6_SCHEDULE_OUTERS: usize = 200;
+
+/// Abort long Striatus runs when mean VF misses target this many outers in a row.
+const STRIATUS_VF_ERR_ABORT_BAND: f32 = 0.1;
+const STRIATUS_VF_ERR_ABORT_STREAK: usize = 3;
+
+/// Roof traction asymmetry: `UMST_SHELL_ROOF_RAMP=0` → uniform; default **on** with
+/// strength `UMST_SHELL_ROOF_RAMP_STRENGTH` (default **0.2**, traction \(\propto 1+r\,i_x/n_x\)).
+fn parse_roof_ramp() -> (bool, f32) {
+    let on = env::var("UMST_SHELL_ROOF_RAMP")
+        .map(|v| v != "0")
+        .unwrap_or(true);
+    let strength = env::var("UMST_SHELL_ROOF_RAMP_STRENGTH")
+        .or_else(|_| env::var("UMST_SHELL_ROOF_RAMP_F"))
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.2_f32)
+        .clamp(0.0, 4.0);
+    (on, if on { strength } else { 0.0 })
+}
+
+/// Coarse **z-profile**: mean nodal `ρ` per `z` layer (`nz+1` entries) — sandwich vs ribs at a glance.
+fn rho_z_layer_profile(rho: &[f32], nx: usize, ny: usize, nz: usize) -> String {
+    let nx1 = nx + 1;
+    let ny1 = ny + 1;
+    let nz1 = nz + 1;
+    let mut layers = Vec::with_capacity(nz1);
+    for iz in 0..nz1 {
+        let mut sum = 0.0_f32;
+        let mut cnt = 0usize;
+        for iy in 0..ny1 {
+            for ix in 0..nx1 {
+                let nid = ix + iy * nx1 + iz * nx1 * ny1;
+                if nid < rho.len() {
+                    sum += rho[nid];
+                    cnt += 1;
+                }
+            }
+        }
+        layers.push(sum / cnt.max(1) as f32);
+    }
+    format!(
+        "[{}]",
+        layers
+            .iter()
+            .map(|v| format!("{v:.3}"))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
 }
 
 /// Density-net Kaiming scale (`UMST_SHELL_INIT_SCALE`). Default **1.0** on Striatus **40×40×4**:
@@ -793,7 +893,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
 
     let use_self_weight = env::var("UMST_SHELL_SELF_WEIGHT")
         .map(|v| v != "0")
-        .unwrap_or(false);
+        .unwrap_or(true);
     let vol_in_loop = env::var("UMST_SHELL_VOL_LOOP")
         .map(|v| v != "0")
         .unwrap_or(true);
@@ -821,7 +921,8 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let ny = 40usize;
     let nz = 4usize;
     let iterations = parse_full_rib_adam_iters();
-    let iter_total = iterations;
+    let iter_total = STRIATUS_B6_SCHEDULE_OUTERS;
+    let smoke_subset = iterations < STRIATUS_B6_SCHEDULE_OUTERS;
 
     let lx = 4.0_f32;
     let ly = 4.0_f32;
@@ -869,8 +970,8 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         Tensor::<B, 3>::from_data(Data::new(bm, Shape::new([1, nn, 3])), device)
     };
 
-    // x-ramp roof traction (same as quick path): breaks load symmetry so nodal sensitivities vary
-    // spatially; uniform pressure + scaled-flat ρ cancels DensityNet grads at Striatus N.
+    let (roof_ramp_on, roof_ramp_strength) = parse_roof_ramp();
+    // x-ramp roof traction (`UMST_SHELL_ROOF_RAMP`): breaks load symmetry so nodal sensitivities vary.
     let mut live_f = vec![0.0f32; n * 3];
     let nx1 = nx + 1;
     let ny1 = ny + 1;
@@ -879,7 +980,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     for iy in 0..=ny {
         for ix in 0..=nx {
             let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
-            let w = 1.0_f32 + 0.2 * (ix as f32 / nx_d);
+            let w = 1.0_f32 + roof_ramp_strength * (ix as f32 / nx_d);
             live_f[nid * 3 + 2] = -50.0 * dx * dy * w;
         }
     }
@@ -899,8 +1000,12 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     // Default **off**: even with a finite filter forward, the full compliance adjoint can still yield
     // non-finite outer loss at Striatus N until the PCG / SIMP path is hardened (B6 follow-up).
     let helm_on = matches!(env::var("UMST_SHELL_HELM").as_deref(), Ok("1"));
-    let use_vol_bisect = matches!(env::var("UMST_SHELL_VOL_BISECT").as_deref(), Ok("1"))
-        || env::var("UMST_SHELL_VOL_BISECT").is_err();
+    // In-loop: `VolumeProjection` AL when `UMST_SHELL_VOL_LOOP=1` (default). η-bisect in-loop only
+    // with `UMST_SHELL_VOL_BISECT=1` (debug). Terminal η-bisect finisher unless `UMST_SHELL_VOL_BISECT=0`.
+    let vol_bisect_in_loop = matches!(env::var("UMST_SHELL_VOL_BISECT").as_deref(), Ok("1"));
+    let vol_eta_terminal = env::var("UMST_SHELL_VOL_BISECT")
+        .map(|v| v != "0")
+        .unwrap_or(true);
     let metrics_on = matches!(env::var("UMST_SHELL_METRICS").as_deref(), Ok("1"));
     let h4_diag = h4_diag_enabled();
     let plateau_beta = PlateauBetaContinuation::new(5, 0.008);
@@ -963,8 +1068,15 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     };
     let mut adam_skipped = 0usize;
     let mut last_grad_l2 = 0.0_f32;
+    let mut max_grad_l2 = 0.0_f32;
+    let mut min_grad_l2 = f32::INFINITY;
+    let mut first_c1 = f32::NAN;
+    let mut first_xy_var = f32::NAN;
     let mut last_rho_raw_min = f32::NAN;
     let mut last_rho_raw_max = f32::NAN;
+    let mut last_outer_beta = heaviside_beta0;
+    let mut vf_err_streak = 0usize;
+    let pcg_tol = cg_cfg.pcg_tolerance.max(cg_cfg.cg_tolerance);
 
     for it in 1..=iterations {
         let base_beta = BetaContinuation::beta(
@@ -996,9 +1108,9 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             rho_raw.clone()
         };
         let rho_mid = proj.project(rho_tilde.clone()).reshape([1, n, 1]);
-        let rho_bar = if use_vol_bisect {
+        let rho_bar = if vol_bisect_in_loop {
             vol_eta
-                .project(rho_tilde.reshape([1, n, 1]), beta, target_vf)
+                .project(rho_tilde.clone().reshape([1, n, 1]), beta, target_vf)
                 .reshape([1, n, 1])
         } else if vol_in_loop {
             vol_proj.project(rho_mid.clone()).reshape([1, n, 1])
@@ -1009,7 +1121,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             let pre = greyness_mean(&rho_mid.clone().into_data().value);
             let post = greyness_mean(&rho_bar.clone().into_data().value);
             eprintln!(
-                "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} greyness_pre_vol={pre:.6} greyness_post_vol={post:.6} beta={beta:.3} helm_on={helm_on} vol_bisect={use_vol_bisect}"
+                "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} greyness_pre_vol={pre:.6} greyness_post_vol={post:.6} beta={beta:.3} helm_on={helm_on} vol_bisect_in_loop={vol_bisect_in_loop} vol_eta_terminal={vol_eta_terminal}"
             );
         }
 
@@ -1030,14 +1142,14 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         let bf_inner = bf.inner();
         last_rho_bar = Some(rho_bar.clone());
         last_bf_inner = Some(bf_inner.clone());
-        // Compliance AD: Heaviside ρ_mid (differentiable in ρ_tilde); volume η only shifts the
-        // threshold scalar. `UMST_SHELL_H5_SKIP_PROJ=1` uses raw net output for isolation probes.
+        // Compliance AD on post–volume-projection ρ_bar (in-loop AL); β schedule anchored at 200 outers.
+        // `UMST_SHELL_H5_SKIP_PROJ=1` forces raw net output for isolation probes.
         let rho_comp = if h5_skip_projection_compliance() {
             rho_raw.clone()
         } else {
-            rho_mid.clone()
+            rho_bar.clone()
         };
-        let (surrogate, c_raw, h4_bundle) = if h4_diag {
+        let (surrogate, c_raw, h4_bundle) = if h4_diag || smoke_subset {
             let (s, c, diag) = q1_compliance_with_diagnostics(
                 rho_comp.clone(),
                 &plate,
@@ -1073,6 +1185,10 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
             c0 = c_raw / comp_scale;
         }
         c1 = c_raw / comp_scale;
+        if it == 1 {
+            first_c1 = c1;
+            first_xy_var = xy_plane_variance(&last_rho, nx, ny, nz);
+        }
         let mut total_loss = surrogate.clone().div_scalar(comp_scale);
         if grey_lambda > 0.0 {
             let grey_t = mean_greyness_tensor(rho_bar.clone());
@@ -1118,9 +1234,54 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
         let (grad_l2, grad_max, grad_layer_nf) =
             autodiff_param_grad_audit(&grads_params, &opt.density_net);
         last_grad_l2 = grad_l2;
+        if grad_l2.is_finite() {
+            max_grad_l2 = max_grad_l2.max(grad_l2);
+            min_grad_l2 = min_grad_l2.min(grad_l2);
+        }
         let (rmin, rmax, _) = rho_raw_range(&rho_raw_vec);
         last_rho_raw_min = rmin;
         last_rho_raw_max = rmax;
+        last_outer_beta = beta;
+        let vf_now = last_rho.iter().sum::<f32>() / last_rho.len().max(1) as f32;
+        let vf_err = vf_now - target_vf;
+        if vf_err.abs() > STRIATUS_VF_ERR_ABORT_BAND {
+            vf_err_streak += 1;
+        } else {
+            vf_err_streak = 0;
+        }
+        if vf_err_streak >= STRIATUS_VF_ERR_ABORT_STREAK {
+            panic!(
+                "striatus_vf_band_guard: |vf-target|>{STRIATUS_VF_ERR_ABORT_BAND} for \
+{STRIATUS_VF_ERR_ABORT_STREAK} consecutive outers (outer {it}/{iterations} vf={vf_now:.6} \
+target_vf={target_vf:.4} err={vf_err:+.6})"
+            );
+        }
+        if smoke_subset || metrics_on {
+            let grey_now = greyness_mean(&last_rho);
+            let xy_now = xy_plane_variance(&last_rho, nx, ny, nz);
+            let eq_rel = h4_bundle
+                .as_ref()
+                .map(|d| d.equilibrium_rel_residual)
+                .unwrap_or(f32::NAN);
+            if smoke_subset {
+                assert_pcg_equilibrium_gate(
+                    &format!("shell_topology_rib_pattern_full_v04 smoke outer {it}"),
+                    h4_bundle.as_ref().map(|d| d.pcg.rel_residual).unwrap_or(f32::NAN),
+                    eq_rel,
+                    pcg_tol,
+                );
+                assert!(
+                    grad_l2.is_finite() && grad_l2 > 0.0,
+                    "smoke outer {it}: grad_l2={grad_l2}"
+                );
+            }
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: outer {it}/{iterations} \
+schedule_k={} beta={beta:.3} vf={vf_now:.6} vf_err={vf_err:+.6} greyness={grey_now:.6} \
+grad_l2={grad_l2:.6} xy_var={xy_now:.6} c1={c1:.6} eq_rel={eq_rel:.3e}",
+                it.saturating_sub(1),
+            );
+        }
         if h4_diag {
             if let Some(ref diag) = h4_bundle {
                 let xy_v = xy_plane_variance(&last_rho, nx, ny, nz);
@@ -1153,6 +1314,50 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
     }
 
     assert!(!last_rho.is_empty(), "full rib run produced no ρ");
+
+    // Terminal η-bisect finisher (export / gate metrics). In-loop volume is `VolumeProjection` AL.
+    if vol_eta_terminal && !vol_bisect_in_loop {
+        let mut rho_raw_f = opt
+            .density_net
+            .forward_batched(coords_norm.clone())
+            .reshape([1, n, 1]);
+        if sym_period > 0 && iterations % sym_period == 0 {
+            rho_raw_f =
+                apply_reflection_xy_average(rho_raw_f, &partners).reshape([1, n, 1]);
+        }
+        if let Some(ref pat) = xy_rib_pat {
+            rho_raw_f = rho_raw_f
+                .add(pat.clone().mul_scalar(xy_rib_prior_amp))
+                .clamp(0.0, 1.0);
+        }
+        let rho_tilde_f = if helm_on {
+            helm.apply_straight_through(rho_raw_f.clone(), edges_b1.clone(), dx_f)
+                .reshape([1, n, 1])
+        } else {
+            rho_raw_f.clone()
+        };
+        // Detached export step: use schedule β_max so η-bisect can hit V* on soft ρ̃ (continuation
+        // β≈1.5 cannot enforce 0.15 VF — same silent failure as the pre-fix 20-outer run).
+        let finisher_beta = heaviside_beta_max.max(last_outer_beta);
+        let rho_bar_f = vol_eta
+            .project(
+                rho_tilde_f.reshape([1, n, 1]),
+                finisher_beta,
+                target_vf,
+            )
+            .reshape([1, n, 1]);
+        last_rho = rho_bar_f.clone().into_data().value;
+        last_rho_bar = Some(rho_bar_f);
+        let vf_fin = last_rho.iter().sum::<f32>() / last_rho.len() as f32;
+        eprintln!(
+            "shell_topology_rib_pattern_full_v04: terminal η-bisect finisher \
+beta_cont={:.3} beta_fin={finisher_beta:.3} vf={vf_fin:.6} vf_err={:+.6} greyness={:.6}",
+            last_outer_beta,
+            vf_fin - target_vf,
+            greyness_mean(&last_rho),
+        );
+    }
+
     let vf = last_rho.iter().sum::<f32>() / last_rho.len() as f32;
     let (_, _, final_diag) = q1_compliance_with_diagnostics(
         last_rho_bar.expect("last rho_bar"),
@@ -1162,8 +1367,8 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
         last_simp_mat,
         &cg_cfg,
     );
-    let pcg_tol = cg_cfg.pcg_tolerance.max(cg_cfg.cg_tolerance);
-    RibMetrics {
+    let z_profile = rho_z_layer_profile(&last_rho, nx, ny, nz);
+    let metrics = RibMetrics {
         vf,
         greyness: greyness_mean(&last_rho),
         xy_var: xy_plane_variance(&last_rho, nx, ny, nz),
@@ -1174,10 +1379,17 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
         pcg_rel_res: final_diag.pcg.rel_residual,
         eq_rel_res: final_diag.equilibrium_rel_residual,
         last_grad_l2,
+        max_grad_l2,
         last_rho_raw_min,
         last_rho_raw_max,
-    }
-    .also_pcg_gate("shell_topology_rib_pattern_full_v04", pcg_tol)
+        last_outer_beta,
+        target_vf,
+        roof_ramp_on,
+        roof_ramp_strength,
+        z_profile,
+    };
+    log_striatus_acceptance_line("shell_topology_rib_pattern_full_v04", nx, ny, nz, &metrics);
+    metrics.also_pcg_gate("shell_topology_rib_pattern_full_v04", pcg_tol)
 }
 
 #[test]
@@ -1439,13 +1651,25 @@ fn shell_topology_rib_pattern_full_v04() {
     let (gl, xyl, b0, jit, rib) = parse_umst_shell_b6_aux_env();
     let g_uni = 4.0 * target_vf * (1.0 - target_vf);
     eprintln!(
-        "shell_topology_rib_pattern_full_v04: pre-gate metrics vf={:.6} greyness_vol_mean(4ρ(1−ρ))={:.6} g_uni=4·vf·(1−vf)={:.6} xy_var_z_avg={:.6} c0={:.6} c1={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} UMST_SHELL_GREY_LAMBDA={:.6} UMST_SHELL_XY_VAR_LAMBDA={:.6} UMST_SHELL_HEAVISIDE_BETA0={:.6} UMST_SHELL_DENSITY_INIT_JITTER={:.6} UMST_SHELL_XY_RIB_PRIOR_AMP={:.6}",
-        m.vf,
+        "shell_topology_rib_pattern_full_v04: pre-gate metrics \
+GREYNESS(4ρ(1−ρ))={:.6} vf={:.6} target_vf={:.4} vf_err={:+.6} \
+UMST_SHELL_ROOF_RAMP={} ramp_strength={:.3} z_rho_mean={} \
+xy_var_z_avg={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
+max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} UMST_SHELL_GREY_LAMBDA={:.6} UMST_SHELL_XY_VAR_LAMBDA={:.6} UMST_SHELL_HEAVISIDE_BETA0={:.6} UMST_SHELL_DENSITY_INIT_JITTER={:.6} UMST_SHELL_XY_RIB_PRIOR_AMP={:.6}",
         m.greyness,
-        g_uni,
+        m.vf,
+        m.target_vf,
+        m.vf - m.target_vf,
+        if m.roof_ramp_on { 1 } else { 0 },
+        m.roof_ramp_strength,
+        m.z_profile,
         m.xy_var,
         m.c0,
         m.c1,
+        m.last_outer_beta,
+        m.max_grad_l2,
+        m.last_grad_l2,
+        g_uni,
         m.pcg_iters,
         m.pcg_rel_res,
         m.eq_rel_res,
@@ -1475,12 +1699,21 @@ fn shell_topology_rib_pattern_full_v04() {
     // Smoke (`UMST_SHELL_RIB_FULL_ITERS` < 200): five-criteria gate before 200-outer acceptance.
     if adam_iters < 200 {
         assert!(
-            m.last_grad_l2.is_finite() && m.last_grad_l2 > 0.0,
-            "smoke grad_l2: got {} (adam_skipped={} vf={} xy_var={})",
+            m.max_grad_l2.is_finite() && m.max_grad_l2 > 0.0 && m.last_grad_l2 > 0.0,
+            "smoke grad_l2: max={} last={} (adam_skipped={} vf={} vf_err={:+.6} xy_var={})",
+            m.max_grad_l2,
             m.last_grad_l2,
             m.adam_skipped,
             m.vf,
+            m.vf - m.target_vf,
             m.xy_var
+        );
+        assert!(
+            (m.vf - m.target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
+            "smoke vf band: vf={} target={} err={} (guard should have aborted in-loop)",
+            m.vf,
+            m.target_vf,
+            m.vf - m.target_vf
         );
         assert_eq!(
             m.adam_skipped, 0,
@@ -1501,12 +1734,19 @@ fn shell_topology_rib_pattern_full_v04() {
             m.vf
         );
         eprintln!(
-            "shell_topology_rib_pattern_full_v04: smoke PASS ({adam_iters} outer) — grad_l2={:.6} \
-rho_raw=[{:.6},{:.6}] xy_var={:.6} eq_rel={:.3e} adam_skipped=0; full B6 vf/greyness/compliance gates deferred to 200-outer",
+            "shell_topology_rib_pattern_full_v04: smoke PASS ({adam_iters} outer) — \
+GREYNESS={:.6} max_grad_l2={:.6} last_grad_l2={:.6} beta_last={:.3} \
+xy_var={:.6} c0={:.6} c1={:.6} rho_raw=[{:.6},{:.6}] eq_rel={:.3e} adam_skipped=0; \
+full B6 vf/greyness<0.15/compliance-drop gates deferred to 200-outer",
+            m.greyness,
+            m.max_grad_l2,
             m.last_grad_l2,
+            m.last_outer_beta,
+            m.xy_var,
+            m.c0,
+            m.c1,
             m.last_rho_raw_min,
             m.last_rho_raw_max,
-            m.xy_var,
             m.eq_rel_res
         );
         return;
