@@ -80,6 +80,18 @@ First divergent metric at Striatus scale: **forward PCG never meets tolerance** 
 
 **Tolerance policy (`q1_hex_elasticity`, 2026-06-10 re-ground):** both lanes **`HEX_PCG_REL_TOL_F32=HEX_PCG_REL_TOL_F64=1e-4`**. Rationale: (i) **sensitivity fidelity** — adjoint compliance gradients are dominated by equilibrium solve error; tightening below the measured κ·ε floor at 40×40×4 buys no gradient signal ([Bendsøe & Sigmund 2003](https://doi.org/10.1007/978-3-662-05086-6), Ch. 1 inexact-solve TO practice); (ii) **attainable floor** — full f64 PCG lane (`eq_rel` binding) still reports true **`rel≈1e-4`** at Striatus N after ~2k iters while recursive self-report can lie by orders of magnitude (arm-A table below); **`1e-6`** overshoots that floor and caused false **`pcg_rel` pass / `eq_rel` fail** on smoke. Step C gates assert **`eq_rel`** against the **lane** tol (f64 harness uses **`HEX_PCG_REL_TOL_F64`**). Production solver: **arm A** (original recursive loop + nondim).
 
+**f64 descent curve (`q1_hex_pcg_descent_probe`, 40×40×4, Jacobi, run-to-10k, tol=1e-4, 2026-06-10):**
+
+| iter | r_recursive | r_true | r_rec/r_true |
+|------|-------------|--------|--------------|
+| 2000 | 7.94×10⁻⁷ | 7.94×10⁻⁷ | 1.0 |
+| 4000 | 5.00×10⁻¹¹ | 5.00×10⁻¹¹ | 1.0 |
+| 6000 | 4.96×10⁻¹¹ | 4.96×10⁻¹¹ | 1.0 |
+| 8000 | 4.99×10⁻¹¹ | 4.99×10⁻¹¹ | 1.0 |
+| 10000 | 5.01×10⁻¹¹ | 5.01×10⁻¹¹ | 1.0 |
+
+**Verdict:** full f64 PCG lane **closes Signal 1** — recursive self-report matches true `eq_rel` at every milestone (contrast arm-A table: recursive 9×10⁻⁵ vs true 0.24). True residual **plateaus below tol by 2k**; flat tail is convergence, not preconditioner stall. **Block-Jacobi (3×3 nodal) deferred** — not the binding bottleneck after f64 lane.
+
 **Unit sanity @ 40×40×4 (`q1_hex_unit_sanity_striatus_n`, 2026-06-10):** `rel = ‖Pr‖/‖Pf‖` with both in **N** (masked nodal force components). **Not** a mixed-unit absolute dressed as relative.
 
 | Arm | tol | iters | ‖Pf‖ [N] | ‖Pr‖ [N] | rel | r_recursive |
