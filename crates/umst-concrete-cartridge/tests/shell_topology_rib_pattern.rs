@@ -605,9 +605,10 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     };
 
     let helm = HelmholtzFilter::new((2.0 * dx.min(dy).min(dz)).max(1e-6), 240, 1e-7);
-    // Full harness defaults **Helmholtz on** via straight-through ([`HelmholtzFilter::apply_straight_through`]).
-    // Set **`UMST_SHELL_HELM=0`** to disable; **`UMST_SHELL_HELM=1`** is an explicit alias for on.
-    let helm_on = !matches!(env::var("UMST_SHELL_HELM").as_deref(), Ok("0"));
+    // **`UMST_SHELL_HELM=1`** enables straight-through Helmholtz ([`HelmholtzFilter::apply_straight_through`]).
+    // Default **off**: even with a finite filter forward, the full compliance adjoint can still yield
+    // non-finite outer loss at Striatus N until the PCG / SIMP path is hardened (B6 follow-up).
+    let helm_on = matches!(env::var("UMST_SHELL_HELM").as_deref(), Ok("1"));
     let use_vol_bisect = matches!(env::var("UMST_SHELL_VOL_BISECT").as_deref(), Ok("1"))
         || env::var("UMST_SHELL_VOL_BISECT").is_err();
     let metrics_on = matches!(env::var("UMST_SHELL_METRICS").as_deref(), Ok("1"));
