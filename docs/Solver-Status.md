@@ -78,6 +78,8 @@ First divergent metric at Striatus scale: **forward PCG never meets tolerance** 
 | C | refresh+masked p | OFF | 59 | 8.1×10⁻⁵ | 8.1×10⁻⁵ | rewrite OK at quick scale; r_rec = r_true |
 | D | refresh+masked p | ON | 59 | 6.9×10⁻⁵ | 6.9×10⁻⁵ | bundled state; r_rec = r_true |
 
+**PCG iteration budget (`HEX_PCG_MAX_ITER_DEFAULT_STRIATUS=4000`, 2026-06-10):** derived from measured **~1213** iters @ outer 1 on **40×40×4**; **2×** headroom because κ grows as the design develops contrast (outers **11–18** previously hit the **2000** cap with `eq_rel` creeping to **8.9×10⁻⁴**). Override with **`UMST_SHELL_MAX_CG`**.
+
 **Tolerance policy (`q1_hex_elasticity`, 2026-06-10 re-ground):** both lanes **`HEX_PCG_REL_TOL_F32=HEX_PCG_REL_TOL_F64=1e-4`**. Rationale: (i) **sensitivity fidelity** — adjoint compliance gradients are dominated by equilibrium solve error; tightening below the measured κ·ε floor at 40×40×4 buys no gradient signal ([Bendsøe & Sigmund 2003](https://doi.org/10.1007/978-3-662-05086-6), Ch. 1 inexact-solve TO practice); (ii) **attainable floor** — full f64 PCG lane (`eq_rel` binding) still reports true **`rel≈1e-4`** at Striatus N after ~2k iters while recursive self-report can lie by orders of magnitude (arm-A table below); **`1e-6`** overshoots that floor and caused false **`pcg_rel` pass / `eq_rel` fail** on smoke. Step C gates assert **`eq_rel`** against the **lane** tol (f64 harness uses **`HEX_PCG_REL_TOL_F64`**). Production solver: **arm A** (original recursive loop + nondim).
 
 **f64 descent curve (`q1_hex_pcg_descent_probe`, 40×40×4, Jacobi, run-to-10k, tol=1e-4, 2026-06-10):**
