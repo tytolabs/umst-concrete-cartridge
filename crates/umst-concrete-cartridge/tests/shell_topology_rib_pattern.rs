@@ -718,6 +718,9 @@ fn run_rib_quick_metrics() -> RibMetrics {
         pcg_iters: final_diag.pcg.iterations,
         pcg_rel_res: final_diag.pcg.rel_residual,
         eq_rel_res: final_diag.equilibrium_rel_residual,
+        last_grad_l2: f32::NAN,
+        last_rho_raw_min: f32::NAN,
+        last_rho_raw_max: f32::NAN,
     }
     .also_pcg_gate("shell_topology_rib_pattern_quick", pcg_tol)
 }
@@ -1170,6 +1173,9 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
         pcg_iters: final_diag.pcg.iterations,
         pcg_rel_res: final_diag.pcg.rel_residual,
         eq_rel_res: final_diag.equilibrium_rel_residual,
+        last_grad_l2,
+        last_rho_raw_min,
+        last_rho_raw_max,
     }
     .also_pcg_gate("shell_topology_rib_pattern_full_v04", pcg_tol)
 }
@@ -1466,20 +1472,42 @@ fn shell_topology_rib_pattern_full_v04() {
         m.xy_var,
         m.greyness
     );
-    // Smoke (`UMST_SHELL_RIB_FULL_ITERS` < 200): one or few outers still exercise 40×40×4 AD +
-    // Q1-hex PCG; use `--release` (module `//!` above). Brief B6 gates need the full 200-outer schedule.
+    // Smoke (`UMST_SHELL_RIB_FULL_ITERS` < 200): five-criteria gate before 200-outer acceptance.
     if adam_iters < 200 {
-        let band = 0.15_f32 * target_vf;
         assert!(
-            (m.vf - target_vf).abs() <= band,
-            "smoke vf band: got vf={} target_vf={} (±15% quick-style band; greyness={} xy_var={})",
+            m.last_grad_l2.is_finite() && m.last_grad_l2 > 0.0,
+            "smoke grad_l2: got {} (adam_skipped={} vf={} xy_var={})",
+            m.last_grad_l2,
+            m.adam_skipped,
             m.vf,
-            target_vf,
-            m.greyness,
             m.xy_var
         );
+        assert_eq!(
+            m.adam_skipped, 0,
+            "smoke adam_skipped: got {} (grad_l2={} vf={})",
+            m.adam_skipped, m.last_grad_l2, m.vf
+        );
+        assert!(
+            m.last_rho_raw_min < 0.501 - 1e-6 || m.last_rho_raw_max > 0.501 + 1e-6,
+            "smoke rho_raw plateau: [{}, {}] must leave [0.501, 0.501]",
+            m.last_rho_raw_min,
+            m.last_rho_raw_max
+        );
+        assert!(
+            m.xy_var > 0.0,
+            "smoke xy_var: got {} (grad_l2={} vf={})",
+            m.xy_var,
+            m.last_grad_l2,
+            m.vf
+        );
         eprintln!(
-            "shell_topology_rib_pattern_full_v04: smoke mode (UMST_SHELL_RIB_FULL_ITERS={adam_iters} < 200) — B6 greyness / xy_var / compliance-drop gates skipped (see pre-gate metrics: pcg_iter_final documents early-exit vs bar-network 2000-cap stall)"
+            "shell_topology_rib_pattern_full_v04: smoke PASS ({adam_iters} outer) — grad_l2={:.6} \
+rho_raw=[{:.6},{:.6}] xy_var={:.6} eq_rel={:.3e} adam_skipped=0; full B6 vf/greyness/compliance gates deferred to 200-outer",
+            m.last_grad_l2,
+            m.last_rho_raw_min,
+            m.last_rho_raw_max,
+            m.xy_var,
+            m.eq_rel_res
         );
         return;
     }
