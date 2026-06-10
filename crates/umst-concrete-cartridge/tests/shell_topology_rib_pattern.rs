@@ -33,11 +33,15 @@ use umst_manifold::ai::topology::{
     BetaContinuation, ContinuationSchedule, HeavisideProjection, PlateauBetaContinuation,
     TopologyOptimizer, VolumeEtaProjection, VolumeProjection,
 };
-use umst_manifold::physics::adjoint::{AdjointComplianceDiagnostics, SimpElasticMaterial};
+use umst_manifold::physics::adjoint::{
+    AdjointComplianceDiagnostics, AdjointFiniteStageAudit, SimpElasticMaterial,
+};
 use umst_manifold::physics::adjoint_q1_hex::AdjointComplianceQ1Hex;
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
 use umst_manifold::physics::mechanics::SelfWeightConfig;
-use umst_manifold::physics::q1_hex_elasticity::HEX_PCG_REL_TOL_F64;
+use umst_manifold::physics::q1_hex_elasticity::{
+    HEX_PCG_MAX_ITER_DEFAULT_STRIATUS, HEX_PCG_REL_TOL_F32, HEX_PCG_REL_TOL_F64,
+};
 use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 use umst_manifold::physics::topology_filter::HelmholtzFilter;
 
@@ -241,6 +245,10 @@ fn h4_diag_enabled() -> bool {
     matches!(env::var("UMST_SHELL_H4_DIAG").as_deref(), Ok("1"))
 }
 
+fn h5_skip_projection_compliance() -> bool {
+    matches!(env::var("UMST_SHELL_H5_SKIP_PROJ").as_deref(), Ok("1"))
+}
+
 fn vec_l2_norm(v: &[f32]) -> f32 {
     v.iter().map(|x| x * x).sum::<f32>().sqrt()
 }
@@ -262,24 +270,90 @@ fn rho_raw_range(rho: &[f32]) -> (f32, f32, f32) {
 }
 
 fn autodiff_param_grad_l2<M: AutodiffModule<B>>(grads: &GradientsParams, module: &M) -> f32 {
+    let (l2, _, _) = autodiff_param_grad_audit(grads, module);
+    l2
+}
+
+/// Per-tensor grad L2 and non-finite counts (H5 stage **d**).
+fn tensor_grad_l2_inner(g: &Tensor<Inner, 3>) -> (f32, f32) {
+    let vals = g.clone().into_data().value;
+    let l2 = vals.iter().map(|x| x * x).sum::<f32>().sqrt();
+    let max = vals.iter().map(|x| x.abs()).fold(0.0_f32, f32::max);
+    (l2, max)
+}
+
+fn autodiff_param_grad_audit<M: AutodiffModule<B>>(
+    grads: &GradientsParams,
+    module: &M,
+) -> (f32, f32, Vec<(usize, usize, usize)>) {
     struct Visitor<'a> {
         gp: &'a GradientsParams,
         sum_sq: f32,
+        max_abs: f32,
+        layer: usize,
+        layers: Vec<(usize, usize, usize)>,
     }
     impl ModuleVisitor<B> for Visitor<'_> {
         fn visit_float<const D: usize>(&mut self, id: &ParamId, _tensor: &Tensor<B, D>) {
-            if let Some(g) = self.gp.get::<B, D>(id) {
+            if let Some(g) = self.gp.get::<Inner, D>(id) {
                 let vals = g.clone().into_data().value;
-                self.sum_sq += vals.iter().map(|&x| x * x).sum::<f32>();
+                let nf = vals.iter().filter(|x| !x.is_finite()).count();
+                let n = vals.len();
+                if nf > 0 {
+                    self.layers.push((self.layer, nf, n));
+                }
+                for &x in &vals {
+                    self.sum_sq += x * x;
+                    self.max_abs = self.max_abs.max(x.abs());
+                }
             }
+            self.layer += 1;
         }
     }
     let mut visitor = Visitor {
         gp: grads,
         sum_sq: 0.0,
+        max_abs: 0.0,
+        layer: 0,
+        layers: Vec::new(),
     };
     module.visit(&mut visitor);
-    visitor.sum_sq.sqrt()
+    (visitor.sum_sq.sqrt(), visitor.max_abs, visitor.layers)
+}
+
+fn log_h5_finite_chain(tag: &str, outer: usize, audit: &AdjointFiniteStageAudit) {
+    eprintln!(
+        "{tag}: H5 finite chain outer {outer}: \
+u_nf={} u_pinned_nf={} u_pinned_abs_max={:.3e} ge_nf={} nodal_sens_nf={} first_bad={}",
+        audit.u_nonfinite,
+        audit.u_pinned_nonfinite,
+        audit.u_pinned_abs_max,
+        audit.ge_nonfinite,
+        audit.nodal_sens_nonfinite,
+        audit
+            .first_bad_stage
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "none".to_string()),
+    );
+}
+
+fn log_h5_grad_layers(
+    tag: &str,
+    outer: usize,
+    grad_l2: f32,
+    grad_max: f32,
+    rho_grad_l2: f32,
+    rho_grad_max: f32,
+    layers: &[(usize, usize, usize)],
+) {
+    eprintln!(
+        "{tag}: H5 grad outer {outer}: param_l2={grad_l2:.6} param_max={grad_max:.6} \
+rho_bar_l2={rho_grad_l2:.6} rho_bar_max={rho_grad_max:.6} layer_nf={}",
+        layers.len()
+    );
+    for &(idx, nf, n) in layers {
+        eprintln!("{tag}: H5 grad outer {outer}: layer={idx} nonfinite={nf}/{n}");
+    }
 }
 
 fn log_h4_outer(
@@ -707,7 +781,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let max_cg = env::var("UMST_SHELL_MAX_CG")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(2000usize)
+        .unwrap_or(HEX_PCG_MAX_ITER_DEFAULT_STRIATUS)
         .clamp(50, 50_000);
     let e_min_rel = env::var("UMST_SHELL_E_MIN_REL")
         .ok()
@@ -927,28 +1001,31 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         let bf_inner = bf.inner();
         last_rho_bar = Some(rho_bar.clone());
         last_bf_inner = Some(bf_inner.clone());
-        let (surrogate, c_raw) = q1_compliance_forward(
-            rho_bar.clone(),
-            &plate,
-            boundary_inner.clone(),
-            bf_inner.clone(),
-            simp_mat,
-            &cg_cfg,
-        );
-        let h4_bundle = if h4_diag {
-            Some(
-                q1_compliance_with_diagnostics(
-                    rho_bar.clone(),
-                    &plate,
-                    boundary_inner.clone(),
-                    bf_inner,
-                    simp_mat,
-                    &cg_cfg,
-                )
-                .2,
-            )
+        let rho_comp = if h5_skip_projection_compliance() {
+            rho_raw.clone()
         } else {
-            None
+            rho_bar.clone()
+        };
+        let (surrogate, c_raw, h4_bundle) = if h4_diag {
+            let (s, c, diag) = q1_compliance_with_diagnostics(
+                rho_comp.clone(),
+                &plate,
+                boundary_inner.clone(),
+                bf_inner,
+                simp_mat,
+                &cg_cfg,
+            );
+            (s, c, Some(diag))
+        } else {
+            let (s, c) = q1_compliance_forward(
+                rho_comp.clone(),
+                &plate,
+                boundary_inner.clone(),
+                bf_inner.clone(),
+                simp_mat,
+                &cg_cfg,
+            );
+            (s, c, None)
         };
 
         last_rho = rho_bar.clone().into_data().value;
@@ -1000,24 +1077,43 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
             continue;
         }
 
+        let rho_bar_grad_anchor = rho_comp.clone();
+        let grads = total_loss.backward();
+        let (rho_grad_l2, rho_grad_max) = rho_bar_grad_anchor
+            .grad(&grads)
+            .map(|g| tensor_grad_l2_inner(&g))
+            .unwrap_or((f32::NAN, f32::NAN));
+        let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
+        let (grad_l2, grad_max, grad_layer_nf) =
+            autodiff_param_grad_audit(&grads_params, &opt.density_net);
         if h4_diag {
             if let Some(ref diag) = h4_bundle {
                 let xy_v = xy_plane_variance(&last_rho, nx, ny, nz);
+                if let Some(ref audit) = diag.finite_audit {
+                    log_h5_finite_chain("shell_topology_rib_pattern_full_v04", it, audit);
+                }
+                log_h5_grad_layers(
+                    "shell_topology_rib_pattern_full_v04",
+                    it,
+                    grad_l2,
+                    grad_max,
+                    rho_grad_l2,
+                    rho_grad_max,
+                    &grad_layer_nf,
+                );
                 log_h4_outer(
                     "shell_topology_rib_pattern_full_v04",
                     it,
                     iter_total,
                     &rho_raw_vec,
                     diag,
-                    f32::NAN,
+                    grad_l2,
                     adam_skipped,
                     xy_v,
                     loss_scalar,
                 );
             }
         }
-        let grads = total_loss.backward();
-        let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
         opt.density_net = adam.step(0.005, opt.density_net, grads_params);
     }
 
