@@ -5,7 +5,7 @@
 name = "tyto_mortar"
 schema = "calibration.v1"
 material = "mortar"
-source_repo = "MaOS-Research/08_EXPERIMENTS/proxy_rheology_extrusion"
+source_repo = "studio-tyto/in-house/proxy_rheology_extrusion"
 
 [provenance]
 dataset_lift_from = "S1 bead+slug session; slug τ₀ lanes DO_NOT_USE until hardened protocol"
