@@ -675,7 +675,8 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             heaviside_beta0,
             heaviside_beta_max.max(64.0),
         );
-        let beta = plateau_beta.effective_beta(base_beta, &greyness_hist, heaviside_beta_max.max(64.0));
+        let beta =
+            plateau_beta.effective_beta(base_beta, &greyness_hist, heaviside_beta_max.max(64.0));
         proj.set_beta(beta);
 
         let mut rho_raw = opt
