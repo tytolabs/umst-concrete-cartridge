@@ -28,4 +28,4 @@ serde_json = "1.0"
 csv = "1.4"
 
 [build-dependencies]
-pyo3-build-config = "0.22"
+pyo3-build-config = "0.28"
