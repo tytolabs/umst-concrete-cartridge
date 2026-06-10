@@ -1,0 +1,18 @@
+[package]
+name = "umst-concrete-ffi"
+version = "0.1.0"
+edition = "2021"
+authors = ["Santhosh Shyamsundar", "Santosh Prabhu Shenbagamoorthy"]
+description = "C-ABI cement chemistry morphisms (hydration, Powers strength, mix→state)."
+license = "MIT"
+
+[dependencies]
+umst-manifold = { workspace = true }
+
+[lib]
+name = "umst_concrete_ffi"
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"

@@ -83,6 +83,31 @@ the cartridge is being driven into untested territory; downstream
 agents should treat a small or negative `safety_margin` as a request
 for human review.
 
+## Physical validation loop (Track V)
+
+This section records **studio-scale** prediction bundles and pipeline
+rehearsals — separate from the automated constitutive regression table
+above. It follows the manifold pattern of keeping operational gates and
+artifact paths in a dedicated verify doc ([`umst-manifold/docs/VERIFY.md`](../../umst-manifold/docs/VERIFY.md))
+rather than the repository README.
+
+| Artifact | Path | Status |
+|----------|------|--------|
+| V1 prediction bundle | [`calibration/v1_tyto_mortar_prediction_bundle/`](../calibration/v1_tyto_mortar_prediction_bundle/) | `umst predict --profile tyto_mortar` |
+| V2 cast protocol (future) | [`calibration/v3_pipeline_rehearsal/V2_specimen_protocol.md`](../calibration/v3_pipeline_rehearsal/V2_specimen_protocol.md) | Not executed |
+| V3 pipeline rehearsal | [`calibration/v3_pipeline_rehearsal/tyto_mortar_pipeline_rehearsal.png`](../calibration/v3_pipeline_rehearsal/tyto_mortar_pipeline_rehearsal.png) | **Placeholder data — V3-gate: CLOSED** (pending Term 3 cast) |
+
+**V3-gate:** closed until a physical specimen is cast and compressive
+strength is measured (Term 3). Until then, V3 artifacts are pipeline
+rehearsal only — not cited as external validation evidence.
+
+**Deferred roadmap items:** M2-2, M3-1, and M3-2 remain deferred until
+V3-gate opens on real compressive strength measurements.
+
+Related: [`calibration/SCHEMA.md`](../calibration/SCHEMA.md) (TOML profiles),
+[`docs/applications_bouquet.md`](applications_bouquet.md) (application domains
+and calibration workflows).
+
 ## Contributing a new validation row
 
 When a contributor adds a new constitutive module or refines an

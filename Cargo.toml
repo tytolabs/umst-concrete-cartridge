@@ -6,6 +6,7 @@
 resolver = "2"
 members = [
     "crates/umst-concrete-cartridge",
+    "crates/umst-concrete-ffi",
     "crates/umst-cli",
     "crates/umst-mcp",
     "crates/umst-py",

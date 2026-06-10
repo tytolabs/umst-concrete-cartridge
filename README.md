@@ -18,16 +18,6 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 **UMST Concrete Cartridge** is the applied physical brain of the [UMST Manifold](https://github.com/tytolabs/umst-manifold) for **cementitious materials**. It provides the specific chemical-physical equations, real-world data calibration, and programming connections for cement, concrete, and mineral binders.
 
-### Track V (validation + pipeline rehearsal)
-
-| Artifact | Path | Status |
-|----------|------|--------|
-| V1 prediction bundle | [`calibration/v1_tyto_mortar_prediction_bundle/`](calibration/v1_tyto_mortar_prediction_bundle/) | `umst predict --profile tyto_mortar` |
-| V2 cast protocol (future) | [`calibration/v3_pipeline_rehearsal/V2_specimen_protocol.md`](calibration/v3_pipeline_rehearsal/V2_specimen_protocol.md) | Not executed |
-| V3 pipeline rehearsal | [`calibration/v3_pipeline_rehearsal/tyto_mortar_pipeline_rehearsal.png`](calibration/v3_pipeline_rehearsal/tyto_mortar_pipeline_rehearsal.png) | **Placeholder data — V3-gate: CLOSED** (pending Term 3 cast) |
-
-M2-2, M3-1, and M3-2 remain deferred until V3-gate opens on real compressive strength measurements.
-
 ### What this is, in plain words
 
 Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through a **hard thermodynamic gate** (the reduced Clausius–Duhem inequality): conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.
@@ -452,7 +442,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 
 For rigorous validation reports, exact mathematical constitutive equations, and generated formal proof status, consult the local `docs/` folder:
 - [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md)
-- [`docs/Validation.md`](docs/Validation.md)
+- [`docs/Validation.md`](docs/Validation.md) — constitutive regression envelope **and** Track V physical validation / pipeline rehearsal (V1–V3 gates)
 - [`docs/WireSchemas.md`](docs/WireSchemas.md)
 - [`docs/Solver-Status.md`](docs/Solver-Status.md)
 - [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md) — cement-specific proof/trace table

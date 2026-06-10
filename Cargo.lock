@@ -3899,6 +3899,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "umst-concrete-ffi"
+version = "0.1.0"
+dependencies = [
+ "umst-manifold",
+]
+
+[[package]]
 name = "umst-manifold"
 version = "0.1.0"
 dependencies = [
