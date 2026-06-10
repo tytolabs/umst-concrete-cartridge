@@ -849,14 +849,18 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         Tensor::<B, 3>::from_data(Data::new(bm, Shape::new([1, nn, 3])), device)
     };
 
+    // x-ramp roof traction (same as quick path): breaks load symmetry so nodal sensitivities vary
+    // spatially; uniform pressure + scaled-flat ρ cancels DensityNet grads at Striatus N.
     let mut live_f = vec![0.0f32; n * 3];
     let nx1 = nx + 1;
     let ny1 = ny + 1;
     let iz_top = nz;
+    let nx_d = nx.max(1) as f32;
     for iy in 0..=ny {
         for ix in 0..=nx {
             let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
-            live_f[nid * 3 + 2] = -50.0 * dx * dy;
+            let w = 1.0_f32 + 0.2 * (ix as f32 / nx_d);
+            live_f[nid * 3 + 2] = -50.0 * dx * dy * w;
         }
     }
     let live_force: Tensor<B, 3> =
@@ -904,7 +908,9 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
 
     let boundary_inner = boundary_b.clone().inner();
 
-    let mut opt = topology_optimizer_scaled(target_vf, 3.0, 64, 0.05, device);
+    // Unscaled DensityNet init: `topology_optimizer_scaled(..., 0.05)` parks every nodal ρ≈0.5 so
+    // adjoint nodal sensitivities (nearly uniform under uniform load) sum to zero param grad at 40×40×4.
+    let mut opt = TopologyOptimizer::new(target_vf, 3.0, 64, device);
     if density_init_jitter > 0.0 {
         let mut jm = AddDensityInitJitter {
             amplitude: density_init_jitter,
@@ -977,7 +983,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             rho_mid.clone()
         };
         if metrics_on && (it % 20 == 0 || it == iterations) {
-            let pre = greyness_mean(&rho_mid.into_data().value);
+            let pre = greyness_mean(&rho_mid.clone().into_data().value);
             let post = greyness_mean(&rho_bar.clone().into_data().value);
             eprintln!(
                 "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} greyness_pre_vol={pre:.6} greyness_post_vol={post:.6} beta={beta:.3} helm_on={helm_on} vol_bisect={use_vol_bisect}"
@@ -1001,10 +1007,12 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         let bf_inner = bf.inner();
         last_rho_bar = Some(rho_bar.clone());
         last_bf_inner = Some(bf_inner.clone());
+        // Compliance AD: Heaviside ρ_mid (differentiable in ρ_tilde); volume η only shifts the
+        // threshold scalar. `UMST_SHELL_H5_SKIP_PROJ=1` uses raw net output for isolation probes.
         let rho_comp = if h5_skip_projection_compliance() {
             rho_raw.clone()
         } else {
-            rho_bar.clone()
+            rho_mid.clone()
         };
         let (surrogate, c_raw, h4_bundle) = if h4_diag {
             let (s, c, diag) = q1_compliance_with_diagnostics(
@@ -1176,31 +1184,44 @@ fn shell_topology_rib_pattern_quick() {
     assert!(m.c1 <= m.c0 * 1.45_f32, "compliance {:?}", (m.c0, m.c1));
 }
 
-/// H5: density-net → Q1 compliance AD chain on quick grid (isolates grad plumbing from projections).
+/// H5 Striatus grid: isolates 40×40×4 density-net → Q1 compliance AD (no projections).
 #[test]
-fn h5_density_net_compliance_grad_9x8x2() {
+#[ignore = "slow: cargo test --release -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental h5_striatus_density_net_compliance_grad_40x40x4 -- --ignored --nocapture"]
+fn h5_striatus_density_net_compliance_grad_40x40x4() {
+    assert_striatus_release_profile("h5_striatus_density_net_compliance_grad_40x40x4");
     <B as BackendTrait>::seed(42);
     let device = Default::default();
-    let nx = 9usize;
-    let ny = 8usize;
-    let nz = 2usize;
+    let nx = 40usize;
+    let ny = 40usize;
+    let nz = 4usize;
+    let lx = 4.0_f32;
+    let ly = 4.0_f32;
+    let lz = 0.1_f32;
     let plate = ExtrudedPlateMechanics {
         nx,
         ny,
         nz,
-        dx: 0.8 / nx as f32,
-        dy: 0.8 / ny as f32,
-        dz: 0.1 / nz as f32,
+        dx: lx / nx as f32,
+        dy: ly / ny as f32,
+        dz: lz / nz as f32,
     };
     let n = plate.n_nodes();
     let coords = plate
         .coords_bn3::<B>(&device)
-        .div_scalar(0.8_f32)
+        .div_scalar(lx.max(ly).max(lz))
         .mul_scalar(2.0)
         .sub_scalar(1.0);
     let boundary = pin_bottom_perimeter_inner(nx, ny, nz, &device);
-    let bf = top_load_inner_x_ramp(nx, ny, nz, 50.0, plate.dx, plate.dy, 0.2, &device);
-    let opt = TopologyOptimizer::new(0.15, 3.0, 64, &device);
+    let bf = top_load_inner(nx, ny, nz, 50.0, plate.dx, plate.dy, &device);
+    let scale = env::var("UMST_SHELL_DENSITY_SCALE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.42_f32);
+    let opt = if (scale - 1.0).abs() < 1e-6 {
+        TopologyOptimizer::new(0.15, 3.0, 64, &device)
+    } else {
+        topology_optimizer_scaled(0.15, 3.0, 64, scale, &device)
+    };
     let rho = opt
         .density_net
         .forward_batched(coords.clone())
@@ -1212,9 +1233,9 @@ fn h5_density_net_compliance_grad_9x8x2() {
         e_min: 200e3,
     };
     let cg = MechanicsInnerLoopConfig {
-        max_cg_iterations: 2000,
-        cg_tolerance: HEX_PCG_REL_TOL_F32,
-        pcg_tolerance: HEX_PCG_REL_TOL_F32,
+        max_cg_iterations: HEX_PCG_MAX_ITER_DEFAULT_STRIATUS,
+        cg_tolerance: HEX_PCG_REL_TOL_F64,
+        pcg_tolerance: HEX_PCG_REL_TOL_F64,
         use_preconditioner: true,
         max_equilibrium_substeps: 1,
     };
@@ -1230,16 +1251,158 @@ fn h5_density_net_compliance_grad_9x8x2() {
         assert_eq!(audit.first_bad_stage, None, "{audit:?}");
     }
     let grads = surrogate.backward();
+    let rho_grad_l2 = rho
+        .grad(&grads)
+        .map(|g| tensor_grad_l2_inner(&g).0)
+        .unwrap_or(f32::NAN);
     let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
     let (comp_l2, comp_max, nf_layers) =
         autodiff_param_grad_audit(&grads_params, &opt.density_net);
     eprintln!(
-        "h5_density_net_compliance_grad_9x8x2: param_l2={comp_l2:.6} param_max={comp_max:.6} layer_nf={}",
+        "h5_striatus_density_net_compliance_grad_40x40x4: scale={scale} rho_grad_l2={rho_grad_l2:.6} \
+param_l2={comp_l2:.6} param_max={comp_max:.6} sens_l2={:.6} layer_nf={}",
+        vec_l2_norm(&diag.nodal_sensitivity),
         nf_layers.len()
     );
     assert!(
-        comp_l2 > 0.0,
-        "compliance surrogate must backprop to density-net params (l2={comp_l2})"
+        comp_l2 > 0.0 && rho_grad_l2.is_finite() && rho_grad_l2 > 0.0,
+        "Striatus-scale compliance must backprop (param_l2={comp_l2} rho_grad_l2={rho_grad_l2})"
+    );
+}
+
+fn h5_density_net_compliance_grad_probe(
+    nx: usize,
+    ny: usize,
+    nz: usize,
+    lx: f32,
+    ly: f32,
+    lz: f32,
+    weight_scale: Option<f32>,
+    hidden_dim: usize,
+    tag: &str,
+) -> (f32, f32, f32) {
+    <B as BackendTrait>::seed(42);
+    let device = Default::default();
+    let plate = ExtrudedPlateMechanics {
+        nx,
+        ny,
+        nz,
+        dx: lx / nx as f32,
+        dy: ly / ny as f32,
+        dz: lz / nz as f32,
+    };
+    let n = plate.n_nodes();
+    let coord_scale = lx.max(ly).max(lz);
+    let coords = plate
+        .coords_bn3::<B>(&device)
+        .div_scalar(coord_scale)
+        .mul_scalar(2.0)
+        .sub_scalar(1.0);
+    let boundary = pin_bottom_perimeter_inner(nx, ny, nz, &device);
+    let use_uniform_load = matches!(
+        env::var("UMST_H5_PROBE_UNIFORM_LOAD").as_deref(),
+        Ok("1")
+    );
+    let bf = if nx >= 32 && use_uniform_load {
+        top_load_inner(nx, ny, nz, 50.0, plate.dx, plate.dy, &device)
+    } else {
+        top_load_inner_x_ramp(nx, ny, nz, 50.0, plate.dx, plate.dy, 0.2, &device)
+    };
+    let opt = match weight_scale {
+        Some(s) => topology_optimizer_scaled(0.15, 3.0, hidden_dim, s, &device),
+        None => TopologyOptimizer::new(0.15, 3.0, hidden_dim, &device),
+    };
+    let rho = opt
+        .density_net
+        .forward_batched(coords.clone())
+        .reshape([1, n, 1]);
+    let rho_flat = rho.clone().into_data().value;
+    let (rmin, rmax, rmean) = rho_raw_range(&rho_flat);
+    let mat = SimpElasticMaterial {
+        e0: 200e6,
+        nu: 0.2,
+        p: 3.0,
+        e_min: 200e3,
+    };
+    let cg = MechanicsInnerLoopConfig {
+        max_cg_iterations: if nx >= 32 {
+            HEX_PCG_MAX_ITER_DEFAULT_STRIATUS
+        } else {
+            2000
+        },
+        cg_tolerance: if nx >= 32 {
+            HEX_PCG_REL_TOL_F64
+        } else {
+            HEX_PCG_REL_TOL_F32
+        },
+        pcg_tolerance: if nx >= 32 {
+            HEX_PCG_REL_TOL_F64
+        } else {
+            HEX_PCG_REL_TOL_F32
+        },
+        use_preconditioner: true,
+        max_equilibrium_substeps: 1,
+    };
+    let (surrogate, c_raw, diag) = q1_compliance_with_diagnostics(
+        rho.clone(),
+        &plate,
+        boundary.clone(),
+        bf.clone(),
+        mat,
+        &cg,
+    );
+    if let Some(audit) = &diag.finite_audit {
+        assert_eq!(audit.first_bad_stage, None, "{tag}: {audit:?}");
+    }
+    let sens_l2 = vec_l2_norm(&diag.nodal_sensitivity);
+    let grads = surrogate.backward();
+    let rho_grad_l2 = rho
+        .grad(&grads)
+        .map(|g| {
+            let v = g.into_data().value;
+            v.iter().map(|x| x * x).sum::<f32>().sqrt()
+        })
+        .unwrap_or(f32::NAN);
+    let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
+    let (param_l2, param_max, nf_layers) =
+        autodiff_param_grad_audit(&grads_params, &opt.density_net);
+    eprintln!(
+        "{tag}: rho=[{rmin:.6},{rmax:.6}] mean={rmean:.6} sens_l2={sens_l2:.6} c_raw={c_raw:.6} \
+rho_grad_l2={rho_grad_l2:.6} param_l2={param_l2:.6} param_max={param_max:.6} layer_nf={}",
+        nf_layers.len()
+    );
+    (param_l2, rho_grad_l2, sens_l2)
+}
+
+/// H5: density-net → Q1 compliance AD chain on quick grid (isolates grad plumbing from projections).
+#[test]
+fn h5_density_net_compliance_grad_9x8x2() {
+    let (param_l2, _, _) =
+        h5_density_net_compliance_grad_probe(9, 8, 2, 0.8, 0.8, 0.1, None, 64, "h5_9x8x2");
+    assert!(
+        param_l2 > 0.0,
+        "compliance surrogate must backprop to density-net params (l2={param_l2})"
+    );
+}
+
+/// Striatus-scale grad probe: 40×40×4, one forward+backward (matches full harness DensityNet init).
+#[test]
+#[ignore = "slow: cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental h5_density_net_compliance_grad_40x40x4_striatus --release -- --ignored --nocapture"]
+fn h5_density_net_compliance_grad_40x40x4_striatus() {
+    let (param_l2, _, sens_l2) = h5_density_net_compliance_grad_probe(
+        40,
+        40,
+        4,
+        4.0,
+        4.0,
+        0.1,
+        None,
+        64,
+        "h5_40x40x4_striatus",
+    );
+    assert!(
+        param_l2 > 0.0 && sens_l2 > 0.0,
+        "Striatus-scale compliance AD must reach density-net (param_l2={param_l2} sens_l2={sens_l2})"
     );
 }
 
