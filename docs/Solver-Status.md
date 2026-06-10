@@ -67,7 +67,27 @@ First divergent metric at Striatus scale: **forward PCG never meets tolerance** 
 | PROBE 2 — f32/f64 matvec | **pass** | max rel err **5.1×10⁻⁸** |
 | PROBE 3 — dense K_ff Cholesky | **singular** | n_free=708; Cholesky fails (min pivot **2.3×10⁻¹⁰**); ρ_cgls≈1.0 vs pcg_obs=0.937 |
 
-**Q1-hex spike (2026-06-10, `q1_hex_harness_roof_spike`, same 9×8×2 / pins / 50 Pa roof):** **GO** — `c0≈3.24×10⁻⁴`, `pcg_rel≈9.6×10⁻⁵`, `eq_rel≈9.6×10⁻⁵` (tol 10⁻⁴).
+**Q1-hex spike (2026-06-10, `q1_hex_harness_roof_spike`, same 9×8×2 / pins / 50 Pa roof):** **GO** — `c0≈3.24×10⁻⁴`, `pcg_rel≈8.4×10⁻⁵`, `eq_rel≈9.6×10⁻⁵` (tol **`HEX_PCG_REL_TOL_F32`** = 10⁻⁴).
+
+**PCG 2×2 bisection (2026-06-10, `q1_hex_pcg_bisect_probe`, 9×8×2, tol 10⁻⁴, Jacobi):**
+
+| Arm | loop | nondim | iters | r_recursive | r_true | verdict |
+|-----|------|--------|-------|-------------|--------|---------|
+| A | original | OFF | 58 | 8.4×10⁻⁵ | 9.6×10⁻⁵ | baseline — recursive self-report drifts from true |
+| B | original | ON | 58 | 9.6×10⁻⁵ | 1.04×10⁻⁴ | **trajectory-identical to A** (`|Δu|∞≈1.6×10⁻¹⁰`) — nondim is exact no-op |
+| C | refresh+masked p | OFF | 59 | 8.1×10⁻⁵ | 8.1×10⁻⁵ | rewrite OK at quick scale; r_rec = r_true |
+| D | refresh+masked p | ON | 59 | 6.9×10⁻⁵ | 6.9×10⁻⁵ | bundled state; r_rec = r_true |
+
+**Tolerance policy (`q1_hex_elasticity`, 2026-06-10 re-ground):** both lanes **`HEX_PCG_REL_TOL_F32=HEX_PCG_REL_TOL_F64=1e-4`**. Rationale: (i) **sensitivity fidelity** — adjoint compliance gradients are dominated by equilibrium solve error; tightening below the measured κ·ε floor at 40×40×4 buys no gradient signal ([Bendsøe & Sigmund 2003](https://doi.org/10.1007/978-3-662-05086-6), Ch. 1 inexact-solve TO practice); (ii) **attainable floor** — full f64 PCG lane (`eq_rel` binding) still reports true **`rel≈1e-4`** at Striatus N after ~2k iters while recursive self-report can lie by orders of magnitude (arm-A table below); **`1e-6`** overshoots that floor and caused false **`pcg_rel` pass / `eq_rel` fail** on smoke. Step C gates assert **`eq_rel`** against the **lane** tol (f64 harness uses **`HEX_PCG_REL_TOL_F64`**). Production solver: **arm A** (original recursive loop + nondim).
+
+**Unit sanity @ 40×40×4 (`q1_hex_unit_sanity_striatus_n`, 2026-06-10):** `rel = ‖Pr‖/‖Pf‖` with both in **N** (masked nodal force components). **Not** a mixed-unit absolute dressed as relative.
+
+| Arm | tol | iters | ‖Pf‖ [N] | ‖Pr‖ [N] | rel | r_recursive |
+|-----|-----|-------|----------|----------|-----|-------------|
+| A (original, no nondim) | 1e-4 | 1972 | 19.75 | 4.70 | **2.38×10⁻¹** | 9.3×10⁻⁵ |
+| D (refresh+masked, nondim) | 1e-6 | 10000 | 19.75 | 8.37×10⁵ | **4.24×10⁴** | 4.24×10⁴ |
+
+**4.2×10⁴ verdict:** true dimensionless divergence — iterate residual force ~**836 kN** against ~**20 N** RHS (≈4×10⁴× worse than equilibrium). **Incomplete nondim refuted** for that number (`‖Pf‖` matches arm A). **Arm A @ Striatus:** recursive self-report **lies** (9×10⁻⁵ vs true **0.24**) — explains smoke `pcg_rel≈1e-6` / `eq_rel≈0.24` split.
 
 **Harness swap (2026-06-10):** `shell_topology_rib_pattern_{quick,full_v04}` forward+adjoint → **`AdjointComplianceQ1Hex`**; Step C **green** on quick CI. **Perf:** Striatus **40×40×4** only with `--release` (`#[cfg(debug_assertions)]` guard on full harness); mechanism probes stay **9×8×2**; `pre-gate metrics` logs **`pcg_iter_final`**. **Stale debug smoke (discarded):** outer 1/20 hit **`pcg_iter=2000`** cap with **`eq_rel_res≈0.21`** while **`pcg_rel_res≈5×10⁻⁵`** — slow-converging equilibrium residual, not the bar-network **0.94** incompatible-RHS floor. **Release smoke 20-outer (2026-06-10, `--release`, `MAX_CG=10000`):** **FAILED** Step C **`eq_rel_res`** gate — final **`eq_rel≈0.24`** vs tol **1e-6**; **`pcg_rel≈1e-6`** passes; **`pcg_iter` max ≈5236** (under cap). `rho_raw` barely leaves **[0.501,0.501]**; **`xy_var=0`**. Not the bar **0.94** floor — PCG/equilibrium residual metrics **diverge at Striatus N** (investigate before 200-outer). **λ_g forbidden.**
 
