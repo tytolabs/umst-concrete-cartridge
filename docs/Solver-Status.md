@@ -45,10 +45,31 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix the same comm
 
 | Scale | outer | `rho_raw` | `pcg_rel_res` | `eq_rel_res` | `xy_var` | `adam_skip` |
 |-------|-------|-----------|---------------|--------------|----------|-------------|
-| quick 9×8×2 (healthy CI) | 24/24 | [0.489,0.493] | **1.1e9** | **1.1e9** | 3.1e-5 | 0 |
+| quick 9×8×2 (pre-H4; solver convergence **never asserted** before 2026-06-10) | 24/24 | [0.489,0.493] | **1.1e9** | **1.1e9** | 3.1e-5 | 0 |
 | full 40×40×4 | 20/20 | [0.501,0.501] | **7.1e9** | **7.1e9** | 0 | 1/20 |
 
-First divergent metric at Striatus scale: **forward PCG never meets tolerance** (`pcg_iter` pinned at cap; `pcg_rel_res` ≫ 1). Discrete `sens_l2` explodes accordingly; field stays uniform → no rib signal. Next: harden bar-network PCG / conditioning (`UMST_SHELL_MAX_CG`, `E_min`, preconditioner) before any λ_g.
+First divergent metric at Striatus scale: **forward PCG never meets tolerance** (`pcg_iter` pinned at cap; `pcg_rel_res` ≫ 1). Discrete `sens_l2` explodes accordingly; field stays uniform → no rib signal.
+
+**H4 fix sequence (2026-06-10, in progress on `b6-h4-diagnosis`):**
+
+| Step | Status | Notes |
+|------|--------|-------|
+| A — operator probes | **verified** | `bar_network_operator_step_a`: symmetry, PSD, 2-node rel_res metric, 9-node axial manufactured |
+| B — scale / solve lane | **resolved (Q1 hex)** | bar-network mechanism retired; harness uses `AdjointComplianceQ1Hex` |
+| C — permanent gate | **green (quick)** | `shell_topology_rib_pattern_quick` PCG/eq gates pass on Q1 hex; full **40×40×4** pending smoke |
+
+**Roof-traction mechanism probes (2026-06-10, `bar_network_roof_mechanism_probe`, 9×8×2 harness):**
+
+| Probe | Result | Key metrics |
+|-------|--------|-------------|
+| PROBE 1 — mechanism modes + floor | **mechanism confirmed** | interior column z-slide κ=0; CGLS min-residual floor ρ≈1.0; bar PCG rel_res **0.937** @ 2000 iters (`use_preconditioner=false`) |
+| PROBE 1b — perimeter column point load | **well-posed** | pcg_rel≈0, 2 iters |
+| PROBE 2 — f32/f64 matvec | **pass** | max rel err **5.1×10⁻⁸** |
+| PROBE 3 — dense K_ff Cholesky | **singular** | n_free=708; Cholesky fails (min pivot **2.3×10⁻¹⁰**); ρ_cgls≈1.0 vs pcg_obs=0.937 |
+
+**Q1-hex spike (2026-06-10, `q1_hex_harness_roof_spike`, same 9×8×2 / pins / 50 Pa roof):** **GO** — `c0≈3.24×10⁻⁴`, `pcg_rel≈9.6×10⁻⁵`, `eq_rel≈9.6×10⁻⁵` (tol 10⁻⁴).
+
+**Harness swap (2026-06-10):** `shell_topology_rib_pattern_{quick,full_v04}` forward+adjoint → **`AdjointComplianceQ1Hex`**; Step C **green** on quick CI. **Perf:** Striatus **40×40×4** only with `--release` (`#[cfg(debug_assertions)]` guard on full harness); mechanism probes stay **9×8×2**; `pre-gate metrics` logs **`pcg_iter_final`**. **Stale debug smoke (discarded):** outer 1/20 hit **`pcg_iter=2000`** cap with **`eq_rel_res≈0.21`** while **`pcg_rel_res≈5×10⁻⁵`** — slow-converging equilibrium residual, not the bar-network **0.94** incompatible-RHS floor. Next: **20-outer** release smoke (`UMST_SHELL_MAX_CG=10000`). **λ_g forbidden.**
 
 **`gates_track_b8` path (Track L / B8 rollup):** boolean **`gates_track_b8_all_pass`** lives in **`notebooks/_artifacts/striatus_shell_v0.4.print_ready.json`** (repo root **`umst-concrete-cartridge/`**). It is emitted by **`notebooks/export_print_ready.py`**; **`notebooks/tests/test_print_ready.py`** (or **`python notebooks/test_print_ready.py`**) reads the same field — **`test_print_ready_track_b8_topology_gates`** **skips** when false unless **`UMST_REQUIRE_B8=1`**. **Profiling:** peak GPU VRAM or unified-memory figures are **not** part of default CI or this status table — cite them only from an explicit profiling task or hardware note. Optional log template: [`VRAM.md`](VRAM.md).
 
