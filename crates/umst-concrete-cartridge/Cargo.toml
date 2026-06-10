@@ -58,7 +58,7 @@ burn = { version = "=0.13.2", default-features = false, features = ["autodiff", 
 burn-ndarray = "0.13.0"
 umst-manifold = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
-toml = "0.8"
+toml = "1.1"
 time = "0.3.47"
 bincode = "=2.0.0-rc.3"
 rand = "0.8"
