@@ -28,7 +28,7 @@ cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern \
   --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored
 ```
 
-Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_SHELL_ROOF_RAMP=0`**. Default when unset: x-ramp on at **`UMST_SHELL_ROOF_RAMP_STRENGTH`** (alias **`UMST_SHELL_ROOF_RAMP_F`**, default **0.2**). Final **`acceptance diag`** / pre-gate line logs ramp flag, **F**, **`vf_final`**, **`vf_err`**, and **`z_rho_mean=[…]`** (mean ρ per z-layer).
+Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_SHELL_ROOF_RAMP=0`**. Default when unset: x-ramp on at **`UMST_SHELL_ROOF_RAMP_STRENGTH`** (alias **`UMST_SHELL_ROOF_RAMP_F`**, default **0.2**). **Self-weight:** default **on** (`UMST_SHELL_SELF_WEIGHT` unset); set **`UMST_SHELL_SELF_WEIGHT=0`** to disable gravity. **Discretization audit (before 200-outer):** `cargo test -p umst-manifold --features mechanics-voigt-cauchy --test mechanics_analytic uniform_rho_q1_hex_compliance_vs_kirchhoff_ssss_audit --release -- --nocapture` — read **`stiff_bias_pct`** in the VERIFY line. Final **`acceptance diag`** / pre-gate line logs ramp flag, **F**, **`vf_final`**, **`vf_err`**, and **`z_rho_mean=[…]`** (mean ρ per z-layer).
 
 **200-outer verdict (pre-registered):** if **greyness + c1 pass** but **xy_var fails** with **sandwich z-profile** → insufficient load asymmetry, not optimizer bug (tune ramp **F** before `λ_xy`). If **xy_var fails** with **greyness/c1 also failing** → report as optimizer/volume path issue. **Greyness ≪1 at β≲2** implies DensityNet saturation, not Heaviside; always check **`vf_err`** after η-bisection.
 
@@ -44,6 +44,7 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 | 2026-06-10 | **aborted** @ outer 20, 200 planned, `UMST_SHELL_HELM=0`, η-bisect on | 1.000 | 0.844 | — | **ABORT** — pre_vol≥0.95, Adam NaN skips; would land ~0.51 / `xy_var≈0` (same as 2026-05-11) |
 | 2026-06-10 | **smoke** 1-outer H4 diag pre-fix, `UMST_SHELL_H4_DIAG=1`, `b6-h4-diagnosis`, `--release` | 0.954 | — | — | **FAIL** VF band; Step C **green**; **`grad_l2=0`** (`INIT_SCALE=0.05` + uniform sens cancellation) |
 | 2026-06-10 | **smoke** 1-outer H4 diag post-fix, `INIT_SCALE=1.0`, `--release` | 0.940 | — | **0.934** | Step C **green** (`eq_rel≈9.7×10⁻⁵`); **`grad_l2≈0.934`**; VF band still fails (1-outer smoke) |
+| 2026-06-10 | **smoke 5-outer** post-volume-fix + **self-weight ON**, in-loop AL, terminal η @ β=32, `a5fe90c`, `--release` | 0.510 | 0.293 (terminal) | 0.293 | **PASS** smoke gate — `vf=0.1501`, `eq_rel≈9.8×10⁻⁵` all outers, `max_grad_l2=6.28`, `beta_last=1.087` (200-outer schedule), `xy_var=0.054`; Kirchhoff **`stiff_bias_pct≈34%`** @ 16²×4 (discretization caveat for §9 compliance) |
 
 **H4 diagnosis (2026-06-10, `UMST_SHELL_H4_DIAG=1`):** primary hypothesis — compliance adjoint / sensitivity pathology at Striatus N. Instrumentation logs per-outer `sens_l2`, `sens_var`, `pcg_iter`, `pcg_rel_res`, `eq_rel_res`, `xy_var`, `adam_skipped` (see harness). **H1 REFUTED:** `greyness_pre_vol≈0.99` is uniform ρ≈0.5 **before** projection; post 0.510=`4·vf·(1−vf)` is degenerate constant-field signature (identical under λ-shift and η-bisect). **λ_g forbidden** for this failure mode.
 

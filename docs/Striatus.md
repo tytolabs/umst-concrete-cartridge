@@ -77,6 +77,25 @@ The UMST manifold supplies differentiable mechanics and topology hooks; the conc
 
 The differentiable stack matters for research workflows: gradients of compliance-like objectives with respect to design variables are the workhorse of first-order optimisers (here, Adam on the density field). That is not the same as claiming that every local minimum is globally optimal, nor that the discrete voxel model matches a full shell theory with drilling rotations and transverse shear refinements. The demo is a **showcase** aligned with cited numerical practice [Lazarov & Sigmund 2011; Wang, Lazarov & Sigmund 2011; Bruyneel & Duysinx 2005; Bertsekas 1996; Sigmund & Maute 2013], not a substitute for project-specific peer review.
 
+## Voxel grid, slab proportions, and fabrication mapping
+
+The **B6** harness (`shell_topology_rib_pattern_full_v04`) fixes a **4 m × 4 m × 0.1 m** extruded brick at **40 × 40 × 4** Q1-hex cells: in-plane spacing **0.1 m**, through-thickness spacing **0.025 m**, aspect ratio **L/t ≈ 40**, and **nz = 4** layers. That grid is a **research-scale** discretisation chosen for overnight CPU on a laptop-class machine, not a literal 1:1 print voxel for the Venice footbridge.
+
+| Quantity | B6 harness | Printed-slab follow-up (moderate track) |
+|----------|------------|----------------------------------------|
+| Span **L** | 4 m | same order (demo slab) |
+| Thickness **t** | 0.1 m (**L/t ≈ 40**) | **0.3 m** demo slab (**L/t ≈ 13**) |
+| **nz** | 4 (**Δz ≈ 0.025 m**) | **8** (**Δz ≈ 0.0375 m**, **~2.7:1** in-plane:through-thickness element aspect) |
+| Fabrication | export JSON + **12 mm** nozzle / **30°** overhang gates on marching-cubes STL | same policy; finer voxels only where the slicer and mix allow |
+
+**Why reconsider proportions:** at **L/t ≈ 40** with **nz = 4**, equal-order Q1 hex bending is shear-locking prone and offers little room for genuine through-thickness topology (a “sandwich” in **z** is often a discretisation artefact, not a rib). A **0.3 m**-thick demo slab with **nz = 8** is closer to a printable ribbed floor plate: less locking, more degrees of freedom for load paths that carry **self-weight** (see **`UMST_SHELL_SELF_WEIGHT`**, default **on** in the full harness) as well as roof traction.
+
+**Discretization audit:** before interpreting B6 compliance gates, run the manufactured Kirchhoff benchmark  
+`cargo test -p umst-manifold --features mechanics-voigt-cauchy --test mechanics_analytic uniform_rho_q1_hex_compliance_vs_kirchhoff_ssss_audit -- --nocapture`  
+and read the printed **`stiff_bias_pct`** (integration scheme: **2×2×2 Gauss**, **B-bar** volumetric, **selective-reduced** transverse shear). If **> 20–30%**, compliance is measuring mesh stiffness as much as design.
+
+**Pending:** Helmholtz filter on (**`UMST_SHELL_HELM=1`**) to tie minimum feature size to a length-scale parameter ([Lazarov & Sigmund 2011]).
+
 ## Reading order for newcomers
 
 1. Skim this essay top-to-bottom for the historical arc.
