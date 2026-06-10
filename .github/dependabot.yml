@@ -6,8 +6,26 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     labels: ["dependencies"]
+    ignore:
+      - dependency-name: "burn"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "burn-ndarray"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "bincode"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "rand"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "jsonschema"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
     labels: ["ci"]
+    ignore:
+      - dependency-name: "docker/build-push-action"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "docker/login-action"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "actions/setup-python"
+        update-types: ["version-update:semver-major"]
