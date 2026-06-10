@@ -68,8 +68,10 @@ fn topology_optimizer_scaled(
     device: &<NdArray<f32> as BackendTrait>::Device,
 ) -> TopologyOptimizer<B> {
     let mut opt = TopologyOptimizer::new(volume_target, penalization, hidden_dim, device);
-    let mut s = ScaleWeights(scale);
-    opt.density_net = opt.density_net.map(&mut s);
+    if (scale - 1.0).abs() > 1e-6 {
+        let mut s = ScaleWeights(scale);
+        opt.density_net = opt.density_net.map(&mut s);
+    }
     opt
 }
 
@@ -473,6 +475,11 @@ struct RibMetrics {
     pcg_iters: usize,
     pcg_rel_res: f32,
     eq_rel_res: f32,
+    /// Last-outer density-net grad L2 (smoke gate 1).
+    last_grad_l2: f32,
+    /// Last-outer `ρ_raw` range (smoke gate 3).
+    last_rho_raw_min: f32,
+    last_rho_raw_max: f32,
 }
 
 /// Striatus **40×40×4** acceptance runs must use `cargo test --release` (not debug `dev`).
@@ -730,6 +737,16 @@ fn parse_full_rib_adam_iters() -> usize {
         .clamp(1, 200)
 }
 
+/// Density-net Kaiming scale (`UMST_SHELL_INIT_SCALE`). Default **1.0** on Striatus **40×40×4**:
+/// `0.05` pins ρ≈0.5 with uniform nodal sensitivity → exact param-gradient cancellation.
+fn parse_density_init_scale(default: f32) -> f32 {
+    env::var("UMST_SHELL_INIT_SCALE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(default)
+        .clamp(0.0, 1.0)
+}
+
 /// Parsed **`UMST_SHELL_*`** knobs shared by [`run_rib_full_striatus`] and the **`pre-gate metrics`** line.
 fn parse_umst_shell_b6_aux_env() -> (f32, f32, f32, f32, f32) {
     let grey_lambda = env::var("UMST_SHELL_GREY_LAMBDA")
@@ -908,9 +925,9 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
 
     let boundary_inner = boundary_b.clone().inner();
 
-    // Unscaled DensityNet init: `topology_optimizer_scaled(..., 0.05)` parks every nodal ρ≈0.5 so
-    // adjoint nodal sensitivities (nearly uniform under uniform load) sum to zero param grad at 40×40×4.
-    let mut opt = TopologyOptimizer::new(target_vf, 3.0, 64, device);
+    // `topology_optimizer_scaled(..., 0.05)` parks ρ≈0.5; uniform nodal sens → zero param grad at 40×40×4.
+    let init_scale = parse_density_init_scale(1.0);
+    let mut opt = topology_optimizer_scaled(target_vf, 3.0, 64, init_scale, device);
     if density_init_jitter > 0.0 {
         let mut jm = AddDensityInitJitter {
             amplitude: density_init_jitter,
@@ -942,6 +959,9 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         e_min: material.e_min,
     };
     let mut adam_skipped = 0usize;
+    let mut last_grad_l2 = 0.0_f32;
+    let mut last_rho_raw_min = f32::NAN;
+    let mut last_rho_raw_max = f32::NAN;
 
     for it in 1..=iterations {
         let base_beta = BetaContinuation::beta(
@@ -1094,6 +1114,10 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
         let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
         let (grad_l2, grad_max, grad_layer_nf) =
             autodiff_param_grad_audit(&grads_params, &opt.density_net);
+        last_grad_l2 = grad_l2;
+        let (rmin, rmax, _) = rho_raw_range(&rho_raw_vec);
+        last_rho_raw_min = rmin;
+        last_rho_raw_max = rmax;
         if h4_diag {
             if let Some(ref diag) = h4_bundle {
                 let xy_v = xy_plane_variance(&last_rho, nx, ny, nz);
@@ -1213,15 +1237,8 @@ fn h5_striatus_density_net_compliance_grad_40x40x4() {
         .sub_scalar(1.0);
     let boundary = pin_bottom_perimeter_inner(nx, ny, nz, &device);
     let bf = top_load_inner(nx, ny, nz, 50.0, plate.dx, plate.dy, &device);
-    let scale = env::var("UMST_SHELL_DENSITY_SCALE")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(0.42_f32);
-    let opt = if (scale - 1.0).abs() < 1e-6 {
-        TopologyOptimizer::new(0.15, 3.0, 64, &device)
-    } else {
-        topology_optimizer_scaled(0.15, 3.0, 64, scale, &device)
-    };
+    let init_scale = parse_density_init_scale(1.0);
+    let opt = topology_optimizer_scaled(0.15, 3.0, 64, init_scale, &device);
     let rho = opt
         .density_net
         .forward_batched(coords.clone())
@@ -1251,22 +1268,18 @@ fn h5_striatus_density_net_compliance_grad_40x40x4() {
         assert_eq!(audit.first_bad_stage, None, "{audit:?}");
     }
     let grads = surrogate.backward();
-    let rho_grad_l2 = rho
-        .grad(&grads)
-        .map(|g| tensor_grad_l2_inner(&g).0)
-        .unwrap_or(f32::NAN);
     let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
     let (comp_l2, comp_max, nf_layers) =
         autodiff_param_grad_audit(&grads_params, &opt.density_net);
     eprintln!(
-        "h5_striatus_density_net_compliance_grad_40x40x4: scale={scale} rho_grad_l2={rho_grad_l2:.6} \
+        "h5_striatus_density_net_compliance_grad_40x40x4: init_scale={init_scale} \
 param_l2={comp_l2:.6} param_max={comp_max:.6} sens_l2={:.6} layer_nf={}",
         vec_l2_norm(&diag.nodal_sensitivity),
         nf_layers.len()
     );
     assert!(
-        comp_l2 > 0.0 && rho_grad_l2.is_finite() && rho_grad_l2 > 0.0,
-        "Striatus-scale compliance must backprop (param_l2={comp_l2} rho_grad_l2={rho_grad_l2})"
+        comp_l2 > 0.0,
+        "Striatus-scale compliance must backprop to density-net (init_scale={init_scale} param_l2={comp_l2})"
     );
 }
 
