@@ -1176,6 +1176,73 @@ fn shell_topology_rib_pattern_quick() {
     assert!(m.c1 <= m.c0 * 1.45_f32, "compliance {:?}", (m.c0, m.c1));
 }
 
+/// H5: density-net → Q1 compliance AD chain on quick grid (isolates grad plumbing from projections).
+#[test]
+fn h5_density_net_compliance_grad_9x8x2() {
+    <B as BackendTrait>::seed(42);
+    let device = Default::default();
+    let nx = 9usize;
+    let ny = 8usize;
+    let nz = 2usize;
+    let plate = ExtrudedPlateMechanics {
+        nx,
+        ny,
+        nz,
+        dx: 0.8 / nx as f32,
+        dy: 0.8 / ny as f32,
+        dz: 0.1 / nz as f32,
+    };
+    let n = plate.n_nodes();
+    let coords = plate
+        .coords_bn3::<B>(&device)
+        .div_scalar(0.8_f32)
+        .mul_scalar(2.0)
+        .sub_scalar(1.0);
+    let boundary = pin_bottom_perimeter_inner(nx, ny, nz, &device);
+    let bf = top_load_inner_x_ramp(nx, ny, nz, 50.0, plate.dx, plate.dy, 0.2, &device);
+    let opt = TopologyOptimizer::new(0.15, 3.0, 64, &device);
+    let rho = opt
+        .density_net
+        .forward_batched(coords.clone())
+        .reshape([1, n, 1]);
+    let mat = SimpElasticMaterial {
+        e0: 200e6,
+        nu: 0.2,
+        p: 3.0,
+        e_min: 200e3,
+    };
+    let cg = MechanicsInnerLoopConfig {
+        max_cg_iterations: 2000,
+        cg_tolerance: HEX_PCG_REL_TOL_F32,
+        pcg_tolerance: HEX_PCG_REL_TOL_F32,
+        use_preconditioner: true,
+        max_equilibrium_substeps: 1,
+    };
+    let (surrogate, _c, diag) = q1_compliance_with_diagnostics(
+        rho.clone(),
+        &plate,
+        boundary.clone(),
+        bf.clone(),
+        mat,
+        &cg,
+    );
+    if let Some(audit) = &diag.finite_audit {
+        assert_eq!(audit.first_bad_stage, None, "{audit:?}");
+    }
+    let grads = surrogate.backward();
+    let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
+    let (comp_l2, comp_max, nf_layers) =
+        autodiff_param_grad_audit(&grads_params, &opt.density_net);
+    eprintln!(
+        "h5_density_net_compliance_grad_9x8x2: param_l2={comp_l2:.6} param_max={comp_max:.6} layer_nf={}",
+        nf_layers.len()
+    );
+    assert!(
+        comp_l2 > 0.0,
+        "compliance surrogate must backprop to density-net params (l2={comp_l2})"
+    );
+}
+
 #[test]
 #[ignore = "slow B6: UMST_SHELL_RIB_PATTERN=1 cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern --features solver-experimental shell_topology_rib_pattern_full_v04 --release -- --ignored (optional UMST_SHELL_RIB_FULL_ITERS=1..200 for smoke)"]
 fn shell_topology_rib_pattern_full_v04() {
