@@ -18,6 +18,4 @@ mt-build  = "build --features mac-fast --release"
 mt-check  = "check --features mac-fast"
 mt-shell  = "run --release -p umst-concrete-cartridge --example optimize_shell_3d --features mac-fast"
 
-# MaOS monorepo: patch git dep to sibling checkout (see config.toml.example).
-[patch."https://github.com/tytolabs/umst-manifold.git"]
-umst-manifold = { path = "../umst-manifold" }
+# CI uses git pin from workspace Cargo.toml. For local monorepo patch, copy config.toml.example.
