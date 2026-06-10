@@ -1,0 +1,15 @@
+{
+  "bundle_slug": "v1_tyto_mortar_prediction_bundle",
+  "created_at": "2026-06-10",
+  "commands": {
+    "tyto_mortar": "umst predict --profile tyto_mortar --input input_mix.json --schema-version v2",
+    "default_contrast": "umst predict --profile default --input input_mix.json --schema-version v2"
+  },
+  "results_mpa_24h": {
+    "tyto_mortar_profile": 28.26,
+    "default_profile": 53.82
+  },
+  "sanity_note": "default profile ~53.8 MPa is high for mortar; always pass --profile tyto_mortar for this mix.",
+  "v3_gate": "CLOSED",
+  "v3_rehearsal": "calibration/v3_pipeline_rehearsal/"
+}

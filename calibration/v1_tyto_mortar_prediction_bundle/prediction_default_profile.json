@@ -1,0 +1,145 @@
+{
+  "axioms": [
+    "physicalSecondLaw"
+  ],
+  "calibration_model": "powers_gel_space",
+  "calibration_profile": "default",
+  "compressive_strength_mpa": 53.82371139526367,
+  "degree_of_hydration": 0.9137817621231079,
+  "formal_anchor": "lean://umst-formal/Lean/Powers.lean#powers_monotone",
+  "gwp_kg_co2_eq_per_m3": 333.34722900390625,
+  "optical": {
+    "lwir_emissivity": 0.8815737366676331,
+    "profile": "plain_portland",
+    "schema_version": "optical.v1",
+    "solar_reflectance": 0.29992997646331787,
+    "thickness_m": 0.05000000074505806,
+    "uv_absorption": 0.8352458477020264
+  },
+  "physics_pipeline": {
+    "representation": "batch_collapsed",
+    "schema_version": "physics_pipeline.v1",
+    "stages": [
+      {
+        "id": "hydration_degree",
+        "status": "executed"
+      },
+      {
+        "id": "packing_density",
+        "status": "executed"
+      },
+      {
+        "id": "porosity_capillary_bulk",
+        "status": "executed"
+      },
+      {
+        "id": "strength_jennings",
+        "status": "executed"
+      },
+      {
+        "id": "colloidal_dlvo",
+        "status": "executed"
+      },
+      {
+        "id": "rheology_yodel",
+        "status": "executed"
+      },
+      {
+        "id": "rheology_chateau_ovarlez",
+        "status": "executed"
+      },
+      {
+        "id": "thermo_heat_rate_proxy",
+        "status": "executed"
+      },
+      {
+        "id": "transport_chloride",
+        "status": "executed"
+      },
+      {
+        "id": "printability",
+        "status": "executed"
+      },
+      {
+        "id": "itz",
+        "status": "executed"
+      },
+      {
+        "id": "chemo_water",
+        "status": "executed"
+      },
+      {
+        "id": "fracture",
+        "status": "executed"
+      },
+      {
+        "id": "nano_enhancement_baseline",
+        "status": "executed"
+      },
+      {
+        "id": "sustainability",
+        "status": "executed"
+      },
+      {
+        "id": "cost_linear_dot",
+        "status": "executed"
+      },
+      {
+        "id": "creep",
+        "status": "executed"
+      },
+      {
+        "id": "set_time",
+        "status": "executed"
+      },
+      {
+        "id": "shrinkage",
+        "status": "executed"
+      },
+      {
+        "id": "freeze_thaw",
+        "status": "executed"
+      },
+      {
+        "detail": "zero polymer-cement ratio on bulk path",
+        "id": "polymer",
+        "status": "skipped_missing_inputs"
+      },
+      {
+        "id": "self_heal",
+        "status": "executed"
+      },
+      {
+        "detail": "zero fiber volume fraction on bulk path",
+        "id": "fiber",
+        "status": "skipped_missing_inputs"
+      }
+    ],
+    "summary": {
+      "chloride_diffusivity_m2_s": 1.5399806487659132e-15,
+      "creep_compliance_1_over_gpa": 0.03865550458431244,
+      "dlvo_potential_kt_minimum": -8105567.5,
+      "effective_water_cement_ratio": 0.44999998807907104,
+      "fracture_toughness_k_ic_mpa_sqrt_m": 27975.615234375,
+      "freeze_thaw_durability_factor": 0.0,
+      "hydration_alpha": 0.9137817621231079,
+      "itz_thickness_microns": 17.794227600097656,
+      "porosity_capillary": 0.1571929007768631,
+      "printability_buildability": 1.0,
+      "printability_extrudability": 0.20000000298023224,
+      "rheology_plastic_viscosity_pa_s": 0.0032704626210033894,
+      "rheology_yield_stress_pa": 565384.6875,
+      "shrinkage_microstrain_proxy": 0.0,
+      "strength_jennings_mpa": 53.82371139526367,
+      "sustainability_cost_usd_per_m3": 77.01499938964844,
+      "sustainability_gwp_kg_co2_m3": 333.34722900390625,
+      "thermo_adiabatic_rise_proxy_c": 45.6890869140625
+    }
+  },
+  "printability_buildability": 1.0,
+  "printability_extrudability": 0.20000000298023224,
+  "safety_margin": 0.07859645038843155,
+  "schema_version": "result.v2",
+  "warnings": [],
+  "yield_stress_pa": 565384.6875
+}

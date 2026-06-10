@@ -1,0 +1,25 @@
+{
+  "WARNING_not_measurements": "Strength values below are SYNTHETIC placeholders for pipeline rehearsal only. S1 proxy-rheology session (2026-06-02) measured τ₀ band / extrusion rheology only — no compressive strength prisms were tested. Do not cite as validation data.",
+  "s1_actual_measurements": "tau_0_band_proxy_rheology_only",
+  "specimen": "tyto_mortar_S1_proxy_rheology_only",
+  "protocol": "V2_specimen_protocol.md",
+  "provenance": "pipeline_rehearsal_synthetic",
+  "points": [
+    {
+      "age_hours": 24,
+      "strength_mpa_placeholder": 17.1,
+      "strength_mpa_predicted_placeholder": 18.4,
+      "sigma_mpa_synthetic": 1.2
+    },
+    {
+      "age_hours": 48,
+      "strength_mpa_placeholder": 22.8,
+      "strength_mpa_predicted_placeholder": 24.1,
+      "sigma_mpa_synthetic": 1.5
+    }
+  ],
+  "rehearsal_notes": [
+    "Placeholder points exercise the V3 notebook/figure path only.",
+    "V3-gate: CLOSED — pending Term 3 cast + real compressive strength tests."
+  ]
+}

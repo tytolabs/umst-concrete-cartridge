@@ -35,11 +35,11 @@ struct CliRoot {
 
 #[derive(Parser)]
 struct Globals {
-    /// Calibration bundle id (`default`, `uci_d1`, `zenodo_ndt`, …) unless `--profile-file` is set.
-    #[arg(long, default_value = "default")]
+    /// Calibration bundle id (`default`, `tyto_mortar`, `uci_d1`, …) unless `--profile-file` is set.
+    #[arg(long, default_value = "default", global = true)]
     profile: String,
     /// Override bundled profile with external TOML (wins over `--profile`).
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", global = true)]
     profile_file: Option<PathBuf>,
 }
 
@@ -459,6 +459,7 @@ fn handle_profiles(cmd: &ProfilesCmd) -> Result<()> {
                 "uhpc" => include_str!("../../../calibration/profiles/uhpc.v1.toml"),
                 "highscm" => include_str!("../../../calibration/profiles/highscm.v1.toml"),
                 "selfheal" => include_str!("../../../calibration/profiles/selfheal.v1.toml"),
+                "tyto_mortar" => include_str!("../../../calibration/profiles/tyto_mortar.v1.toml"),
                 _ => return Err(anyhow::anyhow!("unknown profile")),
             };
             print!("{txt}");

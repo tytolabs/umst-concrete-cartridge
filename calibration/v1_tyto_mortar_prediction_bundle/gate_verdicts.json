@@ -1,0 +1,12 @@
+{
+  "catalog_digest_hex": "ef0ed071fc82bf8ebc8971aeee8d142b4b54e15583f0c575d942cb237474d1dc",
+  "default_gate_catalog_id": "umst.gate.cd_transition",
+  "verdicts": [
+    {
+      "gate": "umst.gate.cd_transition",
+      "admissible": true,
+      "dissipation": 0.0
+    }
+  ],
+  "verify_command": "UMST_REQUIRE_FORMAL_EXPORT=1 bash ../umst-manifold/scripts/verify_umst_stack.sh"
+}
