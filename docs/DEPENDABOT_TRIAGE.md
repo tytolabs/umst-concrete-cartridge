@@ -11,5 +11,9 @@
 | `docker/build-push-action` 7.x | major; Dockerfile workflow unchanged |
 | `docker/login-action` 4.x | major |
 | `actions/setup-python` 6.x | major; CI pins SHA + stable toolchain |
+| `actions/checkout` 6.x | major; workflows SHA-pinned to v4 commit |
+| `sha2` 0.11 | same hybrid-array finalize break as manifold |
+| `toml` 1.x | major API churn |
+| `pyo3` / `pyo3-build-config` 0.28 | major; wheel ABI wave deferred |
 
 Revisit after `umst-manifold` burn/bincode upgrade wave completes.

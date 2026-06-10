@@ -17,6 +17,14 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "jsonschema"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "sha2"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "toml"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pyo3"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pyo3-build-config"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -28,4 +36,6 @@ updates:
       - dependency-name: "docker/login-action"
         update-types: ["version-update:semver-major"]
       - dependency-name: "actions/setup-python"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "actions/checkout"
         update-types: ["version-update:semver-major"]
