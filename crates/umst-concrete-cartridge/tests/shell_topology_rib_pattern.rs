@@ -37,6 +37,7 @@ use umst_manifold::physics::adjoint::{AdjointComplianceDiagnostics, SimpElasticM
 use umst_manifold::physics::adjoint_q1_hex::AdjointComplianceQ1Hex;
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
 use umst_manifold::physics::mechanics::SelfWeightConfig;
+use umst_manifold::physics::q1_hex_elasticity::{HEX_PCG_REL_TOL_F32, HEX_PCG_REL_TOL_F64};
 use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 use umst_manifold::physics::topology_filter::HelmholtzFilter;
 
@@ -821,8 +822,8 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let cg_cfg = MechanicsInnerLoopConfig {
         // `packed_bar_network_equilibrium` caps at min(this, 3N); 200 iters was far below a useful solve.
         max_cg_iterations: max_cg,
-        cg_tolerance: 1e-6,
-        pcg_tolerance: 1e-6,
+        cg_tolerance: HEX_PCG_REL_TOL_F64,
+        pcg_tolerance: HEX_PCG_REL_TOL_F64,
         use_preconditioner: use_pc,
         max_equilibrium_substeps: 1,
     };
