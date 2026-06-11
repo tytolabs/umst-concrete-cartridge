@@ -528,8 +528,7 @@ max_grad_l2={:.6} eq_rel={:.3e}",
             "{tag}: greyness sanity — greyness={:.4} at beta={:.3}: Heaviside cannot sharpen this \
 far at low beta; field is already near-binary from DensityNet. Confirm vf_final vs target_vf \
 (η-bisection); binary-at-wrong-volume is a silent failure mode.",
-            m.greyness,
-            m.last_outer_beta
+            m.greyness, m.last_outer_beta
         );
     }
 }
@@ -1352,8 +1351,7 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_al_on={vol_al_on}, max_c
 {STRIATUS_VF_LOCK_STREAK} consecutive outers while greyness={grey_lock:.6} \
 >{STRIATUS_VF_LOCK_GREY_MIN} (outer {it}/{iterations} vf_mid={vf_now:.6} \
 target_vf={target_vf:.4} vol_al_lambda={:.4} vol_al_mu={:.4})",
-                    vol_al.lambda,
-                    vol_al.mu,
+                    vol_al.lambda, vol_al.mu,
                 );
             }
         }
@@ -1375,8 +1373,7 @@ target_vf={target_vf:.4} vol_al_lambda={:.4} vol_al_mu={:.4})",
 {STRIATUS_VF_ERR_ABORT_STREAK} consecutive non-converging outers after grace \
 (outer {it}/{iterations} vf_mid={vf_now:.6} target_vf={target_vf:.4} err={vf_err:+.6} \
 vf_drift={vf_drift:+.6} vol_al_lambda={:.4} vol_al_mu={:.4})",
-                    vol_al.lambda,
-                    vol_al.mu,
+                    vol_al.lambda, vol_al.mu,
                 );
             }
         }
@@ -1393,7 +1390,10 @@ vf_drift={vf_drift:+.6} vol_al_lambda={:.4} vol_al_mu={:.4})",
             if smoke_subset {
                 assert_pcg_equilibrium_gate(
                     &format!("shell_topology_rib_pattern_full_v04 smoke outer {it}"),
-                    h4_bundle.as_ref().map(|d| d.pcg.rel_residual).unwrap_or(f32::NAN),
+                    h4_bundle
+                        .as_ref()
+                        .map(|d| d.pcg.rel_residual)
+                        .unwrap_or(f32::NAN),
                     eq_rel,
                     pcg_tol,
                 );
@@ -1458,8 +1458,7 @@ vol_al_lambda={:.4} vol_al_mu={:.4} vf_guard_streak={vf_err_streak}",
             .forward_batched(coords_norm.clone())
             .reshape([1, n, 1]);
         if sym_period > 0 && iterations % sym_period == 0 {
-            rho_raw_f =
-                apply_reflection_xy_average(rho_raw_f, &partners).reshape([1, n, 1]);
+            rho_raw_f = apply_reflection_xy_average(rho_raw_f, &partners).reshape([1, n, 1]);
         }
         if let Some(ref pat) = xy_rib_pat {
             rho_raw_f = rho_raw_f
@@ -1497,11 +1496,7 @@ vf_loop={vf_loop:.6} — not exporting a bogus field"
             );
         }
         let rho_bar_f = vol_eta
-            .project(
-                rho_tilde_f.reshape([1, n, 1]),
-                finisher_beta,
-                target_vf,
-            )
+            .project(rho_tilde_f.reshape([1, n, 1]), finisher_beta, target_vf)
             .reshape([1, n, 1]);
         let rho_export = rho_bar_f.clone().into_data().value;
         vf_export = rho_export.iter().sum::<f32>() / rho_export.len() as f32;
@@ -1665,8 +1660,7 @@ fn h5_striatus_density_net_compliance_grad_40x40x4() {
     }
     let grads = surrogate.backward();
     let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
-    let (comp_l2, comp_max, nf_layers) =
-        autodiff_param_grad_audit(&grads_params, &opt.density_net);
+    let (comp_l2, comp_max, nf_layers) = autodiff_param_grad_audit(&grads_params, &opt.density_net);
     eprintln!(
         "h5_striatus_density_net_compliance_grad_40x40x4: init_scale={init_scale} \
 param_l2={comp_l2:.6} param_max={comp_max:.6} sens_l2={:.6} layer_nf={}",
@@ -1708,10 +1702,7 @@ fn h5_density_net_compliance_grad_probe(
         .mul_scalar(2.0)
         .sub_scalar(1.0);
     let boundary = pin_bottom_perimeter_inner(nx, ny, nz, &device);
-    let use_uniform_load = matches!(
-        env::var("UMST_H5_PROBE_UNIFORM_LOAD").as_deref(),
-        Ok("1")
-    );
+    let use_uniform_load = matches!(env::var("UMST_H5_PROBE_UNIFORM_LOAD").as_deref(), Ok("1"));
     let bf = if nx >= 32 && use_uniform_load {
         top_load_inner(nx, ny, nz, 50.0, plate.dx, plate.dy, &device)
     } else {
@@ -1899,9 +1890,7 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
         assert_eq!(
             m.adam_skipped, 0,
             "smoke adam_skipped: got {} (grad_l2={} vf_loop={})",
-            m.adam_skipped,
-            m.last_grad_l2,
-            m.vf_loop
+            m.adam_skipped, m.last_grad_l2, m.vf_loop
         );
         assert!(
             m.last_rho_raw_min < 0.501 - 1e-6 || m.last_rho_raw_max > 0.501 + 1e-6,
@@ -1923,8 +1912,7 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
         );
         // Smoke c1: final below peak (outer-1 c0 at vf≈0.48 is meaningless once AL drives vf→0.15).
         assert!(
-            m.c1_peak.is_finite()
-                && m.c1 < m.c1_peak - 1e-3,
+            m.c1_peak.is_finite() && m.c1 < m.c1_peak - 1e-3,
             "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
             m.c1,
             m.c1_peak,
