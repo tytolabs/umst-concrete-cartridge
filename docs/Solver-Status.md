@@ -45,6 +45,26 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 | 2026-06-10 | **smoke** 1-outer H4 diag pre-fix, `UMST_SHELL_H4_DIAG=1`, `b6-h4-diagnosis`, `--release` | 0.954 | — | — | **FAIL** VF band; Step C **green**; **`grad_l2=0`** (`INIT_SCALE=0.05` + uniform sens cancellation) |
 | 2026-06-10 | **smoke** 1-outer H4 diag post-fix, `INIT_SCALE=1.0`, `--release` | 0.940 | — | **0.934** | Step C **green** (`eq_rel≈9.7×10⁻⁵`); **`grad_l2≈0.934`**; VF band still fails (1-outer smoke) |
 | 2026-06-10 | **smoke 5-outer** post-volume-fix + **self-weight ON**, in-loop AL, terminal η @ β=32, `a5fe90c`, `--release` | 0.510 | 0.293 (terminal) | 0.293 | **PASS** smoke gate — `vf=0.1501`, `eq_rel≈9.8×10⁻⁵` all outers, `max_grad_l2=6.28`, `beta_last=1.087` (200-outer schedule), `xy_var=0.054`; Kirchhoff **`stiff_bias_pct≈34%`** @ 16²×4 (discretization caveat for §9 compliance) |
+| 2026-06-11 | **A′ smoke 20-outer** run 2, `SELF_WEIGHT=0`, AL `μ=64` uncapped, `b6-h4-diagnosis` WIP | — | — | 0.622 | **FAIL** smoke — vf overshoot 0.099→0.193 (`μ` escalated to 8M); `max_grad_l2=363k`; greyness↓ OK; `xy_var@18+≈0.001` OK; c1 gate |
+| 2026-06-11 | **A′ smoke 20-outer** run 3γ=1.5, `SELF_WEIGHT=0`, AL `μ=32` cap 4096 | — | — | 0.771 | **FAIL** smoke vf band — vf ring 0.091→0.261 (`err=+0.111`); `max_grad_l2=189` (bounded); greyness↓ then ↑; `xy_var@18+≈0.00018` |
+| 2026-06-11 | **A′ smoke 20-outer** run 4, `SELF_WEIGHT=0`, AL `μ=32` `γ=1.2` | — | — | 0.768 | **FAIL** vf band — vf 0.098→0.260 (`err=+0.110`); AL too weak post-outer-10 |
+| 2026-06-11 | **A′ smoke 20-outer** run 5 (accept), `SELF_WEIGHT=0`, AL `μ=96` `γ=1.2` `τ=0.85` cap 4096, `529c48f`, `--release` | 0.625 | — | 167 | **PASS** AL-shaped health — vf damped ring 0.484→0.055@12→0.194@20 (`err=+0.044` in band); `max_grad_l2=167` bounded (no run-2 363k); greyness 0.999→0.625↓; `xy_var@18+=0.000198`; `c1` 26.7→6.8 below peak; `eq_rel≈9.9×10⁻⁵`. Log: `/tmp/b6-aprime-20outer.log` |
+
+**A′ in-loop volume AL knobs (`AugmentedLagrangianVolume`, `shell_topology_rib_pattern.rs`):**
+
+| Knob | Value | Grounding |
+|------|-------|-----------|
+| `μ` (initial) | **96** | Bertsekas AL initial penalty scale ([Bertsekas 1996](https://doi.org/10.1887/978-1-881529-07-6), Ch. 2). **Fit during A′**, admissible **32–128**: run 2 `μ=64` uncapped → `grad_l2` 363k; run 4 `μ=32` `γ=1.2` → vf rebound 0.098→0.260 (under-penalized); run 5 `μ=96` `γ=1.2` → bounded grads + vf settles in band. |
+| `γ` (μ growth) | **1.2** | Bertsekas adaptive penalty increase when `\|g_k\| > τ·\|g_{k-1}\|` ([Bertsekas 1996](https://doi.org/10.1887/978-1-881529-07-6), Ch. 2). **Fit during A′**, admissible **1.1–1.5**: damp **before** touching `μ` — run 2 `γ=2` underdamped vf 0.099→0.193; run 3 `γ=1.5` ring 0.091→0.261; **1.2** first stable damping (run 5). |
+| `τ` (sufficient-decrease) | **0.85** | Bertsekas “retain `μ` if constraint residual decreases adequately” ([Bertsekas 1996](https://doi.org/10.1887/978-1-881529-07-6), Ch. 2). **Fit during A′**, admissible **0.75–0.9**: `topology.rs` default **0.5** doubles `μ` too often at B6 N (run 2 evidence). Held at 0.85 for runs 3–5. |
+| `μ` cap | **4096** | Engineering ceiling (not in Bertsekas). **Fit during A′**, admissible **2048–8192**: prevents f32 blow-up when `update_period=1` and early `vf` residual is large (0.48→0.15). Run 2 without cap hit 8M. |
+| `update_period` | **1** | B6 smoke: update λ every outer. Default **10** in `topology.rs` leaves `λ=0` for first smoke pass (run 1 false-negative guard). |
+
+**Pending gate definition (B6 compliance baseline):**
+
+| id | status | proposal |
+|----|--------|----------|
+| `b6-c0-uniform-at-target-vf` | **open** | 200-outer gate `c1 < 0.6·c0` uses **c0 = outer-1 compliance at vf≈0.48** (init DensityNet field). Meaningless once AL drives vf→0.15. **Proposed:** `c0 := compliance(uniform ρ = target_vf)` — same material budget, no design; gate = “optimized layout ≥40% stiffer than smeared solid at target vf” ([Bendsøe & Sigmund 2003](https://doi.org/10.1007/978-3-662-05086-6), Ch. 1 compliance minimization). Smoke A′ uses `c1 < c1_peak` instead; full gate unchanged until this row closes. |
 
 **H4 diagnosis (2026-06-10, `UMST_SHELL_H4_DIAG=1`):** primary hypothesis — compliance adjoint / sensitivity pathology at Striatus N. Instrumentation logs per-outer `sens_l2`, `sens_var`, `pcg_iter`, `pcg_rel_res`, `eq_rel_res`, `xy_var`, `adam_skipped` (see harness). **H1 REFUTED:** `greyness_pre_vol≈0.99` is uniform ρ≈0.5 **before** projection; post 0.510=`4·vf·(1−vf)` is degenerate constant-field signature (identical under λ-shift and η-bisect). **λ_g forbidden** for this failure mode.
 

@@ -30,6 +30,7 @@ use burn::tensor::{
 };
 use burn_ndarray::NdArray;
 use umst_manifold::ai::topology::{
+    heaviside_tanh_scalar, volume_matching_threshold_from_slice, AugmentedLagrangianVolume,
     BetaContinuation, ContinuationSchedule, HeavisideProjection, PlateauBetaContinuation,
     TopologyOptimizer, VolumeEtaProjection, VolumeProjection,
 };
@@ -271,6 +272,7 @@ fn rho_raw_range(rho: &[f32]) -> (f32, f32, f32) {
     (min, max, mean)
 }
 
+#[allow(dead_code)]
 fn autodiff_param_grad_l2<M: AutodiffModule<B>>(grads: &GradientsParams, module: &M) -> f32 {
     let (l2, _, _) = autodiff_param_grad_audit(grads, module);
     l2
@@ -489,9 +491,19 @@ struct RibMetrics {
     roof_ramp_strength: f32,
     /// Mean nodal `ρ` per z-layer on final `ρ_bar` (see [`rho_z_layer_profile`]).
     z_profile: String,
+    /// In-loop VF on `ρ_mid` (last outer, before terminal η export).
+    vf_loop: f32,
+    /// Post–η-bisect export VF when terminal finisher runs (`vf_loop` otherwise).
+    vf_export: f32,
+    /// Greyness on `ρ_mid` at outer 1 (A′: must fall vs final).
+    greyness_outer1: f32,
+    /// Peak normalized compliance across outers (A′: final must sit below peak).
+    c1_peak: f32,
+    /// Min `xy_var` on `ρ_mid` for outers ≥ 18 (A′: must stay > 0 past old collapse point).
+    min_xy_var_from_outer_18: f32,
 }
 
-fn log_striatus_acceptance_line(tag: &str, nx: usize, ny: usize, nz: usize, m: &RibMetrics) {
+fn log_striatus_acceptance_line(tag: &str, _nx: usize, _ny: usize, _nz: usize, m: &RibMetrics) {
     eprintln!(
         "{tag}: acceptance diag \
 UMST_SHELL_ROOF_RAMP={} ramp_strength={:.3} target_vf={:.4} vf_final={:.6} vf_err={:+.6} \
@@ -767,6 +779,11 @@ fn run_rib_quick_metrics() -> RibMetrics {
         roof_ramp_on: true,
         roof_ramp_strength: 0.2,
         z_profile: String::new(),
+        vf_loop: vf,
+        vf_export: vf,
+        greyness_outer1: greyness,
+        c1_peak: c1,
+        min_xy_var_from_outer_18: xy_var,
     }
     .also_pcg_gate("shell_topology_rib_pattern_quick", pcg_tol)
 }
@@ -794,6 +811,34 @@ const STRIATUS_B6_SCHEDULE_OUTERS: usize = 200;
 /// Abort long Striatus runs when mean VF misses target this many outers in a row.
 const STRIATUS_VF_ERR_ABORT_BAND: f32 = 0.1;
 const STRIATUS_VF_ERR_ABORT_STREAK: usize = 3;
+/// AL volume ramp-up: no band abort until this outer (healthy drift from ~0.48→0.15).
+const STRIATUS_VF_GUARD_GRACE_OUTERS: usize = 10;
+/// Pathology: exact VF lock at target while field is still grey (old VolumeProjection artifact).
+const STRIATUS_VF_LOCK_TOL: f32 = 1e-4;
+const STRIATUS_VF_LOCK_STREAK: usize = 5;
+const STRIATUS_VF_LOCK_GREY_MIN: f32 = 0.5;
+/// Terminal η-bisect must predict this VF residual before export (honest failure, not silent 0.15→0.97).
+const STRIATUS_ETA_FINISHER_VF_TOL: f32 = 0.02;
+/// Cap AL penalty growth — unconstrained `mu *= gamma` every outer overshoots vf past target.
+const STRIATUS_VOL_AL_MU_MAX: f32 = 4096.0;
+
+/// Predict VF after η-bisect on a detached `ρ̃` slice (same bisection as [`VolumeEtaProjection`]).
+fn eta_finisher_predicted_vf(
+    rho_tilde: &[f32],
+    beta: f32,
+    target_vf: f32,
+    max_iters: usize,
+    tol: f32,
+) -> (f32, f32) {
+    let eta = volume_matching_threshold_from_slice(rho_tilde, beta, target_vf, tol, max_iters);
+    let n = rho_tilde.len().max(1) as f32;
+    let vf = rho_tilde
+        .iter()
+        .map(|&r| heaviside_tanh_scalar(r, beta, eta))
+        .sum::<f32>()
+        / n;
+    (vf, eta)
+}
 
 /// Roof traction asymmetry: `UMST_SHELL_ROOF_RAMP=0` → uniform; default **on** with
 /// strength `UMST_SHELL_ROOF_RAMP_STRENGTH` (default **0.2**, traction \(\propto 1+r\,i_x/n_x\)).
@@ -892,9 +937,6 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let device = &device_default;
 
     let use_self_weight = env::var("UMST_SHELL_SELF_WEIGHT")
-        .map(|v| v != "0")
-        .unwrap_or(true);
-    let vol_in_loop = env::var("UMST_SHELL_VOL_LOOP")
         .map(|v| v != "0")
         .unwrap_or(true);
     let use_pc = env::var("UMST_SHELL_PCG").map(|v| v != "0").unwrap_or(true);
@@ -1000,8 +1042,12 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     // Default **off**: even with a finite filter forward, the full compliance adjoint can still yield
     // non-finite outer loss at Striatus N until the PCG / SIMP path is hardened (B6 follow-up).
     let helm_on = matches!(env::var("UMST_SHELL_HELM").as_deref(), Ok("1"));
-    // In-loop: `VolumeProjection` AL when `UMST_SHELL_VOL_LOOP=1` (default). η-bisect in-loop only
-    // with `UMST_SHELL_VOL_BISECT=1` (debug). Terminal η-bisect finisher unless `UMST_SHELL_VOL_BISECT=0`.
+    // In-loop: [`AugmentedLagrangianVolume`] penalty on mean(`ρ_mid`); multipliers updated after Adam.
+    // Hard [`VolumeProjection`] is off the tape. η in-loop only with `UMST_SHELL_VOL_BISECT=1` (debug).
+    // Terminal η-bisect export unless `UMST_SHELL_VOL_BISECT=0`.
+    let vol_al_on = env::var("UMST_SHELL_VOL_LOOP")
+        .map(|v| v != "0")
+        .unwrap_or(true);
     let vol_bisect_in_loop = matches!(env::var("UMST_SHELL_VOL_BISECT").as_deref(), Ok("1"));
     let vol_eta_terminal = env::var("UMST_SHELL_VOL_BISECT")
         .map(|v| v != "0")
@@ -1010,7 +1056,12 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let h4_diag = h4_diag_enabled();
     let plateau_beta = PlateauBetaContinuation::new(5, 0.008);
     let mut proj = HeavisideProjection::new(heaviside_beta0, 0.5);
-    let vol_proj = VolumeProjection::new(target_vf, 48);
+    let mut vol_al = AugmentedLagrangianVolume::new(target_vf);
+    // Default `update_period=10` leaves λ=0 for the first smoke outers; B6 updates every outer.
+    vol_al.update_period = 1;
+    vol_al.mu = 96.0;
+    vol_al.gamma = 1.2;
+    vol_al.tau = 0.85;
     let vol_eta = VolumeEtaProjection::new(48, 1e-4);
     let mut greyness_hist: Vec<f32> = Vec::new();
 
@@ -1058,7 +1109,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let mut c0 = f32::NAN;
     let mut c1 = f32::NAN;
     let mut last_rho: Vec<f32> = Vec::new();
-    let mut last_rho_bar: Option<Tensor<B, 3>> = None;
+    let mut _last_rho_bar: Option<Tensor<B, 3>> = None;
     let mut last_bf_inner: Option<Tensor<Inner, 3>> = None;
     let mut last_simp_mat = SimpElasticMaterial {
         e0: material.e0,
@@ -1070,12 +1121,19 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     let mut last_grad_l2 = 0.0_f32;
     let mut max_grad_l2 = 0.0_f32;
     let mut min_grad_l2 = f32::INFINITY;
-    let mut first_c1 = f32::NAN;
-    let mut first_xy_var = f32::NAN;
+    let mut _first_c1 = f32::NAN;
+    let mut _first_xy_var = f32::NAN;
+    let mut c1_peak = f32::NEG_INFINITY;
     let mut last_rho_raw_min = f32::NAN;
     let mut last_rho_raw_max = f32::NAN;
     let mut last_outer_beta = heaviside_beta0;
     let mut vf_err_streak = 0usize;
+    let mut vf_lock_streak = 0usize;
+    let mut prev_vf_err_abs = f32::NAN;
+    let mut prev_vf_mid = f32::NAN;
+    let mut greyness_outer1 = f32::NAN;
+    let mut min_xy_var_from_outer_18 = f32::INFINITY;
+    let mut last_rho_mid: Option<Tensor<B, 3>> = None;
     let pcg_tol = cg_cfg.pcg_tolerance.max(cg_cfg.cg_tolerance);
 
     for it in 1..=iterations {
@@ -1108,25 +1166,27 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             rho_raw.clone()
         };
         let rho_mid = proj.project(rho_tilde.clone()).reshape([1, n, 1]);
-        let rho_bar = if vol_bisect_in_loop {
+        // Debug-only in-loop η (not A′ path). Hard λ-shift [`VolumeProjection`] is never used here.
+        let rho_mech = if vol_bisect_in_loop {
             vol_eta
                 .project(rho_tilde.clone().reshape([1, n, 1]), beta, target_vf)
                 .reshape([1, n, 1])
-        } else if vol_in_loop {
-            vol_proj.project(rho_mid.clone()).reshape([1, n, 1])
         } else {
             rho_mid.clone()
         };
         if metrics_on && (it % 20 == 0 || it == iterations) {
-            let pre = greyness_mean(&rho_mid.clone().into_data().value);
-            let post = greyness_mean(&rho_bar.clone().into_data().value);
+            let grey_mid = greyness_mean(&rho_mid.clone().into_data().value);
             eprintln!(
-                "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} greyness_pre_vol={pre:.6} greyness_post_vol={post:.6} beta={beta:.3} helm_on={helm_on} vol_bisect_in_loop={vol_bisect_in_loop} vol_eta_terminal={vol_eta_terminal}"
+                "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} greyness_rho_mid={grey_mid:.6} \
+beta={beta:.3} vol_al_on={vol_al_on} vol_al_lambda={:.4} vol_al_mu={:.4} helm_on={helm_on} \
+vol_bisect_in_loop={vol_bisect_in_loop} vol_eta_terminal={vol_eta_terminal}",
+                vol_al.lambda,
+                vol_al.mu,
             );
         }
 
         let bf = if use_self_weight {
-            sw_cfg.body_force(rho_bar.clone()).add(live_force.clone())
+            sw_cfg.body_force(rho_mech.clone()).add(live_force.clone())
         } else {
             live_force.clone()
         };
@@ -1140,14 +1200,14 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         last_simp_mat = simp_mat;
         let rho_raw_vec = rho_raw.clone().into_data().value;
         let bf_inner = bf.inner();
-        last_rho_bar = Some(rho_bar.clone());
+        _last_rho_bar = Some(rho_mech.clone());
+        last_rho_mid = Some(rho_mid.clone());
         last_bf_inner = Some(bf_inner.clone());
-        // Compliance AD on post–volume-projection ρ_bar (in-loop AL); β schedule anchored at 200 outers.
-        // `UMST_SHELL_H5_SKIP_PROJ=1` forces raw net output for isolation probes.
+        // Compliance AD on post-Heaviside ρ_mid (A′). `UMST_SHELL_H5_SKIP_PROJ=1` → raw net output.
         let rho_comp = if h5_skip_projection_compliance() {
             rho_raw.clone()
         } else {
-            rho_bar.clone()
+            rho_mid.clone()
         };
         let (surrogate, c_raw, h4_bundle) = if h4_diag || smoke_subset {
             let (s, c, diag) = q1_compliance_with_diagnostics(
@@ -1171,31 +1231,44 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             (s, c, None)
         };
 
-        last_rho = rho_bar.clone().into_data().value;
+        last_rho = rho_mid.clone().into_data().value;
         greyness_hist.push(greyness_mean(&last_rho));
+        if it == 1 {
+            greyness_outer1 = greyness_mean(&last_rho);
+        }
 
         if it == 1 {
             assert!(
                 c_raw.is_finite(),
                 "B6 full harness: non-finite raw compliance at iter 1 (Q1-hex PCG / load path). \
 Try UMST_SHELL_SELF_WEIGHT=0, UMST_SHELL_MAX_CG>=2000, UMST_SHELL_E_MIN_REL=0.001, UMST_SHELL_PCG=1. \
-Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, max_cg={max_cg})."
+Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_al_on={vol_al_on}, max_cg={max_cg})."
             );
             comp_scale = c_raw.max(1e-12);
             c0 = c_raw / comp_scale;
         }
         c1 = c_raw / comp_scale;
+        if c1.is_finite() {
+            c1_peak = c1_peak.max(c1);
+        }
         if it == 1 {
-            first_c1 = c1;
-            first_xy_var = xy_plane_variance(&last_rho, nx, ny, nz);
+            _first_c1 = c1;
+            _first_xy_var = xy_plane_variance(&last_rho, nx, ny, nz);
         }
         let mut total_loss = surrogate.clone().div_scalar(comp_scale);
+        if vol_al_on && !vol_bisect_in_loop {
+            total_loss = total_loss.add(
+                vol_al
+                    .loss_term(rho_mid.clone())
+                    .div_scalar(comp_scale.max(1e-12)),
+            );
+        }
         if grey_lambda > 0.0 {
-            let grey_t = mean_greyness_tensor(rho_bar.clone());
+            let grey_t = mean_greyness_tensor(rho_mid.clone());
             total_loss = total_loss.add(grey_t.mul_scalar(grey_lambda));
         }
         if xy_var_lambda > 0.0 {
-            let v_xy = xy_plane_variance_z_avg_tensor(rho_bar.clone(), nx, ny, nz);
+            let v_xy = xy_plane_variance_z_avg_tensor(rho_mid.clone(), nx, ny, nz);
             total_loss = total_loss.sub(v_xy.mul_scalar(xy_var_lambda));
         }
 
@@ -1244,21 +1317,65 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_in_loop={vol_in_loop}, m
         last_outer_beta = beta;
         let vf_now = last_rho.iter().sum::<f32>() / last_rho.len().max(1) as f32;
         let vf_err = vf_now - target_vf;
-        if vf_err.abs() > STRIATUS_VF_ERR_ABORT_BAND {
-            vf_err_streak += 1;
+        let vf_err_abs = vf_err.abs();
+        let vf_drift = if prev_vf_mid.is_finite() {
+            vf_now - prev_vf_mid
         } else {
-            vf_err_streak = 0;
+            f32::NAN
+        };
+        let converging_toward_target =
+            prev_vf_err_abs.is_finite() && vf_err_abs + 1e-6 < prev_vf_err_abs;
+        prev_vf_err_abs = vf_err_abs;
+        prev_vf_mid = vf_now;
+
+        // Pathology: exact VF lock at target while Heaviside field is still grey.
+        if vf_err_abs < STRIATUS_VF_LOCK_TOL {
+            vf_lock_streak += 1;
+        } else {
+            vf_lock_streak = 0;
         }
-        if vf_err_streak >= STRIATUS_VF_ERR_ABORT_STREAK {
-            panic!(
-                "striatus_vf_band_guard: |vf-target|>{STRIATUS_VF_ERR_ABORT_BAND} for \
-{STRIATUS_VF_ERR_ABORT_STREAK} consecutive outers (outer {it}/{iterations} vf={vf_now:.6} \
-target_vf={target_vf:.4} err={vf_err:+.6})"
-            );
+        if vf_lock_streak >= STRIATUS_VF_LOCK_STREAK {
+            let grey_lock = greyness_mean(&last_rho);
+            if grey_lock > STRIATUS_VF_LOCK_GREY_MIN {
+                panic!(
+                    "striatus_vf_lock_pathology: |vf-target|<{STRIATUS_VF_LOCK_TOL} for \
+{STRIATUS_VF_LOCK_STREAK} consecutive outers while greyness={grey_lock:.6} \
+>{STRIATUS_VF_LOCK_GREY_MIN} (outer {it}/{iterations} vf_mid={vf_now:.6} \
+target_vf={target_vf:.4} vol_al_lambda={:.4} vol_al_mu={:.4})",
+                    vol_al.lambda,
+                    vol_al.mu,
+                );
+            }
+        }
+
+        // Band abort: after AL grace, only when |vf-target| stays wide AND is not converging.
+        if it > STRIATUS_VF_GUARD_GRACE_OUTERS {
+            if vf_err_abs > STRIATUS_VF_ERR_ABORT_BAND {
+                if converging_toward_target {
+                    vf_err_streak = 0;
+                } else {
+                    vf_err_streak += 1;
+                }
+            } else {
+                vf_err_streak = 0;
+            }
+            if vf_err_streak >= STRIATUS_VF_ERR_ABORT_STREAK {
+                panic!(
+                    "striatus_vf_band_guard: |vf-target|>{STRIATUS_VF_ERR_ABORT_BAND} for \
+{STRIATUS_VF_ERR_ABORT_STREAK} consecutive non-converging outers after grace \
+(outer {it}/{iterations} vf_mid={vf_now:.6} target_vf={target_vf:.4} err={vf_err:+.6} \
+vf_drift={vf_drift:+.6} vol_al_lambda={:.4} vol_al_mu={:.4})",
+                    vol_al.lambda,
+                    vol_al.mu,
+                );
+            }
         }
         if smoke_subset || metrics_on {
             let grey_now = greyness_mean(&last_rho);
             let xy_now = xy_plane_variance(&last_rho, nx, ny, nz);
+            if it >= 18 {
+                min_xy_var_from_outer_18 = min_xy_var_from_outer_18.min(xy_now);
+            }
             let eq_rel = h4_bundle
                 .as_ref()
                 .map(|d| d.equilibrium_rel_residual)
@@ -1277,9 +1394,12 @@ target_vf={target_vf:.4} err={vf_err:+.6})"
             }
             eprintln!(
                 "shell_topology_rib_pattern_full_v04: outer {it}/{iterations} \
-schedule_k={} beta={beta:.3} vf={vf_now:.6} vf_err={vf_err:+.6} greyness={grey_now:.6} \
-grad_l2={grad_l2:.6} xy_var={xy_now:.6} c1={c1:.6} eq_rel={eq_rel:.3e}",
+schedule_k={} beta={beta:.3} vf_mid={vf_now:.6} vf_err={vf_err:+.6} vf_drift={vf_drift:+.6} \
+greyness={grey_now:.6} grad_l2={grad_l2:.6} xy_var={xy_now:.6} c1={c1:.6} eq_rel={eq_rel:.3e} \
+vol_al_lambda={:.4} vol_al_mu={:.4} vf_guard_streak={vf_err_streak}",
                 it.saturating_sub(1),
+                vol_al.lambda,
+                vol_al.mu,
             );
         }
         if h4_diag {
@@ -1311,12 +1431,18 @@ grad_l2={grad_l2:.6} xy_var={xy_now:.6} c1={c1:.6} eq_rel={eq_rel:.3e}",
             }
         }
         opt.density_net = adam.step(0.005, opt.density_net, grads_params);
+        if vol_al_on && !vol_bisect_in_loop {
+            vol_al.update_multipliers(vf_now);
+            vol_al.mu = vol_al.mu.min(STRIATUS_VOL_AL_MU_MAX);
+        }
     }
 
     assert!(!last_rho.is_empty(), "full rib run produced no ρ");
+    let vf_loop = last_rho.iter().sum::<f32>() / last_rho.len() as f32;
+    let mut vf_export = vf_loop;
 
-    // Terminal η-bisect finisher (export / gate metrics). In-loop volume is `VolumeProjection` AL.
-    if vol_eta_terminal && !vol_bisect_in_loop {
+    // Terminal η-bisect finisher (export-only; full 200-outer). Smoke subsets gate on `ρ_mid` only.
+    if vol_eta_terminal && !vol_bisect_in_loop && !smoke_subset {
         let mut rho_raw_f = opt
             .density_net
             .forward_batched(coords_norm.clone())
@@ -1336,9 +1462,30 @@ grad_l2={grad_l2:.6} xy_var={xy_now:.6} c1={c1:.6} eq_rel={eq_rel:.3e}",
         } else {
             rho_raw_f.clone()
         };
-        // Detached export step: use schedule β_max so η-bisect can hit V* on soft ρ̃ (continuation
-        // β≈1.5 cannot enforce 0.15 VF — same silent failure as the pre-fix 20-outer run).
         let finisher_beta = heaviside_beta_max.max(last_outer_beta);
+        let rho_tilde_flat = rho_tilde_f.clone().detach().into_data().value;
+        let (vf_pred, eta_star) = eta_finisher_predicted_vf(
+            &rho_tilde_flat,
+            finisher_beta,
+            target_vf,
+            vol_eta.max_bisection,
+            vol_eta.tol,
+        );
+        let grey_tilde = greyness_mean(
+            &rho_tilde_flat
+                .iter()
+                .map(|&r| heaviside_tanh_scalar(r, finisher_beta, eta_star))
+                .collect::<Vec<_>>(),
+        );
+        let vf_pred_err = vf_pred - target_vf;
+        if vf_pred_err.abs() > STRIATUS_ETA_FINISHER_VF_TOL {
+            panic!(
+                "striatus_eta_finisher_unreachable: η-bisect cannot reach target_vf on current \
+ρ̃ (near-binary export). beta_fin={finisher_beta:.3} eta*={eta_star:.6} vf_predicted={vf_pred:.6} \
+vf_err={vf_pred_err:+.6} tol={STRIATUS_ETA_FINISHER_VF_TOL} greyness_tilde={grey_tilde:.6} \
+vf_loop={vf_loop:.6} — not exporting a bogus field"
+            );
+        }
         let rho_bar_f = vol_eta
             .project(
                 rho_tilde_f.reshape([1, n, 1]),
@@ -1346,21 +1493,30 @@ grad_l2={grad_l2:.6} xy_var={xy_now:.6} c1={c1:.6} eq_rel={eq_rel:.3e}",
                 target_vf,
             )
             .reshape([1, n, 1]);
-        last_rho = rho_bar_f.clone().into_data().value;
-        last_rho_bar = Some(rho_bar_f);
-        let vf_fin = last_rho.iter().sum::<f32>() / last_rho.len() as f32;
+        let rho_export = rho_bar_f.clone().into_data().value;
+        vf_export = rho_export.iter().sum::<f32>() / rho_export.len() as f32;
+        let vf_export_err = vf_export - target_vf;
+        if vf_export_err.abs() > STRIATUS_VF_ERR_ABORT_BAND {
+            panic!(
+                "striatus_terminal_vf_guard: |vf_export-target|>{STRIATUS_VF_ERR_ABORT_BAND} \
+after η-bisect (vf_loop={vf_loop:.6} vf_export={vf_export:.6} err={vf_export_err:+.6} \
+greyness_export={:.6})",
+                greyness_mean(&rho_export),
+            );
+        }
         eprintln!(
             "shell_topology_rib_pattern_full_v04: terminal η-bisect finisher \
-beta_cont={:.3} beta_fin={finisher_beta:.3} vf={vf_fin:.6} vf_err={:+.6} greyness={:.6}",
+beta_cont={:.3} beta_fin={finisher_beta:.3} vf_loop={vf_loop:.6} vf_export={vf_export:.6} \
+vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
             last_outer_beta,
-            vf_fin - target_vf,
-            greyness_mean(&last_rho),
+            greyness_mean(&rho_export),
         );
     }
 
-    let vf = last_rho.iter().sum::<f32>() / last_rho.len() as f32;
+    let vf = vf_loop;
+    let rho_mid_final = last_rho_mid.expect("last rho_mid");
     let (_, _, final_diag) = q1_compliance_with_diagnostics(
-        last_rho_bar.expect("last rho_bar"),
+        rho_mid_final.clone(),
         &plate,
         boundary_inner.clone(),
         last_bf_inner.expect("last body force"),
@@ -1368,6 +1524,11 @@ beta_cont={:.3} beta_fin={finisher_beta:.3} vf={vf_fin:.6} vf_err={:+.6} greynes
         &cg_cfg,
     );
     let z_profile = rho_z_layer_profile(&last_rho, nx, ny, nz);
+    let min_xy_18 = if min_xy_var_from_outer_18.is_finite() {
+        min_xy_var_from_outer_18
+    } else {
+        f32::NAN
+    };
     let metrics = RibMetrics {
         vf,
         greyness: greyness_mean(&last_rho),
@@ -1387,6 +1548,11 @@ beta_cont={:.3} beta_fin={finisher_beta:.3} vf={vf_fin:.6} vf_err={:+.6} greynes
         roof_ramp_on,
         roof_ramp_strength,
         z_profile,
+        vf_loop,
+        vf_export,
+        greyness_outer1,
+        c1_peak,
+        min_xy_var_from_outer_18: min_xy_18,
     };
     log_striatus_acceptance_line("shell_topology_rib_pattern_full_v04", nx, ny, nz, &metrics);
     metrics.also_pcg_gate("shell_topology_rib_pattern_full_v04", pcg_tol)
@@ -1696,29 +1862,33 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
         m.xy_var,
         m.greyness
     );
-    // Smoke (`UMST_SHELL_RIB_FULL_ITERS` < 200): five-criteria gate before 200-outer acceptance.
+    // Smoke (`UMST_SHELL_RIB_FULL_ITERS` < 200): A′ gate before 200-outer acceptance.
+    // Pass = AL-shaped health (not gate ticks alone): vf damped oscillation settling into band,
+    // grad_l2 bounded (no μ-escalation blow-up), greyness falling, xy_var alive past outer 18.
+    // AL knobs: Solver-Status.md § A′ in-loop volume AL knobs (μ=96, γ=1.2, τ=0.85, cap=4096).
     if adam_iters < 200 {
         assert!(
             m.max_grad_l2.is_finite() && m.max_grad_l2 > 0.0 && m.last_grad_l2 > 0.0,
-            "smoke grad_l2: max={} last={} (adam_skipped={} vf={} vf_err={:+.6} xy_var={})",
+            "smoke grad_l2: max={} last={} (adam_skipped={} vf_loop={} xy_var={})",
             m.max_grad_l2,
             m.last_grad_l2,
             m.adam_skipped,
-            m.vf,
-            m.vf - m.target_vf,
+            m.vf_loop,
             m.xy_var
         );
         assert!(
-            (m.vf - m.target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
-            "smoke vf band: vf={} target={} err={} (guard should have aborted in-loop)",
-            m.vf,
+            (m.vf_loop - m.target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
+            "smoke vf_loop band: vf={} target={} err={} (AL drift OK; exact lock was pathology)",
+            m.vf_loop,
             m.target_vf,
-            m.vf - m.target_vf
+            m.vf_loop - m.target_vf
         );
         assert_eq!(
             m.adam_skipped, 0,
-            "smoke adam_skipped: got {} (grad_l2={} vf={})",
-            m.adam_skipped, m.last_grad_l2, m.vf
+            "smoke adam_skipped: got {} (grad_l2={} vf_loop={})",
+            m.adam_skipped,
+            m.last_grad_l2,
+            m.vf_loop
         );
         assert!(
             m.last_rho_raw_min < 0.501 - 1e-6 || m.last_rho_raw_max > 0.501 + 1e-6,
@@ -1727,34 +1897,49 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
             m.last_rho_raw_max
         );
         assert!(
-            m.xy_var > 0.0,
-            "smoke xy_var: got {} (grad_l2={} vf={})",
-            m.xy_var,
-            m.last_grad_l2,
-            m.vf
+            m.greyness < m.greyness_outer1 - 1e-4,
+            "smoke A′ greyness falling: outer1={} final={}",
+            m.greyness_outer1,
+            m.greyness
+        );
+        assert!(
+            m.min_xy_var_from_outer_18.is_finite() && m.min_xy_var_from_outer_18 > 1e-6,
+            "smoke A′ xy_var past outer 18: min_xy_var={} final_xy_var={}",
+            m.min_xy_var_from_outer_18,
+            m.xy_var
+        );
+        // Smoke c1: final below peak (outer-1 c0 at vf≈0.48 is meaningless once AL drives vf→0.15).
+        assert!(
+            m.c1_peak.is_finite()
+                && m.c1 < m.c1_peak - 1e-3,
+            "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
+            m.c1,
+            m.c1_peak,
+            m.c0
         );
         eprintln!(
-            "shell_topology_rib_pattern_full_v04: smoke PASS ({adam_iters} outer) — \
-GREYNESS={:.6} max_grad_l2={:.6} last_grad_l2={:.6} beta_last={:.3} \
-xy_var={:.6} c0={:.6} c1={:.6} rho_raw=[{:.6},{:.6}] eq_rel={:.3e} adam_skipped=0; \
-full B6 vf/greyness<0.15/compliance-drop gates deferred to 200-outer",
+            "shell_topology_rib_pattern_full_v04: smoke A′ PASS ({adam_iters} outer) — \
+GREYNESS={:.6} (outer1={:.6}) max_grad_l2={:.6} vf_loop={:.6} vf_export={:.6} \
+min_xy_var@18+={:.6} xy_var={:.6} c0={:.6} c1={:.6} beta_last={:.3} eq_rel={:.3e}",
             m.greyness,
+            m.greyness_outer1,
             m.max_grad_l2,
-            m.last_grad_l2,
-            m.last_outer_beta,
+            m.vf_loop,
+            m.vf_export,
+            m.min_xy_var_from_outer_18,
             m.xy_var,
             m.c0,
             m.c1,
-            m.last_rho_raw_min,
-            m.last_rho_raw_max,
+            m.last_outer_beta,
             m.eq_rel_res
         );
         return;
     }
     assert!(
-        (m.vf - target_vf).abs() <= 0.01,
-        "vf gate: got vf={} target_vf={} (greyness={} xy_var={} c0={} c1={})",
-        m.vf,
+        (m.vf_export - target_vf).abs() <= 0.01,
+        "vf export gate: vf_export={} vf_loop={} target_vf={} (greyness={} xy_var={} c0={} c1={})",
+        m.vf_export,
+        m.vf_loop,
         target_vf,
         m.greyness,
         m.xy_var,
@@ -1779,6 +1964,10 @@ full B6 vf/greyness<0.15/compliance-drop gates deferred to 200-outer",
         m.c0,
         m.c1
     );
+    // TODO(b6-c0-uniform-at-target-vf): c0 below is outer-1 compliance at vf≈0.48 — baseline
+    // disease for 200-outer gate. Proposed (Solver-Status ledger, open): c0 := compliance of
+    // uniform ρ=target_vf ([Bendsøe & Sigmund 2003], Ch. 1); gate → c1 < 0.6·c0_uniform_at_target
+    // (“optimized layout ≥40% stiffer than smeared material at target vf”). Unchanged until row closes.
     assert!(
         m.c1 < m.c0 * 0.6,
         "compliance drop gate: c0={} c1={} ratio={} (vf={} greyness={} xy_var={})",
