@@ -583,6 +583,7 @@ fn main() {
                 boundary_inner.clone(),
                 simp_mat,
                 &cg_cfg,
+                if use_self_weight { Some(sw_cfg) } else { None },
             )
         } else {
             AdjointCompliance::forward_and_loss(

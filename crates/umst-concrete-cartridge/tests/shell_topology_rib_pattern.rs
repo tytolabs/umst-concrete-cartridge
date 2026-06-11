@@ -563,6 +563,7 @@ fn q1_compliance_forward(
     body_force: Tensor<Inner, 3>,
     mat: SimpElasticMaterial,
     cg: &MechanicsInnerLoopConfig,
+    self_weight: Option<SelfWeightConfig>,
 ) -> (Tensor<B, 1>, f32) {
     AdjointComplianceQ1Hex::forward_and_loss(
         rho_bar,
@@ -576,6 +577,7 @@ fn q1_compliance_forward(
         boundary,
         mat,
         cg,
+        self_weight,
     )
 }
 
@@ -587,6 +589,7 @@ fn q1_compliance_with_diagnostics(
     body_force: Tensor<Inner, 3>,
     mat: SimpElasticMaterial,
     cg: &MechanicsInnerLoopConfig,
+    self_weight: Option<SelfWeightConfig>,
 ) -> (Tensor<B, 1>, f32, AdjointComplianceDiagnostics) {
     AdjointComplianceQ1Hex::forward_loss_with_diagnostics(
         rho_bar,
@@ -600,6 +603,7 @@ fn q1_compliance_with_diagnostics(
         boundary,
         mat,
         cg,
+        self_weight,
     )
 }
 
@@ -684,6 +688,7 @@ fn run_rib_quick_metrics() -> RibMetrics {
             live_inner.clone(),
             simp_mat,
             &cg,
+            None,
         );
         let h4_bundle = if h4 {
             Some(
@@ -694,6 +699,7 @@ fn run_rib_quick_metrics() -> RibMetrics {
                     live_inner.clone(),
                     simp_mat,
                     &cg,
+                    None,
                 )
                 .2,
             )
@@ -748,6 +754,7 @@ fn run_rib_quick_metrics() -> RibMetrics {
         live_inner.clone(),
         simp_mat,
         &cg,
+        None,
     );
     let pcg_tol = cg.pcg_tolerance.max(cg.cg_tolerance);
 
@@ -1209,6 +1216,7 @@ vol_bisect_in_loop={vol_bisect_in_loop} vol_eta_terminal={vol_eta_terminal}",
         } else {
             rho_mid.clone()
         };
+        let sw_adj = if use_self_weight { Some(sw_cfg) } else { None };
         let (surrogate, c_raw, h4_bundle) = if h4_diag || smoke_subset {
             let (s, c, diag) = q1_compliance_with_diagnostics(
                 rho_comp.clone(),
@@ -1217,6 +1225,7 @@ vol_bisect_in_loop={vol_bisect_in_loop} vol_eta_terminal={vol_eta_terminal}",
                 bf_inner,
                 simp_mat,
                 &cg_cfg,
+                sw_adj,
             );
             (s, c, Some(diag))
         } else {
@@ -1227,6 +1236,7 @@ vol_bisect_in_loop={vol_bisect_in_loop} vol_eta_terminal={vol_eta_terminal}",
                 bf_inner.clone(),
                 simp_mat,
                 &cg_cfg,
+                sw_adj,
             );
             (s, c, None)
         };
@@ -1522,6 +1532,7 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         last_bf_inner.expect("last body force"),
         last_simp_mat,
         &cg_cfg,
+        if use_self_weight { Some(sw_cfg) } else { None },
     );
     let z_profile = rho_z_layer_profile(&last_rho, nx, ny, nz);
     let min_xy_18 = if min_xy_var_from_outer_18.is_finite() {
@@ -1647,6 +1658,7 @@ fn h5_striatus_density_net_compliance_grad_40x40x4() {
         bf.clone(),
         mat,
         &cg,
+        None,
     );
     if let Some(audit) = &diag.finite_audit {
         assert_eq!(audit.first_bad_stage, None, "{audit:?}");
@@ -1747,6 +1759,7 @@ fn h5_density_net_compliance_grad_probe(
         bf.clone(),
         mat,
         &cg,
+        None,
     );
     if let Some(audit) = &diag.finite_audit {
         assert_eq!(audit.first_bad_stage, None, "{tag}: {audit:?}");
