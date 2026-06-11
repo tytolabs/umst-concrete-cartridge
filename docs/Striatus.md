@@ -46,6 +46,8 @@ The `optimize_shell_3d` example bundles ingredients that separate a **literature
 - **XY symmetry (default on):** in-loop averaging over four mirror partners every **`UMST_SHELL_SYMM_PERIOD`** outers; **`final.npy`** applies the same XY average once at the end so the exported field matches the symmetrised design. **`iter_*.npy`** frames (when **`UMST_SHELL_DUMP_ITER=1`**) can differ slightly on the last GIF frame vs **`final.npy`** because mirroring is periodic in the loop — use **`final.npy`** + **`manifest.json`** (`symmetry_xy`, `sym_period`, `iters`, `dump_stride`, …) for reproducible **ρ**-span checks and **`export_print_ready.py`**. **`UMST_SHELL_DUMP_STRIDE`** defaults to **10** when unset (aligned with **`notebooks/_run_shell_demo.sh`**).
 - The mechanical kernel follows a **continuum topology optimisation** elasticity route on an extruded plate scaffold [Bendsøe & Sigmund 2003], with classical SIMP stiffness interpolation rooted in homogenisation-based thinking [Bendsøe & Sigmund 1989].
 
+> **Claim gap closed (2026-06-10):** B6 harness (`shell_topology_rib_pattern`) now uses **`AdjointComplianceQ1Hex`** (Q1 hex continuum SIMP), matching this document. Bar-network ground structure retired after mechanism probes (`K_ff` singular, roof PCG floor ≈0.94 on axial bars). See [`Solver-Status.md`](Solver-Status.md) H4 probe table.
+
 The comparative review by [Sigmund & Maute 2013] situates these choices among robust formulations in structural optimisation. Efficient reference implementations for 3D topology optimisation on regular grids, such as the MATLAB code of [Liu & Tovar 2014], informed engineering expectations for iteration counts and solver structure even though this repository’s core is Rust, not MATLAB. Homogenisation-based interpretations of the SIMP exponent remain the conceptual bridge between **microstructural void families** and **macroscopic penalised stiffness** [Bendsøe & Sigmund 1989]; the textbook treatment [Bendsøe & Sigmund 2003] is the canonical reference for assembling filtered, projected, and volume-constrained compliance problems in structural optimisation practice.
 
 ## Streamlines on the final GIF frames
@@ -74,6 +76,25 @@ Concrete extrusion differs from polymer fused filament: layer interfaces, aggreg
 The UMST manifold supplies differentiable mechanics and topology hooks; the concrete cartridge wires a **cementitious** interpretation and demonstration assets. Together they support the approved framing that **the optimiser converges to a Nervi/Striatus-class compression-favouring topology** and that **the recovered shape lies within the funicular-shell tradition**, without asserting blanket structural safety for every site-specific load combination.
 
 The differentiable stack matters for research workflows: gradients of compliance-like objectives with respect to design variables are the workhorse of first-order optimisers (here, Adam on the density field). That is not the same as claiming that every local minimum is globally optimal, nor that the discrete voxel model matches a full shell theory with drilling rotations and transverse shear refinements. The demo is a **showcase** aligned with cited numerical practice [Lazarov & Sigmund 2011; Wang, Lazarov & Sigmund 2011; Bruyneel & Duysinx 2005; Bertsekas 1996; Sigmund & Maute 2013], not a substitute for project-specific peer review.
+
+## Voxel grid, slab proportions, and fabrication mapping
+
+The **B6** harness (`shell_topology_rib_pattern_full_v04`) fixes a **4 m × 4 m × 0.1 m** extruded brick at **40 × 40 × 4** Q1-hex cells: in-plane spacing **0.1 m**, through-thickness spacing **0.025 m**, aspect ratio **L/t ≈ 40**, and **nz = 4** layers. That grid is a **research-scale** discretisation chosen for overnight CPU on a laptop-class machine, not a literal 1:1 print voxel for the Venice footbridge.
+
+| Quantity | B6 harness | Printed-slab follow-up (moderate track) |
+|----------|------------|----------------------------------------|
+| Span **L** | 4 m | same order (demo slab) |
+| Thickness **t** | 0.1 m (**L/t ≈ 40**) | **0.3 m** demo slab (**L/t ≈ 13**) |
+| **nz** | 4 (**Δz ≈ 0.025 m**) | **8** (**Δz ≈ 0.0375 m**, **~2.7:1** in-plane:through-thickness element aspect) |
+| Fabrication | export JSON + **12 mm** nozzle / **30°** overhang gates on marching-cubes STL | same policy; finer voxels only where the slicer and mix allow |
+
+**Why reconsider proportions:** at **L/t ≈ 40** with **nz = 4**, equal-order Q1 hex bending is shear-locking prone and offers little room for genuine through-thickness topology (a “sandwich” in **z** is often a discretisation artefact, not a rib). A **0.3 m**-thick demo slab with **nz = 8** is closer to a printable ribbed floor plate: less locking, more degrees of freedom for load paths that carry **self-weight** (see **`UMST_SHELL_SELF_WEIGHT`**, default **on** in the full harness) as well as roof traction.
+
+**Discretization audit:** before interpreting B6 compliance gates, run the manufactured Kirchhoff benchmark  
+`cargo test -p umst-manifold --features mechanics-voigt-cauchy --test mechanics_analytic uniform_rho_q1_hex_compliance_vs_kirchhoff_ssss_audit -- --nocapture`  
+and read the printed **`stiff_bias_pct`** (integration scheme: **2×2×2 Gauss**, **B-bar** volumetric, **selective-reduced** transverse shear). If **> 20–30%**, compliance is measuring mesh stiffness as much as design.
+
+**Pending:** Helmholtz filter on (**`UMST_SHELL_HELM=1`**) to tie minimum feature size to a length-scale parameter ([Lazarov & Sigmund 2011]).
 
 ## Reading order for newcomers
 
