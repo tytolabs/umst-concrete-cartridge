@@ -781,7 +781,7 @@ fn run_rib_quick_metrics() -> RibMetrics {
         last_rho_raw_min: f32::NAN,
         last_rho_raw_max: f32::NAN,
         last_outer_beta: f32::NAN,
-        target_vf: target_vf,
+        target_vf,
         roof_ramp_on: true,
         roof_ramp_strength: 0.2,
         z_profile: String::new(),
