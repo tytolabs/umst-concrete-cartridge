@@ -48,7 +48,9 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 | 2026-06-11 | **A′ smoke 20-outer** run 2, `SELF_WEIGHT=0`, AL `μ=64` uncapped, `b6-h4-diagnosis` WIP | — | — | 0.622 | **FAIL** smoke — vf overshoot 0.099→0.193 (`μ` escalated to 8M); `max_grad_l2=363k`; greyness↓ OK; `xy_var@18+≈0.001` OK; c1 gate |
 | 2026-06-11 | **A′ smoke 20-outer** run 3γ=1.5, `SELF_WEIGHT=0`, AL `μ=32` cap 4096 | — | — | 0.771 | **FAIL** smoke vf band — vf ring 0.091→0.261 (`err=+0.111`); `max_grad_l2=189` (bounded); greyness↓ then ↑; `xy_var@18+≈0.00018` |
 | 2026-06-11 | **A′ smoke 20-outer** run 4, `SELF_WEIGHT=0`, AL `μ=32` `γ=1.2` | — | — | 0.768 | **FAIL** vf band — vf 0.098→0.260 (`err=+0.110`); AL too weak post-outer-10 |
-| 2026-06-11 | **A′ smoke 20-outer** run 5 (accept), `SELF_WEIGHT=0`, AL `μ=96` `γ=1.2` `τ=0.85` cap 4096, `529c48f`, `--release` | 0.625 | — | 167 | **PASS** AL-shaped health — vf damped ring 0.484→0.055@12→0.194@20 (`err=+0.044` in band); `max_grad_l2=167` bounded (no run-2 363k); greyness 0.999→0.625↓; `xy_var@18+=0.000198`; `c1` 26.7→6.8 below peak; `eq_rel≈9.9×10⁻⁵`. Log: `/tmp/b6-aprime-20outer.log` |
+| 2026-06-11 | **A′ smoke 20-outer** run 5 (accept), `SELF_WEIGHT=0`, AL `μ=96` `γ=1.2` `τ=0.85` cap 4096, `c789b5d`, `--release` | 0.625 | — | 167 | **PASS** AL-shaped health — vf damped ring 0.484→0.055@12→0.194@20 (`err=+0.044` in band); `max_grad_l2=167` bounded (no run-2 363k); greyness 0.999→0.625↓; `xy_var@18+=0.000198`; `c1` 26.7→6.8 below peak; `eq_rel≈9.9×10⁻⁵`. Log: `/tmp/b6-aprime-20outer.log` |
+| 2026-06-11 | **Suspect 2** FD adjoint 9×8×2, `adjoint_q1_hex_self_weight_fd`, `umst-manifold` `140483d` | — | — | — | **PASS** — central FD ε=2×10⁻³, 10 nodes; **documented bound rel ≤2.5%** ON/OFF (worst ON **2.01%** @ nid=186; f32 FD floor, not analytic exact); void deciles all sens negative (no spurious “add mass” sign) |
+| 2026-06-11 | **Suspect 2 smoke 20-outer**, `SELF_WEIGHT=1`, AL knobs as A′, `96c537a` + `140483d`, `--release` | 0.625 | — | 163 | **PASS** smoke A′ — same AL health as run 5; `xy_var@18+=0.000198`; `c1` peak→6.7 (non-monotone OK under design-dependent load) |
 
 **A′ in-loop volume AL knobs (`AugmentedLagrangianVolume`, `shell_topology_rib_pattern.rs`):**
 
@@ -82,6 +84,8 @@ First divergent metric at Striatus scale: **forward PCG never meets tolerance** 
 | A — operator probes | **verified** | `bar_network_operator_step_a`: symmetry, PSD, 2-node rel_res metric, 9-node axial manufactured |
 | B — scale / solve lane | **resolved (Q1 hex)** | bar-network mechanism retired; harness uses `AdjointComplianceQ1Hex` |
 | C — permanent gate | **green (quick + 1-outer full)** | quick CI + full **40×40×4** 1-outer H4 diag: `eq_rel≈9.7×10⁻⁵`; **`grad_l2≈0.93`** after init-scale fix (`UMST_SHELL_INIT_SCALE` default **1.0**, not **0.05**) |
+| D — Suspect 2 self-weight adjoint | **verified** | `2uᵀ(∂f/∂ρ)` Bruyneel–Duysinx in `adjoint_q1_hex.rs` (`140483d`); FD property test; 20-outer `SELF_WEIGHT=1` smoke pass (`96c537a`) |
+| E — 200-outer B6 acceptance | **pending** | Requires manifold pin bump to `140483d` on remote + `METRICS=1` overnight run; §9 verdict + `b6-c0-uniform-at-target-vf` caveat |
 
 **Roof-traction mechanism probes (2026-06-10, `bar_network_roof_mechanism_probe`, 9×8×2 harness):**
 
