@@ -994,7 +994,8 @@ fn bisect_logit_offset_b_detached<Bk: BackendTrait<FloatElem = f32>>(
             break (-width, width);
         }
         if width > 1_000_000.0 {
-            let vf_slice = logit_offset_vf_from_slice(&logits_flat, 0.0, beta, STRIATUS_HEAVISIDE_ETA);
+            let vf_slice =
+                logit_offset_vf_from_slice(&logits_flat, 0.0, beta, STRIATUS_HEAVISIDE_ETA);
             panic!(
                 "logit_offset_bisect: bracket failed — vf@b=-{width}={vf_lo:.6} vf@b=+{width}={vf_hi:.6} \
 target={target_vf:.6} beta={beta:.3} identity_vf@b=0={vf_slice:.6}"
@@ -1361,12 +1362,8 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             heaviside_beta0,
             beta_max_sched,
         );
-        let beta = plateau_beta.effective_beta(
-            base_beta,
-            &greyness_hist,
-            beta_max_sched,
-            last_outer_beta,
-        );
+        let beta =
+            plateau_beta.effective_beta(base_beta, &greyness_hist, beta_max_sched, last_outer_beta);
         assert!(
             it == 1 || beta + 1e-6 >= last_outer_beta,
             "striatus_beta_monotone: outer {it} beta={beta:.6} < prev={last_outer_beta:.6}"
