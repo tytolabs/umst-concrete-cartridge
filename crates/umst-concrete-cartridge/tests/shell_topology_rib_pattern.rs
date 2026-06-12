@@ -518,7 +518,7 @@ fn log_striatus_acceptance_line(tag: &str, _nx: usize, _ny: usize, _nz: usize, m
         "{tag}: acceptance diag \
 UMST_SHELL_ROOF_RAMP={} ramp_strength={:.3} target_vf={:.4} vf_final={:.6} vf_err={:+.6} \
 GREYNESS={:.6} z_rho_mean={} xy_var={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
-max_grad_l2={:.6} eq_rel={:.3e}",
+max_grad_l2={:.6} max_vf_err_abs={:.6} eq_rel={:.3e}",
         if m.roof_ramp_on { 1 } else { 0 },
         m.roof_ramp_strength,
         m.target_vf,
@@ -531,6 +531,7 @@ max_grad_l2={:.6} eq_rel={:.3e}",
         m.c1,
         m.last_outer_beta,
         m.max_grad_l2,
+        m.max_vf_err_abs,
         m.eq_rel_res,
     );
     if m.greyness < 0.05 && m.last_outer_beta < 8.0 {
