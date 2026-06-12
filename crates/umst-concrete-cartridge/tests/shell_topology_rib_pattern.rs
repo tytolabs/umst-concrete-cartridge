@@ -517,7 +517,7 @@ struct RibMetrics {
     max_vf_err_abs: f32,
     /// Peak `|vf_err|` when detached b-bisection ran (logit-offset is feasible by construction).
     max_vf_err_when_feasible: f32,
-    /// Compliance baseline: uniform ρ = target_vf @ final schedule SIMP `p` ([`b6-c0-uniform-at-target-vf`]).
+    /// Compliance baseline: uniform ρ = target_vf @ SIMP **p = 1** (Voigt; [`b6-c0-uniform-at-target-vf`]).
     c0_uniform: f32,
     /// Greyness on in-loop `ρ_mid` at the last outer (may differ from acceptance when sym boundary fires).
     greyness_loop_last: f32,
@@ -884,6 +884,9 @@ const STRIATUS_VF_ERR_ABORT_BAND: f32 = 0.02;
 const STRIATUS_B_FINISHER_VF_TOL: f32 = 0.02;
 const STRIATUS_B_BISECT_MAX_ITERS: usize = 48;
 const STRIATUS_HEAVISIDE_ETA: f32 = 0.5;
+/// SIMP `p` for [`b6-c0-uniform-at-target-vf`] — **Voigt bound** (linear rule of mixtures).
+/// Strictest honest smeared reference; schedule-final `p` (e.g. 3) crushes uniform stiffness and trivializes the gate.
+const STRIATUS_C0_UNIFORM_SIMP_P: f32 = 1.0;
 /// Adjacent-outer greyness ratio above this logs `WARN greyness_jump` (sym-without-absorb signature).
 const STRIATUS_GREYNESS_JUMP_WARN_RATIO: f32 = 10.0;
 
@@ -1371,15 +1374,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     };
     let sym_period = 20usize;
 
-    // `b6-c0-uniform-at-target-vf`: compliance baseline at ρ ≡ target_vf (final schedule SIMP `p`).
-    let sched_final_k = iterations.saturating_sub(1);
-    let p_final_uniform = ContinuationSchedule::value(sched_final_k, iter_total);
-    let simp_uniform = SimpElasticMaterial {
-        e0: material.e0,
-        nu: material.nu,
-        p: p_final_uniform,
-        e_min: material.e_min,
-    };
+    // `b6-c0-uniform-at-target-vf`: compliance(uniform ρ = target_vf, SIMP p = 1) — Voigt-bound baseline.
     let rho_uniform = Tensor::<B, 3>::full([1, n, 1], target_vf, device);
     let bf_uniform = if use_self_weight {
         sw_cfg
@@ -1388,18 +1383,44 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     } else {
         live_force.clone()
     };
+    let simp_uniform_gate = SimpElasticMaterial {
+        e0: material.e0,
+        nu: material.nu,
+        p: STRIATUS_C0_UNIFORM_SIMP_P,
+        e_min: material.e_min,
+    };
+    let bf_uniform_inner = bf_uniform.inner();
     let (_, c0_uniform_raw, _) = q1_compliance_with_diagnostics(
+        rho_uniform.clone(),
+        &plate,
+        boundary_inner.clone(),
+        bf_uniform_inner.clone(),
+        simp_uniform_gate,
+        &cg_cfg,
+        if use_self_weight { Some(sw_cfg) } else { None },
+    );
+    // Audit only: full-schedule final `p` on uniform ρ (e.g. p=3 @ 200 outers — ~34× compliance vs Voigt p=1; not a gate).
+    let p_schedule_final = ContinuationSchedule::value(iter_total.saturating_sub(1), iter_total);
+    let simp_uniform_p_final = SimpElasticMaterial {
+        e0: material.e0,
+        nu: material.nu,
+        p: p_schedule_final,
+        e_min: material.e_min,
+    };
+    let (_, c0_uniform_p_final_raw, _) = q1_compliance_with_diagnostics(
         rho_uniform,
         &plate,
         boundary_inner.clone(),
-        bf_uniform.inner(),
-        simp_uniform,
+        bf_uniform_inner,
+        simp_uniform_p_final,
         &cg_cfg,
         if use_self_weight { Some(sw_cfg) } else { None },
     );
     eprintln!(
         "shell_topology_rib_pattern_full_v04: c0_uniform_at_target_vf \
-target_vf={target_vf:.4} p_final={p_final_uniform:.3} c0_uniform_raw={c0_uniform_raw:.6} eq_rel baseline"
+target_vf={target_vf:.4} gate_p={STRIATUS_C0_UNIFORM_SIMP_P} c0_uniform_raw={c0_uniform_raw:.6} \
+audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_raw:.6} \
+(Voigt p=1 gate; p_final audit only) eq_rel baseline",
     );
 
     let comp_scale = c0_uniform_raw.max(1e-12);
@@ -2366,10 +2387,10 @@ beta_steps={} greyness@β_steps={:?} min_xy_var@18+={:.6} min_xy_var@50+={:.6} m
     );
     assert!(
         m.c1 < m.c0_uniform * 0.6,
-        "compliance drop gate: c0_uniform={} c1={} ratio={} (vf={} greyness={} xy_var={})",
+        "compliance drop gate (c0_uniform=uniform ρ=target_vf @ SIMP p=1 Voigt): c0_uniform={} c1={} ratio={} (vf={} greyness={} xy_var={})",
         m.c0_uniform,
         m.c1,
-        m.c1 / m.c0.max(1e-30),
+        m.c1 / m.c0_uniform.max(1e-30),
         m.vf,
         m.greyness,
         m.xy_var
