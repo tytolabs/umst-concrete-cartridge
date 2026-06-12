@@ -44,7 +44,7 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 | eq_rel ≤ 1e-4 | PASS | 200/200 observed |
 | greyness < 0.15 | PASS (~10⁻⁴) | ~50 clean outers observed |
 | xy_var > 0.1 | PASS (~0.124) | clean outers + 60-outer concur |
-| c1 < 0.6·c0_uniform | **unknown** | first honest measurement (`c0_uniform_raw=3.882`) |
+| c1 < 0.6·c0_uniform | **unknown** | first honest measurement — **`c0_uniform` @ SIMP p=1 (Voigt)**; see gate definition below |
 
 **200-outer verdict (pre-registered):** if **greyness + c1 pass** but **xy_var fails** with **sandwich z-profile** → insufficient load asymmetry, not optimizer bug (tune ramp **F** before `λ_xy`). If **xy_var fails** with **greyness/c1 also failing** → report as optimizer/volume path issue. **Greyness ≪1 at β≲2** implies DensityNet saturation, not Heaviside; always check **`vf_err`** after logit-offset b-bisection.
 
@@ -102,7 +102,7 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 
 | id | status | proposal |
 |----|--------|----------|
-| `b6-c0-uniform-at-target-vf` | **closed** (2026-06-12) | Harness now sets `c0 := compliance(uniform ρ = target_vf)` @ final schedule SIMP `p` (logged as `c0_uniform_at_target_vf`). Gate: `c1 < 0.6·c0_uniform`. Outer-1-at-vf≈0.48 baseline retired. |
+| `b6-c0-uniform-at-target-vf` | **closed** (2026-06-12, **p=1 fix**) | **Gate:** `c0_uniform := compliance(uniform ρ = target_vf, SIMP **p = 1**, same mesh/load/BCs/self-weight)` — **Voigt bound**, strictest honest smeared reference (“layout beats best-case smeared material by ≥40%”). **`c1`** = post-finisher export ρ @ schedule-final SIMP `p` (e.g. 3). **Do not** gate on schedule-final `p` for the uniform field: at ρ=0.15, p=3 crushes E∝ρ³ and inflates c0 (~**34×** vs p=1 — observed **3.882 @ p=1** vs **133.9 @ p=3** on 40×40×4). Harness logs both (`c0_uniform_p_final_raw` audit only). Outer-1-at-vf≈0.48 baseline retired. |
 
 **H4 diagnosis (2026-06-10, `UMST_SHELL_H4_DIAG=1`):** primary hypothesis — compliance adjoint / sensitivity pathology at Striatus N. Instrumentation logs per-outer `sens_l2`, `sens_var`, `pcg_iter`, `pcg_rel_res`, `eq_rel_res`, `xy_var`, `adam_skipped` (see harness). **H1 REFUTED:** `greyness_pre_vol≈0.99` is uniform ρ≈0.5 **before** projection; post 0.510=`4·vf·(1−vf)` is degenerate constant-field signature (identical under λ-shift and η-bisect). **λ_g forbidden** for this failure mode.
 
