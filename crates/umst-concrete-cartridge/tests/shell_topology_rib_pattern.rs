@@ -347,18 +347,32 @@ u_nf={} u_pinned_nf={} u_pinned_abs_max={:.3e} ge_nf={} nodal_sens_nf={} first_b
     );
 }
 
+fn format_rho_bar_grad_component(v: f32) -> String {
+    if v.is_nan() {
+        "n/a (non-leaf)".to_string()
+    } else {
+        format!("{v:.6}")
+    }
+}
+
 fn log_h5_grad_layers(
     tag: &str,
     outer: usize,
     grad_l2: f32,
     grad_max: f32,
-    rho_grad_l2: f32,
-    rho_grad_max: f32,
+    rho_bar_grad: Option<(f32, f32)>,
     layers: &[(usize, usize, usize)],
 ) {
+    let (rho_l2_s, rho_max_s) = match rho_bar_grad {
+        Some((l2, mx)) => (
+            format_rho_bar_grad_component(l2),
+            format_rho_bar_grad_component(mx),
+        ),
+        None => ("n/a (non-leaf)".to_string(), "n/a (non-leaf)".to_string()),
+    };
     eprintln!(
         "{tag}: H5 grad outer {outer}: param_l2={grad_l2:.6} param_max={grad_max:.6} \
-rho_bar_l2={rho_grad_l2:.6} rho_bar_max={rho_grad_max:.6} layer_nf={}",
+rho_bar_l2={rho_l2_s} rho_bar_max={rho_max_s} layer_nf={}",
         layers.len()
     );
     for &(idx, nf, n) in layers {
@@ -1655,10 +1669,9 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_b_on={vol_b_on}, max_cg=
 
         let rho_bar_grad_anchor = rho_comp.clone();
         let grads = total_loss.backward();
-        let (rho_grad_l2, rho_grad_max) = rho_bar_grad_anchor
+        let rho_bar_grad = rho_bar_grad_anchor
             .grad(&grads)
-            .map(|g| tensor_grad_l2_inner(&g))
-            .unwrap_or((f32::NAN, f32::NAN));
+            .map(|g| tensor_grad_l2_inner(&g));
         let grads_params = GradientsParams::from_grads(grads, &opt.density_net);
         let (grad_l2, grad_max, grad_layer_nf) =
             autodiff_param_grad_audit(&grads_params, &opt.density_net);
@@ -1752,8 +1765,7 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
                     it,
                     grad_l2,
                     grad_max,
-                    rho_grad_l2,
-                    rho_grad_max,
+                    rho_bar_grad,
                     &grad_layer_nf,
                 );
                 log_h4_outer(
