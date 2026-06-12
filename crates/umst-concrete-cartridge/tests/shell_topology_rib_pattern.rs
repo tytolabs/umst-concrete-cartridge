@@ -1402,18 +1402,12 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
 target_vf={target_vf:.4} p_final={p_final_uniform:.3} c0_uniform_raw={c0_uniform_raw:.6} eq_rel baseline"
     );
 
-    let mut comp_scale = c0_uniform_raw.max(1e-12);
-    let mut c0 = c0_uniform_raw / comp_scale;
+    let comp_scale = c0_uniform_raw.max(1e-12);
+    let c0 = c0_uniform_raw / comp_scale;
+    #[allow(unused_assignments)]
     let mut c1 = f32::NAN;
     let mut last_rho: Vec<f32> = Vec::new();
     let mut _last_rho_bar: Option<Tensor<B, 3>> = None;
-    let mut last_bf_inner: Option<Tensor<Inner, 3>> = None;
-    let mut last_simp_mat = SimpElasticMaterial {
-        e0: material.e0,
-        nu: material.nu,
-        p: 3.0,
-        e_min: material.e_min,
-    };
     let mut adam_skipped = 0usize;
     let mut last_grad_l2 = 0.0_f32;
     let mut max_grad_l2 = 0.0_f32;
@@ -1433,7 +1427,6 @@ target_vf={target_vf:.4} p_final={p_final_uniform:.3} c0_uniform_raw={c0_uniform
     let mut max_vf_err_abs = 0.0_f32;
     let mut max_vf_err_when_feasible = 0.0_f32;
     let mut _last_b = 0.0_f32;
-    let mut last_rho_mid: Option<Tensor<B, 3>> = None;
     let mut prev_greyness_outer = f32::NAN;
     let pcg_tol = cg_cfg.pcg_tolerance.max(cg_cfg.cg_tolerance);
     let beta_max_sched = heaviside_beta_max.max(64.0);
@@ -1538,12 +1531,9 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
             p: p_act,
             e_min: material.e_min,
         };
-        last_simp_mat = simp_mat;
         let rho_raw_vec = rho_raw.clone().into_data().value;
         let bf_inner = bf.inner();
         _last_rho_bar = Some(rho_mech.clone());
-        last_rho_mid = Some(rho_mid.clone());
-        last_bf_inner = Some(bf_inner.clone());
         // Compliance AD on post-Heaviside ρ_mid (A′). `UMST_SHELL_H5_SKIP_PROJ=1` → raw net output.
         let rho_comp = if h5_skip_projection_compliance() {
             rho_raw.clone()
