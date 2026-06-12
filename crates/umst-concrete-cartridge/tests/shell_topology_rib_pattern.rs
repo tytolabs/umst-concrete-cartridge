@@ -1361,8 +1361,16 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             heaviside_beta0,
             beta_max_sched,
         );
-        let beta =
-            plateau_beta.effective_beta(base_beta, &greyness_hist, beta_max_sched);
+        let beta = plateau_beta.effective_beta(
+            base_beta,
+            &greyness_hist,
+            beta_max_sched,
+            last_outer_beta,
+        );
+        assert!(
+            it == 1 || beta + 1e-6 >= last_outer_beta,
+            "striatus_beta_monotone: outer {it} beta={beta:.6} < prev={last_outer_beta:.6}"
+        );
         let beta_stepped = it > 1 && beta > last_outer_beta * (1.0 + 1e-6);
 
         let logits = opt
