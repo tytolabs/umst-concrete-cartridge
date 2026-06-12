@@ -30,6 +30,22 @@ cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern \
 
 Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_SHELL_ROOF_RAMP=0`**. Default when unset: x-ramp on at **`UMST_SHELL_ROOF_RAMP_STRENGTH`** (alias **`UMST_SHELL_ROOF_RAMP_F`**, default **0.2**). **Self-weight:** default **on** (`UMST_SHELL_SELF_WEIGHT` unset); set **`UMST_SHELL_SELF_WEIGHT=0`** to disable gravity. **Discretization audit (before 200-outer):** `cargo test -p umst-manifold --features mechanics-voigt-cauchy --test mechanics_analytic uniform_rho_q1_hex_compliance_vs_kirchhoff_ssss_audit --release -- --nocapture` — read **`stiff_bias_pct`** in the VERIFY line. Final **`acceptance diag`** / pre-gate line logs ramp flag, **F**, **`vf_final`**, **`vf_err`**, and **`z_rho_mean=[…]`** (mean ρ per z-layer).
 
+**Absorbing-step invariant (harness, 2026-06-12):** no **periodic mutation** of ρ (or schedule-driving state) without a **subsequent Adam step** to absorb it — any new outer-loop mechanism inherits this rule. Instances: **XY reflection** (`sym_period=20`) on outers **20, 40, …** but **never outer `N`**; **`outer_schedule_k`** frozen on the final outer; acceptance on **post-finisher export ρ** + one equilibrium solve (not in-loop `ρ_mid` of outer `N`). **Tripwire:** adjacent-outer greyness ratio **≥10×** → `WARN greyness_jump` (would have caught 200-outer spikes @ 160/180/200). Module doc: [`shell_topology_rib_pattern_full_v04`](../../crates/umst-concrete-cartridge/tests/shell_topology_rib_pattern.rs).
+
+**200-outer sym forensics (2026-06-12, MISTRIAL):** spikes @ outers **160 / 180 / 200** — greyness **6×10⁻⁵→0.30**, xy_var **0.124→0.051**, H4 ρ mean **0.151→0.243**; **β=64 flat**, `schedule_k` +1/outer only; recovery @ **161** immediate. Outers **150–199** (excl. sym): greyness **<10⁻⁴**, xy_var **≈0.124** — both gates green ~50 consecutive outers.
+
+**Load-case hypothesis (§9, 2026-06-12):** **CLOSED** — `z_rho_mean=[0.161,0.156,0.151,0.146,0.140]` (mild gradient, not sandwich); `xy_var≈0.125` @ full β (60-outer PASS). Under honestly-differentiated self-weight + roof ramp, this problem makes **ribs, not plates**.
+
+**Acceptance re-run pre-registration (boundary-fixed harness, pending row):**
+
+| Gate | Expected | Basis |
+|------|----------|-------|
+| vf ±0.02 | PASS | by construction; 200/200 observed |
+| eq_rel ≤ 1e-4 | PASS | 200/200 observed |
+| greyness < 0.15 | PASS (~10⁻⁴) | ~50 clean outers observed |
+| xy_var > 0.1 | PASS (~0.124) | clean outers + 60-outer concur |
+| c1 < 0.6·c0_uniform | **unknown** | first honest measurement (`c0_uniform_raw=3.882`) |
+
 **200-outer verdict (pre-registered):** if **greyness + c1 pass** but **xy_var fails** with **sandwich z-profile** → insufficient load asymmetry, not optimizer bug (tune ramp **F** before `λ_xy`). If **xy_var fails** with **greyness/c1 also failing** → report as optimizer/volume path issue. **Greyness ≪1 at β≲2** implies DensityNet saturation, not Heaviside; always check **`vf_err`** after logit-offset b-bisection.
 
 **Greyness target:** B6 asserts **volume**-mean **`mean(4ρ(1−ρ)) < 0.15`** on the final **post–volume-projection** nodal **ρ** (`crates/umst-concrete-cartridge/tests/shell_topology_rib_pattern.rs`, **`greyness_mean`** on **`last_rho`**).
@@ -55,6 +71,7 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 | 2026-06-12 | **logit-offset 20-outer**, `RIB_FULL_ITERS=20`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `b6-h4-diagnosis`, `--release` | 0.513 | 0.438 | — | **PASS — first all-green B6 run** — vf locked 0.151±0.001 every outer; greyness↓; `xy_var@18+=0.019`; `grad_l2≤241`; `eq_rel≈9.8×10⁻⁵`; β monotone (6 steps → 4.438). **Volume arc closed.** Log: `/tmp/b6-logit-offset-20outer.log` |
 | 2026-06-12 | **logit-offset 60-outer** (pre-budget), `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `MAX_CG=4000`, `--release` | — | 0.084 @32 | — | **FAIL @ outer 33** — PCG gate (`pcg_rel=1.38×10⁻⁴` vs tol `1e-4`); vf held 0.151 through outer 32; `pcg_iter` 3642→3960 (cap-bound, not stall). Log: `/tmp/b6-logit-offset-60outer.log` |
 | 2026-06-12 | **logit-offset 60-outer** (sharp-field budget), `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `MAX_CG=8000`, `--release` | 0.513 | 0.310 | — | **PASS** schedule-regime — vf 0.151 every outer; **10 β steps** → 64; `min_xy_var@18+=0.019`, `@50+=0.125`; `max_grad_l2=461`; `eq_rel≈9.8×10⁻⁵`; `pcg_iter` peak ~4378 (well under 8000 cap). **45 min** wall. Log: `/tmp/b6-logit-offset-60outer-v2.log` |
+| 2026-06-12 | **logit-offset 200-outer** (pinned `fb24edaa`), `METRICS=1`, `SELF_WEIGHT=1`, `MAX_CG=8000`, `--release` | 0.513 | **0.303**† | **0.303**† | **MISTRIAL†** — run healthy (vf locked, `eq_rel` green, 0 skips/guards); **§9 measured wrong state**. Forensics: greyness/xy_var spikes every **20** outers (`sym_period`, outers 160/180/200) — **not** β/schedule_k (β=64 flat; `schedule_k` +1/outer). Outer **199**: greyness **6.2×10⁻⁵**, xy_var **0.124** (both gates green). Outer **200**: `b` jump −2392→−2224 + reflection → greyness **0.303**, xy_var **0.051**. Fix: skip sym on outer `N`; gates on finisher export. Log: `/tmp/b6-logit-offset-200outer.log` |
 
 **Milestone (2026-06-12):** B6 volume arc **closed** — four mechanisms, three earned retirements (λ-shift, AL, η); survivor is logit-offset (Hoyer et al. 2019). First all-green 20-outer: vf by construction, `xy_var` restored, greyness falling, β monotone, solver green. The 60-outer PCG miss is **solver provisioning** stressed by optimizer success (sharp-field κ peak), not a volume-path regression.
 
@@ -85,7 +102,7 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 
 | id | status | proposal |
 |----|--------|----------|
-| `b6-c0-uniform-at-target-vf` | **open** | 200-outer gate `c1 < 0.6·c0` uses **c0 = outer-1 compliance at vf≈0.48** (init DensityNet field). Meaningless once AL drives vf→0.15. **Proposed:** `c0 := compliance(uniform ρ = target_vf)` — same material budget, no design; gate = “optimized layout ≥40% stiffer than smeared solid at target vf” ([Bendsøe & Sigmund 2003](https://doi.org/10.1007/978-3-662-05086-6), Ch. 1 compliance minimization). Smoke A′ uses `c1 < c1_peak` instead; full gate unchanged until this row closes. |
+| `b6-c0-uniform-at-target-vf` | **closed** (2026-06-12) | Harness now sets `c0 := compliance(uniform ρ = target_vf)` @ final schedule SIMP `p` (logged as `c0_uniform_at_target_vf`). Gate: `c1 < 0.6·c0_uniform`. Outer-1-at-vf≈0.48 baseline retired. |
 
 **H4 diagnosis (2026-06-10, `UMST_SHELL_H4_DIAG=1`):** primary hypothesis — compliance adjoint / sensitivity pathology at Striatus N. Instrumentation logs per-outer `sens_l2`, `sens_var`, `pcg_iter`, `pcg_rel_res`, `eq_rel_res`, `xy_var`, `adam_skipped` (see harness). **H1 REFUTED:** `greyness_pre_vol≈0.99` is uniform ρ≈0.5 **before** projection; post 0.510=`4·vf·(1−vf)` is degenerate constant-field signature (identical under λ-shift and η-bisect). **λ_g forbidden** for this failure mode.
 
@@ -104,7 +121,7 @@ First divergent metric at Striatus scale: **forward PCG never meets tolerance** 
 | B — scale / solve lane | **resolved (Q1 hex)** | bar-network mechanism retired; harness uses `AdjointComplianceQ1Hex` |
 | C — permanent gate | **green (quick + 1-outer full)** | quick CI + full **40×40×4** 1-outer H4 diag: `eq_rel≈9.7×10⁻⁵`; **`grad_l2≈0.93`** after init-scale fix (`UMST_SHELL_INIT_SCALE` default **1.0**, not **0.05**) |
 | D — Suspect 2 self-weight adjoint | **verified** | `2uᵀ(∂f/∂ρ)` Bruyneel–Duysinx in `adjoint_q1_hex.rs` (`140483d`); FD property test; 20-outer `SELF_WEIGHT=1` smoke pass (`96c537a`) |
-| E — 200-outer B6 acceptance | **pending** | Requires manifold pin bump to `140483d` on remote + `METRICS=1` overnight run; §9 verdict + `b6-c0-uniform-at-target-vf` caveat |
+| E — 200-outer B6 acceptance | **re-run pending** | MISTRIAL @ outer 200 (sym boundary); harness fix landed 2026-06-12; acceptance re-run vs `c0_uniform=3.882` is last open gate |
 
 **Roof-traction mechanism probes (2026-06-10, `bar_network_roof_mechanism_probe`, 9×8×2 harness):**
 
