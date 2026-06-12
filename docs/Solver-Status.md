@@ -36,15 +36,17 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 
 **Load-case hypothesis (§9, 2026-06-12):** **CLOSED** — `z_rho_mean=[0.161,0.156,0.151,0.146,0.140]` (mild gradient, not sandwich); `xy_var≈0.125` @ full β (60-outer PASS). Under honestly-differentiated self-weight + roof ramp, this problem makes **ribs, not plates**.
 
-**Acceptance re-run pre-registration (boundary-fixed harness, pending row):**
+**Acceptance verdict (200-outer, post-finisher export, 2026-06-12):**
 
-| Gate | Expected | Basis |
-|------|----------|-------|
-| vf ±0.02 | PASS | by construction; 200/200 observed |
-| eq_rel ≤ 1e-4 | PASS | 200/200 observed |
-| greyness < 0.15 | PASS (~10⁻⁴) | ~50 clean outers observed |
-| xy_var > 0.1 | PASS (~0.124) | clean outers + 60-outer concur |
-| c1 < 0.6·c0_uniform | **unknown** | first honest measurement — **`c0_uniform` @ SIMP p=1 (Voigt)**; see gate definition below |
+| Gate | Expected | Measured | Verdict |
+|------|----------|----------|---------|
+| vf ±0.02 | PASS | 0.151, err +0.001 | **PASS** |
+| eq_rel ≤ 1e-4 | PASS | 9.97×10⁻⁵ | **PASS** |
+| greyness < 0.15 | PASS (~10⁻⁴) | 6.6×10⁻⁵ | **PASS** |
+| xy_var > 0.1 | PASS (~0.124) | 0.124495 | **PASS** |
+| c1 < 0.6·c0_uniform | first honest measurement | c1_raw=64.90; c0_uniform_raw=3.881671 (Voigt p=1); need c1<2.329 | **FAIL** |
+
+**Overall:** **ACCEPTANCE FAIL** (200-outer, post-finisher) — optimizer/volume path did not deliver ≥40% compliance drop vs Voigt p=1 uniform reference. **Not** a MISTRIAL (boundary-fixed harness; finisher export used). Log: `/tmp/b6-logit-offset-200outer-voigt-p1.log`. Workspace verdict: `outputs/b6-acceptance-verdict.md`. Manifold pin `fb24eda`; cartridge `e8cc95e`. Caveats: Kirchhoff **`stiff_bias_pct≈34%`**; `c0_uniform` gate definition row [`b6-c0-uniform-at-target-vf`].
 
 **200-outer verdict (pre-registered):** if **greyness + c1 pass** but **xy_var fails** with **sandwich z-profile** → insufficient load asymmetry, not optimizer bug (tune ramp **F** before `λ_xy`). If **xy_var fails** with **greyness/c1 also failing** → report as optimizer/volume path issue. **Greyness ≪1 at β≲2** implies DensityNet saturation, not Heaviside; always check **`vf_err`** after logit-offset b-bisection.
 
@@ -72,8 +74,9 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 | 2026-06-12 | **logit-offset 60-outer** (pre-budget), `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `MAX_CG=4000`, `--release` | — | 0.084 @32 | — | **FAIL @ outer 33** — PCG gate (`pcg_rel=1.38×10⁻⁴` vs tol `1e-4`); vf held 0.151 through outer 32; `pcg_iter` 3642→3960 (cap-bound, not stall). Log: `/tmp/b6-logit-offset-60outer.log` |
 | 2026-06-12 | **logit-offset 60-outer** (sharp-field budget), `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `MAX_CG=8000`, `--release` | 0.513 | 0.310 | — | **PASS** schedule-regime — vf 0.151 every outer; **10 β steps** → 64; `min_xy_var@18+=0.019`, `@50+=0.125`; `max_grad_l2=461`; `eq_rel≈9.8×10⁻⁵`; `pcg_iter` peak ~4378 (well under 8000 cap). **45 min** wall. Log: `/tmp/b6-logit-offset-60outer-v2.log` |
 | 2026-06-12 | **logit-offset 200-outer** (pinned `fb24edaa`), `METRICS=1`, `SELF_WEIGHT=1`, `MAX_CG=8000`, `--release` | 0.513 | **0.303**† | **0.303**† | **MISTRIAL†** — run healthy (vf locked, `eq_rel` green, 0 skips/guards); **§9 measured wrong state**. Forensics: greyness/xy_var spikes every **20** outers (`sym_period`, outers 160/180/200) — **not** β/schedule_k (β=64 flat; `schedule_k` +1/outer). Outer **199**: greyness **6.2×10⁻⁵**, xy_var **0.124** (both gates green). Outer **200**: `b` jump −2392→−2224 + reflection → greyness **0.303**, xy_var **0.051**. Fix: skip sym on outer `N`; gates on finisher export. Log: `/tmp/b6-logit-offset-200outer.log` |
+| 2026-06-12 | **ACCEPTANCE 200-outer** Voigt p=1 gate, boundary-fixed harness, `e8cc95e`, post-finisher export, `--release` | — | **6.6×10⁻⁵** | — | **ACCEPTANCE FAIL** — vf/eq_rel/greyness/xy_var **PASS**; **c1 FAIL** (64.90 vs 0.6×3.882); z=`[0.160,0.156,0.151,0.146,0.142]`; no `greyness_jump` @200. **Not smoke.** Log: `/tmp/b6-logit-offset-200outer-voigt-p1.log` |
 
-**Milestone (2026-06-12):** B6 volume arc **closed** — four mechanisms, three earned retirements (λ-shift, AL, η); survivor is logit-offset (Hoyer et al. 2019). First all-green 20-outer: vf by construction, `xy_var` restored, greyness falling, β monotone, solver green. The 60-outer PCG miss is **solver provisioning** stressed by optimizer success (sharp-field κ peak), not a volume-path regression.
+**Milestone (2026-06-12):** B6 volume arc **closed** — four mechanisms, three earned retirements (λ-shift, AL, η); survivor is logit-offset (Hoyer et al. 2019). First all-green 20-outer: vf by construction, `xy_var` restored, greyness falling, β monotone, solver green. **B6 acceptance measured 2026-06-12: FAIL on c1 only** (honest post-finisher run). Open: compliance-drop gate vs **`stiff_bias≈34%`** calibration. The 60-outer PCG miss is **solver provisioning**, not a volume-path regression.
 
 **Volume enforcement arc (B6, earned rejections):**
 
@@ -121,7 +124,7 @@ First divergent metric at Striatus scale: **forward PCG never meets tolerance** 
 | B — scale / solve lane | **resolved (Q1 hex)** | bar-network mechanism retired; harness uses `AdjointComplianceQ1Hex` |
 | C — permanent gate | **green (quick + 1-outer full)** | quick CI + full **40×40×4** 1-outer H4 diag: `eq_rel≈9.7×10⁻⁵`; **`grad_l2≈0.93`** after init-scale fix (`UMST_SHELL_INIT_SCALE` default **1.0**, not **0.05**) |
 | D — Suspect 2 self-weight adjoint | **verified** | `2uᵀ(∂f/∂ρ)` Bruyneel–Duysinx in `adjoint_q1_hex.rs` (`140483d`); FD property test; 20-outer `SELF_WEIGHT=1` smoke pass (`96c537a`) |
-| E — 200-outer B6 acceptance | **re-run pending** | MISTRIAL @ outer 200 (sym boundary); harness fix landed 2026-06-12; acceptance re-run vs `c0_uniform=3.882` is last open gate |
+| E — 200-outer B6 acceptance | **FAIL (c1 only)** | 2026-06-12 post-finisher export; vf/eq_rel/greyness/xy_var PASS; c1=64.90 vs 0.6×3.882 FAIL; verdict `outputs/b6-acceptance-verdict.md` |
 
 **Roof-traction mechanism probes (2026-06-10, `bar_network_roof_mechanism_probe`, 9×8×2 harness):**
 
