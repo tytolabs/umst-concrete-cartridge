@@ -2,7 +2,7 @@
 
 **Authoritative table:** [`umst-manifold/docs/Solver-Status.md`](../../umst-manifold/docs/Solver-Status.md) in a sibling checkout. This file mirrors manifold docs for cartridge-side deep links and the Striatus pipeline; edit manifold first, then refresh here.
 
-**Verification index (manifold):** [`VERIFICATION_SCOPE_INDEX.md`](../../umst-manifold/docs/VERIFICATION_SCOPE_INDEX.md).
+**Verification index (manifold):** [`VERIFICATION_SCOPE_INDEX.md`](../../umst-manifold/docs/VERIFICATION_SCOPE_INDEX.md) — **file absent** in manifold `docs/` at audit pin `fb24eda`; use manifold [`Solver-Status.md`](../../umst-manifold/docs/Solver-Status.md) + [`PROOF-STATUS.md`](../../umst-manifold/docs/PROOF-STATUS.md) as the live index until a stub is added.
 
 **PROOF-STATUS (different stub contracts):** manifold [`PROOF-STATUS.md`](../../umst-manifold/docs/PROOF-STATUS.md) is a short solver→lane index (Track J3); this repo's [`PROOF-STATUS.md`](PROOF-STATUS.md) is generated from Rust `#[doc]` formal blocks (`proof_status_doc`).
 
@@ -14,7 +14,9 @@
 
 ### P0 runbook — `shell_topology_rib_pattern_full_v04` (B6, honest)
 
-**Purpose:** one Striatus-scale **B6** proof attempt (**40×40×4**, Burn seed **42**); default CI remains **`shell_topology_rib_pattern_quick`**.
+**Purpose:** one Striatus-scale **B6** proof attempt (**40×40×4**, Burn seed **42**). **`shell_topology_rib_pattern_quick`** is the compact regression target but is **not** default cartridge **`cargo test`** — it requires **`--features solver-experimental`** (same as **`research-main`** on manifold).
+
+**Smoke vs acceptance:** **`UMST_SHELL_RIB_FULL_ITERS < 200`** ⇒ **smoke** (skips greyness / **`xy_var`** / **`c1`** gates). **20-outer** and **60-outer PASS** rows below are **schedule-regime smokes**, **not** **200-outer B6 acceptance**. Audit finding **#8** — do not conflate them in prose or milestones.
 
 **Environment — 200 Adam outers:** **`UMST_SHELL_RIB_PATTERN=1`** (required). Use **`UMST_SHELL_RIB_FULL_ITERS=200`** or omit it — the harness **defaults to 200** (clamped **1…200**). Values **< 200** are **smoke only**: the test **skips** greyness / planar-variance / compliance-ratio gates and only checks finite metrics + a loose VF band.
 
@@ -68,12 +70,12 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 | 2026-06-11 | **Suspect 2** FD adjoint 9×8×2, `adjoint_q1_hex_self_weight_fd`, `umst-manifold` `140483d` | — | — | — | **PASS** — central FD ε=2×10⁻³, 10 nodes; **documented bound rel ≤2.5%** ON/OFF (worst ON **2.01%** @ nid=186; f32 FD floor, not analytic exact); void deciles all sens negative (no spurious “add mass” sign) |
 | 2026-06-11 | **Suspect 2 smoke 20-outer**, `SELF_WEIGHT=1`, AL knobs as A′, `96c537a` + `140483d`, `--release` | 0.625 | — | 163 | **PASS** smoke A′ — same AL health as run 5; `xy_var@18+=0.000198`; `c1` peak→6.7 (non-monotone OK under design-dependent load) |
 | 2026-06-11 | **AL×β handshake 60-outer**, `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, handshake WIP, `--release` | — | — | — | **FAIL @ outer 24** — `striatus_vf_band_guard`; **0 β steps** (`beta=1.000` all outers; `settled=0` throughout); vf ring 0.119→0.288; `λ` sign-flip ring (−32…+273); `xy_var@18+≈0.0004` alive; log `/tmp/b6-handshake-60outer.log` |
-| 2026-06-12 | **logit-offset 20-outer**, `RIB_FULL_ITERS=20`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `b6-h4-diagnosis`, `--release` | 0.513 | 0.438 | — | **PASS — first all-green B6 run** — vf locked 0.151±0.001 every outer; greyness↓; `xy_var@18+=0.019`; `grad_l2≤241`; `eq_rel≈9.8×10⁻⁵`; β monotone (6 steps → 4.438). **Volume arc closed.** Log: `/tmp/b6-logit-offset-20outer.log` |
+| 2026-06-12 | **logit-offset 20-outer smoke**, `RIB_FULL_ITERS=20`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `b6-h4-diagnosis`, `--release` | 0.513 | 0.438 | — | **SMOKE PASS** (20-outer schedule-regime; **not** 200-outer B6) — vf locked 0.151±0.001 every outer; greyness↓; `xy_var@18+=0.019`; `grad_l2≤241`; `eq_rel≈9.8×10⁻⁵`; β monotone (6 steps → 4.438). **Volume mechanism validated**; **B6 acceptance not earned.** Log: `/tmp/b6-logit-offset-20outer.log` |
 | 2026-06-12 | **logit-offset 60-outer** (pre-budget), `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `MAX_CG=4000`, `--release` | — | 0.084 @32 | — | **FAIL @ outer 33** — PCG gate (`pcg_rel=1.38×10⁻⁴` vs tol `1e-4`); vf held 0.151 through outer 32; `pcg_iter` 3642→3960 (cap-bound, not stall). Log: `/tmp/b6-logit-offset-60outer.log` |
 | 2026-06-12 | **logit-offset 60-outer** (sharp-field budget), `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `MAX_CG=8000`, `--release` | 0.513 | 0.310 | — | **PASS** schedule-regime — vf 0.151 every outer; **10 β steps** → 64; `min_xy_var@18+=0.019`, `@50+=0.125`; `max_grad_l2=461`; `eq_rel≈9.8×10⁻⁵`; `pcg_iter` peak ~4378 (well under 8000 cap). **45 min** wall. Log: `/tmp/b6-logit-offset-60outer-v2.log` |
 | 2026-06-12 | **logit-offset 200-outer** (pinned `fb24edaa`), `METRICS=1`, `SELF_WEIGHT=1`, `MAX_CG=8000`, `--release` | 0.513 | **0.303**† | **0.303**† | **MISTRIAL†** — run healthy (vf locked, `eq_rel` green, 0 skips/guards); **§9 measured wrong state**. Forensics: greyness/xy_var spikes every **20** outers (`sym_period`, outers 160/180/200) — **not** β/schedule_k (β=64 flat; `schedule_k` +1/outer). Outer **199**: greyness **6.2×10⁻⁵**, xy_var **0.124** (both gates green). Outer **200**: `b` jump −2392→−2224 + reflection → greyness **0.303**, xy_var **0.051**. Fix: skip sym on outer `N`; gates on finisher export. Log: `/tmp/b6-logit-offset-200outer.log` |
 
-**Milestone (2026-06-12):** B6 volume arc **closed** — four mechanisms, three earned retirements (λ-shift, AL, η); survivor is logit-offset (Hoyer et al. 2019). First all-green 20-outer: vf by construction, `xy_var` restored, greyness falling, β monotone, solver green. The 60-outer PCG miss is **solver provisioning** stressed by optimizer success (sharp-field κ peak), not a volume-path regression.
+**Milestone (2026-06-12):** **Volume enforcement arc closed** — four mechanisms, three earned retirements (λ-shift, AL, η); survivor is logit-offset (Hoyer et al. 2019). First all-green **20-outer smoke**: vf by construction, `xy_var` restored, greyness falling, β monotone, solver green. **B6 acceptance (200-outer + full gates incl. Voigt p=1 `c0_uniform`) remains open** — 200-outer run is **MISTRIAL†**; honest re-run **pending** (verdict **TBD** until a completed log is recorded). The 60-outer PCG miss is **solver provisioning** stressed by optimizer success (sharp-field κ peak), not a volume-path regression.
 
 **Volume enforcement arc (B6, earned rejections):**
 
@@ -121,7 +123,7 @@ First divergent metric at Striatus scale: **forward PCG never meets tolerance** 
 | B — scale / solve lane | **resolved (Q1 hex)** | bar-network mechanism retired; harness uses `AdjointComplianceQ1Hex` |
 | C — permanent gate | **green (quick + 1-outer full)** | quick CI + full **40×40×4** 1-outer H4 diag: `eq_rel≈9.7×10⁻⁵`; **`grad_l2≈0.93`** after init-scale fix (`UMST_SHELL_INIT_SCALE` default **1.0**, not **0.05**) |
 | D — Suspect 2 self-weight adjoint | **verified** | `2uᵀ(∂f/∂ρ)` Bruyneel–Duysinx in `adjoint_q1_hex.rs` (`140483d`); FD property test; 20-outer `SELF_WEIGHT=1` smoke pass (`96c537a`) |
-| E — 200-outer B6 acceptance | **re-run pending** | MISTRIAL @ outer 200 (sym boundary); harness fix landed 2026-06-12; acceptance re-run vs `c0_uniform=3.882` is last open gate |
+| E — 200-outer B6 acceptance | **re-run pending — verdict TBD** | MISTRIAL† @ outer 200 (sym boundary measured wrong state); harness fix landed 2026-06-12; acceptance re-run vs Voigt **p = 1** `c0_uniform` is last open gate — **do not claim 200-outer PASS** until a completed log shows all gates green on post-finisher export |
 
 **Roof-traction mechanism probes (2026-06-10, `bar_network_roof_mechanism_probe`, 9×8×2 harness):**
 
