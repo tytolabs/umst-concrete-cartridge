@@ -30,7 +30,7 @@ cargo test -p umst-concrete-cartridge --test shell_topology_rib_pattern \
 
 Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_SHELL_ROOF_RAMP=0`**. Default when unset: x-ramp on at **`UMST_SHELL_ROOF_RAMP_STRENGTH`** (alias **`UMST_SHELL_ROOF_RAMP_F`**, default **0.2**). **Self-weight:** default **on** (`UMST_SHELL_SELF_WEIGHT` unset); set **`UMST_SHELL_SELF_WEIGHT=0`** to disable gravity. **Discretization audit (before 200-outer):** `cargo test -p umst-manifold --features mechanics-voigt-cauchy --test mechanics_analytic uniform_rho_q1_hex_compliance_vs_kirchhoff_ssss_audit --release -- --nocapture` — read **`stiff_bias_pct`** in the VERIFY line. Final **`acceptance diag`** / pre-gate line logs ramp flag, **F**, **`vf_final`**, **`vf_err`**, and **`z_rho_mean=[…]`** (mean ρ per z-layer).
 
-**200-outer verdict (pre-registered):** if **greyness + c1 pass** but **xy_var fails** with **sandwich z-profile** → insufficient load asymmetry, not optimizer bug (tune ramp **F** before `λ_xy`). If **xy_var fails** with **greyness/c1 also failing** → report as optimizer/volume path issue. **Greyness ≪1 at β≲2** implies DensityNet saturation, not Heaviside; always check **`vf_err`** after η-bisection.
+**200-outer verdict (pre-registered):** if **greyness + c1 pass** but **xy_var fails** with **sandwich z-profile** → insufficient load asymmetry, not optimizer bug (tune ramp **F** before `λ_xy`). If **xy_var fails** with **greyness/c1 also failing** → report as optimizer/volume path issue. **Greyness ≪1 at β≲2** implies DensityNet saturation, not Heaviside; always check **`vf_err`** after logit-offset b-bisection.
 
 **Greyness target:** B6 asserts **volume**-mean **`mean(4ρ(1−ρ)) < 0.15`** on the final **post–volume-projection** nodal **ρ** (`crates/umst-concrete-cartridge/tests/shell_topology_rib_pattern.rs`, **`greyness_mean`** on **`last_rho`**).
 
@@ -51,16 +51,35 @@ Uniform roof (match **`optimize_shell_3d`** with ramp off): prefix with **`UMST_
 | 2026-06-11 | **A′ smoke 20-outer** run 5 (accept), `SELF_WEIGHT=0`, AL `μ=96` `γ=1.2` `τ=0.85` cap 4096, `c789b5d`, `--release` | 0.625 | — | 167 | **PASS** AL-shaped health — vf damped ring 0.484→0.055@12→0.194@20 (`err=+0.044` in band); `max_grad_l2=167` bounded (no run-2 363k); greyness 0.999→0.625↓; `xy_var@18+=0.000198`; `c1` 26.7→6.8 below peak; `eq_rel≈9.9×10⁻⁵`. Log: `/tmp/b6-aprime-20outer.log` |
 | 2026-06-11 | **Suspect 2** FD adjoint 9×8×2, `adjoint_q1_hex_self_weight_fd`, `umst-manifold` `140483d` | — | — | — | **PASS** — central FD ε=2×10⁻³, 10 nodes; **documented bound rel ≤2.5%** ON/OFF (worst ON **2.01%** @ nid=186; f32 FD floor, not analytic exact); void deciles all sens negative (no spurious “add mass” sign) |
 | 2026-06-11 | **Suspect 2 smoke 20-outer**, `SELF_WEIGHT=1`, AL knobs as A′, `96c537a` + `140483d`, `--release` | 0.625 | — | 163 | **PASS** smoke A′ — same AL health as run 5; `xy_var@18+=0.000198`; `c1` peak→6.7 (non-monotone OK under design-dependent load) |
+| 2026-06-11 | **AL×β handshake 60-outer**, `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, handshake WIP, `--release` | — | — | — | **FAIL @ outer 24** — `striatus_vf_band_guard`; **0 β steps** (`beta=1.000` all outers; `settled=0` throughout); vf ring 0.119→0.288; `λ` sign-flip ring (−32…+273); `xy_var@18+≈0.0004` alive; log `/tmp/b6-handshake-60outer.log` |
+| 2026-06-12 | **logit-offset 20-outer**, `RIB_FULL_ITERS=20`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `b6-h4-diagnosis`, `--release` | 0.513 | 0.438 | — | **PASS — first all-green B6 run** — vf locked 0.151±0.001 every outer; greyness↓; `xy_var@18+=0.019`; `grad_l2≤241`; `eq_rel≈9.8×10⁻⁵`; β monotone (6 steps → 4.438). **Volume arc closed.** Log: `/tmp/b6-logit-offset-20outer.log` |
+| 2026-06-12 | **logit-offset 60-outer** (pre-budget), `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `MAX_CG=4000`, `--release` | — | 0.084 @32 | — | **FAIL @ outer 33** — PCG gate (`pcg_rel=1.38×10⁻⁴` vs tol `1e-4`); vf held 0.151 through outer 32; `pcg_iter` 3642→3960 (cap-bound, not stall). Log: `/tmp/b6-logit-offset-60outer.log` |
+| 2026-06-12 | **logit-offset 60-outer** (sharp-field budget), `RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `MAX_CG=8000`, `--release` | 0.513 | 0.310 | — | **PASS** schedule-regime — vf 0.151 every outer; **10 β steps** → 64; `min_xy_var@18+=0.019`, `@50+=0.125`; `max_grad_l2=461`; `eq_rel≈9.8×10⁻⁵`; `pcg_iter` peak ~4378 (well under 8000 cap). **45 min** wall. Log: `/tmp/b6-logit-offset-60outer-v2.log` |
 
-**A′ in-loop volume AL knobs (`AugmentedLagrangianVolume`, `shell_topology_rib_pattern.rs`):**
+**Milestone (2026-06-12):** B6 volume arc **closed** — four mechanisms, three earned retirements (λ-shift, AL, η); survivor is logit-offset (Hoyer et al. 2019). First all-green 20-outer: vf by construction, `xy_var` restored, greyness falling, β monotone, solver green. The 60-outer PCG miss is **solver provisioning** stressed by optimizer success (sharp-field κ peak), not a volume-path regression.
+
+**Volume enforcement arc (B6, earned rejections):**
+
+| Path | Status | Mechanism diagnosis |
+|------|--------|---------------------|
+| Hard λ-shift [`VolumeProjection`] | **RETIRED** | Uniformizer — adds constant to every density; H1 grey inflation |
+| In-loop AL [`AugmentedLagrangianVolume`] | **RETIRED** (2026-06-11) | Underdamped primal-dual oscillator at single-Adam-step timescale; 60-outer log @ β=1: vf ring + λ sign-flip without any β step. Struct kept in `topology.rs` + unit tests for future inequality constraints. |
+| AL×β [`BetaAlHandshake`] | **RETIRED** (2026-06-11) | Handshake blocked β correctly; oscillator rang anyway. Struct + tests retained unwired. |
+| η-by-construction (VP-HP, Xu et al. 2010) | **RETIRED** (2026-06-12) | Arithmetic infeasibility on bounded ρ̃∈[0,1] at low β — detached η-bisect cannot reach target_vf; soft `(vf−vf\*)²` fallback deleted. |
+| **logit-offset** (Hoyer et al. 2019) | **ACTIVE** | Per outer: bisect scalar **b** on **detached** logits **z** so `mean(Heaviside_{β,η=0.5}(filter(σ(z+b)))) = target_vf`; apply `σ(z+b)` **on tape** (b constant per outer; `db/dz` omitted). η **fixed at 0.5** — unbounded logit space ⇒ feasible by construction. |
+
+**In-loop b-bisect knobs (`shell_topology_rib_pattern.rs`, active path):**
 
 | Knob | Value | Grounding |
 |------|-------|-----------|
-| `μ` (initial) | **96** | Bertsekas AL initial penalty scale ([Bertsekas 1996](https://doi.org/10.1887/978-1-881529-07-6), Ch. 2). **Fit during A′**, admissible **32–128**: run 2 `μ=64` uncapped → `grad_l2` 363k; run 4 `μ=32` `γ=1.2` → vf rebound 0.098→0.260 (under-penalized); run 5 `μ=96` `γ=1.2` → bounded grads + vf settles in band. |
-| `γ` (μ growth) | **1.2** | Bertsekas adaptive penalty increase when `\|g_k\| > τ·\|g_{k-1}\|` ([Bertsekas 1996](https://doi.org/10.1887/978-1-881529-07-6), Ch. 2). **Fit during A′**, admissible **1.1–1.5**: damp **before** touching `μ` — run 2 `γ=2` underdamped vf 0.099→0.193; run 3 `γ=1.5` ring 0.091→0.261; **1.2** first stable damping (run 5). |
-| `τ` (sufficient-decrease) | **0.85** | Bertsekas “retain `μ` if constraint residual decreases adequately” ([Bertsekas 1996](https://doi.org/10.1887/978-1-881529-07-6), Ch. 2). **Fit during A′**, admissible **0.75–0.9**: `topology.rs` default **0.5** doubles `μ` too often at B6 N (run 2 evidence). Held at 0.85 for runs 3–5. |
-| `μ` cap | **4096** | Engineering ceiling (not in Bertsekas). **Fit during A′**, admissible **2048–8192**: prevents f32 blow-up when `update_period=1` and early `vf` residual is large (0.48→0.15). Run 2 without cap hit 8M. |
-| `update_period` | **1** | B6 smoke: update λ every outer. Default **10** in `topology.rs` leaves `λ=0` for first smoke pass (run 1 false-negative guard). |
+| `UMST_SHELL_B_BISECT_TOL` | **1e-3** | Derived: vf gate band **0.02 / 100**. Logit-offset bisection tolerance on detached logits. |
+| `UMST_SHELL_SKIP_B_BISECT_OUTERS` | **0** (default) | Synthetic guard only: skip b-bisect for first N outers → `striatus_vf_bisect_guard` tripwire test. |
+| vf tripwire band | **±0.02** | `STRIATUS_VF_ERR_ABORT_BAND`; bisection failure / skipped-b pathology — immediate panic, not export. |
+| η (Heaviside threshold) | **0.5** (fixed) | No η-bisect; projection sharpens via β continuation only. |
+
+**RETIRED knobs (do not re-tune):** `UMST_SHELL_ETA_BISECT_TOL`, `UMST_SHELL_SKIP_ETA_BISECT_OUTERS`, `STRIATUS_VF_SOFT_FALLBACK`, `μ`, `γ`, `τ`, AL cap, `UMST_SHELL_VF_SETTLE_TOL`, `UMST_SHELL_LAMBDA_SETTLE_TOL`, `UMST_SHELL_AL_REEQ_STEPS`, `UMST_SHELL_AL_BETA_DECAY`, `UMST_SHELL_VF_GRACE_OUTERS`, `UMST_SHELL_BETA_SETTLE_BYPASS`.
+
+**§process — verify horizon (2026-06-12):** minimum verify **60-outer schedule-regime** (`RIB_FULL_ITERS=60`, `H4_DIAG=1`, `SELF_WEIGHT=1`, `--release`). **20-outer health** first: vf within ±0.02 every outer, greyness↓, `xy_var@18+`, `grad_l2<500`, β monotone. **60-outer:** ≥3 β steps (plateau-on-loss); vf holds through steps; `xy_var@50+`; greyness↓ across β steps; zero `striatus_vf_bisect_guard` fires; synthetic pathology test panics when b-bisect skipped.
 
 **Pending gate definition (B6 compliance baseline):**
 
@@ -107,7 +126,7 @@ First divergent metric at Striatus scale: **forward PCG never meets tolerance** 
 | C | refresh+masked p | OFF | 59 | 8.1×10⁻⁵ | 8.1×10⁻⁵ | rewrite OK at quick scale; r_rec = r_true |
 | D | refresh+masked p | ON | 59 | 6.9×10⁻⁵ | 6.9×10⁻⁵ | bundled state; r_rec = r_true |
 
-**PCG iteration budget (`HEX_PCG_MAX_ITER_DEFAULT_STRIATUS=4000`, 2026-06-10):** derived from measured **~1213** iters @ outer 1 on **40×40×4**; **2×** headroom because κ grows as the design develops contrast (outers **11–18** previously hit the **2000** cap with `eq_rel` creeping to **8.9×10⁻⁴**). Override with **`UMST_SHELL_MAX_CG`**.
+**PCG iteration budget (`HEX_PCG_MAX_ITER_DEFAULT_STRIATUS=8000`, 2026-06-12):** **revised basis** — worst sharp-field observation **3960** iters @ outer 32 (`greyness≈0.084`, logit-offset 60-outer); **2×** headroom ⇒ **8000**. Supersedes grey-field derivation (**~1213** @ outer 1 → **4000**, 2026-06-10). Tol **`1e-4` unchanged** (sensitivity fidelity). Override with **`UMST_SHELL_MAX_CG`**. If late-run iters exceed **~15–20k**, warm-start then block-Jacobi 3×3 (each own commit) before further budget growth.
 
 **Tolerance policy (`q1_hex_elasticity`, 2026-06-10 re-ground):** both lanes **`HEX_PCG_REL_TOL_F32=HEX_PCG_REL_TOL_F64=1e-4`**. Rationale: (i) **sensitivity fidelity** — adjoint compliance gradients are dominated by equilibrium solve error; tightening below the measured κ·ε floor at 40×40×4 buys no gradient signal ([Bendsøe & Sigmund 2003](https://doi.org/10.1007/978-3-662-05086-6), Ch. 1 inexact-solve TO practice); (ii) **attainable floor** — full f64 PCG lane (`eq_rel` binding) still reports true **`rel≈1e-4`** at Striatus N after ~2k iters while recursive self-report can lie by orders of magnitude (arm-A table below); **`1e-6`** overshoots that floor and caused false **`pcg_rel` pass / `eq_rel` fail** on smoke. Step C gates assert **`eq_rel`** against the **lane** tol (f64 harness uses **`HEX_PCG_REL_TOL_F64`**). Production solver: **arm A** (original recursive loop + nondim).
 
