@@ -15,7 +15,11 @@ COPY schema ./schema
 COPY calibration ./calibration
 COPY datasets ./datasets
 
-RUN cargo fetch -p umst-mcp
+RUN for attempt in 1 2 3; do \
+      cargo fetch && break; \
+      echo "cargo fetch attempt ${attempt} failed; retrying in 20s..."; \
+      sleep 20; \
+    done
 RUN for attempt in 1 2 3; do \
       cargo build -p umst-mcp --release && exit 0; \
       echo "cargo build attempt ${attempt} failed; retrying in 20s..."; \
