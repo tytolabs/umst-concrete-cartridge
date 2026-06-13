@@ -3,6 +3,10 @@
 
 FROM rust:bookworm AS build
 
+# crates.io HTTP/2 framing flakes in CI Docker builds (burn-core download).
+ENV CARGO_NET_RETRY=10 \
+    CARGO_HTTP_MULTIPLEXING=false
+
 WORKDIR /app
 # Cargo.lock is not committed (workspace gitignore); resolve deps during image build.
 COPY Cargo.toml ./
@@ -11,7 +15,13 @@ COPY schema ./schema
 COPY calibration ./calibration
 COPY datasets ./datasets
 
-RUN cargo build -p umst-mcp --release
+RUN cargo fetch -p umst-mcp
+RUN for attempt in 1 2 3; do \
+      cargo build -p umst-mcp --release && exit 0; \
+      echo "cargo build attempt ${attempt} failed; retrying in 20s..."; \
+      sleep 20; \
+    done; \
+    exit 1
 
 FROM gcr.io/distroless/cc-debian12:nonroot
 WORKDIR /srv
