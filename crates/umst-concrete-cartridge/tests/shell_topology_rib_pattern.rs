@@ -1870,6 +1870,22 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
     }
 
     // Acceptance gates: post-finisher export ρ (one equilibrium solve on exactly that field).
+    if let Ok(export_path) = env::var("UMST_SHELL_EXPORT_RHO") {
+        let bytes: Vec<u8> = rho_acceptance
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect();
+        if let Err(e) = std::fs::write(&export_path, bytes) {
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: WARN failed to export rho to {export_path}: {e}"
+            );
+        } else {
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: exported acceptance rho ({} nodes) -> {export_path}",
+                rho_acceptance.len()
+            );
+        }
+    }
     let rho_acceptance_t = Tensor::<B, 3>::from_data(
         Data::new(rho_acceptance.clone(), Shape::new([1, n, 1])),
         device,
