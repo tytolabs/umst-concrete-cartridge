@@ -3910,6 +3910,7 @@ dependencies = [
 [[package]]
 name = "umst-manifold"
 version = "0.1.0"
+source = "git+https://github.com/tytolabs/umst-manifold.git?rev=cfc683f3a02e112843b1af8e0a49a1e414261fae#cfc683f3a02e112843b1af8e0a49a1e414261fae"
 dependencies = [
  "bincode",
  "burn",
