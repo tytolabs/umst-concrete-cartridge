@@ -25,6 +25,19 @@ pub mod print_ready;
 
 /// Wire DTOs and pure `predict` / schema bytes without `serde_json` in this crate.
 pub mod facade;
+pub mod gate_policy;
+
+#[cfg(feature = "tier2c-handshake")]
+pub mod material_transition;
+
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled.
+#[cfg(feature = "tier2c-handshake")]
+pub use material_transition::{
+    cement_reaction_extent_kinetics_spec, CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA,
+    CEMENT_REACTION_ENTHALPY_J_PER_KG,
+};
 
 mod burn_compat;
 
@@ -32,8 +45,12 @@ mod burn_compat;
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports manifold façade symbols for ergonomics only.
 pub use core::{
-    apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, MixTensor, PhysicalResult,
+    apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, PhysicalResult, StatePoint,
 };
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports cartridge HTTP gate policy evaluator.
+pub use gate_policy::ConcretePolicyEvaluator;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Stable import path for MCP/CLI integration tests.

@@ -8,6 +8,7 @@ license = "MIT"
 
 [dependencies]
 umst-manifold = { workspace = true }
+umst-concrete-cartridge = { path = "../umst-concrete-cartridge", default-features = false, features = ["tier2c-handshake"] }
 
 [lib]
 name = "umst_concrete_ffi"

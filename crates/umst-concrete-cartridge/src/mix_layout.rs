@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! Canonical `[Batch, Features]` layout for [`MixTensor`](umst_manifold::core::tensors::MixTensor) used by tensor physics.
+//! Canonical `[Batch, Features]` layout for [`StatePoint`](umst_manifold::core::tensors::StatePoint) used by tensor physics.
 //!
 //! Hydration kernels (`physics::hydration`) read cement at column **1**, slag **5**, fly ash **6** — unchanged.
 
 use burn::tensor::{backend::Backend, Data, Shape, Tensor};
-use umst_manifold::core::tensors::MixTensor;
+use umst_manifold::core::tensors::StatePoint;
 
 use crate::homogeneous::MixRow;
 
@@ -103,7 +103,7 @@ pub fn fractions_from_mix_row(
     z
 }
 
-/// Builds a single-batch [`MixTensor`] from a packed layout row.
+/// Builds a single-batch [`StatePoint`] from a packed layout row.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Constructor replacing non-existent `MixTensor::from_proportions`; see README Quick start.
@@ -111,8 +111,8 @@ pub fn fractions_from_mix_row(
 pub fn mix_tensor_from_layout<B: Backend<FloatElem = f32>>(
     layout: &[f32; MIX_FEATURE_COUNT],
     device: &B::Device,
-) -> MixTensor<B> {
-    MixTensor {
+) -> StatePoint<B> {
+    StatePoint {
         fractions: Tensor::from_data(
             Data::new(layout.to_vec(), Shape::new([1, MIX_FEATURE_COUNT])),
             device,

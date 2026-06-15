@@ -3889,6 +3889,7 @@ dependencies = [
  "proc-macro2",
  "rand 0.8.6",
  "serde",
+ "serde_json",
  "syn 2.0.117",
  "time",
  "toml",
@@ -3902,13 +3903,13 @@ dependencies = [
 name = "umst-concrete-ffi"
 version = "0.1.0"
 dependencies = [
+ "umst-concrete-cartridge",
  "umst-manifold",
 ]
 
 [[package]]
 name = "umst-manifold"
 version = "0.1.0"
-source = "git+https://github.com/tytolabs/umst-manifold.git?rev=fb24edaa1fa9f918ce325e7ca143b4058f1cd73f#fb24edaa1fa9f918ce325e7ca143b4058f1cd73f"
 dependencies = [
  "bincode",
  "burn",

@@ -8,7 +8,7 @@
 //! formal_anchor_rationale: Staged dispatch only; coupling iterations belong in manifold orchestrator follow-ons.
 
 use burn::tensor::{backend::Backend, Data, Shape, Tensor};
-use umst_manifold::core::tensors::MixTensor;
+use umst_manifold::core::tensors::StatePoint;
 
 use crate::calibration::Profile;
 use crate::homogeneous::{self, MixRow};
@@ -45,7 +45,7 @@ use crate::pipeline::report::{
     PHYSICS_PIPELINE_SCHEMA_VERSION,
 };
 
-fn layout_snapshot<B: Backend<FloatElem = f32>>(mix: &MixTensor<B>) -> [f32; MIX_FEATURE_COUNT] {
+fn layout_snapshot<B: Backend<FloatElem = f32>>(mix: &StatePoint<B>) -> [f32; MIX_FEATURE_COUNT] {
     let data = mix.fractions.clone().into_data().value;
     let mut arr = [0_f32; MIX_FEATURE_COUNT];
     for (i, v) in data.iter().copied().enumerate().take(MIX_FEATURE_COUNT) {
@@ -131,7 +131,7 @@ fn min_f32_rank4<B: Backend<FloatElem = f32>>(t: Tensor<B, 4>) -> f32 {
 #[must_use]
 pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     profile: &Profile,
-    mix: &MixTensor<B>,
+    mix: &StatePoint<B>,
 ) -> PhysicsPipelineReport {
     let dev = mix.fractions.device();
     let layout = layout_snapshot(mix);
