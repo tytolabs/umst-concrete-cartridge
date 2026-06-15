@@ -3,7 +3,10 @@
 
 //! Pure `f32`/`f64` cement physics — no tensors, no heap handles.
 
-use umst_manifold::gate::mix_proposal::{ThermodynamicStateSnapshot, DEFAULT_S_INTRINSIC_MPA};
+use umst_concrete_cartridge::material_transition::CementMaterialParams;
+use umst_manifold::gate::ThermodynamicStateSnapshot;
+
+use umst_concrete_cartridge::CEMENT_DEFAULT_S_INTRINSIC_MPA;
 
 /// Avrami–Parrott hydration degree α ∈ [0, 1].
 #[must_use]
@@ -44,7 +47,13 @@ pub fn strength_powers(
 /// Thermodynamic snapshot from mix scalars (Powers closure).
 #[must_use]
 pub fn thermo_snapshot_from_mix(w_c: f64, alpha: f64, temp: f64) -> ThermodynamicStateSnapshot {
-    ThermodynamicStateSnapshot::from_mix_calibrated(w_c, alpha, temp, DEFAULT_S_INTRINSIC_MPA)
+    ThermodynamicStateSnapshot::from_mix_calibrated_with_params(
+        w_c,
+        alpha,
+        temp,
+        CEMENT_DEFAULT_S_INTRINSIC_MPA,
+        &CementMaterialParams,
+    )
 }
 
 /// C-ABI struct mirror for Haskell `Storable` consumers.
@@ -64,9 +73,9 @@ pub fn c_state_from_mix(w_c: f64, alpha: f64, temp: f64) -> CThermodynamicState 
     CThermodynamicState {
         density: snap.density,
         free_energy: snap.free_energy,
-        hydration_degree: snap.hydration_degree,
+        hydration_degree: snap.reaction_extent,
         strength: snap.strength,
-        max_strength: DEFAULT_S_INTRINSIC_MPA,
+        max_strength: CEMENT_DEFAULT_S_INTRINSIC_MPA,
     }
 }
 

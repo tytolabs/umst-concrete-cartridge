@@ -3,14 +3,18 @@
 
 //! Cartridge-owned HTTP gate policy marker (`GateEvaluator` only — orthogonal to [`crate::core::ConcreteCartridge`] `IScienceCartridge`).
 
-use umst_manifold::gate::{default_gate_manifest, GateEvaluator, GateManifest};
+use umst_manifold::gate::{default_gate_manifest, GateEvaluator, HttpGateManifest as GateManifest};
 
-/// Zero-sized policy evaluator: HTTP gate catalog row without linking spatial physics.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Zero-sized policy evaluator; HTTP gate catalog row without spatial physics.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct ConcretePolicyEvaluator;
 
 impl ConcretePolicyEvaluator {
-    /// Powers closure defaults (prototype `PhysicsConfig::default` / UCI D1 **`s_intrinsic`**).
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Powers closure defaults for HTTP manifest shim.
     #[must_use]
     pub fn default_gate_manifest() -> GateManifest {
         default_gate_manifest()

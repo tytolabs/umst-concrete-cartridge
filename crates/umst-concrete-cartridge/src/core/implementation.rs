@@ -5,12 +5,12 @@
 use burn::tensor::Int;
 use burn::tensor::{backend::Backend, Tensor};
 use umst_manifold::core::apply_physics_to_umst;
-use umst_manifold::core::tensors::MixTensor;
+use umst_manifold::core::tensors::StatePoint;
 use umst_manifold::core::tensors::UnifiedMaterialStateTensor;
 use umst_manifold::core::traits::{IScienceCartridge, PhysicalResult};
 #[cfg(feature = "solver-experimental")]
 use umst_manifold::core::SCALAR_HUMIDITY;
-use umst_manifold::core::{SCALAR_DAMAGE, SCALAR_HYDRATION_ALPHA, SCALAR_TEMPERATURE};
+use umst_manifold::core::{SCALAR_DAMAGE, SCALAR_INTERNAL_VARIABLE_0, SCALAR_TEMPERATURE};
 #[cfg(feature = "solver-experimental")]
 use umst_manifold::core::{SCALAR_FRACTURE_ENERGY_GC, VECTOR_MECHANICAL_DISPLACEMENT};
 
@@ -147,8 +147,8 @@ fn thmc_state_from_umst<B: Backend<FloatElem = f32>>(
         Tensor::<B, 3>::zeros([1, n, 1], &dev)
     };
 
-    let hydration_alpha = if nf > SCALAR_HYDRATION_ALPHA {
-        f.slice([0..n, SCALAR_HYDRATION_ALPHA..SCALAR_HYDRATION_ALPHA + 1])
+    let hydration_alpha = if nf > SCALAR_INTERNAL_VARIABLE_0 {
+        f.slice([0..n, SCALAR_INTERNAL_VARIABLE_0..SCALAR_INTERNAL_VARIABLE_0 + 1])
             .unsqueeze_dim::<3>(0)
     } else {
         Tensor::<B, 3>::zeros([1, n, 1], &dev).add_scalar(0.01_f32)
@@ -174,7 +174,9 @@ fn thmc_state_from_umst<B: Backend<FloatElem = f32>>(
         thermal: ThermalPlan { temperature },
         hydro: HydrologicPlan { humidity },
         mechanical: MechanicalPlan { displacement },
-        chemical: ChemicalPlan { hydration_alpha },
+        chemical: ChemicalPlan {
+            reaction_extent: hydration_alpha,
+        },
         damage: damage_bn1,
         time: 0.0_f32,
     }
@@ -248,7 +250,7 @@ impl<B: Backend<FloatElem = f32>> Default for ConcreteCartridge<B> {
 }
 
 impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> {
-    fn compute_all(&self, mix: &MixTensor<B>) -> PhysicalResult<B> {
+    fn compute_all(&self, mix: &StatePoint<B>) -> PhysicalResult<B> {
         let report = run_full_physics_pipeline::<B>(&self.profile, mix);
         let dev = mix.fractions.device();
         physical_result_from_report::<B>(&self.profile, &report, &dev)
@@ -320,12 +322,12 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
         #[cfg(not(feature = "solver-experimental"))]
         let manifold_alpha_bn = {
             let nf = features.dims()[1];
-            if nf > SCALAR_HYDRATION_ALPHA {
+            if nf > SCALAR_INTERNAL_VARIABLE_0 {
                 features
                     .clone()
                     .slice([
                         0..n_nodes,
-                        SCALAR_HYDRATION_ALPHA..SCALAR_HYDRATION_ALPHA + 1,
+                        SCALAR_INTERNAL_VARIABLE_0..SCALAR_INTERNAL_VARIABLE_0 + 1,
                     ])
                     .unsqueeze_dim::<3>(0)
                     .squeeze::<2>(2)
@@ -358,7 +360,11 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
                     .step(self, state0, manifold)
                     .expect("THMC step must not fail in experimental mode");
 
-                let alpha_exp = state1.chemical.hydration_alpha.clone().squeeze::<2>(2);
+                let alpha_exp = state1
+                    .chemical
+                    .reaction_extent
+                    .clone()
+                    .squeeze::<2>(2);
                 (state1.damage.squeeze::<2>(2), alpha_exp)
             }
             #[cfg(not(feature = "solver-experimental"))]
