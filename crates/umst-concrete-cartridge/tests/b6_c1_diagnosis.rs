@@ -186,6 +186,47 @@ fn scale_to_vf(rho: &mut [f32], target: f32) {
     }
 }
 
+fn skin_arithmetic() {
+    eprintln!("=== non-design skin arithmetic (H-c1-B) ===");
+    let cases = [
+        ("nz=4 (0.1m slab, current B6)", 4usize, 0.15_f32),
+        ("nz=8 (0.3m slab, publishable bridge)", 8usize, 0.15_f32),
+    ];
+    for (label, nz, budget) in cases {
+        let skin_vf_one_cell = 1.0 / nz as f32;
+        eprintln!(
+            "{label}: one solid loaded skin cell-layer vf = 1/{nz} = {skin_vf_one_cell:.3} \
+(budget vf={budget:.2}) → {}",
+            if skin_vf_one_cell > budget {
+                "EXCEEDS budget — non-design skin alone violates vf"
+            } else {
+                "within budget — room for rib material below skin"
+            }
+        );
+    }
+    eprintln!(
+        "node-layer accounting (top layer ρ=1, rest 0): vf = 1/(nz+1) → nz=4 gives 0.20, nz=8 gives 0.111"
+    );
+}
+
+fn print_verdict_ha(frac: &umst_manifold::physics::adjoint_q1_hex::Q1HexTopVoidColumnFractions) {
+    let se = frac.strain_energy_fraction * 100.0;
+    let comp = frac.compliance_fraction * 100.0;
+    eprintln!("=== H-c1-A verdict ===");
+    if se > 50.0 || comp > 50.0 {
+        eprintln!(
+            "H-A CONFIRMED: top-void columns carry >50% (SE={se:.1}%, compliance work={comp:.1}%)"
+        );
+    } else if se < 20.0 && comp < 20.0 {
+        eprintln!(
+            "H-A REFUTED: top-void share <20% (SE={se:.1}%, compliance work={comp:.1}%) — structure genuinely soft; see triplet"
+        );
+    } else {
+        eprintln!(
+            "H-A INCONCLUSIVE: void-column share between 20–50% (SE={se:.1}%, compliance work={comp:.1}%)"
+        );
+    }
+}
 fn load_rho_bin(path: &Path) -> Vec<f32> {
     let bytes = fs::read(path).expect("read rho export");
     assert_eq!(bytes.len() % 4, 0, "rho bin must be f32 LE");
@@ -220,7 +261,12 @@ fn print_triplet(mesh: &B6Mesh, p_accept: f32) {
     );
 }
 
-fn spatial_breakdown(mesh: &B6Mesh, rho: &[f32], p_accept: f32, label: &str) {
+fn spatial_breakdown(
+    mesh: &B6Mesh,
+    rho: &[f32],
+    p_accept: f32,
+    label: &str,
+) -> umst_manifold::physics::adjoint_q1_hex::Q1HexTopVoidColumnFractions {
     let (audit, u) = AdjointComplianceQ1Hex::evaluate_compliance(
         rho,
         NX,
@@ -270,6 +316,7 @@ fn spatial_breakdown(mesh: &B6Mesh, rho: &[f32], p_accept: f32, label: &str) {
     } else {
         eprintln!("H-A: NOT confirmed at >50% threshold");
     }
+    frac
 }
 
 #[test]
@@ -295,5 +342,11 @@ fn b6_c1_accepted_export_spatial() {
     assert_eq!(rho.len(), mesh.n_nodes, "rho node count mismatch");
     let p_accept = ContinuationSchedule::value(199, 200);
     print_triplet(&mesh, p_accept);
-    spatial_breakdown(&mesh, &rho, p_accept, "accepted export");
+    let frac = spatial_breakdown(&mesh, &rho, p_accept, "accepted export");
+    print_verdict_ha(&frac);
+    skin_arithmetic();
+    eprintln!(
+        "optimizer c1 (acceptance log): 64.899582 vs gate {:.6}",
+        GATE_RATIO * C0_UNIFORM_P1
+    );
 }
