@@ -25,6 +25,7 @@ pub mod print_ready;
 
 /// Wire DTOs and pure `predict` / schema bytes without `serde_json` in this crate.
 pub mod facade;
+pub mod gate_policy;
 
 mod burn_compat;
 
@@ -34,6 +35,7 @@ mod burn_compat;
 pub use core::{
     apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, MixTensor, PhysicalResult,
 };
+pub use gate_policy::ConcretePolicyEvaluator;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Stable import path for MCP/CLI integration tests.
