@@ -14,12 +14,12 @@ use umst_manifold::runtime::catalog::{
     WitnessCatalog,
 };
 
-/// Pinned in `umst-manifold/artifacts/catalog.lock.json` (120-module unified export).
+/// Pinned in `umst-manifold/artifacts/catalog.lock.json` (122-module unified export).
 const EXPECTED_UPSTREAM_CATALOG_DIGEST_HEX: &str =
-    "2f17cdf1fecbf5188f7c25e9d4aabb3c72a184f0ef55f7da96160ee8d2fb4bb1";
+    "c61b1befdec77a82bbb9f6c3f7562e754218ef635f0e3b9990752138df5f4bb5";
 /// SHA-256 of verbatim `umst-manifold/artifacts/catalog.lock.json` (v2 dual-pin lock file).
 const EXPECTED_CATALOG_LOCK_BUNDLE_SHA256_HEX: &str =
-    "c995736ddc8c508f5a863efd4919ac48baa29a06e109c02b814ec607ae4507d3";
+    "3e6f869943e2406e335397da205d99d7f38cc4b7417547a27055b0a1349fc8a8";
 
 /// Lean modules cited by cartridge mechanised `formal_anchor` blocks (FORMAL_GROUNDING_AUDIT).
 const MECHANISED_LEAN_MODULE_BASENAMES: &[&str] = &[
@@ -78,11 +78,11 @@ fn manifest_default_gate_catalog_ids_resolve_embedded_catalog_digest() {
         lock_json.contains(&format!(
             "\"upstream_catalog_digest_hex\": \"{EXPECTED_UPSTREAM_CATALOG_DIGEST_HEX}\""
         )),
-        "120-export upstream digest must match catalog.lock.json pin"
+        "122-export upstream digest must match catalog.lock.json pin"
     );
     assert!(
         lock_json.contains("\"module_count\": 120"),
-        "catalog.lock.json must pin the 120-module umst-formal-double-slit export"
+        "catalog.lock.json must pin the 122-module unified Lean export"
     );
     assert_eq!(
         lock_bundle_hex, EXPECTED_CATALOG_LOCK_BUNDLE_SHA256_HEX,
