@@ -81,7 +81,7 @@ fn manifest_default_gate_catalog_ids_resolve_embedded_catalog_digest() {
         "122-export upstream digest must match catalog.lock.json pin"
     );
     assert!(
-        lock_json.contains("\"module_count\": 120"),
+        lock_json.contains("\"module_count\": 122"),
         "catalog.lock.json must pin the 122-module unified Lean export"
     );
     assert_eq!(
