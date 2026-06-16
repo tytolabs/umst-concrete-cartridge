@@ -11,8 +11,8 @@ use umst_manifold::ai::topology::ContinuationSchedule;
 use umst_manifold::physics::adjoint::SimpElasticMaterial;
 use umst_manifold::physics::adjoint_q1_hex::AdjointComplianceQ1Hex;
 use umst_manifold::physics::mechanics::SelfWeightConfig;
-use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 use umst_manifold::physics::q1_hex_elasticity::HEX_PCG_MAX_ITER_DEFAULT_STRIATUS;
+use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 
 const NX: usize = 40;
 const NY: usize = 40;
@@ -207,10 +207,18 @@ fn print_triplet(mesh: &B6Mesh, p_accept: f32) {
 
     let gate = GATE_RATIO * C0_UNIFORM_P1;
     eprintln!("=== B6 c1 reference triplet (vf={TARGET_VF}, p_accept={p_accept:.3}) ===");
-    eprintln!("(i)   uniform @ p=1 Voigt:  c={c_uni_p1:.6}  (ledger c0_uniform_raw={C0_UNIFORM_P1:.6})");
+    eprintln!(
+        "(i)   uniform @ p=1 Voigt:  c={c_uni_p1:.6}  (ledger c0_uniform_raw={C0_UNIFORM_P1:.6})"
+    );
     eprintln!("(i')  uniform @ p={p_accept:.1}: c={c_uni_p:.6}");
-    eprintln!("(ii)  hand rib (period=7):   c={c_rib:.6}  ratio/c0={:.3}", c_rib / C0_UNIFORM_P1);
-    eprintln!("(iii) z-concentrated:        c={c_z:.6}  ratio/c0={:.3}", c_z / C0_UNIFORM_P1);
+    eprintln!(
+        "(ii)  hand rib (period=7):   c={c_rib:.6}  ratio/c0={:.3}",
+        c_rib / C0_UNIFORM_P1
+    );
+    eprintln!(
+        "(iii) z-concentrated:        c={c_z:.6}  ratio/c0={:.3}",
+        c_z / C0_UNIFORM_P1
+    );
     eprintln!("gate c1 < {gate:.6} (0.6 * c0_uniform_p1)");
     eprintln!(
         "pass gate? uni_p1={} rib={} z={}",
@@ -261,10 +269,7 @@ fn spatial_breakdown(mesh: &B6Mesh, rho: &[f32], p_accept: f32, label: &str) {
         "void columns (top ρ<{VOID_RHO}): {:.1}% of xy grid",
         frac.void_column_fraction_xy * 100.0
     );
-    eprintln!(
-        "c1 ratio vs c0_p1: {:.3}",
-        audit.compliance / C0_UNIFORM_P1
-    );
+    eprintln!("c1 ratio vs c0_p1: {:.3}", audit.compliance / C0_UNIFORM_P1);
     if frac.compliance_fraction > 0.5 || frac.strain_energy_fraction > 0.5 {
         eprintln!("H-A: CONFIRMED mechanically (>50% top-void contribution)");
     } else {
@@ -283,9 +288,8 @@ fn b6_c1_reference_triplet() {
 #[test]
 #[ignore = "B6 c1 spatial breakdown — needs UMST_SHELL_RHO_BIN export from 200-outer"]
 fn b6_c1_accepted_export_spatial() {
-    let path = env::var("UMST_SHELL_RHO_BIN").unwrap_or_else(|_| {
-        "/tmp/b6_acceptance_rho.bin".to_string()
-    });
+    let path =
+        env::var("UMST_SHELL_RHO_BIN").unwrap_or_else(|_| "/tmp/b6_acceptance_rho.bin".to_string());
     if !Path::new(&path).exists() {
         eprintln!("skip: rho export missing at {path} — re-run 200-outer with UMST_SHELL_EXPORT_RHO={path}");
         return;

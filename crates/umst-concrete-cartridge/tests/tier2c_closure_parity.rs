@@ -11,8 +11,8 @@ use umst_manifold::core::{
     MaterialTransitionParams, ReactionExtentKineticsSpec, SubstrateMaterialParams,
 };
 use umst_manifold::gate::{
-    thermodynamic_transition_admissible, transition_outcome, AdmissibilityVerdict, ThermodynamicGate,
-    ThermodynamicStateSnapshot, TransitionFilter, TRANSITION_TOLERANCE,
+    thermodynamic_transition_admissible, transition_outcome, AdmissibilityVerdict,
+    ThermodynamicGate, ThermodynamicStateSnapshot, TransitionFilter, TRANSITION_TOLERANCE,
 };
 use umst_manifold::physics::solvers::ReactionExtentKinetics;
 

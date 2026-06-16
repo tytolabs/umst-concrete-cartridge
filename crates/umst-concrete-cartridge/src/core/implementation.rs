@@ -148,8 +148,11 @@ fn thmc_state_from_umst<B: Backend<FloatElem = f32>>(
     };
 
     let hydration_alpha = if nf > SCALAR_INTERNAL_VARIABLE_0 {
-        f.slice([0..n, SCALAR_INTERNAL_VARIABLE_0..SCALAR_INTERNAL_VARIABLE_0 + 1])
-            .unsqueeze_dim::<3>(0)
+        f.slice([
+            0..n,
+            SCALAR_INTERNAL_VARIABLE_0..SCALAR_INTERNAL_VARIABLE_0 + 1,
+        ])
+        .unsqueeze_dim::<3>(0)
     } else {
         Tensor::<B, 3>::zeros([1, n, 1], &dev).add_scalar(0.01_f32)
     };
@@ -360,11 +363,7 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
                     .step(self, state0, manifold)
                     .expect("THMC step must not fail in experimental mode");
 
-                let alpha_exp = state1
-                    .chemical
-                    .reaction_extent
-                    .clone()
-                    .squeeze::<2>(2);
+                let alpha_exp = state1.chemical.reaction_extent.clone().squeeze::<2>(2);
                 (state1.damage.squeeze::<2>(2), alpha_exp)
             }
             #[cfg(not(feature = "solver-experimental"))]
