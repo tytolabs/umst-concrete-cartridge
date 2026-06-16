@@ -48,38 +48,38 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
 | Operations | [§6](#6-quick-start-time-to-value--60-seconds) · [§7](#7-build-test-and-ci-parity-for-integrators) · [§8](#8-deep-documentation-and-citations) |
 | Agents & wrap-up | [§9](#9-special-protocol-note-to-autonomous-ai-agents--systems) · [§10](#10-conclusion-inferences--forward-path) · [Related](#related-repositories) |
 
-**Detailed outline** — each line links to a heading anchor where one exists; *(collapsible)* marks a `<details>` block under that section.
+**Detailed outline** — every entry links to a stable anchor (`README.md#…`); collapsible sections use `<details>` but share the same deep-link fragments.
 
 - [§1 Physical and Chemical Formulations](#1-physical-and-chemical-formulations)
   - [1.1 Mounting on the UMST carrier](#11-mounting-on-the-umst-carrier)
   - [1.2 Grounding contract: derived, measured, and grounded constants](#12-grounding-contract-derived-measured-and-grounded-constants)
-  - In-§1 narrative bullets (nanoscale, Arrhenius, DFT, GWP) — no sub-anchors
+  - [In-§1 narrative bullets](#1-physical-and-chemical-formulations) (nanoscale, Arrhenius, DFT, GWP)
 - [§2 Cross-Domain Integration Specifications](#2-cross-domain-integration-specifications)
-  - *(collapsible)* Spatial Topologies & Structural Design
-  - *(collapsible)* Material Auditing & Mix Optimization
-  - *(collapsible)* Robotic Manufacturing & 3D Printing
-  - *(collapsible)* Structural Verification & Systems Integration
+  - [2.1 Spatial Topologies & Structural Design](#21-spatial-topologies--structural-design)
+  - [2.2 Material Auditing & Mix Optimization](#22-material-auditing--mix-optimization)
+  - [2.3 Robotic Manufacturing & 3D Printing](#23-robotic-manufacturing--3d-printing)
+  - [2.4 Structural Verification & Systems Integration](#24-structural-verification--systems-integration)
 - [§3 Industrial CAD/CAM/CAE Pipeline Integration](#3-industrial-cadcamcae-pipeline-integration)
-  - Integration table (BIM, FEM, Robotic CAM, PLM)
+  - [Integration table (BIM, FEM, Robotic CAM, PLM)](#3-industrial-cadcamcae-pipeline-integration)
 - [§4 Exhaustive Architecture Topology](#4-exhaustive-architecture-topology)
-  - *(collapsible)* Repository tree
+  - [Repository tree](#repository-tree)
 - [§5 Constitutive Chemistry & Durability Closures](#5-constitutive-chemistry--durability-closures)
-  - Summary closure table
-  - *(collapsible)* Nanoscale DLVO & ITZ
-  - *(collapsible)* Creep & capillary shrinkage
-  - *(collapsible)* Calcite & self-healing
-  - *(collapsible)* Robotic printability & buckling
-  - *(collapsible)* GWP & dynamic sequestration
+  - [Summary closure table](#5-constitutive-chemistry--durability-closures)
+  - [5.1 Nanoscale DLVO & ITZ](#51-nanoscale-dlvo-slurry--itz-boundary-mechanics)
+  - [5.2 Creep & capillary shrinkage](#52-long-term-creep-compliance--capillary-shrinkage)
+  - [5.3 Calcite & self-healing](#53-calcite-crystallization--self-healing-kinetics)
+  - [5.4 Robotic printability & buckling](#54-robotic-printability--buckling-limit-envelopes)
+  - [5.5 GWP & dynamic sequestration](#55-global-warming-potential-gwp--dynamic-sequestration)
 - [§6 Quick start (~60 s)](#6-quick-start-time-to-value--60-seconds)
-  - *(collapsible)* Copy-paste: CLI, Python, MCP
+  - [Copy-paste: CLI, Python, MCP](#quick-start-copy-paste-cli-python-mcp)
   - [Surface A: The CLI](#surface-a-the-cli-for-massive-dataset-audits)
   - [Surface B: Python & Notebooks](#surface-b-python--notebooks-for-data-scientists-and-cad-integration)
   - [Surface C: The MCP Server](#surface-c-the-mcp-server-for-autonomous-agents--ides)
 - [§7 Build, Test, and CI Parity (For Integrators)](#7-build-test-and-ci-parity-for-integrators)
-  - *(collapsible)* Integrator commands & feature matrix
+  - [Integrator commands & feature matrix](#integrator-commands--feature-matrix)
   - [Feature Flags (Cartridge)](#feature-flags-cartridge)
 - [§8 Deep documentation and citations](#8-deep-documentation-and-citations)
-  - Linked docs list in §8 body
+  - [Linked docs list in §8 body](#8-deep-documentation-and-citations)
 - [§9 Special Protocol: Note to Autonomous AI Agents & Systems](#9-special-protocol-note-to-autonomous-ai-agents--systems)
   - [9.1 The Unified Material Science Ecosystem](#91-the-unified-material-science-ecosystem)
   - [9.2 Working Contract](#92-working-contract)
@@ -101,14 +101,26 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 #11-mounting-on-the-umst-carrier
 #12-grounding-contract-derived-measured-and-grounded-constants
 #2-cross-domain-integration-specifications
+#21-spatial-topologies--structural-design
+#22-material-auditing--mix-optimization
+#23-robotic-manufacturing--3d-printing
+#24-structural-verification--systems-integration
 #3-industrial-cadcamcae-pipeline-integration
 #4-exhaustive-architecture-topology
+#repository-tree
 #5-constitutive-chemistry--durability-closures
+#51-nanoscale-dlvo-slurry--itz-boundary-mechanics
+#52-long-term-creep-compliance--capillary-shrinkage
+#53-calcite-crystallization--self-healing-kinetics
+#54-robotic-printability--buckling-limit-envelopes
+#55-global-warming-potential-gwp--dynamic-sequestration
 #6-quick-start-time-to-value--60-seconds
+#quick-start-copy-paste-cli-python-mcp
 #surface-a-the-cli-for-massive-dataset-audits
 #surface-b-python--notebooks-for-data-scientists-and-cad-integration
 #surface-c-the-mcp-server-for-autonomous-agents--ides
 #7-build-test-and-ci-parity-for-integrators
+#integrator-commands--feature-matrix
 #feature-flags-cartridge
 #8-deep-documentation-and-citations
 #9-special-protocol-note-to-autonomous-ai-agents--systems
@@ -177,6 +189,7 @@ To optimize a structural mix, we must follow the physical processes that govern 
 
 This cartridge exposes its physical equations through multiple programmatic surfaces to seamlessly integrate into your specific development environment:
 
+<a id="21-spatial-topologies--structural-design"></a>
 <details>
 <summary><b>1. Spatial Topologies & Structural Design</b> (Architects, Computational Designers)</summary>
 
@@ -195,6 +208,7 @@ This cartridge exposes its physical equations through multiple programmatic surf
 *   **Computational Outcome:** Geometric optimization where internal material densities, local wall thicknesses, and rebar channels are scaled to satisfy structural limits under gravity. Iteration cadence tracks the underlying solver — interactive on simple mechanics surrogates, batch (minutes to hours) on full shell topology runs.
 </details>
 
+<a id="22-material-auditing--mix-optimization"></a>
 <details>
 <summary><b>2. Material Auditing & Mix Optimization</b> (Material Researchers, Suppliers)</summary>
 
@@ -205,6 +219,7 @@ This cartridge exposes its physical equations through multiple programmatic surf
 *   **Computational Outcome:** Automated, high-throughput verification of compressive strength (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;f_c"><img alt="f_c" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;f_c" style="vertical-align:middle"></picture>) development curves, hydration heat profiles, and GWP footprints across batch CSV entries.
 </details>
 
+<a id="23-robotic-manufacturing--3d-printing"></a>
 <details>
 <summary><b>3. Robotic Manufacturing & 3D Printing</b> (Robotics Engineers, Physical AI Architects)</summary>
 
@@ -222,6 +237,7 @@ This cartridge exposes its physical equations through multiple programmatic surf
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://mermaid.ink/svg/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgYXV0b251bWJlclxuICAgIHBhcnRpY2lwYW50IE5venpsZSBhcyBOb3p6bGUgKFRDUClcbiAgICBwYXJ0aWNpcGFudCBTZW5zb3JzIGFzIFNlbnNvcnMgKFAsIFQpXG4gICAgcGFydGljaXBhbnQgQ2FydHJpZGdlIGFzIENhcnRyaWRnZVxuICAgIHBhcnRpY2lwYW50IFNvbHZlciBhcyBQcmludGFiaWxpdHkgU29sdmVyXG4gICAgcGFydGljaXBhbnQgQ0JGIGFzIFRoZXJtbyBDQkZcbiAgICBwYXJ0aWNpcGFudCBJSyBhcyBNb3ZlSXQyIElLXG4gICAgcGFydGljaXBhbnQgSm9pbnQgYXMgUm9ib3QgSm9pbnRzXG5cbiAgICBOb3p6bGUtPj5TZW5zb3JzOiBTdHJlYW0gZXh0cnVzaW9uIHByZXNzdXJlICYgdGVtcGVyYXR1cmVcbiAgICBTZW5zb3JzLT4-Q2FydHJpZGdlOiBGZWVkIHNlbnNvcnMgdG8gM0QgVm94ZWwgR3JpZFxuICAgIENhcnRyaWRnZS0-PlNvbHZlcjogVXBkYXRlIGxvY2FsaXplZCBzdGlmZm5lc3MgJiBhZ2UgcGFyYW1ldGVyc1xuICAgIFNvbHZlci0-PkNCRjogQ2FsY3VsYXRlIHRoaXhvdHJvcGljIHlpZWxkICYgc2x1bXAgcmlzayBsaW1pdHNcbiAgICBhbHQgTGltaXQgRXhjZWVkZWQgKFNsdW1wL0J1Y2tsaW5nIFJpc2spXG4gICAgICAgIENCRi0-PkNhcnRyaWRnZTogQ29tcHV0ZSBzcGF0aWFsIGdyYWRpZW50IGNvcnJlY3Rpb25zIChcdTAzOTR4LCBcdTAzOTR5LCBcdTAzOTR6KVxuICAgICAgICBDYXJ0cmlkZ2UtPj5JSzogU2VuZCBDYXJ0ZXNpYW4gY29ycmVjdGlvbiB2ZWN0b3JcbiAgICAgICAgSUstPj5Kb2ludDogQ29tcHV0ZSAmIGFwcGx5IHJlYWwtdGltZSBqb2ludCBhbmdsZXMgKFx1MDM5NFx1MDNiOClcbiAgICAgICAgSm9pbnQtPj5Ob3p6bGU6IEFkanVzdCBub3p6bGUgc3BlZWQgJiBwb3NpdGlvbiBkeW5hbWljYWxseVxuICAgIGVsc2UgU3RhYmxlIFByaW50IFN0YXRlXG4gICAgICAgIENCRi0-Pk5venpsZTogTWFpbnRhaW4gcGxhbm5lZCBwcmludCB0cmFqZWN0b3J5XG4gICAgZW5kIiwibWVybWFpZCI6IntcInRoZW1lXCI6IFwiZGFya1wifSJ9"><img alt="sequenceDiagram" src="https://mermaid.ink/svg/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgYXV0b251bWJlclxuICAgIHBhcnRpY2lwYW50IE5venpsZSBhcyBOb3p6bGUgKFRDUClcbiAgICBwYXJ0aWNpcGFudCBTZW5zb3JzIGFzIFNlbnNvcnMgKFAsIFQpXG4gICAgcGFydGljaXBhbnQgQ2FydHJpZGdlIGFzIENhcnRyaWRnZVxuICAgIHBhcnRpY2lwYW50IFNvbHZlciBhcyBQcmludGFiaWxpdHkgU29sdmVyXG4gICAgcGFydGljaXBhbnQgQ0JGIGFzIFRoZXJtbyBDQkZcbiAgICBwYXJ0aWNpcGFudCBJSyBhcyBNb3ZlSXQyIElLXG4gICAgcGFydGljaXBhbnQgSm9pbnQgYXMgUm9ib3QgSm9pbnRzXG5cbiAgICBOb3p6bGUtPj5TZW5zb3JzOiBTdHJlYW0gZXh0cnVzaW9uIHByZXNzdXJlICYgdGVtcGVyYXR1cmVcbiAgICBTZW5zb3JzLT4-Q2FydHJpZGdlOiBGZWVkIHNlbnNvcnMgdG8gM0QgVm94ZWwgR3JpZFxuICAgIENhcnRyaWRnZS0-PlNvbHZlcjogVXBkYXRlIGxvY2FsaXplZCBzdGlmZm5lc3MgJiBhZ2UgcGFyYW1ldGVyc1xuICAgIFNvbHZlci0-PkNCRjogQ2FsY3VsYXRlIHRoaXhvdHJvcGljIHlpZWxkICYgc2x1bXAgcmlzayBsaW1pdHNcbiAgICBhbHQgTGltaXQgRXhjZWVkZWQgKFNsdW1wL0J1Y2tsaW5nIFJpc2spXG4gICAgICAgIENCRi0-PkNhcnRyaWRnZTogQ29tcHV0ZSBzcGF0aWFsIGdyYWRpZW50IGNvcnJlY3Rpb25zIChcdTAzOTR4LCBcdTAzOTR5LCBcdTAzOTR6KVxuICAgICAgICBDYXJ0cmlkZ2UtPj5JSzogU2VuZCBDYXJ0ZXNpYW4gY29ycmVjdGlvbiB2ZWN0b3JcbiAgICAgICAgSUstPj5Kb2ludDogQ29tcHV0ZSAmIGFwcGx5IHJlYWwtdGltZSBqb2ludCBhbmdsZXMgKFx1MDM5NFx1MDNiOClcbiAgICAgICAgSm9pbnQtPj5Ob3p6bGU6IEFkanVzdCBub3p6bGUgc3BlZWQgJiBwb3NpdGlvbiBkeW5hbWljYWxseVxuICAgIGVsc2UgU3RhYmxlIFByaW50IFN0YXRlXG4gICAgICAgIENCRi0-Pk5venpsZTogTWFpbnRhaW4gcGxhbm5lZCBwcmludCB0cmFqZWN0b3J5XG4gICAgZW5kIiwibWVybWFpZCI6IntcInRoZW1lXCI6IFwiZGVmYXVsdFwifSJ9" style="max-width:100%;height:auto"></picture></p>
 </details>
 
+<a id="24-structural-verification--systems-integration"></a>
 <details>
 <summary><b>4. Structural Verification & Systems Integration</b> (Structural & Civil Engineers, Systems Architects)</summary>
 
@@ -253,6 +269,7 @@ The cartridge is engineered to interface with industry-standard design, engineer
 
 The codebase exposes the underlying physics through four distinct, elegant surfaces.
 
+<a id="repository-tree"></a>
 <details>
 <summary><b>Repository tree</b> (paths & surfaces)</summary>
 
@@ -295,6 +312,7 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
 | **4. 3D Concrete Printability** | Thixotropic Buildability & Column Buckling | `printability.rs` | Printed layers thixotropic yield buildup (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\tau_y"><img alt="\tau_y" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\tau_y" style="vertical-align:middle"></picture>), spatial elastic buckling loads (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;P_{\text{buckling}}"><img alt="P_{\text{buckling}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;P_{\text{buckling}}" style="vertical-align:middle"></picture>). | Gradient-corrected robotic deposition print speeds to prevent structural layer collapse. |
 | **5. Carbonation & LCA GWP** | Dynamic CO2 Carbonation Capture & Footprint | `sustainability.rs` | Global Warming Potential (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;GWP"><img alt="GWP" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;GWP" style="vertical-align:middle"></picture>), long-term carbonation sequestration depth (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;d_c"><img alt="d_c" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;d_c" style="vertical-align:middle"></picture>). | Pareto-optima balancing structural strength with carbon footprint. |
 
+<a id="51-nanoscale-dlvo-slurry--itz-boundary-mechanics"></a>
 <details>
 <summary><b>1. Nanoscale DLVO Slurry & ITZ Boundary Mechanics</b> (Early Mixing & Weakness Layers)</summary>
 
@@ -308,6 +326,7 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
     Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\psi_0"><img alt="\psi_0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\psi_0" style="vertical-align:middle"></picture> is surface potential, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\kappa^{-1}"><img alt="\kappa^{-1}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\kappa^{-1}" style="vertical-align:middle"></picture> is Debye length, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;A_H"><img alt="A_H" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;A_H" style="vertical-align:middle"></picture> is the Hamaker constant, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;D"><img alt="D" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;D" style="vertical-align:middle"></picture> is separation distance, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\phi"><img alt="\phi" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\phi" style="vertical-align:middle"></picture> is the localized volume fraction of porosity.
 </details>
 
+<a id="52-long-term-creep-compliance--capillary-shrinkage"></a>
 <details>
 <summary><b>2. Long-term Creep Compliance & Capillary Shrinkage</b> (Viscoelastic Aging & Drying)</summary>
 
@@ -321,6 +340,7 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
     Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;t_0"><img alt="t_0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;t_0" style="vertical-align:middle"></picture> is the age at loading, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\tau_i"><img alt="\tau_i" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\tau_i" style="vertical-align:middle"></picture> are relaxation times, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;P_{\text{cap}}"><img alt="P_{\text{cap}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;P_{\text{cap}}" style="vertical-align:middle"></picture> is internal capillary tension.
 </details>
 
+<a id="53-calcite-crystallization--self-healing-kinetics"></a>
 <details>
 <summary><b>3. Calcite Crystallization & Self-Healing Kinetics</b> (Autonomous Repair)</summary>
 
@@ -332,6 +352,7 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
     Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;k_{\text{precip}}"><img alt="k_{\text{precip}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;k_{\text{precip}}" style="vertical-align:middle"></picture> is kinetic rate, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;a_{\text{crack}}"><img alt="a_{\text{crack}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;a_{\text{crack}}" style="vertical-align:middle"></picture> is local crack surface area, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;K_{sp}"><img alt="K_{sp}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;K_{sp}" style="vertical-align:middle"></picture> is the calcite solubility product, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\theta"><img alt="\theta" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\theta" style="vertical-align:middle"></picture> is a Heaviside unit step function limiting precipitation to active moisture channels.
 </details>
 
+<a id="54-robotic-printability--buckling-limit-envelopes"></a>
 <details>
 <summary><b>4. Robotic Printability & Buckling Limit Envelopes</b> (3D Concrete Printing)</summary>
 
@@ -343,6 +364,7 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
     Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\tau_{y0}"><img alt="\tau_{y0}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\tau_{y0}" style="vertical-align:middle"></picture> is initial yield stress, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;R_{\text{th}}"><img alt="R_{\text{th}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;R_{\text{th}}" style="vertical-align:middle"></picture> is the structuration rate (thixotropic buildup), <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;E(t)"><img alt="E(t)" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;E(t)" style="vertical-align:middle"></picture> is aging Young’s modulus, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;I"><img alt="I" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;I" style="vertical-align:middle"></picture> is moment of inertia, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;H(t)"><img alt="H(t)" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;H(t)" style="vertical-align:middle"></picture> is total height of the printed element.
 </details>
 
+<a id="55-global-warming-potential-gwp--dynamic-sequestration"></a>
 <details>
 <summary><b>5. Global Warming Potential (GWP) & Dynamic Sequestration</b> (Carbon Life-Cycle)</summary>
 
@@ -358,6 +380,7 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
 
 ## 6. Quick Start (Time to Value < 60 Seconds)
 
+<a id="quick-start-copy-paste-cli-python-mcp"></a>
 <details>
 <summary><b>Copy-paste: CLI, Python, MCP</b></summary>
 
@@ -402,6 +425,7 @@ docker compose run --rm umst-mcp
 
 ## 7. Build, Test, and CI Parity (For Integrators)
 
+<a id="integrator-commands--feature-matrix"></a>
 <details>
 <summary><b>Integrator commands & feature matrix</b></summary>
 
