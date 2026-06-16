@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // B6 c1 gate post-processing — reference triplet + spatial breakdown (H-A).
 
-#![cfg(feature = "solver-experimental")]
+#![cfg(feature = "b6-c1-diagnosis")]
 
 use std::env;
 use std::fs;

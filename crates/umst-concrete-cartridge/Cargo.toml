@@ -48,6 +48,8 @@ manifold-manifest = ["umst-manifold/manifold-manifest"]
 manifold-gate = ["umst-manifold/manifold-gate"]
 # W9 Tier-2c SSOT + parity (requires patched `umst-manifold` w9 handshake; off in default CI).
 tier2c-handshake = ["manifold-gate"]
+# B6 c1 spatial diagnosis (requires `umst-manifold` `mechanics-adjoint-q1-hex`; off in default CI).
+b6-c1-diagnosis = ["solver-experimental"]
 # Optional ROS serde DTOs (no runtime ROS dep); forwards `umst_manifold::ros` when enabled.
 ros2-contract = ["umst-manifold/ros2-contract"]
 # Virtual stack + extrusion proxies (Roussel / Bingham drivers); default off.
@@ -77,6 +79,11 @@ walkdir = "2.5"
 [lib]
 name = "umst_concrete_cartridge"
 path = "src/lib.rs"
+
+[[test]]
+name = "b6_c1_diagnosis"
+path = "tests/b6_c1_diagnosis.rs"
+required-features = ["b6-c1-diagnosis"]
 
 [[test]]
 name = "tier2c_closure_parity"

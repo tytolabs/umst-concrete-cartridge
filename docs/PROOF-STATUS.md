@@ -213,15 +213,15 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `load_from_path` | `crates/umst-concrete-cartridge/src/calibration.rs:269` | `NONE` | — | Filesystem path IO for non-bundled TOML; parse errors surface as CalibrationError. |
 | `RegressionMetrics` | `crates/umst-concrete-cartridge/src/calibration_metrics.rs:7` | `NONE` | — | Ordinary least-squares aggregates over paired CSV predictions; QA helper without Lean witness on this surface. |
 | `regression_metrics` | `crates/umst-concrete-cartridge/src/calibration_metrics.rs:19` | `NONE` | — | Same as `RegressionMetrics`; computes MAE/RMSE/R² slices for calibration reports. |
-| `ConcreteCartridge` | `crates/umst-concrete-cartridge/src/core/implementation.rs:185` | `NONE` | — | Cartridge functor F: mix layout → constitutive summaries; topology pass remains separate DEC hook. |
-| `new` | `crates/umst-concrete-cartridge/src/core/implementation.rs:198` | `NONE` | — | Deterministic bundled baseline when callers omit explicit calibration. |
-| `with_profile` | `crates/umst-concrete-cartridge/src/core/implementation.rs:206` | `NONE` | — | Avoids silently mixing heterogeneous tensor kinetics with unrelated gel-space coefficients. |
-| `with_topology_nominal` | `crates/umst-concrete-cartridge/src/core/implementation.rs:219` | `NONE` | — | Avoids silent regime-midpoint surrogate when a design is known. |
-| `apply_topology_result_to_umst` | `crates/umst-concrete-cartridge/src/core/implementation.rs:229` | `NONE` | — | Mutable UMST merge path for topology tensors; proof witnesses remain caller-owned. |
+| `ConcreteCartridge` | `crates/umst-concrete-cartridge/src/core/implementation.rs:188` | `NONE` | — | Cartridge functor F: mix layout → constitutive summaries; topology pass remains separate DEC hook. |
+| `new` | `crates/umst-concrete-cartridge/src/core/implementation.rs:201` | `NONE` | — | Deterministic bundled baseline when callers omit explicit calibration. |
+| `with_profile` | `crates/umst-concrete-cartridge/src/core/implementation.rs:209` | `NONE` | — | Avoids silently mixing heterogeneous tensor kinetics with unrelated gel-space coefficients. |
+| `with_topology_nominal` | `crates/umst-concrete-cartridge/src/core/implementation.rs:222` | `NONE` | — | Avoids silent regime-midpoint surrogate when a design is known. |
+| `apply_topology_result_to_umst` | `crates/umst-concrete-cartridge/src/core/implementation.rs:232` | `NONE` | — | Mutable UMST merge path for topology tensors; proof witnesses remain caller-owned. |
 | `ConcreteCartridge` | `crates/umst-concrete-cartridge/src/core/mod.rs:6` | `NONE` | — | Re-export; classification follows the underlying symbol. |
 | `apply_physics_to_umst` | `crates/umst-concrete-cartridge/src/core/mod.rs:10` | `NONE` | — | Forwards manifold UMST write-back helper used after topology physics. |
-| `IScienceCartridge, PhysicalResult` | `crates/umst-concrete-cartridge/src/core/mod.rs:14` | `NONE` | — | Forwards manifold cartridge façade trait and tensor bundles. |
-| `StatePoint` | `crates/umst-concrete-cartridge/src/core/mod.rs:18` | `NONE` | — | W9 agnostic state-point re-export; classification follows manifold `StatePoint`. |
+| `StatePoint` | `crates/umst-concrete-cartridge/src/core/mod.rs:14` | `NONE` | — | W9 agnostic state-point re-export; classification follows manifold `StatePoint`. |
+| `IScienceCartridge, PhysicalResult` | `crates/umst-concrete-cartridge/src/core/mod.rs:18` | `NONE` | — | Forwards manifold cartridge façade trait and tensor bundles. |
 | `MixTensor` | `crates/umst-concrete-cartridge/src/core/mod.rs:22` | `NONE` | — | Deprecated W9 alias for `StatePoint`; retained one release for cartridge callers. |
 | `umst_manifold::manifest::*` | `crates/umst-concrete-cartridge/src/facade/mod.rs:46` | `NONE` | — | Forwards manifold manifest types when `manifest-bridge` is enabled. |
 | `UmstManifest` | `crates/umst-concrete-cartridge/src/facade/mod.rs:53` | `NONE` | — | Local serde mirror until `manifest-bridge` pins manifold wire types. |
