@@ -22,5 +22,6 @@ pub use umst_manifold::core::{IScienceCartridge, PhysicalResult};
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Deprecated W9 alias for `StatePoint`; retained one release for cartridge callers.
+#[allow(deprecated)]
 #[deprecated(note = "renamed to StatePoint (W9)")]
 pub use umst_manifold::MixTensor;
