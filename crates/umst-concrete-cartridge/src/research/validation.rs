@@ -134,10 +134,7 @@ pub fn validate_contribution_value(v: &Value) -> Result<Contribution, Validation
         .chain(gate_summary_rational_errors(&c))
         .collect::<Vec<_>>();
 
-    rational_errors
-        .into_iter()
-        .next()
-        .map_or(Ok(c), Err)
+    rational_errors.into_iter().next().map_or(Ok(c), Err)
 }
 
 /// Validate for ingest accept — requires `gate_summary.admissible == true`.
@@ -157,7 +154,6 @@ pub fn validate_for_accept(v: &Value) -> Result<Contribution, ValidationError> {
 /// formal_status: Structural
 /// formal_anchor_rationale: JSON parse + `validate_contribution_value`; no store I/O.
 pub fn parse_contribution_json(text: &str) -> Result<Contribution, ValidationError> {
-    let v: Value =
-        serde_json::from_str(text).map_err(|e| ValidationError::Json(e.to_string()))?;
+    let v: Value = serde_json::from_str(text).map_err(|e| ValidationError::Json(e.to_string()))?;
     validate_contribution_value(&v)
 }

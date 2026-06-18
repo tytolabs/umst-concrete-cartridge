@@ -118,7 +118,10 @@ pub fn build_gate_reject_from_contribution(
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Append-only reject audit sink; not admissible memory.
-pub fn append_gate_reject_jsonl(row: &GateRejectRow, path: Option<&Path>) -> Result<(), RejectError> {
+pub fn append_gate_reject_jsonl(
+    row: &GateRejectRow,
+    path: Option<&Path>,
+) -> Result<(), RejectError> {
     let path = path
         .map(|p| p.to_path_buf())
         .unwrap_or_else(|| std::path::PathBuf::from(".umst-memory/gate_reject.jcs.jsonl"));

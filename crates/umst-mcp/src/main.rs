@@ -102,9 +102,14 @@ fn base_tools() -> Vec<Value> {
 }
 
 fn dispatch_tools_list(id: Value) -> Value {
-    let mut tools = base_tools();
     #[cfg(feature = "agent-layer")]
-    tools.extend(agent_layer::agent_tools_schema());
+    let tools = {
+        let mut tools = base_tools();
+        tools.extend(agent_layer::agent_tools_schema());
+        tools
+    };
+    #[cfg(not(feature = "agent-layer"))]
+    let tools = base_tools();
     json!({
         "jsonrpc": "2.0",
         "id": id,
@@ -300,19 +305,13 @@ fn tool_umst_contribute(id: Value, args: &Value, session: AgentSession) -> (Valu
     let contribution = match args.get("contribution") {
         Some(c) => c.clone(),
         None => {
-            return (
-                err_frame(id, "missing contribution"),
-                session,
-            );
+            return (err_frame(id, "missing contribution"), session);
         }
     };
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
         Err(e) => {
-            return (
-                err_frame(id, format!("profile load error: {e}")),
-                session,
-            );
+            return (err_frame(id, format!("profile load error: {e}")), session);
         }
     };
     let async_mode = args.get("async").and_then(|x| x.as_bool()).unwrap_or(false);
@@ -386,9 +385,7 @@ fn tool_umst_memory_query(id: Value, args: &Value, session: &AgentSession) -> Va
             .and_then(|x| x.as_u64())
             .map(|n| n as usize),
         near_mix_spec: args.get("near_mix_spec").cloned(),
-        max_mix_l1: args
-            .get("max_mix_l1")
-            .and_then(|x| x.as_f64()),
+        max_mix_l1: args.get("max_mix_l1").and_then(|x| x.as_f64()),
         hilbert_index: args
             .get("hilbert_index")
             .and_then(|x| x.as_u64())
@@ -407,7 +404,11 @@ fn tool_umst_memory_query(id: Value, args: &Value, session: &AgentSession) -> Va
 }
 
 #[cfg(feature = "agent-layer")]
-fn handle_tools_call(id: Value, params: Option<&Value>, session: AgentSession) -> (Value, AgentSession) {
+fn handle_tools_call(
+    id: Value,
+    params: Option<&Value>,
+    session: AgentSession,
+) -> (Value, AgentSession) {
     let name = params
         .and_then(|p| p.get("name"))
         .and_then(|n| n.as_str())
@@ -487,11 +488,14 @@ fn dispatch(req: &Value, session: AgentSession) -> (Value, AgentSession) {
         ),
         "tools/list" => (dispatch_tools_list(id), session),
         "tools/call" => handle_tools_call(id, req.get("params"), session),
-        "resources/list" => (json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "result": agent_layer::resources_list_result(),
-        }), session),
+        "resources/list" => (
+            json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": agent_layer::resources_list_result(),
+            }),
+            session,
+        ),
         "resources/read" => {
             let uri = req
                 .get("params")
@@ -499,11 +503,14 @@ fn dispatch(req: &Value, session: AgentSession) -> (Value, AgentSession) {
                 .and_then(|u| u.as_str())
                 .unwrap_or("");
             match agent_layer::resources_read_result(uri) {
-                Ok(result) => (json!({
-                    "jsonrpc": "2.0",
-                    "id": id,
-                    "result": result,
-                }), session),
+                Ok(result) => (
+                    json!({
+                        "jsonrpc": "2.0",
+                        "id": id,
+                        "result": result,
+                    }),
+                    session,
+                ),
                 Err(e) => (err_frame(id, e), session),
             }
         }
@@ -522,11 +529,14 @@ fn dispatch(req: &Value, session: AgentSession) -> (Value, AgentSession) {
                 .and_then(|n| n.as_str())
                 .unwrap_or("");
             match agent_layer::prompts_get_result(name) {
-                Ok(result) => (json!({
-                    "jsonrpc": "2.0",
-                    "id": id,
-                    "result": result,
-                }), session),
+                Ok(result) => (
+                    json!({
+                        "jsonrpc": "2.0",
+                        "id": id,
+                        "result": result,
+                    }),
+                    session,
+                ),
                 Err(e) => (err_frame(id, e), session),
             }
         }

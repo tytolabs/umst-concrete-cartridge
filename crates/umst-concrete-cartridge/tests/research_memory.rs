@@ -6,8 +6,8 @@
 use serde_json::Value;
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::research::{
-    accept, gate_check_mix, query, validate_for_accept, ContributeError, GateContext,
-    MemoryQuery, ProvenanceClock, ResearchStore, WallClock,
+    accept, gate_check_mix, query, validate_for_accept, ContributeError, GateContext, MemoryQuery,
+    ProvenanceClock, ResearchStore, WallClock,
 };
 
 fn load_fixture(name: &str) -> Value {
@@ -91,8 +91,14 @@ fn duplicate_content_rejected() {
     let profile = Profile::load_bundled("default").expect("default profile");
     let v = load_fixture("admissible_mix_01.json");
     let ctx = GateContext { profile: &profile };
-    let (store, clock, _) =
-        accept(ResearchStore::default(), ProvenanceClock::default(), WallClock, &ctx, &v).unwrap();
+    let (store, clock, _) = accept(
+        ResearchStore::default(),
+        ProvenanceClock::default(),
+        WallClock,
+        &ctx,
+        &v,
+    )
+    .unwrap();
     let err = accept(store, clock, WallClock, &ctx, &v).unwrap_err();
     assert!(matches!(err, ContributeError::Store(_)));
 }
@@ -102,8 +108,14 @@ fn mix_geometry_on_accepted_row() {
     let profile = Profile::load_bundled("default").expect("default profile");
     let v = load_fixture("admissible_mix_01.json");
     let ctx = GateContext { profile: &profile };
-    let (store, _, _) =
-        accept(ResearchStore::default(), ProvenanceClock::default(), WallClock, &ctx, &v).unwrap();
+    let (store, _, _) = accept(
+        ResearchStore::default(),
+        ProvenanceClock::default(),
+        WallClock,
+        &ctx,
+        &v,
+    )
+    .unwrap();
     let row = &store.rows()[0];
     assert!(row.mix_geometry.is_some());
 }
@@ -113,8 +125,14 @@ fn near_mix_l1_query_sorts_by_distance() {
     let profile = Profile::load_bundled("default").expect("default profile");
     let v = load_fixture("admissible_mix_01.json");
     let ctx = GateContext { profile: &profile };
-    let (store, _, _) =
-        accept(ResearchStore::default(), ProvenanceClock::default(), WallClock, &ctx, &v).unwrap();
+    let (store, _, _) = accept(
+        ResearchStore::default(),
+        ProvenanceClock::default(),
+        WallClock,
+        &ctx,
+        &v,
+    )
+    .unwrap();
     let anchor = v.get("mix_spec").cloned().unwrap();
     let hits = query(
         &store,
@@ -131,10 +149,10 @@ fn near_mix_l1_query_sorts_by_distance() {
 
 #[test]
 fn gate_reject_row_not_in_admissible_memory() {
+    use umst_concrete_cartridge::research::ObservedAt;
     use umst_concrete_cartridge::research::{
         append_gate_reject_jsonl, build_gate_reject, GateVerdict,
     };
-    use umst_concrete_cartridge::research::ObservedAt;
 
     let dir = std::env::temp_dir().join("umst_reject_test");
     let _ = std::fs::remove_dir_all(&dir);

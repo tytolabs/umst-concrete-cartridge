@@ -82,7 +82,11 @@ pub fn merkle_root_from_leaves(leaves: &[String]) -> String {
 /// formal_status: NONE
 /// formal_anchor_rationale: Pure record morphism over content_id leaves; persistence is IO.
 #[must_use]
-pub fn build_checkpoint(batch_id: impl Into<String>, content_ids: &[String], wall_ms: u64) -> CheckpointRecord {
+pub fn build_checkpoint(
+    batch_id: impl Into<String>,
+    content_ids: &[String],
+    wall_ms: u64,
+) -> CheckpointRecord {
     CheckpointRecord {
         schema_version: "memory_checkpoint.v1".into(),
         batch_id: batch_id.into(),

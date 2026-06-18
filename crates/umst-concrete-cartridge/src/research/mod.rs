@@ -30,8 +30,8 @@ pub mod wire_v2;
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports Merkle checkpoint helpers; audit IO on defining module.
 pub use checkpoint::{
-    append_checkpoint_jsonl, build_checkpoint, merkle_root_from_leaves, CheckpointRecord,
-    CheckpointError, CHECKPOINTS_JSONL_DEFAULT,
+    append_checkpoint_jsonl, build_checkpoint, merkle_root_from_leaves, CheckpointError,
+    CheckpointRecord, CHECKPOINTS_JSONL_DEFAULT,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -62,6 +62,11 @@ pub use governance::{validate_scope_token, ScopeError};
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports Physical Reasoning Layer port trait and concrete impl.
 pub use layer::{ConcretePhysicalReasoningLayer, PhysicalReasoningLayer};
+#[cfg(feature = "agent-layer")]
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-export of SQLite IO store when `agent-layer` enabled.
+pub use memory::SqliteStore;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports functional memory store port and filter morphisms.
@@ -69,11 +74,6 @@ pub use memory::{
     filter_records, find_by_memory_id, InMemoryStore, MemoryError, MemoryStore, ResearchStore,
     StoreError,
 };
-#[cfg(feature = "agent-layer")]
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Re-export of SQLite IO store when `agent-layer` enabled.
-pub use memory::SqliteStore;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports Landauer advisory MI surrogates; not admissibility gate.
@@ -103,8 +103,8 @@ pub use provenance::{
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports gate reject audit stream; excluded from admissible memory.
 pub use reject::{
-    append_gate_reject_jsonl, build_gate_reject, build_gate_reject_from_contribution, GateRejectRow,
-    RejectError, GATE_REJECT_SCHEMA,
+    append_gate_reject_jsonl, build_gate_reject, build_gate_reject_from_contribution,
+    GateRejectRow, RejectError, GATE_REJECT_SCHEMA,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -123,15 +123,15 @@ pub use types::{
 pub use validation::{
     parse_contribution_json, validate_contribution_value, validate_for_accept, ValidationError,
 };
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Re-exports observed_at.v2 integer wire mapping.
-pub use wire_v2::{observed_at_to_v2, ObservedAtV2, OBSERVED_AT_V2_SCHEMA};
 #[cfg(feature = "ucrs-provenance")]
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-export UCRS → v2 wire when `ucrs-provenance` feature enabled.
 pub use wire_v2::ucrs_observed_at_to_v2;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports observed_at.v2 integer wire mapping.
+pub use wire_v2::{observed_at_to_v2, ObservedAtV2, OBSERVED_AT_V2_SCHEMA};
 
 /// Alias used by promotion/MCP callers.
 /// formal_anchor: NONE

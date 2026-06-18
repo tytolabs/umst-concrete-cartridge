@@ -122,11 +122,7 @@ impl AgentSession {
     /// formal_anchor: NONE
     /// formal_status: NONE
     /// formal_anchor_rationale: In-process async wrapper; same gate path as `contribute`.
-    pub fn contribute_async(
-        mut self,
-        profile: &Profile,
-        contribution: &Value,
-    ) -> (Self, String) {
+    pub fn contribute_async(mut self, profile: &Profile, contribution: &Value) -> (Self, String) {
         let job_id = uuid::Uuid::new_v4().to_string();
         self.jobs.insert(
             job_id.clone(),

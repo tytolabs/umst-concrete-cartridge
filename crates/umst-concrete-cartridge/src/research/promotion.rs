@@ -3,7 +3,7 @@
 
 //! Human-gated promotion — pure record morphism + isolated filesystem writes.
 
-use super::memory::{find_by_memory_id, ResearchStore, MemoryError};
+use super::memory::{find_by_memory_id, MemoryError, ResearchStore};
 use super::types::MemoryRecord;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -137,7 +137,9 @@ fn validate_approval(approval: &PromotionApproval) -> Result<(), PromotionError>
     }
     if let Some(jws) = &approval.jws {
         if jws.is_empty() {
-            return Err(PromotionError::Approval("jws must be non-empty when present".into()));
+            return Err(PromotionError::Approval(
+                "jws must be non-empty when present".into(),
+            ));
         }
         if !jws.contains('.') {
             return Err(PromotionError::Approval(
@@ -231,7 +233,9 @@ fn sha256_hex(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::research::types::{GateSummary, GateVerdict, MemoryPayload, ObservedAt, CANON_VERSION, MEMORY_SCHEMA};
+    use crate::research::types::{
+        GateSummary, GateVerdict, MemoryPayload, ObservedAt, CANON_VERSION, MEMORY_SCHEMA,
+    };
 
     fn sample_memory() -> MemoryRecord {
         MemoryRecord {

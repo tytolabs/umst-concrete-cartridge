@@ -41,7 +41,11 @@ pub trait PhysicalReasoningLayer {
     /// formal_anchor: STRUCTURAL
     /// formal_status: Structural
     /// formal_anchor_rationale: Delegates to Morton geometry; not thermodynamic gate.
-    fn mix_geometry(&self, mix_spec: &Value, curing_regime: Option<&str>) -> Option<MixGeometryKey> {
+    fn mix_geometry(
+        &self,
+        mix_spec: &Value,
+        curing_regime: Option<&str>,
+    ) -> Option<MixGeometryKey> {
         mix_geometry_key(mix_spec, curing_regime)
     }
 

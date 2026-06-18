@@ -24,8 +24,7 @@ pub fn run_propose_promotion(
     dry_run: bool,
 ) -> Result<()> {
     let policy_text = match policy_path {
-        Some(p) => fs::read_to_string(p)
-            .with_context(|| format!("read policy {}", p.display()))?,
+        Some(p) => fs::read_to_string(p).with_context(|| format!("read policy {}", p.display()))?,
         None => include_str!("../../../governance/promotion_policy.yaml").to_string(),
     };
     let policy: PromotionPolicy =

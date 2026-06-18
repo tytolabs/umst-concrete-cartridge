@@ -7,12 +7,12 @@ use super::geometry::mix_geometry_key;
 use super::governance::validate_scope_token;
 use super::memory::{ResearchStore, StoreError};
 use super::mi::estimate_mi_bits_rational;
-use super::provenance::{ensure_observed_at, is_monotonic_after, observed_at_for_tick, WallClock};
 use super::provenance::ProvenanceClock;
+use super::provenance::{ensure_observed_at, is_monotonic_after, observed_at_for_tick, WallClock};
 use super::reject::{build_gate_reject, build_gate_reject_from_contribution, GateRejectRow};
 use super::types::{
     AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery, MemoryRecord,
-    MEMORY_SCHEMA, CANON_VERSION, CONTRIBUTION_SCHEMA,
+    CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA,
 };
 use super::validation::{validate_for_accept, ValidationError};
 use crate::calibration::Profile;
@@ -341,7 +341,8 @@ pub fn accept(
     let (clock, observed_at) =
         ensure_observed_at(Some(contribution.observed_at.clone()), clock, wall);
     let memory_id = Uuid::new_v4().to_string();
-    let record = memory_record_from_contribution(&contribution, memory_id.clone(), observed_at.clone());
+    let record =
+        memory_record_from_contribution(&contribution, memory_id.clone(), observed_at.clone());
     let content = record.content_id.clone();
     let stamp_tier = observed_at.stamp_tier.clone();
 
@@ -365,10 +366,6 @@ mod hex {
     /// formal_status: NONE
     /// formal_anchor_rationale: Formatting helper; content addressing on `content_id`.
     pub fn encode(bytes: impl AsRef<[u8]>) -> String {
-        bytes
-            .as_ref()
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect()
+        bytes.as_ref().iter().map(|b| format!("{b:02x}")).collect()
     }
 }

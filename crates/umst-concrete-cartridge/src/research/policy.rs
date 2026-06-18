@@ -60,7 +60,9 @@ pub fn validate_promotion_policy(policy: &PromotionPolicy) -> Result<(), PolicyE
         return Err(PolicyError::Policy("max_rmse_mpa must be > 0".into()));
     }
     if policy.allowed_stamp_tiers.is_empty() {
-        return Err(PolicyError::Policy("allowed_stamp_tiers must be non-empty".into()));
+        return Err(PolicyError::Policy(
+            "allowed_stamp_tiers must be non-empty".into(),
+        ));
     }
     Ok(())
 }

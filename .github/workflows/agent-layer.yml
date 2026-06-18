@@ -28,11 +28,11 @@ jobs:
           toolchain: 1.88.0
 
       - name: Research memory + golden gate_check
-        working-directory: umst-concrete-cartridge
+        working-directory: .
         run: |
           cargo test -p umst-concrete-cartridge --features agent-layer \
             --test research_memory --test golden_gate_check
 
       - name: MCP smoke (agent-layer)
-        working-directory: umst-concrete-cartridge
+        working-directory: .
         run: python3 scripts/mcp_smoke.py --agent-layer

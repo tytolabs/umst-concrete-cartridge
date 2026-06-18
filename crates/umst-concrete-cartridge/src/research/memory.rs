@@ -35,7 +35,10 @@ pub type MemoryError = StoreError;
 /// formal_status: Structural
 /// formal_anchor_rationale: Linear scan morphism; no interior mutation.
 #[must_use]
-pub fn find_by_memory_id(store: &ResearchStore, memory_id: &str) -> Result<MemoryRecord, StoreError> {
+pub fn find_by_memory_id(
+    store: &ResearchStore,
+    memory_id: &str,
+) -> Result<MemoryRecord, StoreError> {
     store
         .rows()
         .into_iter()
@@ -171,11 +174,7 @@ impl MemoryStore for InMemoryStore {
     type Error = StoreError;
 
     fn append(mut self, record: MemoryRecord) -> Result<(Self, ()), Self::Error> {
-        if self
-            .rows
-            .iter()
-            .any(|r| r.content_id == record.content_id)
-        {
+        if self.rows.iter().any(|r| r.content_id == record.content_id) {
             return Err(StoreError::DuplicateContentId(record.content_id));
         }
         self.rows.push(record);
@@ -295,8 +294,8 @@ impl ResearchStore {
 
 #[cfg(feature = "agent-layer")]
 mod sqlite_store {
-    use super::{filter_records, MemoryStore, StoreError};
     use super::super::types::{MemoryQuery, MemoryRecord};
+    use super::{filter_records, MemoryStore, StoreError};
     use rusqlite::{params, Connection};
     use serde_json;
     use std::path::{Path, PathBuf};
@@ -404,8 +403,8 @@ mod sqlite_store {
                 .memory_id
                 .clone()
                 .ok_or_else(|| StoreError::Sqlite("missing memory_id".into()))?;
-            let json = serde_json::to_string(&record)
-                .map_err(|e| StoreError::Sqlite(e.to_string()))?;
+            let json =
+                serde_json::to_string(&record).map_err(|e| StoreError::Sqlite(e.to_string()))?;
             self.conn
                 .execute(
                     "INSERT INTO memory_records (memory_id, content_id, idempotency_key, record_json) VALUES (?1, ?2, ?3, ?4)",
