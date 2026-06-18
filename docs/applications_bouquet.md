@@ -21,7 +21,7 @@ Depending on the application, users access the UMST Manifold via the specific in
 ---
 
 ## 3. The MI / Epistemic Selector System (Multimodal Agent Routing)
-When an autonomous agent (such as the Hermes Orchestrator or a PPO Gladiator) runs the UMST manifold in the wild, it rarely receives clean, perfectly structured inputs. It receives **multimodal data**: images of cracked concrete, PDF site reports, unstructured text observations, and historical CSVs. 
+When an autonomous agent (such as a policy orchestrator or a PPO Gladiator) runs the UMST manifold in the wild, it rarely receives clean, perfectly structured inputs. It receives **multimodal data**: images of cracked concrete, PDF site reports, unstructured text observations, and historical CSVs. 
 
 To handle this safely without crashing the rigorous thermodynamic PDE grids, the agent employs an **MI (Material Intelligence) / Epistemic Selector System**. This cognitive triage layer assesses the *epistemic certainty* of the incoming multimodal data before deciding how to use it:
 *   **High Certainty (Structured Physics):** Structured datasets with exact chemical composition (e.g., specific oxide percentages from XRF, mass-loss data) are routed directly into the `burn::tensor` graph for hard physics calculations.

@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/contribution.v1.json",
+  "title": "Contribution v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "canon_version",
+    "mix_spec",
+    "process",
+    "outcome",
+    "gate_summary",
+    "catalog_hash",
+    "observed_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "contribution.v1"
+    },
+    "canon_version": {
+      "type": "string",
+      "const": "jcs-rfc8785-v1"
+    },
+    "mix_spec": {
+      "$ref": "#/$defs/mix_spec_v1"
+    },
+    "process": {
+      "$ref": "#/$defs/process_v1"
+    },
+    "outcome": {
+      "$ref": "#/$defs/outcome_v1"
+    },
+    "gate_summary": {
+      "$ref": "#/$defs/gate_summary_v1"
+    },
+    "catalog_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Pinned manifold unified catalog digest at ingest"
+    },
+    "observed_at": {
+      "$ref": "#/$defs/observed_at_v1"
+    },
+    "content_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Optional precomputed JCS content hash"
+    },
+    "scope_token": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Agent scope credential when UMST_AGENT_SCOPE_TOKENS allowlist is configured"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Client-supplied dedup key; duplicate keys are rejected at accept"
+    }
+  },
+  "$defs": {
+    "rational": {
+      "type": "string",
+      "pattern": "^-?[0-9]+/-?[0-9]+$",
+      "description": "Reduced ratio numerator/denominator; denominator must not be 0"
+    },
+    "mix_spec_v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["w_c", "temperature_k"],
+      "properties": {
+        "w_c": { "$ref": "#/$defs/rational" },
+        "temperature_k": { "$ref": "#/$defs/rational" },
+        "superplasticiser_pct": { "$ref": "#/$defs/rational" },
+        "silica_fume_pct": { "$ref": "#/$defs/rational" },
+        "fly_ash_pct": { "$ref": "#/$defs/rational" },
+        "aggregate_volume_fraction": { "$ref": "#/$defs/rational" },
+        "target_age_hours": { "$ref": "#/$defs/rational" }
+      }
+    },
+    "process_v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "curing_regime": { "type": "string" },
+        "print_layer_height_mm": { "$ref": "#/$defs/rational" },
+        "notes": { "type": "string" }
+      }
+    },
+    "outcome_v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "compressive_strength_mpa": { "$ref": "#/$defs/rational" },
+        "yield_stress_pa": { "$ref": "#/$defs/rational" },
+        "degree_of_hydration": { "$ref": "#/$defs/rational" },
+        "observed_strength_mpa": { "$ref": "#/$defs/rational" },
+        "source": {
+          "type": "string",
+          "enum": ["synthetic", "lab", "field", "literature", "bootstrap"]
+        },
+        "external_experiment_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Opaque id linking to lab notebook, DOI slice, or audit row"
+        }
+      }
+    },
+    "gate_summary_v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["admissible", "verdict", "catalog_ids"],
+      "properties": {
+        "admissible": { "type": "boolean" },
+        "verdict": {
+          "type": "string",
+          "enum": ["PASS", "REJECT", "WARN"]
+        },
+        "catalog_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "safety_margin": { "$ref": "#/$defs/rational" },
+        "mi_bits_est": { "$ref": "#/$defs/rational" }
+      }
+    },
+    "observed_at_v1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stamp_tier"],
+      "properties": {
+        "stamp_tier": {
+          "type": "string",
+          "enum": ["UcrsTier2", "WallOnly", "Absent", "Synthetic"]
+        },
+        "ucrs_seq": { "type": "integer", "minimum": 0 },
+        "phase_entropy_bits_q": { "type": "integer" },
+        "phase_entropy_bits_scale": { "type": "integer", "minimum": 1 },
+        "credit_head_bits_q": { "type": "integer" },
+        "credit_head_bits_scale": { "type": "integer", "minimum": 1 },
+        "wall_ms": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

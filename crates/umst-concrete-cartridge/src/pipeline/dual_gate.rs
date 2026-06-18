@@ -10,7 +10,7 @@
 //!
 //! Witness ladder (proxy-loop scope): printability is a literature surrogate below R1; thermodynamic
 //! leg is R1 (`umst.gate.cd_transition`) via `predict_with_options` when `manifest-bridge` is on.
-//! See `umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md` (R0→R6).
+//! See `umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md` (release witness profile; legacy filename).
 
 use crate::calibration::Profile;
 use crate::facade::{predict_with_options, MixSpec, PredictOptions};

@@ -87,6 +87,36 @@ enum Command {
         #[arg(long, value_enum, default_value_t = AuditFormatCli::Json)]
         format: AuditFormatCli,
     },
+    /// Human-gated promotion of a memory row to calibration review (requires `agent-layer`).
+    #[cfg(feature = "agent-layer")]
+    PromoteContribution {
+        memory_id: String,
+        #[arg(long, value_name = "FILE")]
+        approval_file: PathBuf,
+        #[arg(long, value_name = "FILE")]
+        memory_record: Option<PathBuf>,
+        #[arg(long)]
+        dry_run: bool,
+        #[arg(long, value_name = "DIR")]
+        pending_calibration_dir: Option<PathBuf>,
+    },
+    /// Dry-run promotion proposal with hold-out metrics (human-only; never MCP).
+    #[cfg(feature = "agent-layer")]
+    ProposePromotion {
+        memory_id: String,
+        #[arg(long, value_name = "FILE")]
+        memory_record: Option<PathBuf>,
+        #[arg(long, value_name = "FILE")]
+        policy_file: Option<PathBuf>,
+        /// Comma-separated observed compressive strengths (MPa) for hold-out.
+        #[arg(long, value_delimiter = ',')]
+        observed_mpa: Vec<f64>,
+        /// Comma-separated predicted strengths (MPa) aligned with observed.
+        #[arg(long, value_delimiter = ',')]
+        predicted_mpa: Vec<f64>,
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -423,6 +453,38 @@ fn main() -> ExitCode {
             }
             Ok(())
         }
+        #[cfg(feature = "agent-layer")]
+        Command::PromoteContribution {
+            memory_id,
+            approval_file,
+            memory_record,
+            dry_run,
+            pending_calibration_dir,
+        } => umst_cli::promote::run_promote_contribution(
+            memory_id,
+            approval_file,
+            memory_record.as_deref(),
+            *dry_run,
+            pending_calibration_dir.as_deref(),
+        )
+        .map_err(|e| e.to_string()),
+        #[cfg(feature = "agent-layer")]
+        Command::ProposePromotion {
+            memory_id,
+            memory_record,
+            policy_file,
+            observed_mpa,
+            predicted_mpa,
+            dry_run,
+        } => umst_cli::propose_promotion::run_propose_promotion(
+            memory_id,
+            memory_record.as_deref(),
+            observed_mpa,
+            predicted_mpa,
+            policy_file.as_deref(),
+            *dry_run,
+        )
+        .map_err(|e| e.to_string()),
     };
 
     match result {

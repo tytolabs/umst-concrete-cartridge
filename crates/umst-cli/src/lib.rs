@@ -6,3 +6,8 @@
 pub mod audit;
 pub mod canonical;
 pub mod cli;
+
+#[cfg(feature = "agent-layer")]
+pub mod promote;
+#[cfg(feature = "agent-layer")]
+pub mod propose_promotion;

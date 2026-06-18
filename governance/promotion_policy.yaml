@@ -1,0 +1,9 @@
+schema_version: promotion_policy.v1
+policy_id: governance/promotion_policy.yaml
+min_holdout_rows: 5
+max_rmse_mpa: 8.0
+require_human_approval: true
+allowed_stamp_tiers:
+  - UcrsTier2
+  - Synthetic
+  - WallOnly

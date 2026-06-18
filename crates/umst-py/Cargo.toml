@@ -15,6 +15,7 @@ publish = false
 [features]
 default = []
 blas-accelerate = ["umst-cli/blas-accelerate"]
+agent-layer = ["umst-concrete-cartridge/agent-layer"]
 
 [lib]
 name = "_umst_concrete_cartridge"

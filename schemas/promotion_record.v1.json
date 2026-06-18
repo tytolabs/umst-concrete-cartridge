@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/promotion_record.v1.json",
+  "title": "Promotion Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "canon_version",
+    "record_id",
+    "created_at",
+    "contribution",
+    "proposal",
+    "approval",
+    "promotion",
+    "hash_chain"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "promotion_record.v1"
+    },
+    "canon_version": {
+      "type": "string",
+      "const": "jcs-rfc8785-v1"
+    },
+    "record_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content_hash", "schema_version"],
+      "properties": {
+        "uri": { "type": "string" },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "schema_version": {
+          "type": "string",
+          "const": "contribution.v1"
+        }
+      }
+    },
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content_hash", "schema_version"],
+      "properties": {
+        "content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "schema_version": {
+          "type": "string",
+          "const": "promotion_proposal.v1"
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content_hash", "schema_version", "approver", "ucrs_observation_tier"],
+      "properties": {
+        "content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "schema_version": {
+          "type": "string",
+          "const": "promotion_approval.v1"
+        },
+        "approver": { "type": "string" },
+        "ucrs_observation_tier": {
+          "type": "string",
+          "enum": ["UcrsTier2", "WallOnly", "Synthetic"]
+        },
+        "jws": { "type": "string" }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_ref", "policy_id"],
+      "properties": {
+        "target_ref": { "type": "string" },
+        "policy_id": { "type": "string" }
+      }
+    },
+    "hash_chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contribution_hash", "proposal_hash", "approval_hash", "record_hash"],
+      "properties": {
+        "contribution_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "proposal_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "approval_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "record_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

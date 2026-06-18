@@ -1,0 +1,28 @@
+name: schema
+
+on:
+  push:
+    paths:
+      - 'schemas/**'
+      - 'fixtures/golden-adversarial/**'
+      - '.github/workflows/schema.yml'
+  pull_request:
+    paths:
+      - 'schemas/**'
+      - 'fixtures/golden-adversarial/**'
+      - '.github/workflows/schema.yml'
+
+jobs:
+  validate-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install check-jsonschema
+        run: pipx install 'check-jsonschema==0.37.3'
+
+      - name: Validate golden adversarial contribution fixtures
+        run: |
+          check-jsonschema --schemafile schemas/contribution.v1.json \
+            fixtures/golden-adversarial/admissible_mix_01.json \
+            fixtures/golden-adversarial/reject_mix_01.json

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/promotion_proposal.v1.json",
+  "title": "Promotion Proposal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "canon_version",
+    "contribution_hash",
+    "proposer"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "promotion_proposal.v1"
+    },
+    "canon_version": {
+      "type": "string",
+      "const": "jcs-rfc8785-v1"
+    },
+    "contribution_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "target_tier": {
+      "type": "string"
+    },
+    "ucrs_observation_tier_requested": {
+      "type": "string",
+      "enum": ["UcrsTier2", "WallOnly", "Synthetic"]
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "proposer": {
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}

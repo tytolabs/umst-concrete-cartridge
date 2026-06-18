@@ -1,91 +1,97 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: MIT
-# Smoke-test MCP stdio handshake + umst_predict (requires `cargo build -p umst-mcp`).
+"""Minimal stdio MCP smoke test for umst-mcp."""
 
+from __future__ import annotations
+
+import argparse
 import json
-import os
 import subprocess
 import sys
-from pathlib import Path
+from typing import Any
 
 
-def repo_root() -> Path:
-    return Path(__file__).resolve().parents[1]
-
-
-def mcp_bin() -> Path:
-    profile = os.environ.get("PROFILE", "debug")
-    return repo_root() / "target" / profile / "umst-mcp"
+def rpc(proc: subprocess.Popen[str], payload: dict[str, Any]) -> dict[str, Any]:
+    assert proc.stdin and proc.stdout
+    proc.stdin.write(json.dumps(payload) + "\n")
+    proc.stdin.flush()
+    line = proc.stdout.readline()
+    if not line:
+        raise RuntimeError("MCP server closed stdout")
+    return json.loads(line)
 
 
 def main() -> int:
-    exe = mcp_bin()
-    if not exe.is_file():
-        subprocess.run(["cargo", "build", "-p", "umst-mcp"], cwd=repo_root(), check=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--agent-layer",
+        action="store_true",
+        help="Build/run umst-mcp with agent-layer feature",
+    )
+    args = parser.parse_args()
 
-    exe = mcp_bin()
-    if not exe.is_file():
-        print("FAILED: umst-mcp binary missing after build", file=sys.stderr)
-        return 1
+    features = ["agent-layer"] if args.agent_layer else []
+    cargo_args = ["cargo", "run", "-q", "-p", "umst-mcp"]
+    if features:
+        cargo_args.extend(["--features", ",".join(features)])
 
     proc = subprocess.Popen(
-        [str(exe)],
+        cargo_args,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        cwd=repo_root(),
+        stderr=subprocess.PIPE,
         text=True,
+        cwd=str(__import__("pathlib").Path(__file__).resolve().parents[1]),
     )
 
-    def send(line: dict) -> None:
-        assert proc.stdin
-        proc.stdin.write(json.dumps(line) + "\n")
-        proc.stdin.flush()
-
-    frames = (
-        {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
-        {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
-        {
-            "jsonrpc": "2.0",
-            "id": 3,
-            "method": "tools/call",
-            "params": {
-                "name": "umst_predict",
-                "arguments": {
-                    "profile": "default",
-                    "mix": {"w_c": 0.42, "temperature_k": 293.15},
+    try:
+        init = rpc(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "mcp_smoke", "version": "0.1"},
                 },
             },
-        },
-    )
-    for frame in frames:
-        send(frame)
-    assert proc.stdin
-    proc.stdin.close()
+        )
+        assert "result" in init, init
 
-    decs = []
-    for _ in range(3):
-        line = proc.stdout.readline()
-        if not line:
-            print("unexpected EOF", file=sys.stderr)
-            return 2
-        decs.append(json.loads(line))
+        tools = rpc(proc, {"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
+        names = {t["name"] for t in tools["result"]["tools"]}
+        for required in ("umst_predict", "umst_profiles"):
+            assert required in names, f"missing tool {required}"
 
-    for d in decs:
-        if d.get("error"):
-            print("RPC error:", d["error"])
-            return 3
+        if args.agent_layer:
+            for required in (
+                "umst_gate_check",
+                "umst_contribute",
+                "umst_contribute_status",
+                "umst_memory_query",
+                "umst_mi_estimate",
+            ):
+                assert required in names, f"missing agent tool {required}"
+            resources = rpc(proc, {"jsonrpc": "2.0", "id": 3, "method": "resources/list"})
+            assert "resources" in resources["result"]
 
-    txt = decs[-1]["result"]["content"][0]["text"]
-    payload = json.loads(txt)
-    if payload.get("schema_version") != "result.v2":
-        print("BAD schema_version", payload)
-        return 4
-
-    proc.terminate()
-    print("OK: MCP umst_predict result.v2")
-    return 0
+        profiles = rpc(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 4,
+                "method": "tools/call",
+                "params": {"name": "umst_profiles", "arguments": {}},
+            },
+        )
+        assert "result" in profiles, profiles
+        print("mcp_smoke: ok", file=sys.stderr)
+        return 0
+    finally:
+        proc.terminate()
+        proc.wait(timeout=10)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

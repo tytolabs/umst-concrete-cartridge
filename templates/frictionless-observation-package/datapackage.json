@@ -1,0 +1,29 @@
+{
+  "$schema": "https://frictionlessdata.io/schemas/data-package.json",
+  "name": "umst-observation-package",
+  "title": "UMST Frictionless observation package (concrete)",
+  "description": "Standard interchange for observation PRs: mix + outcome CSV with contribution schema reference.",
+  "version": "1.0.0",
+  "profile": "tabular-data-package",
+  "resources": [
+    {
+      "name": "observations",
+      "path": "data/observations.csv",
+      "format": "csv",
+      "schema": {
+        "fields": [
+          { "name": "w_c", "type": "string", "description": "Rational w/c ratio (n/d)" },
+          { "name": "temperature_k", "type": "string" },
+          { "name": "compressive_strength_mpa", "type": "string" },
+          { "name": "curing_regime", "type": "string" },
+          { "name": "external_experiment_id", "type": "string" }
+        ]
+      }
+    }
+  ],
+  "umst": {
+    "contribution_schema": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/contribution.v1.json",
+    "memory_schema": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/memory_record.v1.json",
+    "ingest": "Convert rows to contribution.v1 JSONL then umst_contribute or scripts/ingest_contributions.py"
+  }
+}

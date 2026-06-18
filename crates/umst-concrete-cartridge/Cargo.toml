@@ -56,6 +56,10 @@ ros2-contract = ["umst-manifold/ros2-contract"]
 virtual-proxies = ["solver-research", "umst-manifold/rheology-bingham"]
 # Track A/B optimisation loop: manifest CD + virtual proxies + local manifold patch.
 proxy-loop = ["manifest-bridge", "virtual-proxies"]
+# Physical Reasoning Layer: gate-validated research memory + MCP contribute/query (default off).
+agent-layer = ["manifest-bridge", "dep:rusqlite", "dep:uuid", "dep:thiserror", "dep:sha2", "dep:serde_json", "dep:serde_yaml"]
+# UCRS Tier-2 observation stamps on memory ingest (requires sibling umst-ucrs).
+ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
 
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
@@ -68,6 +72,13 @@ bincode = "=2.0.0-rc.3"
 rand = "0.8"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+rusqlite = { version = "0.30", features = ["bundled"], optional = true }
+uuid = { version = "1.11", features = ["v4", "serde"], optional = true }
+thiserror = { version = "2", optional = true }
+sha2 = { version = "0.10", optional = true }
+serde_json = { version = "1.0", optional = true }
+serde_yaml = { version = "0.9", optional = true }
+umst-ucrs = { path = "../../../umst-ucrs/Rust", optional = true }
 
 [dev-dependencies]
 approx = "0.5"
@@ -138,6 +149,16 @@ required-features = ["solver-experimental"]
 [[test]]
 name = "rheology_sweep"
 path = "tests/rheology_sweep.rs"
+
+[[test]]
+name = "research_memory"
+path = "tests/research_memory.rs"
+required-features = ["agent-layer"]
+
+[[test]]
+name = "golden_gate_check"
+path = "tests/golden_gate_check.rs"
+required-features = ["agent-layer"]
 
 [[test]]
 name = "virtual_proxies"

@@ -452,6 +452,9 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 | `manifold-gate` | Forwards `umst-manifold/manifold-gate` — host transition gate traits for predict-path parity (no duplicate CD math in cartridge). |
 | `manifold-manifest` | Forwards `umst-manifold/manifold-manifest` — typed `UmstManifest` façade (same git pin as core dep). |
 | `manifest-bridge` | `manifold-gate` + manifold `manifest-bridge` — re-export `umst_manifold::manifest::*`; `predict` runs manifold `umst.gate.cd_transition` (no duplicate CD math). **CI (G-02, closed):** `manifest-bridge` test step in [`rust.yml`](.github/workflows/rust.yml) against git-pinned manifold — **no** workspace `[patch]`. |
+| `proxy-loop` | `manifest-bridge` + `virtual-proxies` — Track A/B optimisation loop. |
+| `agent-layer` | `manifest-bridge` + research memory — `src/research/`, MCP gate/contribute/query, promotion CLI. |
+| `ucrs-provenance` | `agent-layer` + optional `umst-ucrs` — Tier-2 `observed_at` stamps on memory ingest. |
 | `ros2-contract` | Forwards `umst-manifold/ros2-contract` — serde ROS DTOs (`umst_manifold::ros`); no runtime ROS in cartridge. |
 
 **Manifold pin:** `umst-manifold` git **`rev = 67b41f1`** ([`67b41f1a…`](https://github.com/tytolabs/umst-manifold/commit/67b41f1)) — proxy-loop manifest API on upstream `main`; cartridge inherits **119-module** catalog lock SSOT from that revision.
@@ -471,7 +474,7 @@ For rigorous validation reports, exact mathematical constitutive equations, and 
 - [`docs/Solver-Status.md`](docs/Solver-Status.md)
 - [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md) — cement-specific proof/trace table
 
-**Manifold formal stack (shared):** **119-module** unified Lean export pinned on [`umst-manifold`](../umst-manifold) @ [`67b41f1`](https://github.com/tytolabs/umst-manifold/commit/67b41f1) (`artifacts/catalog.lock.json`, upstream digest `ef0ed071…`). Fiber pins record **69** (`umst-formal-double-slit`) + **62** (`umst-formal`) before merge — the runtime contract is the **composed** digest, not either fiber alone. Traceability: [`umst-manifold/docs/claims-vs-proofs.md`](../umst-manifold/docs/claims-vs-proofs.md); witness philosophy [§](../umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md#proof-library--gate-law--mi-envelope--no-rust-axioms). Verify: `bash ../umst-manifold/scripts/verify_umst_stack.sh` ([`umst-manifold/docs/VERIFY.md`](../umst-manifold/docs/VERIFY.md)); workspace index [`VERIFY.md`](../VERIFY.md). Deep cartridge ↔ gate mapping: [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md).
+**Manifold formal stack (shared):** **119-module** unified Lean export pinned on [`umst-manifold`](../umst-manifold) @ [`67b41f1`](https://github.com/tytolabs/umst-manifold/commit/67b41f1) (`artifacts/catalog.lock.json`, upstream digest `ef0ed071…`). Fiber pins record **69** (`umst-formal-double-slit`) + **62** (`umst-formal`) before merge — the runtime contract is the **composed** digest, not either fiber alone. Traceability: [`umst-manifold/docs/claims-vs-proofs.md`](../umst-manifold/docs/claims-vs-proofs.md); release witness profile [§](../umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md#proof-library--gate-law--mi-envelope--no-rust-axioms). Verify: `bash ../umst-manifold/scripts/verify_umst_stack.sh` ([`umst-manifold/docs/VERIFY.md`](../umst-manifold/docs/VERIFY.md)); workspace index [`VERIFY.md`](../VERIFY.md). Deep cartridge ↔ gate mapping: [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md).
 
 ---
 
@@ -483,13 +486,13 @@ This repository is one component of a four-repo material-science stack. The sect
 Four active repositories make up the stack:
 1.  **[`umst-manifold`](https://github.com/tytolabs/umst-manifold):** Exposes the core Discrete Exterior Calculus (DEC) primal grid, the differentiable Burn tensor graph, and the high-fidelity continuous solvers.
 2.  **[`umst-concrete-cartridge`](https://github.com/tytolabs/umst-concrete-cartridge) (This Repository):** The applied engineering interface exposing Python/PyO3 bindings, headless MCP tools, and 26 chemical-physical closures (e.g. hydration kinetics, viscoelastic creep).
-3.  **[`umst-formal`](https://github.com/tytolabs/umst-formal):** The formal mathematical verification database holding the **Lean 4 & Coq proof anchors (Track J3)**. This repository mathematically proves that the DEC cochain complexes satisfy exact conservation laws (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;d%20\circ%20d%20=%200"><img alt="d \circ d = 0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;d%20\circ%20d%20=%200" style="vertical-align:middle"></picture>).
+3.  **[`umst-formal`](https://github.com/tytolabs/umst-formal):** The formal mathematical verification database holding the **Lean 4 & Coq proof anchors** for the cement gate fiber. This repository mathematically proves that the DEC cochain complexes satisfy exact conservation laws (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;d%20\circ%20d%20=%200"><img alt="d \circ d = 0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;d%20\circ%20d%20=%200" style="vertical-align:middle"></picture>).
 4.  **[`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit):** The quantum-information proof suite (Lean 4 + Mathlib). Machine-checked proofs of the Landauer cost of measurement, the Englert visibility / which-path bound, Lindblad dephasing limits, and Klein relative-entropy nonnegativity — anchoring the manifold's Thermodynamic CBF in formally verified quantum-mechanical foundations.
 
 ### 9.2 Working Contract
 *   **No statistical interpolation of physics.** Material stress, deformation, and hydration states come from the solvers — not from heuristics or regression.
 *   **Ground every constant; respect second-law composition.** Follow [§1.2](#12-grounding-contract-derived-measured-and-grounded-constants): trace coefficients to a **derivation, measurement record, or named calibration/literature/DFT anchor**; never weaken the manifold’s thermodynamic admissibility when composing closures.
-*   **Call the MCP tools.** The headless **Model Context Protocol** server in the `umst-mcp` crate exposes `predict_strength`, `audit_mix`, and related tools. Use them to compute the answer rather than predict it.
+*   **Call the MCP tools.** The headless **Model Context Protocol** server in the `umst-mcp` crate exposes `umst_predict`, `umst_audit`, `umst_profiles`, `umst_certify`, and (with `--features agent-layer`) `umst_gate_check`, `umst_contribute`, `umst_memory_query`. Use them to compute answers rather than guessing physics.
 *   **Follow the gradients.** The PyO3 interface (`umst_py`) exposes raw mechanical gradient vectors inside notebooks. Let spatial gradients shape the geometry instead of running grid-searches.
 
 ### 9.3 Operational Execution Guidelines
@@ -516,6 +519,10 @@ New physical domains plug in by implementing **`IScienceCartridge`** — no mani
 
 ---
 
+### 9.6 Physical Reasoning Layer
+
+Gate-validated research memory, contribution schemas, and the expanded MCP contract are documented in [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md). Build with `cargo build -p umst-mcp --features agent-layer`. Contributions require `gate_summary.admissible: true`; calibration changes require human `promotion_approval.v1` via `umst promote-contribution` — never silent auto-tune from MCP.
+
 ## 10. Conclusion: Inferences & Forward Path
 
 ### What this cartridge demonstrates
@@ -541,7 +548,7 @@ In practice, the cartridge is a **software** runtime: mixes and **simulated** pr
 ### Related repositories
 
 - [**UMST Manifold**](https://github.com/tytolabs/umst-manifold) — core DEC substrate and thermodynamic gate this cartridge mounts on
-- [**UMST Formal**](https://github.com/tytolabs/umst-formal) — Lean 4 / Coq proof anchors (Track J3) for the conservation laws
+- [**UMST Formal**](https://github.com/tytolabs/umst-formal) — Lean 4 / Coq proof anchors for the conservation laws
 - [**UMST Formal Double-Slit**](https://github.com/tytolabs/umst-formal-double-slit) — quantum-information proofs anchoring the Thermodynamic CBF
 
 ---

@@ -1,0 +1,40 @@
+{
+  "schema_version": "audit_corpus_provenance.v1",
+  "description": "Unified concrete audit corpus lifted from umst-prototype / umst-prototype-2a",
+  "primary_doc": "umst-prototype-2a/prototype/docs/2_Datasets.md",
+  "calibration_pin_sha256": "6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1",
+  "files": [
+    {
+      "path": "fixtures/corpus/audit_corpus.v1.csv",
+      "rows": 18146,
+      "sha256": "86645bd9749bd3b429e7f1b41814686c7c97b39fa9c9ac18edc5825faf6b1e1e",
+      "source_repo": "umst-prototype",
+      "source_path": "data/dataset_full.csv",
+      "zenodo": "10.5281/zenodo.18940933",
+      "license_mix": "UCI public-domain research + Zenodo CC-BY 4.0 (D2-D4) + synthetic D5-D8 per 2_Datasets.md"
+    },
+    {
+      "path": "fixtures/corpus/dataset_d1.v1.csv",
+      "rows": 1030,
+      "source_repo": "umst-prototype-2a",
+      "source_path": "prototype/data/dataset_D1.csv",
+      "dataset_id": "D1",
+      "primary_reference": "Yeh 1998 / UCI Concrete Compressive Strength"
+    }
+  ],
+  "datasets": [
+    { "id": "D1", "tag": "uci", "samples": 1030, "synthetic": false },
+    { "id": "D2", "tag": "zenodo_ndt", "samples": 4891, "synthetic": false },
+    { "id": "D3", "tag": "zenodo_sun", "samples": 2780, "synthetic": false },
+    { "id": "D4", "tag": "zenodo_rh", "samples": 7445, "synthetic": false },
+    { "id": "D5", "tag": "uhpc", "samples": 500, "synthetic": true },
+    { "id": "D6", "tag": "lunar", "samples": 500, "synthetic": true },
+    { "id": "D7", "tag": "selfheal", "samples": 500, "synthetic": true },
+    { "id": "D8", "tag": "highscm", "samples": 500, "synthetic": true }
+  ],
+  "ingest": {
+    "script": "scripts/bootstrap_memory_from_audit.py",
+    "gate_recheck_required": true,
+    "profile_default": "uci_d1"
+  }
+}

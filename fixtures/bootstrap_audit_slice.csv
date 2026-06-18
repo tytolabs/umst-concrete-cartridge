@@ -1,0 +1,6 @@
+cement,slag,fly_ash,water,superplasticizer,coarse_agg,fine_agg,age,strength,source,temperature,humidity
+350,0,0,157,6,1040,676,28,35.2,bootstrap_slice,20,65
+380,0,50,165,7,1020,660,28,38.1,bootstrap_slice,22,60
+320,40,0,150,5,1050,690,28,32.4,bootstrap_slice,18,70
+400,0,0,172,8,1000,650,7,28.5,bootstrap_slice,25,55
+360,0,30,158,6,1030,670,56,42.0,bootstrap_slice,20,65

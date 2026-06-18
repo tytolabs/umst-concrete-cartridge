@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/observed_at.v2.json",
+  "title": "ObservedAt v2 (wire.v2 integer UCRS)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "stamp_tier"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "observed_at.v2"
+    },
+    "stamp_tier": {
+      "type": "string",
+      "enum": ["UcrsTier2", "WallOnly", "Absent", "Synthetic"]
+    },
+    "ucrs_seq": { "type": "integer", "minimum": 0 },
+    "phase_entropy_bits_q": { "type": "integer" },
+    "phase_entropy_bits_scale": { "type": "integer", "minimum": 1 },
+    "credit_head_bits_q": { "type": "integer" },
+    "credit_head_bits_scale": { "type": "integer", "minimum": 1 },
+    "wall_ms": { "type": "integer", "minimum": 0 }
+  }
+}

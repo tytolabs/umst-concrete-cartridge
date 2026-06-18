@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Santhosh Shyamsundar,
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! MCP stdio JSON-RPC server for **`umst_predict`**, **`umst_audit`**, **`umst_profiles`**, **`umst_certify`** (facade + CLI canonical JSON).
+//! MCP stdio JSON-RPC server — facade tools + optional Physical Reasoning Layer (`agent-layer`).
 
 use std::io::{self, BufRead, Write};
 
@@ -16,6 +16,14 @@ use umst_cli::{
     },
 };
 use umst_concrete_cartridge::calibration::{Profile, BUNDLED_PROFILE_IDS};
+
+#[cfg(feature = "agent-layer")]
+mod agent_layer;
+
+#[cfg(feature = "agent-layer")]
+use agent_layer::AgentSession;
+#[cfg(feature = "agent-layer")]
+use umst_concrete_cartridge::research::MemoryQuery;
 
 fn err_frame(id: Value, msg: impl Into<String>) -> Value {
     json!({
@@ -36,66 +44,71 @@ fn text_result(id: Value, text: String, is_error: bool) -> Value {
     })
 }
 
+fn base_tools() -> Vec<Value> {
+    vec![
+        json!({
+            "name": "umst_predict",
+            "description": "`result.v2` prediction JSON via `umst_concrete_cartridge::facade::predict_with_options`; optional `canonical` forces sorted-key deterministic bytes.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "mix": {
+                        "type": "object",
+                        "description": "MixSpec wire (`w_c`, `temperature_k`, optional fractions)."
+                    },
+                    "profile": { "type": "string", "default": "default" },
+                    "compare_homogeneous": { "type": "boolean", "default": false },
+                    "schema_version": { "type": "string", "enum": ["v1", "v2"], "default": "v2" },
+                    "canonical": { "type": "boolean", "default": false, "description": "Emit canonical JSON bytes (UTF-8) as escaped string"}
+                },
+                "required": ["mix"]
+            }
+        }),
+        json!({
+            "name": "umst_audit",
+            "description": "Batch CSV audit envelope `audit.v1` (dataset_d1-compatible headers).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "profile": { "type": "string", "default": "uci_d1" },
+                    "csv_text": {
+                        "type": "string",
+                        "description": "Full CSV text including header row"
+                    },
+                    "limit": { "type": "integer", "minimum": 0 },
+                    "canonical": { "type": "boolean", "default": false }
+                },
+                "required": ["csv_text"]
+            }
+        }),
+        json!({
+            "name": "umst_profiles",
+            "description": "List bundled calibration profile ids sorted lexicographically with descriptions.",
+            "inputSchema": { "type": "object", "properties": {} }
+        }),
+        json!({
+            "name": "umst_certify",
+            "description": "Emit certify chain JSON (`CertifyChain`) for a bundled profile.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "profile": { "type": "string" },
+                    "canonical": { "type": "boolean", "default": false }
+                },
+                "required": ["profile"]
+            }
+        }),
+    ]
+}
+
 fn dispatch_tools_list(id: Value) -> Value {
+    let mut tools = base_tools();
+    #[cfg(feature = "agent-layer")]
+    tools.extend(agent_layer::agent_tools_schema());
     json!({
         "jsonrpc": "2.0",
         "id": id,
-        "result": {
-            "tools": [
-                {
-                    "name": "umst_predict",
-                    "description": "`result.v2` prediction JSON via `umst_concrete_cartridge::facade::predict_with_options`; optional `canonical` forces sorted-key deterministic bytes.",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "mix": {
-                                "type": "object",
-                                "description": "MixSpec wire (`w_c`, `temperature_k`, optional fractions)."
-                            },
-                            "profile": { "type": "string", "default": "default" },
-                            "compare_homogeneous": { "type": "boolean", "default": false },
-                            "schema_version": { "type": "string", "enum": ["v1", "v2"], "default": "v2" },
-                            "canonical": { "type": "boolean", "default": false, "description": "Emit canonical JSON bytes (UTF-8) as escaped string"}
-                        },
-                        "required": ["mix"]
-                    }
-                },
-                {
-                    "name": "umst_audit",
-                    "description": "Batch CSV audit envelope `audit.v1` (dataset_d1-compatible headers).",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "profile": { "type": "string", "default": "uci_d1" },
-                            "csv_text": {
-                                "type": "string",
-                                "description": "Full CSV text including header row"
-                            },
-                            "limit": { "type": "integer", "minimum": 0 },
-                            "canonical": { "type": "boolean", "default": false }
-                        },
-                        "required": ["csv_text"]
-                    }
-                },
-                {
-                    "name": "umst_profiles",
-                    "description": "List bundled calibration profile ids sorted lexicographically with descriptions.",
-                    "inputSchema": { "type": "object", "properties": {} }
-                },
-                {
-                    "name": "umst_certify",
-                    "description": "Emit certify chain JSON (`CertifyChain`) for a bundled profile.",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "profile": { "type": "string" },
-                            "canonical": { "type": "boolean", "default": false }
-                        },
-                        "required": ["profile"]
-                    }
-                }
-            ]
-        }
+        "result": { "tools": tools }
     })
 }
 
@@ -255,6 +268,178 @@ fn tool_umst_certify(id: Value, args: &Value) -> Value {
     )
 }
 
+#[cfg(feature = "agent-layer")]
+fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Value {
+    let _ = session;
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let mix = match args.get("mix") {
+        Some(m) => m.clone(),
+        None => return err_frame(id, "missing mix"),
+    };
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => return err_frame(id, format!("profile load error: {e}")),
+    };
+    let summary = session.gate_check(&profile, &mix);
+    text_result(
+        id,
+        serde_json::to_string_pretty(&summary).unwrap_or_default(),
+        false,
+    )
+}
+
+#[cfg(feature = "agent-layer")]
+fn tool_umst_contribute(id: Value, args: &Value, session: AgentSession) -> (Value, AgentSession) {
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let contribution = match args.get("contribution") {
+        Some(c) => c.clone(),
+        None => {
+            return (
+                err_frame(id, "missing contribution"),
+                session,
+            );
+        }
+    };
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => {
+            return (
+                err_frame(id, format!("profile load error: {e}")),
+                session,
+            );
+        }
+    };
+    let async_mode = args.get("async").and_then(|x| x.as_bool()).unwrap_or(false);
+    if async_mode {
+        let (next, job_id) = session.contribute_async(&profile, &contribution);
+        return (
+            text_result(
+                id,
+                serde_json::to_string_pretty(&json!({ "job_id": job_id })).unwrap_or_default(),
+                false,
+            ),
+            next,
+        );
+    }
+    match session.clone().contribute(&profile, &contribution) {
+        Ok((next, result)) => (
+            text_result(
+                id,
+                serde_json::to_string_pretty(&result).unwrap_or_default(),
+                false,
+            ),
+            next,
+        ),
+        Err(e) => (err_frame(id, e), session),
+    }
+}
+
+#[cfg(feature = "agent-layer")]
+fn tool_umst_contribute_status(id: Value, args: &Value, session: &AgentSession) -> Value {
+    let job_id = match args.get("job_id").and_then(|x| x.as_str()) {
+        Some(j) => j,
+        None => return err_frame(id, "missing job_id"),
+    };
+    match session.contribute_status(job_id) {
+        Some(job) => text_result(
+            id,
+            serde_json::to_string_pretty(&job).unwrap_or_default(),
+            false,
+        ),
+        None => err_frame(id, format!("unknown job_id: {job_id}")),
+    }
+}
+
+#[cfg(feature = "agent-layer")]
+fn tool_umst_mi_estimate(id: Value, args: &Value, session: &AgentSession) -> Value {
+    let mix = match args.get("mix") {
+        Some(m) => m.clone(),
+        None => return err_frame(id, "missing mix"),
+    };
+    let out = session.mi_estimate(&mix);
+    text_result(
+        id,
+        serde_json::to_string_pretty(&out).unwrap_or_default(),
+        false,
+    )
+}
+
+#[cfg(feature = "agent-layer")]
+fn tool_umst_memory_query(id: Value, args: &Value, session: &AgentSession) -> Value {
+    let q = MemoryQuery {
+        admissible_only: args
+            .get("admissible_only")
+            .and_then(|x| x.as_bool())
+            .unwrap_or(true),
+        curing_regime: args
+            .get("curing_regime")
+            .and_then(|x| x.as_str())
+            .map(str::to_string),
+        limit: args
+            .get("limit")
+            .and_then(|x| x.as_u64())
+            .map(|n| n as usize),
+        near_mix_spec: args.get("near_mix_spec").cloned(),
+        max_mix_l1: args
+            .get("max_mix_l1")
+            .and_then(|x| x.as_f64()),
+        hilbert_index: args
+            .get("hilbert_index")
+            .and_then(|x| x.as_u64())
+            .map(|n| n as u32),
+        max_hilbert_distance: args
+            .get("max_hilbert_distance")
+            .and_then(|x| x.as_u64())
+            .map(|n| n as u32),
+    };
+    let rows = session.memory_query(&q);
+    text_result(
+        id,
+        serde_json::to_string_pretty(&rows).unwrap_or_default(),
+        false,
+    )
+}
+
+#[cfg(feature = "agent-layer")]
+fn handle_tools_call(id: Value, params: Option<&Value>, session: AgentSession) -> (Value, AgentSession) {
+    let name = params
+        .and_then(|p| p.get("name"))
+        .and_then(|n| n.as_str())
+        .unwrap_or("");
+
+    let args = params
+        .and_then(|p| p.get("arguments"))
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+
+    match name {
+        "umst_predict" => (tool_umst_predict(id, &args), session),
+        "umst_audit" => (tool_umst_audit(id, &args), session),
+        "umst_profiles" => (tool_umst_profiles(id), session),
+        "umst_certify" => (tool_umst_certify(id, &args), session),
+        "umst_gate_check" => (tool_umst_gate_check(id, &args, &session), session),
+        "umst_contribute" => tool_umst_contribute(id, &args, session),
+        "umst_contribute_status" => (tool_umst_contribute_status(id, &args, &session), session),
+        "umst_memory_query" => (tool_umst_memory_query(id, &args, &session), session),
+        "umst_mi_estimate" => (tool_umst_mi_estimate(id, &args, &session), session),
+        other => (
+            json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": { "code": -32601, "message": format!("Unknown tool: {other}") },
+            }),
+            session,
+        ),
+    }
+}
+
+#[cfg(not(feature = "agent-layer"))]
 fn handle_tools_call(id: Value, params: Option<&Value>) -> Value {
     let name = params
         .and_then(|p| p.get("name"))
@@ -279,6 +464,84 @@ fn handle_tools_call(id: Value, params: Option<&Value>) -> Value {
     }
 }
 
+#[cfg(feature = "agent-layer")]
+fn dispatch(req: &Value, session: AgentSession) -> (Value, AgentSession) {
+    let id = req.get("id").cloned().unwrap_or(Value::Null);
+    let method = req.get("method").and_then(|m| m.as_str()).unwrap_or("");
+
+    match method {
+        "initialize" => (
+            json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": { "tools": {}, "resources": {}, "prompts": {} },
+                    "serverInfo": {
+                        "name": "umst-concrete-cartridge",
+                        "version": env!("CARGO_PKG_VERSION"),
+                    },
+                },
+            }),
+            session,
+        ),
+        "tools/list" => (dispatch_tools_list(id), session),
+        "tools/call" => handle_tools_call(id, req.get("params"), session),
+        "resources/list" => (json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "result": agent_layer::resources_list_result(),
+        }), session),
+        "resources/read" => {
+            let uri = req
+                .get("params")
+                .and_then(|p| p.get("uri"))
+                .and_then(|u| u.as_str())
+                .unwrap_or("");
+            match agent_layer::resources_read_result(uri) {
+                Ok(result) => (json!({
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "result": result,
+                }), session),
+                Err(e) => (err_frame(id, e), session),
+            }
+        }
+        "prompts/list" => (
+            json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "result": agent_layer::prompts_list_result(),
+            }),
+            session,
+        ),
+        "prompts/get" => {
+            let name = req
+                .get("params")
+                .and_then(|p| p.get("name"))
+                .and_then(|n| n.as_str())
+                .unwrap_or("");
+            match agent_layer::prompts_get_result(name) {
+                Ok(result) => (json!({
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "result": result,
+                }), session),
+                Err(e) => (err_frame(id, e), session),
+            }
+        }
+        _ => (
+            json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "error": { "code": -32601, "message": format!("Method not found: {method}") },
+            }),
+            session,
+        ),
+    }
+}
+
+#[cfg(not(feature = "agent-layer"))]
 fn dispatch(req: &Value) -> Value {
     let id = req.get("id").cloned().unwrap_or(Value::Null);
     let method = req.get("method").and_then(|m| m.as_str()).unwrap_or("");
@@ -296,7 +559,6 @@ fn dispatch(req: &Value) -> Value {
                 },
             },
         }),
-
         "tools/list" => dispatch_tools_list(id),
         "tools/call" => handle_tools_call(id, req.get("params")),
         _ => json!({
@@ -312,10 +574,13 @@ fn main() {
         .with_writer(std::io::stderr)
         .init();
 
-    tracing::info!("UMST MCP server (stdio facade tools).");
+    tracing::info!("UMST MCP server (stdio).");
 
     let stdin = io::stdin();
     let mut stdout = io::stdout();
+
+    #[cfg(feature = "agent-layer")]
+    let mut session = AgentSession::default();
 
     for line in stdin.lock().lines() {
         let line = match line {
@@ -329,6 +594,20 @@ fn main() {
             continue;
         }
 
+        #[cfg(feature = "agent-layer")]
+        let response = match serde_json::from_str::<Value>(&line) {
+            Ok(req) => {
+                let (frame, next) = dispatch(&req, session);
+                session = next;
+                frame
+            }
+            Err(e) => {
+                tracing::error!("Bad JSON-RPC frame: {e}");
+                continue;
+            }
+        };
+
+        #[cfg(not(feature = "agent-layer"))]
         let response = match serde_json::from_str::<Value>(&line) {
             Ok(req) => dispatch(&req),
             Err(e) => {

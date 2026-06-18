@@ -17,6 +17,7 @@ publish = false
 default = []
 proxy-loop = ["umst-concrete-cartridge/proxy-loop"]
 manifest-bridge = ["umst-concrete-cartridge/manifest-bridge"]
+agent-layer = ["umst-concrete-cartridge/agent-layer", "dep:uuid"]
 blas-accelerate = [
     "umst-concrete-cartridge/blas-accelerate",
     "burn-ndarray/blas-accelerate",
@@ -39,6 +40,7 @@ csv = "1.3"
 sha2 = "0.10"
 serde = { version = "1.0", features = ["derive"] }
 ryu = "1.0"
+uuid = { version = "1.11", features = ["v4"], optional = true }
 
 [dev-dependencies]
 approx = "0.5"

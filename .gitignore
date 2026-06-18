@@ -10,6 +10,10 @@
 Thumbs.db
 Desktop/
 .cargo/config.toml
+.cargo/config.toml.local-*
+
+# Agent-layer local memory (operator SQLite + JSONL sidecars)
+.umst-memory/
 
 .idea/
 .vscode/
@@ -55,3 +59,4 @@ opt*.log
 shell_*.log
 *_track*_*.log
 rust_out
+.umst-memory/

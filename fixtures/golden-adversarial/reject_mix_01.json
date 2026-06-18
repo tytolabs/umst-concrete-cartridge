@@ -1,0 +1,34 @@
+{
+  "schema_version": "contribution.v1",
+  "canon_version": "jcs-rfc8785-v1",
+  "mix_spec": {
+    "w_c": "3/4",
+    "temperature_k": "29315/100",
+    "superplasticiser_pct": "0/1",
+    "silica_fume_pct": "0/1",
+    "fly_ash_pct": "0/1",
+    "aggregate_volume_fraction": "7/10",
+    "target_age_hours": "672/1"
+  },
+  "process": {
+    "curing_regime": "standard_20C_water"
+  },
+  "outcome": {
+    "compressive_strength_mpa": "12/1",
+    "degree_of_hydration": "40/100"
+  },
+  "gate_summary": {
+    "admissible": false,
+    "verdict": "REJECT",
+    "catalog_ids": ["gate.clausius_duhem.v1"],
+    "safety_margin": "-1/1"
+  },
+  "catalog_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+  "observed_at": {
+    "stamp_tier": "Synthetic",
+    "ucrs_seq": 2,
+    "phase_entropy_bits_q": 0,
+    "phase_entropy_bits_scale": 1000000,
+    "wall_ms": 1718745601000
+  }
+}

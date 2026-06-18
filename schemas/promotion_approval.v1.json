@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/promotion_approval.v1.json",
+  "title": "Promotion Approval v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "canon_version",
+    "proposal_hash",
+    "ucrs_observation_tier",
+    "decision",
+    "approver",
+    "approved_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "promotion_approval.v1"
+    },
+    "canon_version": {
+      "type": "string",
+      "const": "jcs-rfc8785-v1"
+    },
+    "proposal_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "ucrs_observation_tier": {
+      "type": "string",
+      "enum": ["UcrsTier2", "WallOnly", "Synthetic"]
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["approve", "reject"]
+    },
+    "approver": {
+      "type": "string",
+      "format": "uri"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "jws": {
+      "type": "string",
+      "description": "Detached JWS over JCS body (envelope — excluded from content_hash)"
+    }
+  }
+}

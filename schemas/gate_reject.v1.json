@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/gate_reject.v1.json",
+  "title": "Gate Reject v1",
+  "description": "Append-only audit row for gate failures — never enters admissible_only memory queries",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "canon_version",
+    "mix_content_hash",
+    "verdict",
+    "catalog_ids",
+    "stamp_tier",
+    "rejected_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "gate_reject.v1"
+    },
+    "canon_version": {
+      "type": "string",
+      "const": "jcs-rfc8785-v1"
+    },
+    "mix_content_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "JCS hash of mix_spec preimage"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["REJECT", "WARN"]
+    },
+    "catalog_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "catalog_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "stamp_tier": {
+      "type": "string",
+      "enum": ["UcrsTier2", "WallOnly", "Absent", "Synthetic"]
+    },
+    "rejected_at": {
+      "$ref": "contribution.v1.json#/$defs/observed_at_v1"
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

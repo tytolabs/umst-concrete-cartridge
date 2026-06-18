@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+# Agent Docker image — manifest-bridge + Physical Reasoning Layer MCP
+
+FROM rust:1.88-bookworm AS build
+WORKDIR /src
+COPY . .
+RUN cargo build --release -p umst-mcp --features agent-layer
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=build /src/target/release/umst-mcp /usr/local/bin/umst-mcp
+ENV RUST_LOG=info
+ENTRYPOINT ["umst-mcp"]

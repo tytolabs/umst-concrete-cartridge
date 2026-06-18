@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tytolabs/umst-concrete-cartridge/schemas/memory_record.v1.json",
+  "title": "Memory Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "canon_version",
+    "content_id",
+    "observed_at",
+    "payload",
+    "catalog_hash",
+    "catalog_ids"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "memory_record.v1"
+    },
+    "canon_version": {
+      "type": "string",
+      "const": "jcs-rfc8785-v1"
+    },
+    "content_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "SHA-256 of canonical preimage including observed_at"
+    },
+    "observed_at": {
+      "$ref": "contribution.v1.json#/$defs/observed_at_v1"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mix_spec", "process", "outcome", "gate_summary"],
+      "properties": {
+        "mix_spec": { "$ref": "contribution.v1.json#/$defs/mix_spec_v1" },
+        "process": { "$ref": "contribution.v1.json#/$defs/process_v1" },
+        "outcome": { "$ref": "contribution.v1.json#/$defs/outcome_v1" },
+        "gate_summary": { "$ref": "contribution.v1.json#/$defs/gate_summary_v1" }
+      }
+    },
+    "catalog_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "catalog_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "memory_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "mix_geometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hilbert_index", "regime_bucket", "grid_x", "grid_y"],
+      "properties": {
+        "hilbert_index": { "type": "integer", "minimum": 0 },
+        "regime_bucket": { "type": "string", "minLength": 1 },
+        "grid_x": { "type": "integer", "minimum": 0 },
+        "grid_y": { "type": "integer", "minimum": 0 }
+      },
+      "description": "Mix-space Morton locality index (egoff Hilbert discipline on w_c × T grid)"
+    }
+  }
+}

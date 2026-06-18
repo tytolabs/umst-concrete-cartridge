@@ -27,6 +27,10 @@ pub mod print_ready;
 pub mod facade;
 pub mod gate_policy;
 
+#[cfg(feature = "agent-layer")]
+/// Gate-validated research memory (Physical Reasoning Layer).
+pub mod research;
+
 #[cfg(feature = "tier2c-handshake")]
 pub mod material_transition;
 

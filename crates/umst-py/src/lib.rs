@@ -240,6 +240,88 @@ pub fn canonical_json<'py>(
     Ok(pyo3::types::PyBytes::new_bound(py, &bytes))
 }
 
+#[cfg(feature = "agent-layer")]
+/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+/// catalog_id: umst.gate.cd_transition
+/// formal_anchor_rationale: Python transport over [`gate_check_mix`]; admissibility SSOT on manifold gate.
+/// Gate-check mix_spec JSON; returns admissibility summary dict.
+#[pyfunction]
+#[pyo3(signature = (mix, *, profile="default"))]
+pub fn gate_check(py: Python<'_>, mix: Bound<'_, PyAny>, profile: &str) -> PyResult<Py<PyDict>> {
+    use umst_concrete_cartridge::research::{gate_check_mix, GateSummary};
+    let mix_val = value_from_py_mix(py, &mix)?;
+    let prof = umst_concrete_cartridge::calibration::Profile::load_bundled(profile)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let summary: GateSummary = gate_check_mix(&prof, &mix_val);
+    let v = serde_json::to_value(&summary).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    value_to_py_dict(py, &v)
+}
+
+#[cfg(feature = "agent-layer")]
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Python transport over pure [`query`] filter; no new physical claim.
+/// Query research memory with optional filters (in-memory store per call).
+#[pyfunction]
+#[pyo3(signature = (*, admissible_only=true, curing_regime=None, limit=None))]
+pub fn memory_query(
+    py: Python<'_>,
+    admissible_only: bool,
+    curing_regime: Option<&str>,
+    limit: Option<usize>,
+) -> PyResult<Py<PyList>> {
+    use umst_concrete_cartridge::research::{query, MemoryQuery, ResearchStore};
+    let q = MemoryQuery {
+        admissible_only,
+        curing_regime: curing_regime.map(str::to_string),
+        limit,
+        ..Default::default()
+    };
+    let rows = query(&ResearchStore::default(), &q);
+    let list = PyList::empty_bound(py);
+    for row in rows {
+        let v = serde_json::to_value(&row).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        list.append(value_to_py_dict(py, &v)?)?;
+    }
+    Ok(list.into())
+}
+
+#[cfg(feature = "agent-layer")]
+/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+/// catalog_id: umst.gate.cd_transition
+/// formal_anchor_rationale: Python transport over [`accept`]; gate re-check before memory append.
+/// Contribute contribution.v1 JSON into in-memory research store.
+#[pyfunction]
+#[pyo3(signature = (contribution, *, profile="default"))]
+pub fn contribute(
+    py: Python<'_>,
+    contribution: Bound<'_, PyAny>,
+    profile: &str,
+) -> PyResult<Py<PyDict>> {
+    use umst_concrete_cartridge::research::{
+        accept, GateContext, ProvenanceClock, ResearchStore, WallClock,
+    };
+    let c_val = value_from_py_mix(py, &contribution)?;
+    let prof = umst_concrete_cartridge::calibration::Profile::load_bundled(profile)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let ctx = GateContext { profile: &prof };
+    let (store, _clock, result) = accept(
+        ResearchStore::default(),
+        ProvenanceClock::default(),
+        WallClock,
+        &ctx,
+        &c_val,
+    )
+    .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let _ = store;
+    let v = serde_json::to_value(&result).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    value_to_py_dict(py, &v)
+}
+
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Thin extension entry; façade and CLI layers carry formal blocks.
@@ -252,6 +334,12 @@ fn _umst_concrete_cartridge(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(schema, m)?)?;
     m.add_function(wrap_pyfunction!(bundled_profile_ids, m)?)?;
     m.add_function(wrap_pyfunction!(canonical_json, m)?)?;
+    #[cfg(feature = "agent-layer")]
+    {
+        m.add_function(wrap_pyfunction!(gate_check, m)?)?;
+        m.add_function(wrap_pyfunction!(memory_query, m)?)?;
+        m.add_function(wrap_pyfunction!(contribute, m)?)?;
+    }
     m.add(
         "__doc__",
         "UMST concrete cartridge Python extension (predict, audit, certify, schema).",

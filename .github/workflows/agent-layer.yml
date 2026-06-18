@@ -1,0 +1,38 @@
+name: agent-layer
+
+on:
+  push:
+    paths:
+      - 'crates/umst-concrete-cartridge/src/research/**'
+      - 'crates/umst-mcp/**'
+      - 'fixtures/golden-adversarial/**'
+      - 'scripts/mcp_smoke.py'
+      - '.github/workflows/agent-layer.yml'
+  pull_request:
+    paths:
+      - 'crates/umst-concrete-cartridge/src/research/**'
+      - 'crates/umst-mcp/**'
+      - 'fixtures/golden-adversarial/**'
+      - 'scripts/mcp_smoke.py'
+      - '.github/workflows/agent-layer.yml'
+
+jobs:
+  agent-layer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+
+      - name: Research memory + golden gate_check
+        working-directory: umst-concrete-cartridge
+        run: |
+          cargo test -p umst-concrete-cartridge --features agent-layer \
+            --test research_memory --test golden_gate_check
+
+      - name: MCP smoke (agent-layer)
+        working-directory: umst-concrete-cartridge
+        run: python3 scripts/mcp_smoke.py --agent-layer
