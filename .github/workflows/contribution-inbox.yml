@@ -1,0 +1,41 @@
+name: contribution-inbox
+
+on:
+  pull_request:
+    paths:
+      - 'contributions/inbox/**'
+      - 'scripts/validate_contribution_inbox.py'
+      - 'scripts/ingest_contributions.py'
+      - 'schemas/contribution.v1.json'
+      - '.github/workflows/contribution-inbox.yml'
+  push:
+    paths:
+      - 'contributions/inbox/**'
+      - 'scripts/validate_contribution_inbox.py'
+      - '.github/workflows/contribution-inbox.yml'
+
+jobs:
+  validate-inbox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install check-jsonschema
+        run: pipx install 'check-jsonschema==0.37.3'
+
+      - name: Validate inbox JSONL (schema + admissible + duplicates)
+        run: |
+          shopt -s nullglob
+          files=(contributions/inbox/*.jsonl)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "no inbox JSONL files in this changeset"
+            exit 0
+          fi
+          python3 scripts/validate_contribution_inbox.py "${files[@]}"
+
+      - name: Dry-run ingest (structure + content_id; gate flag checked above)
+        run: |
+          shopt -s nullglob
+          for f in contributions/inbox/*.jsonl; do
+            python3 scripts/ingest_contributions.py "$f" --dry-run --skip-gate
+          done

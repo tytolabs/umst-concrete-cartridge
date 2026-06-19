@@ -99,12 +99,13 @@ def gate_check_admissible(contribution: dict, profile: str) -> bool:
 
 
 def ingest_line(
-    conn: sqlite3.Connection,
+    conn: sqlite3.Connection | None,
     line: str,
     profile: str,
-    memory_jsonl: Path,
+    memory_jsonl: Path | None,
     *,
     skip_gate: bool,
+    dry_run: bool,
 ) -> str:
     obj = json.loads(line)
     if obj.get("schema_version") != "contribution.v1":
@@ -135,6 +136,9 @@ def ingest_line(
         "memory_id": memory_id,
     }
     record_json = json.dumps(record, separators=(",", ":"))
+    if dry_run:
+        return "would_insert"
+    assert conn is not None and memory_jsonl is not None
     try:
         conn.execute(
             "INSERT INTO memory_records (memory_id, content_id, idempotency_key, record_json) VALUES (?, ?, ?, ?)",
@@ -158,28 +162,53 @@ def main() -> int:
         action="store_true",
         help="Trust gate_summary.admissible without MCP gate_check (bootstrap only)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and gate-check only; do not write SQLite or JSONL",
+    )
     args = parser.parse_args()
 
     db_path = Path(args.db)
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
-    conn.executescript(SCHEMA_SQL)
+    conn: sqlite3.Connection | None
+    if args.dry_run:
+        conn = None
+    else:
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(db_path)
+        conn.executescript(SCHEMA_SQL)
 
     fh = open(args.jsonl, encoding="utf-8") if args.jsonl else sys.stdin
-    memory_jsonl = db_path.parent / "memory.jcs.jsonl"
+    memory_jsonl = None if args.dry_run else db_path.parent / "memory.jcs.jsonl"
     counts: dict[str, int] = {}
     for line in fh:
         line = line.strip()
         if not line:
             continue
         status = ingest_line(
-            conn, line, args.profile, memory_jsonl, skip_gate=args.skip_gate
+            conn,
+            line,
+            args.profile,
+            memory_jsonl,
+            skip_gate=args.skip_gate,
+            dry_run=args.dry_run,
         )
         counts[status] = counts.get(status, 0) + 1
-    conn.commit()
+    if not args.dry_run and conn is not None:
+        conn.commit()
     if args.jsonl:
         fh.close()
-    print(json.dumps({"counts": counts, "db": str(db_path)}, indent=2))
+    print(json.dumps({"counts": counts, "db": str(db_path), "dry_run": args.dry_run}, indent=2))
+    if args.dry_run:
+        bad = sum(
+            counts.get(k, 0)
+            for k in (
+                "skip_schema",
+                "skip_gate",
+                "skip_not_admissible",
+            )
+        )
+        return 1 if bad else 0
     return 0
 
 

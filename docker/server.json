@@ -1,0 +1,32 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/server.schema.json",
+  "name": "umst-concrete-cartridge",
+  "description": "UMST Physical Reasoning Layer — gate-validated concrete memory (stdio MCP)",
+  "version": "0.2.1",
+  "repository": {
+    "url": "https://github.com/tytolabs/umst-concrete-cartridge",
+    "source": "github"
+  },
+  "documentation": "https://github.com/tytolabs/umst-concrete-cartridge/blob/main/docs/AGENT_MCP.md",
+  "packages": [
+    {
+      "registry_type": "oci",
+      "identifier": "ghcr.io/tytolabs/umst-concrete-cartridge:agent-layer",
+      "transport": {
+        "type": "stdio"
+      },
+      "environment_variables": [
+        {
+          "name": "UMST_MEMORY_DB",
+          "description": "SQLite research memory path inside container (mount volume)",
+          "required": false
+        },
+        {
+          "name": "UMST_UCRS_WITNESS",
+          "description": "synthetic (default) or live Tier-2 stamps",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

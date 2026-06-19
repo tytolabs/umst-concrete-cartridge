@@ -47,7 +47,16 @@ dbs:
         sync-interval: 60s
 ```
 
-Install: [Litestream](https://litestream.io/) v0.3.x+. Run as systemd unit beside `umst-mcp`.
+Install: [Litestream](https://litestream.io/) v0.3.x+. Example systemd unit: [`scripts/litestream-systemd.example`](../scripts/litestream-systemd.example).
+
+### Restore smoke (operator)
+
+```bash
+litestream restore -config docs/examples/litestream.yml -o /tmp/memory-restored.db /var/lib/umst/.umst-memory/memory.db
+sqlite3 /tmp/memory-restored.db 'SELECT COUNT(*) FROM memory_records;'
+```
+
+Compare count to pre-failover export manifest before cutting traffic back.
 
 ---
 

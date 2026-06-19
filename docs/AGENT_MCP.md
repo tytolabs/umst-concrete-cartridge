@@ -240,13 +240,13 @@ For **live Tier-2 observation stamps** (`UMST_UCRS_WITNESS=live`), operators may
 
 | Temptation | Why wait |
 |------------|----------|
-| **`rmcp` 1.7 rewrite** | Hand-rolled stdio JSON-RPC (MCP 2024-11-05) is shipped and Cursor-stable; migrate when upstream prompts/resources stabilize |
+| **`rmcp` 1.7 rewrite** | [`MCP_PROTOCOL_ROADMAP.md`](MCP_PROTOCOL_ROADMAP.md) — migration triggers |
 | **MCP 2025-11-25 protocol** | No multi-tenant hosted MCP requirement yet |
 | **Streamable HTTP + OAuth** | stdio + Docker suffices for cartridge-local agents |
-| **ghcr OCI MCP distribution** | Docker `ghcr.io/tytolabs/umst-concrete-cartridge` documented; dedicated MCP OCI layer deferred |
-| **RFC 3161 TSA on promotion bundle** | Human-gated promotion only; external anchor deferred |
-| **Sigstore / in-toto per-contribute** | Bundle-release Sigstore only (also deferred for v1 CI) |
-| **Litestream S3 Object Lock** | See [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) |
+| **ghcr OCI MCP distribution** | [`docker/README.md`](../docker/README.md) + [`server.json`](../docker/server.json) (stdio manifest) |
+| **RFC 3161 TSA on promotion bundle** | Human-gated promotion only — see [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) + `scripts/promotion_tsa_timestamp.sh` |
+| **Sigstore / in-toto per-contribute** | Bundle-only — [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) + `scripts/cosign_promotion_bundle.sh` |
+| **Litestream S3 Object Lock** | [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) + `scripts/litestream-systemd.example` |
 | **SQLite `contribute_jobs` table** | JSON sidecar SSOT in v1 |
 | **Background contribute worker** | Inline in-process accept + `contribute_jobs.json` poll |
 
@@ -267,9 +267,27 @@ python3 scripts/mcp_smoke.py --agent-layer
 
 ---
 
+## Federated contribution (git inbox)
+
+Local `umst_contribute` writes to **your** `UMST_MEMORY_DB` only. To propose rows for the **shared corpus**:
+
+```bash
+python3 scripts/export_contributions_jsonl.py \
+  --db .umst-memory/memory.db --lab <slug> \
+  --out contributions/inbox/<slug>-<YYYYMMDD>-<id>.jsonl
+# Open PR; CI validates schema + gate re-check
+```
+
+See [`contributions/README.md`](../contributions/README.md) and workspace plan `git-contribution-inbox.md`. **Not** live git push from MCP — human PR merge required.
+
+---
+
 ## Related
 
 - [`README.md`](../README.md) §9 — agent protocol
+- [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) — TSA + Sigstore operator scripts
+- [`MCP_PROTOCOL_ROADMAP.md`](MCP_PROTOCOL_ROADMAP.md) — rmcp / HTTP defer criteria
+- [`docker/README.md`](../docker/README.md) — OCI agent image + `server.json`
 - [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) — observation stamps, [`TemporalWitness`](https://github.com/tytolabs/umst-ucrs/blob/master/Rust/src/observation.rs), [`HLC_SIDECAR.md`](https://github.com/tytolabs/umst-ucrs/blob/master/Docs/HLC_SIDECAR.md)
 - [`CARTRIDGE_PORT.md`](CARTRIDGE_PORT.md) — cross-cartridge port guide
 - [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) — durability + Litestream defer

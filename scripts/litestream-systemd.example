@@ -1,0 +1,21 @@
+# Example systemd unit for Litestream replication of UMST_MEMORY_DB
+# Copy to /etc/systemd/system/litestream-umst-memory.service and edit paths.
+#
+# Requires: litestream v0.3.x+ (https://litestream.io/)
+# Config: docs/examples/litestream.yml
+
+[Unit]
+Description=Litestream replicate UMST research memory SQLite
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=umst
+Group=umst
+ExecStart=/usr/local/bin/litestream replicate -config /etc/umst/litestream.yml
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
