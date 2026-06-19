@@ -1,3 +1,6 @@
 # Monorepo sibling override (not used in CI). Copy to config.toml (gitignored).
 [patch."https://github.com/tytolabs/umst-manifold.git"]
 umst-manifold = { path = "../umst-manifold" }
+
+[patch."https://github.com/tytolabs/umst-ucrs.git"]
+umst-ucrs = { path = "../umst-ucrs/Rust" }
