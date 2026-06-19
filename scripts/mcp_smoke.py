@@ -143,8 +143,35 @@ def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
 
             prompts = rpc(proc, {"jsonrpc": "2.0", "id": 13, "method": "prompts/list"})
             prompt_names = {p["name"] for p in prompts.get("result", {}).get("prompts", [])}
-            for required_prompt in ("interpret_gate_failure", "suggest_similar_mix"):
+            for required_prompt in (
+                "interpret_gate_failure",
+                "suggest_similar_mix",
+                "audit_mix_csv",
+            ):
                 assert required_prompt in prompt_names, f"missing prompt {required_prompt}"
+
+            transition = rpc(
+                proc,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 14,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "umst_transition_propose",
+                        "arguments": {
+                            "mix": {
+                                "w_c": "9/20",
+                                "temperature_k": "29315/100",
+                                "aggregate_volume_fraction": "7/10",
+                            },
+                        },
+                    },
+                },
+            )
+            assert "result" in transition, transition
+            trans_body = json.loads(transition["result"]["content"][0]["text"])
+            assert "job_id" in trans_body
+            assert "prediction" in trans_body
 
         profiles = rpc(
             proc,
@@ -163,6 +190,41 @@ def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
         proc.wait(timeout=120)
 
 
+def run_memory_export_cli(repo_root: Path) -> None:
+    out_dir = repo_root / "target" / "mcp_smoke_export"
+    if out_dir.exists():
+        import shutil
+
+        shutil.rmtree(out_dir)
+    proc = subprocess.run(
+        [
+            "cargo",
+            "run",
+            "-q",
+            "-p",
+            "umst-cli",
+            "--bin",
+            "umst",
+            "--features",
+            "agent-layer",
+            "--",
+            "memory",
+            "export",
+            "--out",
+            str(out_dir),
+        ],
+        cwd=str(repo_root),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    bundle = out_dir / "memory_export_bundle.v1.json"
+    assert bundle.is_file(), proc.stderr
+    body = json.loads(bundle.read_text())
+    assert body.get("schema_version") == "memory_export_bundle.v1"
+    print("mcp_smoke: memory export CLI ok", file=sys.stderr)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -177,6 +239,7 @@ def main() -> int:
     if args.agent_layer:
         run_smoke(agent_layer=True, witness_mode="synthetic")
         run_smoke(agent_layer=True, witness_mode="live")
+        run_memory_export_cli(Path(__file__).resolve().parents[1])
 
     return 0
 

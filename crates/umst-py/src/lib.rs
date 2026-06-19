@@ -245,47 +245,91 @@ pub fn canonical_json<'py>(
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
-/// formal_anchor_rationale: Python transport over [`gate_check_mix`]; admissibility SSOT on manifold gate.
-/// Gate-check mix_spec JSON; returns admissibility summary dict.
+/// formal_anchor_rationale: Python transport over [`gate_check_mix_result`]; admissibility SSOT on manifold gate.
+/// Gate-check mix_spec JSON; returns admissibility summary dict with optional explain block.
 #[pyfunction]
-#[pyo3(signature = (mix, *, profile="default"))]
-pub fn gate_check(py: Python<'_>, mix: Bound<'_, PyAny>, profile: &str) -> PyResult<Py<PyDict>> {
-    use umst_concrete_cartridge::research::{gate_check_mix, GateSummary};
+#[pyo3(signature = (mix, *, profile="default", explain=false))]
+pub fn gate_check(
+    py: Python<'_>,
+    mix: Bound<'_, PyAny>,
+    profile: &str,
+    explain: bool,
+) -> PyResult<Py<PyDict>> {
+    use umst_concrete_cartridge::research::{
+        gate_check_mix_result, synthetic_observed_at, ProvenanceClock,
+    };
     let mix_val = value_from_py_mix(py, &mix)?;
     let prof = umst_concrete_cartridge::calibration::Profile::load_bundled(profile)
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
-    let summary: GateSummary = gate_check_mix(&prof, &mix_val);
-    let v = serde_json::to_value(&summary).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let observed = synthetic_observed_at(ProvenanceClock::default().sequence());
+    let result = gate_check_mix_result(&prof, &mix_val, explain, observed);
+    let v = serde_json::to_value(&result).map_err(|e| PyValueError::new_err(e.to_string()))?;
     value_to_py_dict(py, &v)
 }
 
 #[cfg(feature = "agent-layer")]
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Python transport over pure [`query`] filter; no new physical claim.
-/// Query research memory with optional filters (in-memory store per call).
+/// formal_anchor_rationale: Python transport over [`query_page`]; paginated filter over env-backed store.
+/// Query research memory with optional filters (uses `UMST_MEMORY_DB` when set).
 #[pyfunction]
-#[pyo3(signature = (*, admissible_only=true, curing_regime=None, limit=None))]
+#[pyo3(signature = (
+    *,
+    admissible_only=true,
+    curing_regime=None,
+    limit=None,
+    cursor=None,
+    catalog_id=None,
+    stamp_tier=None,
+    outcome_source=None,
+    wall_ms_min=None,
+    wall_ms_max=None,
+    near_mix_spec=None,
+    max_mix_l1=None,
+    hilbert_index=None,
+    max_hilbert_distance=None,
+))]
+#[allow(clippy::too_many_arguments)]
 pub fn memory_query(
     py: Python<'_>,
     admissible_only: bool,
     curing_regime: Option<&str>,
     limit: Option<usize>,
-) -> PyResult<Py<PyList>> {
-    use umst_concrete_cartridge::research::{query, MemoryQuery, ResearchStore};
+    cursor: Option<&str>,
+    catalog_id: Option<&str>,
+    stamp_tier: Option<&str>,
+    outcome_source: Option<&str>,
+    wall_ms_min: Option<u64>,
+    wall_ms_max: Option<u64>,
+    near_mix_spec: Option<Bound<'_, PyAny>>,
+    max_mix_l1: Option<f64>,
+    hilbert_index: Option<u32>,
+    max_hilbert_distance: Option<u32>,
+) -> PyResult<Py<PyDict>> {
+    use umst_concrete_cartridge::research::{query_page, MemoryQuery, ResearchStore};
+    let near = match near_mix_spec {
+        Some(v) => Some(value_from_py_mix(py, &v)?),
+        None => None,
+    };
     let q = MemoryQuery {
         admissible_only,
         curing_regime: curing_regime.map(str::to_string),
         limit,
-        ..Default::default()
+        cursor: cursor.map(str::to_string),
+        catalog_id: catalog_id.map(str::to_string),
+        stamp_tier: stamp_tier.map(str::to_string),
+        outcome_source: outcome_source.map(str::to_string),
+        wall_ms_min,
+        wall_ms_max,
+        near_mix_spec: near,
+        max_mix_l1,
+        hilbert_index,
+        max_hilbert_distance,
     };
-    let rows = query(&ResearchStore::default(), &q);
-    let list = PyList::empty_bound(py);
-    for row in rows {
-        let v = serde_json::to_value(&row).map_err(|e| PyValueError::new_err(e.to_string()))?;
-        list.append(value_to_py_dict(py, &v)?)?;
-    }
-    Ok(list.into())
+    let store = ResearchStore::from_env().unwrap_or_default();
+    let page = query_page(&store.rows(), &q);
+    let v = serde_json::to_value(&page).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    value_to_py_dict(py, &v)
 }
 
 #[cfg(feature = "agent-layer")]

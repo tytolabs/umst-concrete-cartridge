@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (PRL Openings Finish — 2026-06-19)
+
+- **`umst memory export`** CLI — signed `memory_export_bundle.v1` + JCS hash chain.
+- **`umst_transition_propose`** MCP tool; prompt **`audit_mix_csv`**; Phase 8 **`umst-py`** parity.
+- Docs: [`CARTRIDGE_PORT.md`](docs/CARTRIDGE_PORT.md), [`MEMORY_REPLICATION.md`](docs/MEMORY_REPLICATION.md).
+
+### Prepare [1.0.0-agent-layer] — **no git tag without maintainer approval**
+
+- PRL MCP P0/P1 surface complete; 16,146-row audit bootstrap; live witness promotion gate.
+
 **Impact:** Cementitious closures stay on the manifold’s pinned catalog and witness ladder — `manifest-bridge` aligns predict-path gates with manifold `catalog_id` evaluators without duplicating CD math in the cartridge. Catalog SSOT is the **119-module** unified export (`module_count` in `artifacts/catalog.lock.json`), digest **`0697014fb5b90a3aca4db3e5cc226896ca198802c910d5395f254e4262aa6227`** (`0697014f…` in logs), aligned with manifold @ [`fe22437`](https://github.com/tytolabs/umst-manifold/commit/fe22437).
 
 ### Added

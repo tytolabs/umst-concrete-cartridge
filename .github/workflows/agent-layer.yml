@@ -34,6 +34,22 @@ jobs:
           cargo test -p umst-concrete-cartridge --features agent-layer \
             --test research_memory --test golden_gate_check
 
+      - name: Bootstrap corpus row count (~16146)
+        working-directory: .
+        run: |
+          python3 - <<'PY'
+          import csv
+          from pathlib import Path
+          p = Path("fixtures/corpus/audit_corpus.v1.csv")
+          if not p.exists():
+              print("skip: audit_corpus.v1.csv not in checkout")
+              raise SystemExit(0)
+          with p.open(newline="") as f:
+              n = sum(1 for _ in csv.reader(f)) - 1
+          assert 16100 <= n <= 16200, f"expected ~16146 bootstrap rows, got {n}"
+          print(f"bootstrap corpus rows: {n}")
+          PY
+
       - name: MCP smoke (agent-layer)
         working-directory: .
         run: python3 scripts/mcp_smoke.py --agent-layer

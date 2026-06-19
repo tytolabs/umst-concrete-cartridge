@@ -1,5 +1,7 @@
 schema_version: promotion_policy.v1
 policy_id: governance/promotion_policy.yaml
+# Track A stamp gate: when UMST_UCRS_WITNESS=live, promote-contribution requires UcrsTier2
+# (enforced in promotion.rs via validate_track_a_stamp_tier). RFC 3161 TSA on bundle: defer.
 min_holdout_rows: 5
 max_rmse_mpa: 8.0
 require_human_approval: true

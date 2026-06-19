@@ -428,6 +428,39 @@ fn tool_umst_memory_query(id: Value, args: &Value, session: &AgentSession) -> Va
 }
 
 #[cfg(feature = "agent-layer")]
+fn tool_umst_transition_propose(
+    id: Value,
+    args: &Value,
+    session: AgentSession,
+) -> (Value, AgentSession) {
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let mix = match args.get("mix") {
+        Some(m) => m.clone(),
+        None => return (err_frame(id, "missing mix"), session),
+    };
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => return (err_frame(id, format!("profile load error: {e}")), session),
+    };
+    let outcome = args.get("outcome");
+    let process = args.get("process");
+    match session.clone().transition_propose(&profile, &mix, outcome, process) {
+        Ok((next, body)) => (
+            text_result(
+                id,
+                serde_json::to_string_pretty(&body).unwrap_or_default(),
+                false,
+            ),
+            next,
+        ),
+        Err(e) => (err_frame(id, e), session),
+    }
+}
+
+#[cfg(feature = "agent-layer")]
 fn handle_tools_call(
     id: Value,
     params: Option<&Value>,
@@ -453,6 +486,7 @@ fn handle_tools_call(
         "umst_contribute_status" => (tool_umst_contribute_status(id, &args, &session), session),
         "umst_memory_query" => (tool_umst_memory_query(id, &args, &session), session),
         "umst_mi_estimate" => (tool_umst_mi_estimate(id, &args, &session), session),
+        "umst_transition_propose" => tool_umst_transition_propose(id, &args, session),
         other => (
             json!({
                 "jsonrpc": "2.0",

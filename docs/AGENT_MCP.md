@@ -58,11 +58,13 @@ Docker agent image should enable `agent-layer` + `manifest-bridge`.
 | `umst_memory_query` | Filter rows by regime / L1 / Morton locality |
 | `umst_mi_estimate` | Advisory MI bits surrogate (not admissibility) |
 
-### P1+ (roadmap)
+### P1 (shipped)
 
-`umst_transition_propose` — async heavy predict uses `umst_contribute` + `umst_contribute_status`.
+| Tool | Purpose |
+|------|---------|
+| `umst_transition_propose` | Predict → gate → async contribute (`job_id` for `umst_contribute_status`) |
 
-**Transport:** shipped as **hand-rolled stdio JSON-RPC** (MCP 2024-11-05). `rmcp` 1.7 migration **deferred** — spike shows no Cursor regression requirement; revisit when upstream MCP prompts stabilize.
+**Transport:** shipped as **hand-rolled stdio JSON-RPC** (MCP 2024-11-05). See [Deliberately defer](#deliberately-defer-v1) for protocol upgrades.
 
 ### MCP prompts (`agent-layer`)
 
@@ -73,6 +75,7 @@ Docker agent image should enable `agent-layer` + `manifest-bridge`.
 | `gate-before-contribute` | Hard gate ordering |
 | `interpret_gate_failure` | Read `gate_reject.v1` + `explain.regime_violations` |
 | `suggest_similar_mix` | Paginated `near_mix_spec` search |
+| `audit_mix_csv` | Batch CSV audit workflow via `umst_audit` |
 
 Call `prompts/list` then `prompts/get` with the prompt name.
 
@@ -126,12 +129,16 @@ All agent tool `inputSchema` objects declare `$schema: https://json-schema.org/d
    umst_memory_query(near_mix_spec, max_mix_l1, cursor pagination)
 
 6. Export signed checkpoint (CLI, not MCP)
-   cargo run -p umst-cli --features agent-layer -- memory export --db .umst-memory/memory.db --out exports/run-001/
+   umst memory export --db .umst-memory/memory.db --out exports/run-001/
    → memory_export_bundle.v1.json + memory.jcs.jsonl + hash_chain
 
 7. Human promotion (never automatic)
    umst promote-contribution --approval promotion_approval.v1.json
 ```
+
+**Async contribute (v1 close-out):** `umst_contribute` with `async: true` runs predict+gate+accept **in-process** on the same stdio session and persists job state to `contribute_jobs.json` beside `UMST_MEMORY_DB`. There is no separate worker daemon in v1 — inline accept after gate is acceptable for agent timeouts; poll `umst_contribute_status` for the result. A dedicated background worker is deferred.
+
+**`contribute_jobs` SSOT:** JSON sidecar (`contribute_jobs.json`), not a SQLite table in v1. Jobs are ephemeral operator state; durable truth remains `memory_records` + JSONL sidecars.
 
 Async contribute jobs persist in `contribute_jobs.json` next to `UMST_MEMORY_DB` when set.
 
@@ -167,9 +174,9 @@ python3 scripts/bootstrap_memory_from_audit.py fixtures/bootstrap_audit_slice.cs
   | python3 scripts/ingest_contributions.py --skip-gate --db .umst-memory/memory.db
 ```
 
-**Litestream → S3 Object Lock:** deferred (storage research). Per-deployment SQLite + JSONL sidecar is v1; replicate via signed export bundles or external backup tooling.
+**Litestream → S3 Object Lock:** deferred (storage research). See [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) + [`docs/examples/litestream.yml`](examples/litestream.yml). Per-deployment SQLite + JSONL sidecar is v1; replicate via signed export bundles or external backup tooling.
 
-**Sigstore / in-toto on promotion bundle:** deferred for v1 CI; document human `promote-contribution` path only. **RFC 3161 TSA** countersign on promotion bundles is likewise deferred — not required per MCP tool call.
+**Sigstore / in-toto on promotion bundle:** deferred for v1 CI; document human `promote-contribution` path only. **RFC 3161 TSA** countersign on promotion bundles is likewise deferred — not required per MCP tool call. See [`governance/promotion_policy.yaml`](../governance/promotion_policy.yaml) comments.
 
 ---
 
@@ -225,7 +232,23 @@ Pure morphisms live in `src/research/` (`validation`, `gate_check_mix`, `accept`
 
 ## UCRS sidecar (constitutional time)
 
-For **live Tier-2 observation stamps** (`UMST_UCRS_WITNESS=live`), operators may run the [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) daemon as a **sidecar process** alongside `umst-mcp`: the MCP agent stays material-memory-only while the sidecar owns the thermodynamic clock, credit ledger, and Prometheus metrics (`:9090/metrics`). Wire `ProvenanceClock` to the sidecar via env (`UMST_UCRS_WITNESS=live`) or in-process `umst_ucrs` when embedding the library; P2P gossip is optional (`p2p` feature / `umst-ucrs-p2p` binary). See `scripts/umst-ucrs.service` and the umst-ucrs `Dockerfile` for production layout.
+For **live Tier-2 observation stamps** (`UMST_UCRS_WITNESS=live`), operators may run the [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) daemon as a **sidecar process** alongside `umst-mcp`: the MCP agent stays material-memory-only while the sidecar owns the thermodynamic clock, credit ledger, and Prometheus metrics (`:9090/metrics`). Wire `ProvenanceClock` to the sidecar via env (`UMST_UCRS_WITNESS=live`) or in-process `umst_ucrs` when embedding the library; P2P gossip is optional (`p2p` feature / `umst-ucrs-p2p` binary). See [`TemporalWitness`](https://github.com/tytolabs/umst-ucrs/blob/master/Rust/src/observation.rs), [`Docs/HLC_SIDECAR.md`](https://github.com/tytolabs/umst-ucrs/blob/master/Docs/HLC_SIDECAR.md), `scripts/umst-ucrs.service`, and the umst-ucrs `Dockerfile` for production layout.
+
+---
+
+## Deliberately defer (v1)
+
+| Temptation | Why wait |
+|------------|----------|
+| **`rmcp` 1.7 rewrite** | Hand-rolled stdio JSON-RPC (MCP 2024-11-05) is shipped and Cursor-stable; migrate when upstream prompts/resources stabilize |
+| **MCP 2025-11-25 protocol** | No multi-tenant hosted MCP requirement yet |
+| **Streamable HTTP + OAuth** | stdio + Docker suffices for cartridge-local agents |
+| **ghcr OCI MCP distribution** | Docker `ghcr.io/tytolabs/umst-concrete-cartridge` documented; dedicated MCP OCI layer deferred |
+| **RFC 3161 TSA on promotion bundle** | Human-gated promotion only; external anchor deferred |
+| **Sigstore / in-toto per-contribute** | Bundle-release Sigstore only (also deferred for v1 CI) |
+| **Litestream S3 Object Lock** | See [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) |
+| **SQLite `contribute_jobs` table** | JSON sidecar SSOT in v1 |
+| **Background contribute worker** | Inline in-process accept + `contribute_jobs.json` poll |
 
 ---
 
@@ -247,5 +270,6 @@ python3 scripts/mcp_smoke.py --agent-layer
 ## Related
 
 - [`README.md`](../README.md) §9 — agent protocol
-- [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) — observation stamps (not material memory)
-- [`umst-manifold` gate docs](https://github.com/tytolabs/umst-manifold/blob/main/docs/CARTRIDGE_PORT.md)
+- [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) — observation stamps, [`TemporalWitness`](https://github.com/tytolabs/umst-ucrs/blob/master/Rust/src/observation.rs), [`HLC_SIDECAR.md`](https://github.com/tytolabs/umst-ucrs/blob/master/Docs/HLC_SIDECAR.md)
+- [`CARTRIDGE_PORT.md`](CARTRIDGE_PORT.md) — cross-cartridge port guide
+- [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) — durability + Litestream defer

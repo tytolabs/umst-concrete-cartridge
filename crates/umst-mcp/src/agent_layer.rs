@@ -5,14 +5,18 @@
 
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
 use umst_concrete_cartridge::calibration::Profile;
+use umst_concrete_cartridge::facade::{MixSpec, PredictionWireVersion};
 use umst_concrete_cartridge::research::{
     accept, append_gate_reject_jsonl, append_memory_jsonl, estimate_mi_bits_from_mix,
-    gate_check_mix_result, query_page, synthetic_observed_at, AcceptError, AcceptResult,
-    GateCheckResult, GateContext, MemoryQuery, MemoryQueryPage, ProvenanceClock, ResearchStore,
-    WallClock,
+    gate_check_mix_result, mix_wire_from_spec_value, query_page, synthetic_observed_at,
+    AcceptError, AcceptResult, GateCheckResult, GateContext, MemoryQuery, MemoryQueryPage,
+    ProvenanceClock, ResearchStore, WallClock, CANON_VERSION, CONTRIBUTION_SCHEMA,
+    DEFAULT_CATALOG_HASH,
 };
+use umst_cli::cli::{predict_with_options, serialize_prediction, PredictOptions};
 
 const JSON_SCHEMA_2020: &str = "https://json-schema.org/draft/2020-12/schema";
 
@@ -244,6 +248,66 @@ impl AgentSession {
     pub fn memory_query(&self, q: &MemoryQuery) -> MemoryQueryPage {
         query_page(&self.store.rows(), q)
     }
+
+    /// MCP `umst_transition_propose` — predict + gate + async contribute.
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Chained operator workflow; gate must pass before async ingest.
+    pub fn transition_propose(
+        self,
+        profile: &Profile,
+        mix: &Value,
+        outcome: Option<&Value>,
+        process: Option<&Value>,
+    ) -> Result<(Self, Value), String> {
+        let mut spec: MixSpec = mix_wire_from_spec_value(mix)
+            .ok_or_else(|| "mix_spec rational parse fail".to_string())
+            .and_then(|wire| MixSpec::try_from(wire).map_err(|e| e.to_string()))?;
+        spec.profile_name = profile.bundle_id.clone();
+        let bundle = predict_with_options(
+            profile,
+            &spec,
+            PredictOptions {
+                compare_homogeneous: false,
+            },
+        )
+        .map_err(|e| e.to_string())?;
+        let prediction = serialize_prediction(&bundle, PredictionWireVersion::V2)
+            .map_err(|e| e.to_string())?;
+
+        let gate = self.gate_check(profile, mix, false);
+        if !gate.gate_summary.admissible {
+            return Err("gate reject: mix not admissible for transition propose".into());
+        }
+
+        let observed = synthetic_observed_at(self.clock.sequence());
+        let mut outcome_obj = outcome.cloned().unwrap_or_else(|| json!({}));
+        if let Value::Object(ref mut map) = outcome_obj {
+            map.entry("prediction".to_string())
+                .or_insert_with(|| prediction.clone());
+        }
+
+        let contribution = json!({
+            "schema_version": CONTRIBUTION_SCHEMA,
+            "canon_version": CANON_VERSION,
+            "mix_spec": mix,
+            "process": process.cloned().unwrap_or_else(|| json!({})),
+            "outcome": outcome_obj,
+            "gate_summary": gate.gate_summary,
+            "catalog_hash": DEFAULT_CATALOG_HASH,
+            "observed_at": observed,
+        });
+
+        let (next, job_id) = self.contribute_async(profile, &contribution);
+        Ok((
+            next,
+            json!({
+                "job_id": job_id,
+                "prediction": prediction,
+                "gate_summary": gate.gate_summary,
+            }),
+        ))
+    }
 }
 
 /// IO boundary: disk sidecar + JCS JSONL so `umst promote-contribution` can find rows later.
@@ -328,6 +392,11 @@ pub const AGENT_PROMPTS: &[(&str, &str, &str)] = &[
         "suggest_similar_mix",
         "Find similar admissible mixes in memory",
         "Call umst_memory_query with near_mix_spec (full rational mix_spec), max_mix_l1 (start at 0.05), admissible_only=true, limit=10. Use cursor from next_cursor for pagination. Optionally add hilbert_index + max_hilbert_distance for Morton locality.",
+    ),
+    (
+        "audit_mix_csv",
+        "Audit a mix CSV batch against calibration",
+        "Use umst_audit with dataset_d1-compatible CSV headers (cement, slag, fly_ash, water, superplasticizer, coarse_agg, fine_agg, age, strength, source, temperature, humidity). Set profile to match calibration bundle (e.g. uci_d1). Parse rows for regime warnings and abs_error_mpa before contributing validated outcomes.",
     ),
 ];
 
@@ -493,6 +562,23 @@ pub fn agent_tools_schema() -> Vec<Value> {
                 }
             }),
             true,
+        ),
+        with_schema_2020(
+            json!({
+                "name": "umst_transition_propose",
+                "description": "Predict constitutive scalars, hard-gate the mix, then enqueue async contribute. Returns job_id for umst_contribute_status.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "mix": { "type": "object", "description": "mix_spec.v1 rational fields" },
+                        "profile": { "type": "string", "default": "default" },
+                        "outcome": { "type": "object", "description": "Optional outcome.v1 fields; prediction merged when absent" },
+                        "process": { "type": "object", "description": "Optional process metadata (curing_regime, etc.)" }
+                    },
+                    "required": ["mix"]
+                }
+            }),
+            false,
         ),
     ]
 }

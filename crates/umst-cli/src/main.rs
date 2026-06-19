@@ -117,6 +117,24 @@ enum Command {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Research memory export bundle (signed JCS + hash chain; not MCP).
+    #[cfg(feature = "agent-layer")]
+    Memory {
+        #[command(subcommand)]
+        cmd: MemoryCmd,
+    },
+}
+
+#[cfg(feature = "agent-layer")]
+#[derive(Subcommand)]
+enum MemoryCmd {
+    /// Write memory_export_bundle.v1.json + memory.jcs.jsonl to `--out`.
+    Export {
+        #[arg(long, value_name = "FILE")]
+        db: Option<PathBuf>,
+        #[arg(long, value_name = "DIR")]
+        out: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -485,6 +503,14 @@ fn main() -> ExitCode {
             *dry_run,
         )
         .map_err(|e| e.to_string()),
+        #[cfg(feature = "agent-layer")]
+        Command::Memory { cmd } => match cmd {
+            MemoryCmd::Export { db, out } => umst_cli::memory_export::run_memory_export(
+                db.as_deref(),
+                out.as_path(),
+            )
+            .map_err(|e| e.to_string()),
+        },
     };
 
     match result {

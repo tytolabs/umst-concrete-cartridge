@@ -41,6 +41,10 @@ umst profiles regime highscm
 
 umst certify uci_d1
 
+# Agent-layer (requires --features agent-layer on umst binary)
+umst memory export --db .umst-memory/memory.db --out exports/run-001/
+umst promote-contribution MEM_ID --approval-file promotion_approval.v1.json
+
 cargo run -q --bin calibration_report --features "cli,calibration" > docs/Calibration.md
 # also writes results/canonical/table_per_dataset_metrics.csv + results/canonical/README.md
 ```

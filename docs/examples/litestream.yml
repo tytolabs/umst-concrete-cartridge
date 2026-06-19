@@ -1,0 +1,12 @@
+# Example Litestream config for UMST_MEMORY_DB replication (operator template — not CI).
+# See docs/MEMORY_REPLICATION.md for defer rationale and S3 Object Lock notes.
+
+dbs:
+  - path: /var/lib/umst/.umst-memory/memory.db
+    replicas:
+      - type: s3
+        bucket: umst-memory-replicas
+        path: concrete/prod
+        region: eu-west-1
+        retention: 168h
+        sync-interval: 60s
