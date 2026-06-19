@@ -119,9 +119,7 @@ pub fn holdout_rmse_passes(observed: &[f64], predicted: &[f64], max_rmse: f64) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
-
-    static WITNESS_ENV_LOCK: Mutex<()> = Mutex::new(());
+    use crate::research::witness_test_lock::with_witness_mode;
 
     #[test]
     fn parse_bundled_policy_shape() {
@@ -132,18 +130,16 @@ mod tests {
 
     #[test]
     fn track_a_requires_ucrs_tier2_when_live_witness() {
-        let _guard = WITNESS_ENV_LOCK.lock().expect("witness env lock");
-        std::env::set_var("UMST_UCRS_WITNESS", "live");
-        assert!(validate_track_a_stamp_tier("UcrsTier2").is_ok());
-        assert!(validate_track_a_stamp_tier("Synthetic").is_err());
-        std::env::remove_var("UMST_UCRS_WITNESS");
+        with_witness_mode("live", || {
+            assert!(validate_track_a_stamp_tier("UcrsTier2").is_ok());
+            assert!(validate_track_a_stamp_tier("Synthetic").is_err());
+        });
     }
 
     #[test]
     fn track_a_allows_synthetic_when_not_live() {
-        let _guard = WITNESS_ENV_LOCK.lock().expect("witness env lock");
-        std::env::set_var("UMST_UCRS_WITNESS", "synthetic");
-        assert!(validate_track_a_stamp_tier("Synthetic").is_ok());
-        std::env::remove_var("UMST_UCRS_WITNESS");
+        with_witness_mode("synthetic", || {
+            assert!(validate_track_a_stamp_tier("Synthetic").is_ok());
+        });
     }
 }

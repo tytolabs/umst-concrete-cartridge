@@ -256,19 +256,10 @@ fn sha256_hex(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::research::witness_test_lock::with_witness_mode;
     use crate::research::types::{
         GateSummary, GateVerdict, MemoryPayload, ObservedAt, CANON_VERSION, MEMORY_SCHEMA,
     };
-    use std::sync::Mutex;
-
-    static WITNESS_ENV_LOCK: Mutex<()> = Mutex::new(());
-
-    fn with_isolated_witness_env<F: FnOnce()>(f: F) {
-        let _guard = WITNESS_ENV_LOCK.lock().expect("witness env lock");
-        std::env::set_var("UMST_UCRS_WITNESS", "synthetic");
-        f();
-        std::env::remove_var("UMST_UCRS_WITNESS");
-    }
 
     fn sample_memory() -> MemoryRecord {
         MemoryRecord {
@@ -305,7 +296,7 @@ mod tests {
 
     #[test]
     fn build_record_is_pure() {
-        with_isolated_witness_env(|| {
+        with_witness_mode("synthetic", || {
         let approval = PromotionApproval {
             schema_version: "promotion_approval.v1".into(),
             proposal_hash: "sha256:def".into(),
@@ -337,8 +328,7 @@ mod tests {
 
     #[test]
     fn build_record_rejects_synthetic_when_live_witness() {
-        with_isolated_witness_env(|| {
-        std::env::set_var("UMST_UCRS_WITNESS", "live");
+        with_witness_mode("live", || {
         let approval = PromotionApproval {
             schema_version: "promotion_approval.v1".into(),
             proposal_hash: "sha256:def".into(),

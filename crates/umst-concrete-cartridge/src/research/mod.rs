@@ -26,6 +26,9 @@ pub mod types;
 pub mod validation;
 pub mod wire_v2;
 
+#[cfg(test)]
+pub(crate) mod witness_test_lock;
+
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports Merkle checkpoint helpers; audit IO on defining module.
