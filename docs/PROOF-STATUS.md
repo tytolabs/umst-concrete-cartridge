@@ -20,7 +20,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Structural** | 84 |
 | **Empirical** | 34 |
 | **Literature** | 50 |
-| **NONE** | 239 |
+| **NONE** | 241 |
 
 ## Mechanised
 
@@ -425,27 +425,29 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `SqliteStore` | `crates/umst-concrete-cartridge/src/research/mod.rs:66` | `NONE` | — | Re-export of SQLite IO store when `agent-layer` enabled. |
 | `filter_records, find_by_memory_id, InMemoryStore, MemoryError, MemoryStore, ResearchStore, StoreError` | `crates/umst-concrete-cartridge/src/research/mod.rs:70` | `NONE` | — | Re-exports functional memory store port and filter morphisms. |
 | `estimate_mi_bits_from_mix, estimate_mi_bits_rational` | `crates/umst-concrete-cartridge/src/research/mod.rs:77` | `NONE` | — | Re-exports Landauer advisory MI surrogates; not admissibility gate. |
-| `holdout_rmse_passes, parse_promotion_policy_yaml, validate_promotion_policy, PolicyError, PromotionPolicy` | `crates/umst-concrete-cartridge/src/research/mod.rs:81` | `NONE` | — | Re-exports promotion policy YAML validation; human-gated CLI only. |
-| `apply_promotion_writes, build_promotion_record, promote_contribution, PromotionApproval, PromotionError, PromotionRecordOut` | `crates/umst-concrete-cartridge/src/research/mod.rs:88` | `NONE` | — | Re-exports human-gated promotion record morphisms; never MCP. |
-| `ensure_observed_at, is_monotonic_after, observed_at_for_tick, synthetic_observed_at, ProvenanceClock, UcrsStampMode, WallClock` | `crates/umst-concrete-cartridge/src/research/mod.rs:95` | `NONE` | — | Re-exports UCRS provenance clock and monotonic stamp helpers. |
-| `append_gate_reject_jsonl, build_gate_reject, build_gate_reject_from_contribution, GateRejectRow, RejectError, GATE_REJECT_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:102` | `NONE` | — | Re-exports gate reject audit stream; excluded from admissible memory. |
-| `append_memory_jsonl, SidecarError, MEMORY_JSONL_DEFAULT` | `crates/umst-concrete-cartridge/src/research/mod.rs:109` | `NONE` | — | Re-exports accepted-memory JSONL sidecar append hook. |
-| `AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery, MemoryRecord, ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:113` | `NONE` | — | Re-exports contribution.v1 / memory_record.v1 wire types. |
-| `parse_contribution_json, validate_contribution_value, validate_for_accept, ValidationError` | `crates/umst-concrete-cartridge/src/research/mod.rs:120` | `NONE` | — | Re-exports contribution.v1 schema validators. |
-| `ucrs_observed_at_to_v2` | `crates/umst-concrete-cartridge/src/research/mod.rs:127` | `NONE` | — | Re-export UCRS → v2 wire when `ucrs-provenance` feature enabled. |
-| `observed_at_to_v2, ObservedAtV2, OBSERVED_AT_V2_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:131` | `NONE` | — | Re-exports observed_at.v2 integer wire mapping. |
-| `memory_record_from_contribution as build_memory_record` | `crates/umst-concrete-cartridge/src/research/mod.rs:136` | `NONE` | — | Re-export alias for `memory_record_from_contribution`; see `contribution`. |
+| `holdout_rmse_passes, live_witness_enabled, parse_promotion_policy_yaml, validate_promotion_policy, validate_track_a_stamp_tier, PolicyError, PromotionPolicy` | `crates/umst-concrete-cartridge/src/research/mod.rs:81` | `NONE` | — | Re-exports promotion policy YAML validation; human-gated CLI only. |
+| `apply_promotion_writes, build_promotion_record, promote_contribution, PromotionApproval, PromotionError, PromotionRecordOut` | `crates/umst-concrete-cartridge/src/research/mod.rs:89` | `NONE` | — | Re-exports human-gated promotion record morphisms; never MCP. |
+| `ensure_observed_at, is_monotonic_after, observed_at_for_tick, synthetic_observed_at, ProvenanceClock, UcrsStampMode, WallClock` | `crates/umst-concrete-cartridge/src/research/mod.rs:96` | `NONE` | — | Re-exports UCRS provenance clock and monotonic stamp helpers. |
+| `append_gate_reject_jsonl, build_gate_reject, build_gate_reject_from_contribution, GateRejectRow, RejectError, GATE_REJECT_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:103` | `NONE` | — | Re-exports gate reject audit stream; excluded from admissible memory. |
+| `append_memory_jsonl, SidecarError, MEMORY_JSONL_DEFAULT` | `crates/umst-concrete-cartridge/src/research/mod.rs:110` | `NONE` | — | Re-exports accepted-memory JSONL sidecar append hook. |
+| `AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery, MemoryRecord, ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:114` | `NONE` | — | Re-exports contribution.v1 / memory_record.v1 wire types. |
+| `parse_contribution_json, validate_contribution_value, validate_for_accept, ValidationError` | `crates/umst-concrete-cartridge/src/research/mod.rs:121` | `NONE` | — | Re-exports contribution.v1 schema validators. |
+| `ucrs_observed_at_to_v2` | `crates/umst-concrete-cartridge/src/research/mod.rs:128` | `NONE` | — | Re-export UCRS → v2 wire when `ucrs-provenance` feature enabled. |
+| `observed_at_to_v2, ObservedAtV2, OBSERVED_AT_V2_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:132` | `NONE` | — | Re-exports observed_at.v2 integer wire mapping. |
+| `memory_record_from_contribution as build_memory_record` | `crates/umst-concrete-cartridge/src/research/mod.rs:137` | `NONE` | — | Re-export alias for `memory_record_from_contribution`; see `contribution`. |
 | `PolicyError` | `crates/umst-concrete-cartridge/src/research/policy.rs:9` | `NONE` | — | Human-gated calibration governance; not MCP admissibility. |
 | `PromotionPolicy` | `crates/umst-concrete-cartridge/src/research/policy.rs:21` | `NONE` | — | Operator policy record; hold-out metrics are empirical gates only. |
 | `parse_promotion_policy_yaml` | `crates/umst-concrete-cartridge/src/research/policy.rs:35` | `NONE` | — | YAML ingest for propose-promotion CLI; never MCP-exposed. |
 | `validate_promotion_policy` | `crates/umst-concrete-cartridge/src/research/policy.rs:46` | `NONE` | — | Schema shape check on policy wire; not thermodynamic gate. |
-| `holdout_rmse_passes` | `crates/umst-concrete-cartridge/src/research/policy.rs:70` | `NONE` | — | Calibration hold-out metric; human review still required. |
-| `PromotionError` | `crates/umst-concrete-cartridge/src/research/promotion.rs:16` | `NONE` | — | CLI-only promotion path; never MCP-exposed. |
-| `PromotionApproval` | `crates/umst-concrete-cartridge/src/research/promotion.rs:32` | `NONE` | — | JWS-backed human decision; not agent auto-promotion. |
-| `PromotionRecordOut` | `crates/umst-concrete-cartridge/src/research/promotion.rs:48` | `NONE` | — | Calibration handoff bundle; admissibility already on memory row. |
-| `build_promotion_record` | `crates/umst-concrete-cartridge/src/research/promotion.rs:65` | `NONE` | — | Record morphism from gate-validated memory + human approval. |
-| `apply_promotion_writes` | `crates/umst-concrete-cartridge/src/research/promotion.rs:153` | `NONE` | — | Filesystem writes for human-gated calibration promotion. |
-| `promote_contribution` | `crates/umst-concrete-cartridge/src/research/promotion.rs:178` | `NONE` | — | CLI orchestration; physics gate already on accepted memory row. |
+| `live_witness_enabled` | `crates/umst-concrete-cartridge/src/research/policy.rs:70` | `NONE` | — | Env IO at session boundary; promotion policy gate only. |
+| `validate_track_a_stamp_tier` | `crates/umst-concrete-cartridge/src/research/policy.rs:79` | `NONE` | — | Human-gated calibration policy; not thermodynamic admissibility. |
+| `holdout_rmse_passes` | `crates/umst-concrete-cartridge/src/research/policy.rs:98` | `NONE` | — | Calibration hold-out metric; human review still required. |
+| `PromotionError` | `crates/umst-concrete-cartridge/src/research/promotion.rs:20` | `NONE` | — | CLI-only promotion path; never MCP-exposed. |
+| `PromotionApproval` | `crates/umst-concrete-cartridge/src/research/promotion.rs:36` | `NONE` | — | JWS-backed human decision; not agent auto-promotion. |
+| `PromotionRecordOut` | `crates/umst-concrete-cartridge/src/research/promotion.rs:52` | `NONE` | — | Calibration handoff bundle; admissibility already on memory row. |
+| `build_promotion_record` | `crates/umst-concrete-cartridge/src/research/promotion.rs:74` | `NONE` | — | Record morphism from gate-validated memory + human approval. |
+| `apply_promotion_writes` | `crates/umst-concrete-cartridge/src/research/promotion.rs:163` | `NONE` | — | Filesystem writes for human-gated calibration promotion. |
+| `promote_contribution` | `crates/umst-concrete-cartridge/src/research/promotion.rs:188` | `NONE` | — | CLI orchestration; physics gate already on accepted memory row. |
 | `WallClock` | `crates/umst-concrete-cartridge/src/research/provenance.rs:13` | `NONE` | — | System time IO injection; stamp semantics on `ProvenanceClock`. |
 | `epoch_ms` | `crates/umst-concrete-cartridge/src/research/provenance.rs:21` | `NONE` | — | `SystemTime` / UCRS wall hook; not monotonic sequence logic. |
 | `from_env` | `crates/umst-concrete-cartridge/src/research/provenance.rs:55` | `NONE` | — | Env IO at session boundary; stamp mode selection only. |
