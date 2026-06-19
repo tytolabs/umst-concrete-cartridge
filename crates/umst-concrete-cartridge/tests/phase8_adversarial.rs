@@ -67,6 +67,39 @@ fn gate_check_result_reject_embeds_gate_reject_v1() {
     assert!(explain
         .regime_violations
         .contains(&"mix_spec_rational_parse_fail".to_string()));
+    assert_eq!(explain.remediation.len(), explain.regime_violations.len());
+    assert!(!explain.remediation.is_empty());
+    assert!(!explain.fields.is_empty());
+    assert!(explain
+        .fields
+        .iter()
+        .any(|f| f.path.contains("w_c") && f.issue == "rational_parse_fail"));
+}
+
+#[test]
+fn gate_check_reject_includes_remediation() {
+    let profile = Profile::load_bundled("default").expect("profile");
+    let mix = json!({
+        "w_c": "not-rational",
+        "temperature_k": "29315/100"
+    });
+    let result = gate_check_mix_result(&profile, &mix, true, synthetic_observed(3));
+    let explain = result.explain.expect("explain");
+    assert!(!explain.remediation.is_empty());
+    assert!(explain.remediation[0].contains("rational"));
+}
+
+#[test]
+fn golden_reject_mix_explain_has_fields() {
+    let profile = Profile::load_bundled("default").expect("profile");
+    let fixture = load_fixture("reject_mix_01.json");
+    let mix = fixture.get("mix_spec").cloned().expect("mix_spec");
+    let result = gate_check_mix_result(&profile, &mix, true, synthetic_observed(4));
+    assert!(!result.gate_summary.admissible);
+    let explain = result.explain.expect("explain");
+    assert!(!explain.regime_violations.is_empty());
+    assert_eq!(explain.remediation.len(), explain.regime_violations.len());
+    assert!(!explain.fields.is_empty());
 }
 
 #[test]

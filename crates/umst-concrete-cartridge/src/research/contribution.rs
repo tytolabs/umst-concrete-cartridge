@@ -123,6 +123,16 @@ pub fn gate_check_mix(profile: &Profile, mix_json: &Value) -> GateSummary {
     }
 }
 
+/// Field-level hint for gate REJECT diagnostics.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Operator diagnostics; not admissibility proof.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct GateFieldIssue {
+    pub path: String,
+    pub issue: String,
+}
+
 /// Optional explain block for MCP `umst_gate_check` when `explain: true`.
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -130,6 +140,10 @@ pub fn gate_check_mix(profile: &Profile, mix_json: &Value) -> GateSummary {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct GateCheckExplain {
     pub regime_violations: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub remediation: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fields: Vec<GateFieldIssue>,
     pub catalog_witnesses: Vec<String>,
 }
 
@@ -161,14 +175,12 @@ pub fn gate_check_mix_result(
     let gate_summary = gate_check_mix(profile, mix_json);
     let gate_reject = gate_reject_row_for_mix(mix_json, &gate_summary, observed_at);
     let explain_block = if explain {
-        Some(GateCheckExplain {
-            regime_violations: collect_gate_explain_codes(
-                profile,
-                mix_json,
-                gate_summary.admissible,
-            ),
-            catalog_witnesses: gate_summary.catalog_ids.clone(),
-        })
+        Some(build_gate_explain(
+            profile,
+            mix_json,
+            gate_summary.admissible,
+            &gate_summary.catalog_ids,
+        ))
     } else {
         None
     };
@@ -176,6 +188,112 @@ pub fn gate_check_mix_result(
         gate_summary,
         gate_reject,
         explain: explain_block,
+    }
+}
+
+fn remediation_for_code(code: &str) -> &'static str {
+    match code {
+        "mix_spec_rational_parse_fail" => {
+            "Use rational strings like \"3/4\" for all mix fields (not floats or bare numbers); ensure w_c and temperature_k are present."
+        }
+        "mix_spec_wire_invalid" => {
+            "mix_spec failed MixSpec validation; compare field names and rational formats against umst://schemas/contribution.v1.json."
+        }
+        "thermodynamic_cd_fail" => {
+            "Mix violates Clausius–Duhem margin; reduce w_c, adjust temperature_k, or change curing regime before re-checking."
+        }
+        "manifest_bridge_disabled" => {
+            "Build umst-mcp with agent-layer and manifest-bridge features so the thermodynamic gate runs."
+        }
+        "thermodynamic_fail" => {
+            "Thermodynamic admissibility failed; run umst_gate_check with explain:true and adjust mix_spec until verdict is PASS."
+        }
+        _ => "See regime_violations codes and umst://schemas/gate_reject.v1.json; fix mix_spec and re-run gate check.",
+    }
+}
+
+fn fields_for_code(code: &str, mix_json: &Value) -> Vec<GateFieldIssue> {
+    match code {
+        "mix_spec_rational_parse_fail" => {
+            let mut fields = Vec::new();
+            for key in [
+                "w_c",
+                "temperature_k",
+                "superplasticiser_pct",
+                "silica_fume_pct",
+                "fly_ash_pct",
+                "aggregate_volume_fraction",
+                "target_age_hours",
+            ] {
+                let issue = match mix_json.get(key) {
+                    None if matches!(key, "w_c" | "temperature_k") => Some("missing_required"),
+                    None => None,
+                    Some(v) if v.as_str().is_some_and(|s| rational_to_f64(s).is_none()) => {
+                        Some("rational_parse_fail")
+                    }
+                    Some(v) if !v.is_string() => Some("expected_rational_string"),
+                    _ => None,
+                };
+                if let Some(issue) = issue {
+                    fields.push(GateFieldIssue {
+                        path: format!("mix.{key}"),
+                        issue: issue.into(),
+                    });
+                }
+            }
+            if fields.is_empty() {
+                fields.push(GateFieldIssue {
+                    path: "mix".into(),
+                    issue: "rational_parse_fail".into(),
+                });
+            }
+            fields
+        }
+        "mix_spec_wire_invalid" => vec![GateFieldIssue {
+            path: "mix".into(),
+            issue: "wire_invalid".into(),
+        }],
+        "thermodynamic_cd_fail" | "thermodynamic_fail" => {
+            let mut fields = vec![GateFieldIssue {
+                path: "mix.w_c".into(),
+                issue: "cd_margin_negative".into(),
+            }];
+            if mix_json.get("temperature_k").is_some() {
+                fields.push(GateFieldIssue {
+                    path: "mix.temperature_k".into(),
+                    issue: "regime_out_of_envelope".into(),
+                });
+            }
+            fields
+        }
+        "manifest_bridge_disabled" => vec![GateFieldIssue {
+            path: "build.features".into(),
+            issue: "manifest_bridge_disabled".into(),
+        }],
+        _ => Vec::new(),
+    }
+}
+
+fn build_gate_explain(
+    profile: &Profile,
+    mix_json: &Value,
+    admissible: bool,
+    catalog_witnesses: &[String],
+) -> GateCheckExplain {
+    let regime_violations = collect_gate_explain_codes(profile, mix_json, admissible);
+    let remediation: Vec<String> = regime_violations
+        .iter()
+        .map(|c| remediation_for_code(c).to_string())
+        .collect();
+    let mut fields = Vec::new();
+    for code in &regime_violations {
+        fields.extend(fields_for_code(code, mix_json));
+    }
+    GateCheckExplain {
+        regime_violations,
+        remediation,
+        fields,
+        catalog_witnesses: catalog_witnesses.to_vec(),
     }
 }
 

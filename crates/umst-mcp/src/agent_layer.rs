@@ -393,6 +393,11 @@ pub const SCHEMA_RESOURCES: &[(&str, &str)] = &[
 /// formal_anchor_rationale: MCP prompt templates; operational guidance only.
 pub const AGENT_PROMPTS: &[(&str, &str, &str)] = &[
     (
+        "safe-exploration",
+        "Read-only agent exploration workflow",
+        "Safe exploration: (1) umst_gate_check with explain:true (default) on candidate mix_spec; (2) optional umst_predict for constitutive detail; (3) umst_memory_query for similar admissible cases. Never call umst_contribute when gate_summary.admissible is false. On REJECT, read explain.regime_violations, explain.remediation, and explain.fields before adjusting the mix.",
+    ),
+    (
         "contribute-admissible",
         "Contribute an admissible mix observation",
         "Submit a contribution.v1 JSON with gate_summary.admissible=true. Run umst_gate_check first; never contribute REJECT mixes. Use rational strings for all physical quantities.",
@@ -410,7 +415,7 @@ pub const AGENT_PROMPTS: &[(&str, &str, &str)] = &[
     (
         "interpret_gate_failure",
         "Interpret a gate REJECT for an agent",
-        "When umst_gate_check returns isError with gate_reject.v1, read explain.regime_violations and catalog_witnesses. Typical codes: mix_spec_rational_parse_fail, thermodynamic_cd_fail. Fix mix_spec rationals or curing regime; re-run gate check before contribute.",
+        "When umst_gate_check returns isError with gate_reject.v1, read explain.regime_violations, explain.remediation, explain.fields, and catalog_witnesses. Typical codes: mix_spec_rational_parse_fail, thermodynamic_cd_fail. Apply remediation hints; re-run gate check before contribute.",
     ),
     (
         "suggest_similar_mix",
@@ -509,13 +514,13 @@ pub fn agent_tools_schema() -> Vec<Value> {
         with_schema_2020(
             json!({
                 "name": "umst_gate_check",
-                "description": "Hard admissibility verdict + catalog_ids + optional mi_bits_est for a mix_spec (manifest CD when agent-layer built). On REJECT returns isError with embedded gate_reject.v1; set explain:true for regime_violations.",
+                "description": "Hard admissibility verdict + catalog_ids + optional mi_bits_est for a mix_spec (manifest CD when agent-layer built). On REJECT returns isError with embedded gate_reject.v1; explain defaults true and includes regime_violations, remediation, and fields.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "mix": { "type": "object", "description": "mix_spec.v1 rational fields (w_c, temperature_k, …)" },
                         "profile": { "type": "string", "default": "default" },
-                        "explain": { "type": "boolean", "default": false, "description": "Include regime_violations + catalog_witnesses diagnostics" }
+                        "explain": { "type": "boolean", "default": true, "description": "Include regime_violations, remediation, fields, and catalog_witnesses diagnostics" }
                     },
                     "required": ["mix"]
                 }

@@ -10,6 +10,8 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
+> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`.
+
 > Release notes in [CHANGELOG.md](CHANGELOG.md).
 
 > *When water meets cement, nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a load-bearing structure. If the temperature or chemistry is off, the material cracks. The cartridge does not regress this from past test data; it simulates the chemical reactions and stresses directly.*

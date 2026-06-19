@@ -332,7 +332,7 @@ fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Valu
     let explain = args
         .get("explain")
         .and_then(|x| x.as_bool())
-        .unwrap_or(false);
+        .unwrap_or(true);
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
         Err(e) => return err_frame(id, format!("profile load error: {e}")),

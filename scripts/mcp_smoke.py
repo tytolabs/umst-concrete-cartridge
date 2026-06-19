@@ -104,6 +104,9 @@ def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
             assert body.get("gate_reject") is not None
             assert body["gate_reject"]["schema_version"] == "gate_reject.v1"
             assert body.get("explain", {}).get("regime_violations")
+            assert body.get("explain", {}).get("remediation")
+            assert len(body["explain"]["remediation"]) >= 1
+            assert body.get("explain", {}).get("fields")
 
             gate_pass = rpc(
                 proc,
@@ -145,6 +148,7 @@ def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
             prompt_names = {p["name"] for p in prompts.get("result", {}).get("prompts", [])}
             for required_prompt in (
                 "interpret_gate_failure",
+                "safe-exploration",
                 "suggest_similar_mix",
                 "audit_mix_csv",
             ):

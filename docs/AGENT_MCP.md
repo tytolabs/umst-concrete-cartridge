@@ -2,20 +2,76 @@
 
 **Audience:** Cursor agents, SDK integrations, `umst-mcp` stdio consumers  
 **Schemas:** [`schemas/`](../schemas/) (CI-validated)  
+**Examples:** [`examples/agent/`](../examples/agent/)  
 **ADR:** [`outputs/.plans/archive/prl-shipped/ai-physical-reasoning-layer.md`](../../outputs/.plans/archive/prl-shipped/ai-physical-reasoning-layer.md)
 
 ---
 
-## What this is (and is not)
+## Quick Start (< 5 minutes)
+
+```bash
+cd umst-concrete-cartridge
+cargo build -p umst-mcp --features agent-layer
+export UMST_MEMORY_DB=.umst-memory/memory.db   # optional; in-memory if unset
+cargo run -p umst-mcp --features agent-layer
+```
+
+Or run the example script (spawns MCP, exercises gate + query):
+
+```bash
+python3 examples/agent/01_gate_explore.py
+```
+
+**Minimal JSON-RPC exchange** (one line per message on stdin/stdout):
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"agent","version":"0.1"}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"umst_gate_check","arguments":{"mix":{"w_c":"9/20","temperature_k":"29315/100","aggregate_volume_fraction":"7/10"}}}}
+```
+
+On **REJECT**, the tool returns `isError: true` with `gate_reject.v1` and `explain` (default `explain: true`):
+
+```json
+{
+  "gate_summary": { "admissible": false, "verdict": "REJECT", "catalog_ids": ["umst.gate.cd_transition"] },
+  "gate_reject": { "schema_version": "gate_reject.v1", "verdict": "REJECT" },
+  "explain": {
+    "regime_violations": ["mix_spec_rational_parse_fail"],
+    "remediation": ["Use rational strings like \"3/4\" for all mix fields …"],
+    "fields": [{ "path": "mix.w_c", "issue": "rational_parse_fail" }],
+    "catalog_witnesses": ["umst.gate.cd_transition"]
+  }
+}
+```
+
+**Smoke test:** `python3 scripts/mcp_smoke.py --agent-layer`
+
+---
+
+## Core concepts
 
 The Physical Reasoning Layer (PRL) is a **gate-validated, cartridge-local memory** for structured mix/outcome contributions. It is **not** RAG, not a paper store, and not a vector database.
 
-Agents should:
+| Concept | Meaning |
+|---------|---------|
+| **Gate** | Hard thermodynamic admissibility (`umst_gate_check`) before any memory write |
+| **Memory** | Append-only research rows (`memory_record.v1`); query by regime / L1 / Morton locality |
+| **Contribution** | Schema-valid `contribution.v1` ingest via `umst_contribute` (admissible only) |
+| **Promotion** | Human-gated calibration update (`umst promote-contribution`) — **never** automatic from MCP |
 
-1. **Check** admissibility before proposing material changes (`umst_gate_check`).
+Agent contract:
+
+1. **Check** admissibility (`umst_gate_check`).
 2. **Query** prior gate-passed cases (`umst_memory_query`).
-3. **Contribute** only admissible, schema-valid rows (`umst_contribute`).
-4. **Never** expect silent calibration updates — promotion is human-gated (`umst promote-contribution`).
+3. **Contribute** only admissible rows (`umst_contribute`).
+4. **Never** expect silent calibration updates.
+
+```text
+umst_gate_check → umst_predict (optional) → umst_contribute
+       → umst_memory_query (similar cases)
+       → human promotion_approval.v1 → umst promote-contribution
+       → calibration/*.toml (never automatic from MCP)
+```
 
 ---
 
@@ -24,20 +80,17 @@ Agents should:
 | Profile | Features | Use |
 |---------|----------|-----|
 | Default CI | *(none)* | `umst_predict`, `umst_audit`, `umst_profiles`, `umst_certify` |
-| Agent layer | `agent-layer` on `umst-mcp` | + gate check, contribute, memory query, schema resources |
+| Agent layer | `agent-layer` on `umst-mcp` | + gate, contribute, memory query, schema resources |
 | UCRS stamps | `ucrs-provenance` on cartridge | Live observation stamp on ingest (`observed_at`) |
 | Manifest CD | `manifest-bridge` (via `agent-layer`) | Runtime Clausius–Duhem gate on mix |
 
-```bash
-cargo build -p umst-mcp --features agent-layer
-cargo run -p umst-mcp --features agent-layer
-```
-
 Docker agent image should enable `agent-layer` + `manifest-bridge`.
+
+**Transport:** hand-rolled stdio JSON-RPC (MCP 2024-11-05). See [Limitations](#limitations-deliberately-defer-v1).
 
 ---
 
-## Tools
+## Tool reference
 
 ### Shipped (always)
 
@@ -48,227 +101,58 @@ Docker agent image should enable `agent-layer` + `manifest-bridge`.
 | `umst_profiles` | Bundled calibration profile list |
 | `umst_certify` | Formal-anchor certify chain for a profile |
 
-### P0 (`agent-layer`)
+### Agent layer (`agent-layer`)
 
 | Tool | Purpose |
 |------|---------|
-| `umst_gate_check` | Hard admissibility + `catalog_ids` + optional `mi_bits_est` for a `mix_spec` |
+| `umst_gate_check` | Hard admissibility + `catalog_ids` + `mi_bits_est`; `explain` defaults **true** |
 | `umst_contribute` | Ingest `contribution.v1` → research memory (admissible only); `idempotency_key` dedup |
 | `umst_contribute_status` | Poll async contribute job (`async: true` on contribute) |
 | `umst_memory_query` | Filter rows by regime / L1 / Morton locality |
-| `umst_mi_estimate` | Advisory MI bits surrogate (not admissibility) |
+| `umst_mi_estimate` | Advisory MI bits surrogate (**not** admissibility) |
+| `umst_transition_propose` | Predict → gate → async contribute (`job_id` for status poll) |
 
-### P1 (shipped)
+### Tool ↔ schema cross-link
 
-| Tool | Purpose |
-|------|---------|
-| `umst_transition_propose` | Predict → gate → async contribute (`job_id` for `umst_contribute_status`) |
+| MCP tool | JSON Schema resource | Example request | Example response |
+|----------|---------------------|-----------------|------------------|
+| `umst_gate_check` | inline + `gate_reject.v1` | `{"mix":{"w_c":"1/2","temperature_k":"29315/100"}}` | `gate_summary`, optional `gate_reject`, `explain` — `isError: true` on REJECT |
+| `umst_contribute` | `umst://schemas/contribution.v1.json` | `{"contribution":{...}}` | `memory_id`, `content_id`, `observed_at` |
+| `umst_memory_query` | `umst://schemas/memory_record.v1.json` | `{"near_mix_spec":{...},"max_mix_l1":0.05,"limit":10}` | `rows`, `next_cursor` |
+| `umst_contribute_status` | — | `{"job_id":"..."}` | `ContributeJob` status |
+| `umst_mi_estimate` | — | `{"mix":{...}}` | `mi_bits_est`, `advisory: true` |
 
-**Transport:** shipped as **hand-rolled stdio JSON-RPC** (MCP 2024-11-05). See [Deliberately defer](#deliberately-defer-v1) for protocol upgrades.
-
-### MCP prompts (`agent-layer`)
-
-| Prompt | Purpose |
-|--------|---------|
-| `contribute-admissible` | Safe contribute workflow |
-| `query-near-mix` | L1 locality query |
-| `gate-before-contribute` | Hard gate ordering |
-| `interpret_gate_failure` | Read `gate_reject.v1` + `explain.regime_violations` |
-| `suggest_similar_mix` | Paginated `near_mix_spec` search |
-| `audit_mix_csv` | Batch CSV audit workflow via `umst_audit` |
-| `export_for_git_inbox` | Export JSONL → validate → PR to `contributions/inbox/` |
-
-Call `prompts/list` then `prompts/get` with the prompt name.
-
----
-
-## Tool ↔ schema cross-link
-
-| MCP tool | JSON Schema resource | Example request | Example response shape |
-|----------|---------------------|-----------------|------------------------|
-| `umst_gate_check` | *(inline `GateSummary` + optional `gate_reject.v1`)* | `{"mix":{"w_c":"1/2","temperature_k":"29315/100"},"explain":true}` | `{"gate_summary":{...},"gate_reject":{...},"explain":{"regime_violations":[...],"catalog_witnesses":[...]}}` — `isError: true` on REJECT |
-| `umst_contribute` | `umst://schemas/contribution.v1.json` | `{"contribution":{...}}` | `AcceptResult` (`memory_id`, `content_id`, `observed_at`) |
-| `umst_memory_query` | `umst://schemas/memory_record.v1.json` | `{"near_mix_spec":{...},"max_mix_l1":0.05,"limit":10}` | `{"rows":[...],"next_cursor":"..."}` |
-| `umst_contribute_status` | — | `{"job_id":"..."}` | `ContributeJob` status enum |
-| `umst_mi_estimate` | — | `{"mix":{...}}` | `{"mi_bits_est":"...","advisory":true}` |
+Call `resources/list` then `resources/read` — do not guess field shapes.
 
 All agent tool `inputSchema` objects declare `$schema: https://json-schema.org/draft/2020-12/schema` and MCP annotations (`readOnlyHint` / `destructiveHint`).
 
 ---
 
-## Error catalog
+## Common workflows
 
-| Error / signal | When | Agent action |
-|----------------|------|--------------|
-| `AcceptError::Validation` | `contribution.v1` schema / rational parse fail | Fix wire against `contribution.v1.json`; re-validate |
-| `AcceptError::GateReject` | `gate_summary.admissible=false` or gate re-check fail | Run `umst_gate_check`; never bypass |
-| `AcceptError::Scope` | `UMST_AGENT_SCOPE_TOKENS` mismatch | Supply valid `scope_token` |
-| `AcceptError::NonMonotonicStamp` | `observed_at` regresses session clock | Use server-assigned stamps on accept |
-| `AcceptError::Store` duplicate | Same `content_id` / idempotency key | Treat as success if idempotent retry |
-| `gate_summary.verdict: REJECT` | Thermodynamic CD fail | Read `explain.regime_violations`; adjust mix |
-| MCP `isError: true` on gate_check | Same as REJECT | Parse embedded `gate_reject.v1`; do not contribute |
-| `unknown job_id` | Stale async poll | Re-submit contribute or check `contribute_jobs.json` beside DB |
+### Safe exploration (read-only)
 
----
+Use MCP prompt `safe-exploration` (`prompts/get`).
 
-## Operator runbook (one page)
+1. `umst_gate_check` on candidate `mix_spec` (`explain` defaults true).
+2. Optional `umst_predict` for constitutive detail.
+3. `umst_memory_query` for similar admissible cases.
+4. **Never** call `umst_contribute` when `gate_summary.admissible` is false.
 
-```text
-1. Bootstrap (optional)
-   python3 scripts/bootstrap_memory_from_audit.py … | python3 scripts/ingest_contributions.py --db .umst-memory/memory.db
+**Dry-run pattern:** gate check and predict are read-only. For inbox files without writing memory: `python3 scripts/ingest_contributions.py <file> --dry-run --skip-gate`.
 
-2. Export UMST_MEMORY_DB + UMST_UCRS_WITNESS (synthetic for CI, live for promotion path)
-   export UMST_MEMORY_DB=.umst-memory/memory.db
+### Contribute admissible row
 
-3. Gate every proposal
-   umst_gate_check(mix, explain:true) → admissible before contribute
+Use prompts `gate-before-contribute` + `contribute-admissible`.
 
-4. Contribute admissible rows
-   umst_contribute(contribution) → memory_id
+1. `umst_gate_check` → must PASS.
+2. Build `contribution.v1` with matching `gate_summary.admissible: true`.
+3. `umst_contribute` → `memory_id`.
+4. Optional `umst_memory_query` to verify row appears.
 
-5. Query similar cases
-   umst_memory_query(near_mix_spec, max_mix_l1, cursor pagination)
+See [`examples/agent/02_contribute_admissible.py`](../examples/agent/02_contribute_admissible.py).
 
-6. Export signed checkpoint (CLI, not MCP)
-   umst memory export --db .umst-memory/memory.db --out exports/run-001/
-   → memory_export_bundle.v1.json + memory.jcs.jsonl + hash_chain
-
-7. Human promotion (never automatic)
-   umst promote-contribution --approval promotion_approval.v1.json
-```
-
-**Async contribute (v1 close-out):** `umst_contribute` with `async: true` runs predict+gate+accept **in-process** on the same stdio session and persists job state to `contribute_jobs.json` beside `UMST_MEMORY_DB`. There is no separate worker daemon in v1 — inline accept after gate is acceptable for agent timeouts; poll `umst_contribute_status` for the result. A dedicated background worker is deferred.
-
-**`contribute_jobs` SSOT:** Dual-write when `UMST_MEMORY_DB` is set — `contribute_jobs` SQLite table **and** `contribute_jobs.json` sidecar. Load prefers SQLite when rows exist; JSON remains for operators without SQL tooling. Jobs are ephemeral; durable truth is `memory_records`.
-
-Async contribute jobs persist in `contribute_jobs.json` next to `UMST_MEMORY_DB` when set.
-
----
-
-## Environment variables (extended)
-
-| Variable | Values | Role |
-|----------|--------|------|
-| `UMST_UCRS_WITNESS` | `live` \| `synthetic` (default) | Session clock mode |
-| `UMST_MEMORY_DB` | SQLite file path | Durable `memory_records` + `contribute_jobs.json` sidecar |
-| `UMST_MEMORY_JSONL` | Optional path override | JSONL sidecar destination |
-| `UMST_MEMORY_REGIME` | e.g. `standard_20C_water` | Default curing regime filter hint (manifold registry) |
-| `UMST_MEMORY_L1_RADIUS` | rational string | Default `max_mix_l1` hint for locality queries |
-| `UMST_MEMORY_MORTON_DEPTH` | integer | Morton depth for geometry indexing (concrete cartridge) |
-| `UMST_AGENT_SCOPE_TOKENS` | comma-separated | Required scope tokens on contribute when set |
-
----
-
-## Durable memory (`UMST_MEMORY_DB`)
-
-When `UMST_MEMORY_DB` points at a SQLite path, `AgentSession` uses **STRICT + WAL** `memory_records` with immutability triggers. Accepted rows also append to `.umst-memory/memory.jcs.jsonl` alongside per-row JSON sidecars.
-
-```bash
-export UMST_MEMORY_DB=.umst-memory/memory.db
-cargo run -p umst-mcp --features agent-layer
-```
-
-Bulk bootstrap (honest limit: no 18k public corpus in-repo):
-
-```bash
-python3 scripts/bootstrap_memory_from_audit.py fixtures/bootstrap_audit_slice.csv \\
-  | python3 scripts/ingest_contributions.py --skip-gate --db .umst-memory/memory.db
-```
-
-**Litestream → S3 Object Lock:** deferred (storage research). See [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) + [`docs/examples/litestream.yml`](examples/litestream.yml). Per-deployment SQLite + JSONL sidecar is v1; replicate via signed export bundles or external backup tooling.
-
-**Sigstore / in-toto on promotion bundle:** deferred for v1 CI; document human `promote-contribution` path only. **RFC 3161 TSA** countersign on promotion bundles is likewise deferred — not required per MCP tool call. See [`governance/promotion_policy.yaml`](../governance/promotion_policy.yaml) comments.
-
----
-
-## Environment variables
-
-| Variable | Values | Role |
-|----------|--------|------|
-| `UMST_UCRS_WITNESS` | `live` \| `synthetic` (default) | Session clock mode. `live` → live observation stamp on accept; `synthetic` → CI-safe deterministic stamps. |
-| `UMST_MEMORY_DB` | SQLite file path | Enables durable `memory_records` (STRICT + WAL). When unset, session is in-memory only. |
-| `UMST_MEMORY_JSONL` | Optional path override | JSONL sidecar destination (default: `.umst-memory/memory.jcs.jsonl` beside the DB). |
-
-**Live witness + promotion:** When `UMST_UCRS_WITNESS=live`, human promotion (`umst promote-contribution`) requires a live observation stamp on the memory row (`observed_at.stamp_tier` must not be synthetic-only). Synthetic stamps are rejected on the promotion path. Hold-out metrics and human `promotion_approval.v1` are still required; RFC 3161 / Sigstore on the promotion bundle remain deferred.
-
-```bash
-export UMST_UCRS_WITNESS=live
-export UMST_MEMORY_DB=.umst-memory/memory.db
-cargo run -p umst-mcp --features agent-layer,ucrs-provenance
-```
-
----
-
-## Resources
-
-With `agent-layer`, MCP exposes JSON Schema resources:
-
-- `umst://schemas/contribution.v1.json`
-- `umst://schemas/memory_record.v1.json`
-- `umst://schemas/gate_reject.v1.json`
-- `umst://schemas/promotion_*.v1.json`
-
-Call `resources/list` then `resources/read` — do not guess field shapes.
-
----
-
-## Feedback loop
-
-```text
-umst_gate_check → umst_predict (optional detail) → umst_contribute
-       → umst_memory_query (similar cases)
-       → human promotion_approval.v1 → umst promote-contribution
-       → calibration/*.toml (never automatic from MCP)
-```
-
----
-
-## FP implementation note
-
-Pure morphisms live in `src/research/` (`validation`, `gate_check_mix`, `accept`, `filter_records`). The MCP server holds an `AgentSession` at the **stdio boundary only**; each `umst_contribute` returns an updated session value internally. With `UMST_MEMORY_DB`, the session backs onto SQLite; otherwise in-memory.
-
-`umst-py` exposes `gate_check`, `memory_query`, `contribute` when built with `--features agent-layer`.
-
----
-
-## UCRS sidecar (constitutional time)
-
-For **live observation stamps** (`UMST_UCRS_WITNESS=live`), operators may run the [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) daemon as a **sidecar process** alongside `umst-mcp`: the MCP agent stays material-memory-only while the sidecar owns the thermodynamic clock, credit ledger, and Prometheus metrics (`:9090/metrics`). Wire `ProvenanceClock` to the sidecar via env (`UMST_UCRS_WITNESS=live`) or in-process `umst_ucrs` when embedding the library; P2P gossip is optional (`p2p` feature / `umst-ucrs-p2p` binary). See [`TemporalWitness`](https://github.com/tytolabs/umst-ucrs/blob/master/Rust/src/observation.rs), [`Docs/HLC_SIDECAR.md`](https://github.com/tytolabs/umst-ucrs/blob/master/Docs/HLC_SIDECAR.md), `scripts/umst-ucrs.service`, and the umst-ucrs `Dockerfile` for production layout.
-
----
-
-## Deliberately defer (v1)
-
-| Temptation | Why wait |
-|------------|----------|
-| **`rmcp` 1.7 rewrite** | [`MCP_PROTOCOL_ROADMAP.md`](MCP_PROTOCOL_ROADMAP.md) — migration triggers |
-| **MCP 2025-11-25 protocol** | No multi-tenant hosted MCP requirement yet |
-| **Streamable HTTP + OAuth** | stdio + Docker suffices for cartridge-local agents |
-| **ghcr OCI MCP distribution** | [`docker/README.md`](../docker/README.md) + [`server.json`](../docker/server.json) (stdio manifest) |
-| **RFC 3161 TSA on promotion bundle** | Human-gated promotion only — see [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) + `scripts/promotion_tsa_timestamp.sh` |
-| **Sigstore / in-toto per-contribute** | Bundle-only — [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) + `scripts/cosign_promotion_bundle.sh` |
-| **Litestream S3 Object Lock** | [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) + `scripts/litestream-systemd.example` |
-| **SQLite `contribute_jobs` table** | Dual-write with JSON sidecar when `UMST_MEMORY_DB` set |
-| **Background contribute worker** | Inline in-process accept + `contribute_jobs.json` poll |
-
----
-
-## MI labeling
-
-`gate_summary.mi_bits_est` and manifold `info_gain` surrogates are **not** histogram `epistemic_mi` unless `epistemic-ppo` is enabled. Treat as frugal hints, not proved information gain.
-
----
-
-## Smoke test
-
-```bash
-python3 scripts/mcp_smoke.py
-python3 scripts/mcp_smoke.py --agent-layer
-```
-
----
-
-## Federated contribution (git inbox)
+### Federated git inbox
 
 Local `umst_contribute` writes to **your** `UMST_MEMORY_DB` only. To propose rows for the **shared corpus**:
 
@@ -281,16 +165,190 @@ python3 scripts/ingest_contributions.py contributions/inbox/<file>.jsonl --dry-r
 # Open PR; CI validates schema + gate re-check + MANIFEST duplicate scan
 ```
 
-MCP prompt `export_for_git_inbox` (`prompts/get`) walks the same flow. See [`contributions/README.md`](../contributions/README.md) and workspace plan `git-contribution-inbox.md`. **Not** live git push from MCP — human PR merge required.
+MCP prompt `export_for_git_inbox` walks the same flow. See [`contributions/README.md`](../contributions/README.md). **Not** live git push from MCP — human PR merge required.
+
+See [`examples/agent/03_export_inbox.sh`](../examples/agent/03_export_inbox.sh).
+
+---
+
+## Error handling
+
+### Gate violation codes (`explain.regime_violations`)
+
+| Code | Meaning | Agent action |
+|------|---------|--------------|
+| `mix_spec_rational_parse_fail` | Non-rational or missing required field | Use `"n/d"` strings; check `explain.fields` for paths |
+| `mix_spec_wire_invalid` | Parsed wire failed `MixSpec` validation | Compare against `contribution.v1.json` |
+| `thermodynamic_cd_fail` | Clausius–Duhem margin negative | Reduce `w_c`, adjust `temperature_k` / curing regime |
+| `manifest_bridge_disabled` | Gate not compiled with manifest-bridge | Build with `agent-layer` + `manifest-bridge` |
+| `thermodynamic_fail` | Generic CD fail | Read `explain.remediation`; iterate gate check |
+
+Each code has a matching entry in `explain.remediation` and optional `explain.fields`.
+
+### Contribute / transport errors
+
+| Error / signal | When | Agent action |
+|----------------|------|--------------|
+| `AcceptError::Validation` | Schema / rational parse fail | Fix wire against `contribution.v1.json` |
+| `AcceptError::GateReject` | Gate re-check fail on contribute | Run `umst_gate_check` first; never bypass |
+| `AcceptError::Scope` | `UMST_AGENT_SCOPE_TOKENS` mismatch | Supply valid `scope_token` |
+| `AcceptError::NonMonotonicStamp` | `observed_at` regresses session clock | Use server-assigned stamps |
+| `AcceptError::Store` duplicate | Same `content_id` / idempotency key | Treat as success if idempotent retry |
+| MCP `isError: true` on gate_check | REJECT verdict | Parse `gate_reject.v1` + `explain`; do not contribute |
+| `unknown job_id` | Stale async poll | Re-submit or check `contribute_jobs` beside DB |
+
+Use prompt `interpret_gate_failure` when parsing REJECT payloads.
+
+---
+
+## MCP prompts
+
+Call `prompts/list` then `prompts/get`.
+
+| Prompt | Purpose |
+|--------|---------|
+| `safe-exploration` | Read-only gate → predict → query workflow |
+| `gate-before-contribute` | Hard gate ordering before ingest |
+| `contribute-admissible` | Safe contribute workflow |
+| `interpret_gate_failure` | Read `gate_reject.v1` + `explain` remediation |
+| `query-near-mix` | L1 locality query |
+| `suggest_similar_mix` | Paginated `near_mix_spec` search |
+| `audit_mix_csv` | Batch CSV audit via `umst_audit` |
+| `export_for_git_inbox` | Export JSONL → validate → PR to `contributions/inbox/` |
+
+---
+
+## Best practices
+
+- **Rationals:** all physical quantities as `"numerator/denominator"` strings, never JSON floats.
+- **Gate first:** always `umst_gate_check` before `umst_contribute`; REJECT rows never enter memory.
+- **Explain:** leave `explain: true` (default) on gate check; read `remediation` and `fields`.
+- **Scope tokens:** when `UMST_AGENT_SCOPE_TOKENS` is set, include matching `scope_token` on contribute.
+- **Idempotency:** use `idempotency_key` on contribute for safe retries.
+- **MI advisory:** `mi_bits_est` and `umst_mi_estimate` are hints, not admissibility proofs.
+
+---
+
+## Environment variables
+
+| Variable | Values | Role |
+|----------|--------|------|
+| `UMST_UCRS_WITNESS` | `live` \| `synthetic` (default) | Session clock mode. `live` → live observation stamp on accept; `synthetic` → CI-safe deterministic stamps. |
+| `UMST_MEMORY_DB` | SQLite file path | Durable `memory_records` (STRICT + WAL) + `contribute_jobs` dual-write. When unset, session is in-memory only. |
+| `UMST_MEMORY_JSONL` | Optional path override | JSONL sidecar (default: `.umst-memory/memory.jcs.jsonl` beside DB). |
+| `UMST_MEMORY_REGIME` | e.g. `standard_20C_water` | Default curing regime filter hint |
+| `UMST_MEMORY_L1_RADIUS` | rational string | Default `max_mix_l1` hint for locality queries |
+| `UMST_MEMORY_MORTON_DEPTH` | integer | Morton depth for geometry indexing |
+| `UMST_AGENT_SCOPE_TOKENS` | comma-separated | Required scope tokens on contribute when set |
+
+**Live witness + promotion:** When `UMST_UCRS_WITNESS=live`, human promotion requires a live observation stamp (`observed_at.stamp_tier` must not be synthetic-only). Synthetic stamps are rejected on the promotion path.
+
+```bash
+export UMST_UCRS_WITNESS=live
+export UMST_MEMORY_DB=.umst-memory/memory.db
+cargo run -p umst-mcp --features agent-layer,ucrs-provenance
+```
+
+---
+
+## Durable memory (`UMST_MEMORY_DB`)
+
+When set, `AgentSession` uses **STRICT + WAL** `memory_records` with immutability triggers. Accepted rows also append to JSONL sidecar.
+
+Bulk bootstrap (honest limit: no 18k public corpus in-repo):
+
+```bash
+python3 scripts/bootstrap_memory_from_audit.py fixtures/bootstrap_audit_slice.csv \
+  | python3 scripts/ingest_contributions.py --skip-gate --db .umst-memory/memory.db
+```
+
+**Async contribute:** `umst_contribute` with `async: true` runs predict+gate+accept in-process. Poll `umst_contribute_status`. Job state dual-writes to SQLite `contribute_jobs` table and `contribute_jobs.json` sidecar when `UMST_MEMORY_DB` is set.
+
+---
+
+## Operator runbook
+
+```text
+1. Bootstrap (optional)
+   python3 scripts/bootstrap_memory_from_audit.py … | python3 scripts/ingest_contributions.py --db .umst-memory/memory.db
+
+2. export UMST_MEMORY_DB=.umst-memory/memory.db
+
+3. umst_gate_check(mix) → admissible before contribute
+
+4. umst_contribute(contribution) → memory_id
+
+5. umst_memory_query(near_mix_spec, max_mix_l1, cursor pagination)
+
+6. umst memory export --db .umst-memory/memory.db --out exports/run-001/
+
+7. umst promote-contribution --approval promotion_approval.v1.json  (human only)
+```
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `profile load error` | Unknown `profile` arg | Call `umst_profiles`; use bundled id (e.g. `default`) |
+| `missing mix` | Gate check without `mix` object | Pass full rational `mix_spec` |
+| Empty `remediation` on REJECT | `explain: false` | Omit `explain` or set `explain: true` (default) |
+| `manifest_bridge_disabled` in violations | MCP built without manifest-bridge | `cargo build -p umst-mcp --features agent-layer` (includes bridge) |
+| `unknown job_id` | Stale poll or wrong DB path | Check `contribute_jobs.json` beside `UMST_MEMORY_DB` |
+| Memory query always empty | In-memory session or strict filters | Set `UMST_MEMORY_DB`; relax `max_mix_l1` / regime filters |
+| Contribute fails after gate PASS | Contribution wire mismatch | Validate against `umst://schemas/contribution.v1.json` |
+
+---
+
+## Resources
+
+With `agent-layer`, MCP exposes JSON Schema resources:
+
+- `umst://schemas/contribution.v1.json`
+- `umst://schemas/memory_record.v1.json`
+- `umst://schemas/gate_reject.v1.json`
+- `umst://schemas/promotion_*.v1.json`
+
+---
+
+## UCRS sidecar (constitutional time)
+
+For **live observation stamps** (`UMST_UCRS_WITNESS=live`), operators may run [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) as a sidecar alongside `umst-mcp`. See [`TemporalWitness`](https://github.com/tytolabs/umst-ucrs/blob/master/Rust/src/observation.rs), [`HLC_SIDECAR.md`](https://github.com/tytolabs/umst-ucrs/blob/master/Docs/HLC_SIDECAR.md).
+
+---
+
+## Limitations (deliberately defer v1)
+
+| Temptation | Why wait |
+|------------|----------|
+| **`rmcp` 1.7 rewrite** | [`MCP_PROTOCOL_ROADMAP.md`](MCP_PROTOCOL_ROADMAP.md) |
+| **Streamable HTTP + OAuth** | stdio + Docker suffices for cartridge-local agents |
+| **Hosted multi-tenant MCP** | Product decision required |
+| **RFC 3161 TSA / Sigstore per-contribute** | Human-gated promotion only — [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) |
+| **Litestream S3 Object Lock** | [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) |
+| **Background contribute worker** | Inline accept + job poll |
+
+---
+
+## MI labeling
+
+`gate_summary.mi_bits_est` and manifold `info_gain` surrogates are **not** histogram `epistemic_mi` unless `epistemic-ppo` is enabled. Treat as frugal hints, not proved information gain.
+
+---
+
+## FP implementation note
+
+Pure morphisms live in `src/research/` (`validation`, `gate_check_mix`, `accept`, `filter_records`). The MCP server holds an `AgentSession` at the **stdio boundary only**. `umst-py` exposes `gate_check`, `memory_query`, `contribute` when built with `--features agent-layer`.
 
 ---
 
 ## Related
 
-- [`README.md`](../README.md) §9 — agent protocol
+- [`README.md`](../README.md) — agent callout + §9
+- [`examples/agent/`](../examples/agent/) — runnable workflows
 - [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) — TSA + Sigstore operator scripts
 - [`MCP_PROTOCOL_ROADMAP.md`](MCP_PROTOCOL_ROADMAP.md) — rmcp / HTTP defer criteria
 - [`docker/README.md`](../docker/README.md) — OCI agent image + `server.json`
-- [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) — observation stamps, [`TemporalWitness`](https://github.com/tytolabs/umst-ucrs/blob/master/Rust/src/observation.rs), [`HLC_SIDECAR.md`](https://github.com/tytolabs/umst-ucrs/blob/master/Docs/HLC_SIDECAR.md)
 - [`CARTRIDGE_PORT.md`](CARTRIDGE_PORT.md) — cross-cartridge port guide
 - [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) — durability + Litestream defer

@@ -43,7 +43,7 @@ pub use contribution::{
     accept, content_hash_preimage, content_id, gate_check_mix, gate_check_mix_result, gate_recheck,
     gate_reject_row_for_mix, memory_record_from_contribution, mix_wire_from_spec_value, query,
     rational_to_f64, AcceptError, ContributeError, GateCheckExplain, GateCheckResult, GateContext,
-    DEFAULT_CATALOG_HASH,
+    GateFieldIssue, DEFAULT_CATALOG_HASH,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE
