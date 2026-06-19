@@ -45,6 +45,11 @@ jobs:
         if: steps.detect.outputs.skip == 'false'
         run: |
           set -euo pipefail
+          python3 scripts/validate_contribution_inbox.py --check-manifest
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            python3 scripts/validate_contribution_inbox.py "$f"
+          done < /tmp/inbox_added.txt
           YM="$(date -u +%Y-%m)"
           mkdir -p "contributions/merged/${YM}"
           while IFS= read -r f; do
