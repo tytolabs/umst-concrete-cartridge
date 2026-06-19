@@ -14,6 +14,8 @@ Publish tag (manual, maintainer):
 ```bash
 docker tag umst-mcp:agent-layer ghcr.io/tytolabs/umst-concrete-cartridge:agent-layer
 docker push ghcr.io/tytolabs/umst-concrete-cartridge:agent-layer
+# Pin digest in server.json after publish:
+docker buildx imagetools inspect ghcr.io/tytolabs/umst-concrete-cartridge:agent-layer --format '{{json .Manifest}}'
 ```
 
 ## Run (stdio)

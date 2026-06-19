@@ -28,6 +28,19 @@ fn contribute_jobs_path() -> Option<PathBuf> {
 }
 
 fn load_contribute_jobs() -> HashMap<String, ContributeJob> {
+    if let Ok(store) = ResearchStore::from_env() {
+        if let Some(raw) = store.load_contribute_jobs_sqlite() {
+            let mut jobs = HashMap::new();
+            for (id, json) in raw {
+                if let Ok(job) = serde_json::from_str::<ContributeJob>(&json) {
+                    jobs.insert(id, job);
+                }
+            }
+            if !jobs.is_empty() {
+                return jobs;
+            }
+        }
+    }
     let Some(path) = contribute_jobs_path() else {
         return HashMap::new();
     };
@@ -38,6 +51,17 @@ fn load_contribute_jobs() -> HashMap<String, ContributeJob> {
 }
 
 fn persist_contribute_jobs(jobs: &HashMap<String, ContributeJob>) {
+    let json_map: HashMap<String, String> = jobs
+        .iter()
+        .filter_map(|(id, job)| {
+            serde_json::to_string(job)
+                .ok()
+                .map(|json| (id.clone(), json))
+        })
+        .collect();
+    if let Ok(store) = ResearchStore::from_env() {
+        let _ = store.persist_contribute_jobs_sqlite(&json_map);
+    }
     let Some(path) = contribute_jobs_path() else {
         return;
     };

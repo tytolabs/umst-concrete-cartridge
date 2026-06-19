@@ -359,6 +359,33 @@ impl ResearchStore {
             Self::Sqlite(s) => s.has_idempotency_key(key).unwrap_or(false),
         }
     }
+
+    /// Load async job JSON blobs from SQLite (when store is file-backed).
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: IO boundary for MCP job poll; JSON sidecar dual-write.
+    pub fn load_contribute_jobs_sqlite(
+        &self,
+    ) -> Option<std::collections::HashMap<String, String>> {
+        match self {
+            Self::InMemory(_) => None,
+            Self::Sqlite(s) => s.load_contribute_jobs().ok(),
+        }
+    }
+
+    /// Persist async job JSON blobs to SQLite (dual-write with JSON sidecar).
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: IO boundary; jobs are ephemeral operator state.
+    pub fn persist_contribute_jobs_sqlite(
+        &self,
+        jobs: &std::collections::HashMap<String, String>,
+    ) -> Result<(), StoreError> {
+        match self {
+            Self::InMemory(_) => Ok(()),
+            Self::Sqlite(s) => s.replace_contribute_jobs(jobs),
+        }
+    }
 }
 
 #[cfg(feature = "agent-layer")]
@@ -388,6 +415,11 @@ mod sqlite_store {
         BEGIN
           SELECT RAISE(ABORT, 'memory_records are immutable');
         END;
+        CREATE TABLE IF NOT EXISTS contribute_jobs (
+          job_id TEXT PRIMARY KEY,
+          job_json TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        ) STRICT;
     ";
 
     /// SQLite-backed store — connection mutation isolated here (effect boundary).
@@ -498,6 +530,54 @@ mod sqlite_store {
         /// formal_anchor_rationale: Full table scan IO; filter in caller if needed.
         pub fn rows(&self) -> Result<Vec<MemoryRecord>, StoreError> {
             self.load_rows()
+        }
+
+        /// Load async contribute jobs (JSON blobs keyed by job_id).
+        /// formal_anchor: NONE
+        /// formal_status: NONE
+        /// formal_anchor_rationale: SQLite read for MCP job poll; JSON sidecar remains dual-written.
+        pub fn load_contribute_jobs(&self) -> Result<std::collections::HashMap<String, String>, StoreError> {
+            let mut stmt = self
+                .conn
+                .prepare("SELECT job_id, job_json FROM contribute_jobs")
+                .map_err(|e| StoreError::Sqlite(e.to_string()))?;
+            let rows = stmt
+                .query_map([], |row| {
+                    let id: String = row.get(0)?;
+                    let json: String = row.get(1)?;
+                    Ok((id, json))
+                })
+                .map_err(|e| StoreError::Sqlite(e.to_string()))?;
+            rows.map(|r| {
+                let (id, json) = r.map_err(|e| StoreError::Sqlite(e.to_string()))?;
+                Ok((id, json))
+            })
+            .collect::<Result<std::collections::HashMap<_, _>, StoreError>>()
+        }
+
+        /// Replace all contribute jobs (dual-write companion to JSON sidecar).
+        /// formal_anchor: NONE
+        /// formal_status: NONE
+        /// formal_anchor_rationale: SQLite transaction boundary for ephemeral job map.
+        pub fn replace_contribute_jobs(
+            &self,
+            jobs: &std::collections::HashMap<String, String>,
+        ) -> Result<(), StoreError> {
+            let tx = self
+                .conn
+                .unchecked_transaction()
+                .map_err(|e| StoreError::Sqlite(e.to_string()))?;
+            tx.execute("DELETE FROM contribute_jobs", [])
+                .map_err(|e| StoreError::Sqlite(e.to_string()))?;
+            for (job_id, job_json) in jobs {
+                tx.execute(
+                    "INSERT INTO contribute_jobs (job_id, job_json, updated_at) VALUES (?1, ?2, datetime('now'))",
+                    params![job_id, job_json],
+                )
+                .map_err(|e| StoreError::Sqlite(e.to_string()))?;
+            }
+            tx.commit().map_err(|e| StoreError::Sqlite(e.to_string()))?;
+            Ok(())
         }
     }
 

@@ -25,7 +25,7 @@ Agents should:
 |---------|----------|-----|
 | Default CI | *(none)* | `umst_predict`, `umst_audit`, `umst_profiles`, `umst_certify` |
 | Agent layer | `agent-layer` on `umst-mcp` | + gate check, contribute, memory query, schema resources |
-| UCRS stamps | `ucrs-provenance` on cartridge | Tier-2 `observed_at` fields on ingest |
+| UCRS stamps | `ucrs-provenance` on cartridge | Live observation stamp on ingest (`observed_at`) |
 | Manifest CD | `manifest-bridge` (via `agent-layer`) | Runtime Clausius–Duhem gate on mix |
 
 ```bash
@@ -139,7 +139,7 @@ All agent tool `inputSchema` objects declare `$schema: https://json-schema.org/d
 
 **Async contribute (v1 close-out):** `umst_contribute` with `async: true` runs predict+gate+accept **in-process** on the same stdio session and persists job state to `contribute_jobs.json` beside `UMST_MEMORY_DB`. There is no separate worker daemon in v1 — inline accept after gate is acceptable for agent timeouts; poll `umst_contribute_status` for the result. A dedicated background worker is deferred.
 
-**`contribute_jobs` SSOT:** JSON sidecar (`contribute_jobs.json`), not a SQLite table in v1. Jobs are ephemeral operator state; durable truth remains `memory_records` + JSONL sidecars.
+**`contribute_jobs` SSOT:** Dual-write when `UMST_MEMORY_DB` is set — `contribute_jobs` SQLite table **and** `contribute_jobs.json` sidecar. Load prefers SQLite when rows exist; JSON remains for operators without SQL tooling. Jobs are ephemeral; durable truth is `memory_records`.
 
 Async contribute jobs persist in `contribute_jobs.json` next to `UMST_MEMORY_DB` when set.
 
@@ -185,11 +185,11 @@ python3 scripts/bootstrap_memory_from_audit.py fixtures/bootstrap_audit_slice.cs
 
 | Variable | Values | Role |
 |----------|--------|------|
-| `UMST_UCRS_WITNESS` | `live` \| `synthetic` (default) | Session clock mode. `live` → `TemporalWitness::stamp()` emits `stamp_tier: UcrsTier2` on accept; `synthetic` → CI-safe deterministic stamps. |
+| `UMST_UCRS_WITNESS` | `live` \| `synthetic` (default) | Session clock mode. `live` → live observation stamp on accept; `synthetic` → CI-safe deterministic stamps. |
 | `UMST_MEMORY_DB` | SQLite file path | Enables durable `memory_records` (STRICT + WAL). When unset, session is in-memory only. |
 | `UMST_MEMORY_JSONL` | Optional path override | JSONL sidecar destination (default: `.umst-memory/memory.jcs.jsonl` beside the DB). |
 
-**Live witness + promotion (Track A):** When `UMST_UCRS_WITNESS=live`, human promotion (`umst promote-contribution`) requires the memory row `observed_at.stamp_tier` to be **`UcrsTier2`**. Synthetic stamps are rejected on the promotion path. Hold-out metrics and human `promotion_approval.v1` are still required; RFC 3161 / Sigstore on the promotion bundle remain deferred.
+**Live witness + promotion:** When `UMST_UCRS_WITNESS=live`, human promotion (`umst promote-contribution`) requires a live observation stamp on the memory row (`observed_at.stamp_tier` must not be synthetic-only). Synthetic stamps are rejected on the promotion path. Hold-out metrics and human `promotion_approval.v1` are still required; RFC 3161 / Sigstore on the promotion bundle remain deferred.
 
 ```bash
 export UMST_UCRS_WITNESS=live
@@ -233,7 +233,7 @@ Pure morphisms live in `src/research/` (`validation`, `gate_check_mix`, `accept`
 
 ## UCRS sidecar (constitutional time)
 
-For **live Tier-2 observation stamps** (`UMST_UCRS_WITNESS=live`), operators may run the [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) daemon as a **sidecar process** alongside `umst-mcp`: the MCP agent stays material-memory-only while the sidecar owns the thermodynamic clock, credit ledger, and Prometheus metrics (`:9090/metrics`). Wire `ProvenanceClock` to the sidecar via env (`UMST_UCRS_WITNESS=live`) or in-process `umst_ucrs` when embedding the library; P2P gossip is optional (`p2p` feature / `umst-ucrs-p2p` binary). See [`TemporalWitness`](https://github.com/tytolabs/umst-ucrs/blob/master/Rust/src/observation.rs), [`Docs/HLC_SIDECAR.md`](https://github.com/tytolabs/umst-ucrs/blob/master/Docs/HLC_SIDECAR.md), `scripts/umst-ucrs.service`, and the umst-ucrs `Dockerfile` for production layout.
+For **live observation stamps** (`UMST_UCRS_WITNESS=live`), operators may run the [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) daemon as a **sidecar process** alongside `umst-mcp`: the MCP agent stays material-memory-only while the sidecar owns the thermodynamic clock, credit ledger, and Prometheus metrics (`:9090/metrics`). Wire `ProvenanceClock` to the sidecar via env (`UMST_UCRS_WITNESS=live`) or in-process `umst_ucrs` when embedding the library; P2P gossip is optional (`p2p` feature / `umst-ucrs-p2p` binary). See [`TemporalWitness`](https://github.com/tytolabs/umst-ucrs/blob/master/Rust/src/observation.rs), [`Docs/HLC_SIDECAR.md`](https://github.com/tytolabs/umst-ucrs/blob/master/Docs/HLC_SIDECAR.md), `scripts/umst-ucrs.service`, and the umst-ucrs `Dockerfile` for production layout.
 
 ---
 
@@ -248,7 +248,7 @@ For **live Tier-2 observation stamps** (`UMST_UCRS_WITNESS=live`), operators may
 | **RFC 3161 TSA on promotion bundle** | Human-gated promotion only — see [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) + `scripts/promotion_tsa_timestamp.sh` |
 | **Sigstore / in-toto per-contribute** | Bundle-only — [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) + `scripts/cosign_promotion_bundle.sh` |
 | **Litestream S3 Object Lock** | [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) + `scripts/litestream-systemd.example` |
-| **SQLite `contribute_jobs` table** | JSON sidecar SSOT in v1 |
+| **SQLite `contribute_jobs` table** | Dual-write with JSON sidecar when `UMST_MEMORY_DB` set |
 | **Background contribute worker** | Inline in-process accept + `contribute_jobs.json` poll |
 
 ---

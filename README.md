@@ -7,11 +7,8 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 <!-- readme:status -->
 [![CI — Rust](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
-[![layer: PRL agent-layer](https://img.shields.io/badge/layer-PRL_agent--layer-C9A27A)](docs/AGENT_MCP.md)
-[![Notebook](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml)
-[![Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
+[![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
-[![Built on UMST Manifold](https://img.shields.io/badge/built_on-UMST_Manifold-2d3436)](https://github.com/tytolabs/umst-manifold)
 
 > Release notes in [CHANGELOG.md](CHANGELOG.md).
 

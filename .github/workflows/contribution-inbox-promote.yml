@@ -1,0 +1,64 @@
+# Promote merged inbox PRs (maintainer bot)
+
+Runs when a PR to `main` is **merged** and adds files under `contributions/inbox/`.
+
+Moves each new inbox JSONL to `contributions/merged/YYYY-MM/`, appends `MANIFEST.jsonl`, and pushes a follow-up commit.
+
+**Manual alternative:** `./scripts/promote_inbox_to_merged.sh contributions/inbox/<file>.jsonl`
+
+name: contribution-inbox-promote
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  promote-merged-inbox:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Detect inbox files added in merged PR
+        id: detect
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          mapfile -t added < <(gh pr diff "$PR_NUMBER" --name-only | grep '^contributions/inbox/.*\.jsonl$' || true)
+          if [ ${#added[@]} -eq 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "no inbox JSONL in merged PR"
+            exit 0
+          fi
+          printf '%s\n' "${added[@]}" > /tmp/inbox_added.txt
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Promote inbox → merged + MANIFEST
+        if: steps.detect.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          YM="$(date -u +%Y-%m)"
+          mkdir -p "contributions/merged/${YM}"
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            base="$(basename "$f")"
+            git mv "$f" "contributions/merged/${YM}/${base}"
+            python3 scripts/update_contribution_manifest.py --append "contributions/merged/${YM}/${base}"
+          done < /tmp/inbox_added.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add contributions/
+          git diff --staged --quiet && exit 0
+          git commit -m "chore(contributions): promote inbox shards from PR #${{ github.event.pull_request.number }}"
+          git push
+
+      - name: Validate manifest after promote
+        if: steps.detect.outputs.skip == 'false'
+        run: python3 scripts/validate_contribution_inbox.py --check-manifest

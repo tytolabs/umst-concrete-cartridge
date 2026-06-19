@@ -12,6 +12,7 @@
     {
       "registry_type": "oci",
       "identifier": "ghcr.io/tytolabs/umst-concrete-cartridge:agent-layer",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       },
@@ -23,7 +24,7 @@
         },
         {
           "name": "UMST_UCRS_WITNESS",
-          "description": "synthetic (default) or live Tier-2 stamps",
+          "description": "synthetic (default) or live observation stamp",
           "required": false
         }
       ]
