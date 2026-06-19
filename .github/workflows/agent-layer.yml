@@ -32,7 +32,7 @@ jobs:
         working-directory: .
         run: |
           cargo test -p umst-concrete-cartridge --features agent-layer \
-            --test research_memory --test golden_gate_check
+            --test research_memory --test golden_gate_check --test phase8_adversarial
 
       - name: Bootstrap corpus row count (~16146)
         working-directory: .
