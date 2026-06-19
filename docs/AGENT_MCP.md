@@ -76,6 +76,7 @@ Docker agent image should enable `agent-layer` + `manifest-bridge`.
 | `interpret_gate_failure` | Read `gate_reject.v1` + `explain.regime_violations` |
 | `suggest_similar_mix` | Paginated `near_mix_spec` search |
 | `audit_mix_csv` | Batch CSV audit workflow via `umst_audit` |
+| `export_for_git_inbox` | Export JSONL → validate → PR to `contributions/inbox/` |
 
 Call `prompts/list` then `prompts/get` with the prompt name.
 
@@ -275,10 +276,12 @@ Local `umst_contribute` writes to **your** `UMST_MEMORY_DB` only. To propose row
 python3 scripts/export_contributions_jsonl.py \
   --db .umst-memory/memory.db --lab <slug> \
   --out contributions/inbox/<slug>-<YYYYMMDD>-<id>.jsonl
-# Open PR; CI validates schema + gate re-check
+python3 scripts/validate_contribution_inbox.py contributions/inbox/<file>.jsonl
+python3 scripts/ingest_contributions.py contributions/inbox/<file>.jsonl --dry-run --skip-gate
+# Open PR; CI validates schema + gate re-check + MANIFEST duplicate scan
 ```
 
-See [`contributions/README.md`](../contributions/README.md) and workspace plan `git-contribution-inbox.md`. **Not** live git push from MCP — human PR merge required.
+MCP prompt `export_for_git_inbox` (`prompts/get`) walks the same flow. See [`contributions/README.md`](../contributions/README.md) and workspace plan `git-contribution-inbox.md`. **Not** live git push from MCP — human PR merge required.
 
 ---
 

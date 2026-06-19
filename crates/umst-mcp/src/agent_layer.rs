@@ -398,6 +398,11 @@ pub const AGENT_PROMPTS: &[(&str, &str, &str)] = &[
         "Audit a mix CSV batch against calibration",
         "Use umst_audit with dataset_d1-compatible CSV headers (cement, slag, fly_ash, water, superplasticizer, coarse_agg, fine_agg, age, strength, source, temperature, humidity). Set profile to match calibration bundle (e.g. uci_d1). Parse rows for regime warnings and abs_error_mpa before contributing validated outcomes.",
     ),
+    (
+        "export_for_git_inbox",
+        "Export local memory rows for git contribution inbox PR",
+        "After umst_gate_check → umst_contribute session: (1) export new admissible rows with `python3 scripts/export_contributions_jsonl.py --db $UMST_MEMORY_DB --lab <lab-slug> --out contributions/inbox/<lab-slug>-<YYYYMMDD>-<6char>.jsonl`; (2) validate locally with `python3 scripts/validate_contribution_inbox.py` on that file and `python3 scripts/ingest_contributions.py <file> --dry-run --skip-gate`; (3) open a PR adding only the inbox JSONL (one file per PR). Export skips content_ids already in contributions/merged/MANIFEST.jsonl. Maintainer merges → moves file to contributions/merged/YYYY-MM/ → appends manifest via `python3 scripts/update_contribution_manifest.py --append <path>`. MCP does not push to git.",
+    ),
 ];
 
 /// formal_anchor: NONE

@@ -21,11 +21,29 @@ from ingest_contributions import content_id_from_contribution, gate_check_admiss
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = REPO_ROOT / "schemas" / "contribution.v1.json"
+DEFAULT_MANIFEST = REPO_ROOT / "contributions" / "merged" / "MANIFEST.jsonl"
 MAX_LINES_DEFAULT = 500
 
 
-def load_known_content_ids(merged_dir: Path) -> set[str]:
+def load_manifest_content_ids(manifest: Path) -> set[str]:
     known: set[str] = set()
+    if not manifest.is_file():
+        return known
+    for line in manifest.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+            for cid in row.get("content_ids", []):
+                known.add(cid)
+        except json.JSONDecodeError:
+            continue
+    return known
+
+
+def load_known_content_ids(merged_dir: Path, manifest: Path | None = None) -> set[str]:
+    known = load_manifest_content_ids(manifest or DEFAULT_MANIFEST)
     if not merged_dir.is_dir():
         return known
     for path in sorted(merged_dir.rglob("*.jsonl")):
@@ -125,14 +143,29 @@ def validate_file(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("files", nargs="+", type=Path)
+    parser.add_argument("files", nargs="*", type=Path)
     parser.add_argument("--merged-dir", type=Path, default=Path("contributions/merged"))
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--max-lines", type=int, default=MAX_LINES_DEFAULT)
     parser.add_argument("--gate-check", action="store_true")
+    parser.add_argument(
+        "--check-manifest",
+        action="store_true",
+        help="verify MANIFEST.jsonl matches merged shards (no inbox files required)",
+    )
     parser.add_argument("--profile", default="default")
     args = parser.parse_args()
 
-    known = load_known_content_ids(args.merged_dir)
+    if args.check_manifest:
+        from update_contribution_manifest import check_manifest
+
+        return check_manifest(args.manifest, args.merged_dir)
+
+    if not args.files:
+        print("error: inbox JSONL path(s) required unless --check-manifest", file=sys.stderr)
+        return 2
+
+    known = load_known_content_ids(args.merged_dir, args.manifest)
     total_errors = 0
     for path in args.files:
         if not path.is_file():

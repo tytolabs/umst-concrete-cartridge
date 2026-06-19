@@ -60,6 +60,8 @@ def load_known_content_ids(merged_dir: Path | None, manifest: Path | None) -> se
                 continue
     if merged_dir and merged_dir.is_dir():
         for path in sorted(merged_dir.rglob("*.jsonl")):
+            if path.name == "MANIFEST.jsonl":
+                continue
             for line in path.read_text(encoding="utf-8").splitlines():
                 line = line.strip()
                 if not line:

@@ -3,15 +3,17 @@ name: contribution-inbox
 on:
   pull_request:
     paths:
-      - 'contributions/inbox/**'
+      - 'contributions/**'
       - 'scripts/validate_contribution_inbox.py'
+      - 'scripts/update_contribution_manifest.py'
       - 'scripts/ingest_contributions.py'
       - 'schemas/contribution.v1.json'
       - '.github/workflows/contribution-inbox.yml'
   push:
     paths:
-      - 'contributions/inbox/**'
+      - 'contributions/**'
       - 'scripts/validate_contribution_inbox.py'
+      - 'scripts/update_contribution_manifest.py'
       - '.github/workflows/contribution-inbox.yml'
 
 jobs:
@@ -22,6 +24,9 @@ jobs:
 
       - name: Install check-jsonschema
         run: pipx install 'check-jsonschema==0.37.3'
+
+      - name: Validate merged MANIFEST consistency
+        run: python3 scripts/validate_contribution_inbox.py --check-manifest
 
       - name: Validate inbox JSONL (schema + admissible + duplicates)
         run: |
