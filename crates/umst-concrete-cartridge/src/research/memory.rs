@@ -4,7 +4,7 @@
 //! Research memory store — functional append, pure query filter.
 
 use super::geometry::{mix_l1_distance, morton_index_distance};
-use super::types::{MemoryQuery, MemoryRecord};
+use super::types::{MemoryQuery, MemoryQueryPage, MemoryRecord};
 use std::path::Path;
 use thiserror::Error;
 
@@ -68,40 +68,88 @@ pub trait MemoryStore {
     fn rows(&self) -> Vec<MemoryRecord>;
 }
 
+fn row_matches_query(r: &MemoryRecord, query: &MemoryQuery) -> bool {
+    if query.admissible_only && !r.payload.gate_summary.admissible {
+        return false;
+    }
+    if let Some(regime) = &query.curing_regime {
+        let actual = r
+            .payload
+            .process
+            .get("curing_regime")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if actual != regime {
+            return false;
+        }
+    }
+    if let Some(catalog_id) = &query.catalog_id {
+        if !r.catalog_ids.iter().any(|id| id == catalog_id) {
+            return false;
+        }
+    }
+    if let Some(tier) = &query.stamp_tier {
+        if r.observed_at.stamp_tier != *tier {
+            return false;
+        }
+    }
+    if let Some(source) = &query.outcome_source {
+        let actual = r
+            .payload
+            .outcome
+            .get("source")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if actual != source {
+            return false;
+        }
+    }
+    if let Some(min_ms) = query.wall_ms_min {
+        let wall = r.observed_at.wall_ms.unwrap_or(0);
+        if wall < min_ms {
+            return false;
+        }
+    }
+    if let Some(max_ms) = query.wall_ms_max {
+        let wall = r.observed_at.wall_ms.unwrap_or(u64::MAX);
+        if wall > max_ms {
+            return false;
+        }
+    }
+    if let Some(idx) = query.hilbert_index {
+        let max_d = query.max_hilbert_distance.unwrap_or(0);
+        let Some(geom) = r.mix_geometry.as_ref() else {
+            return false;
+        };
+        if morton_index_distance(geom.hilbert_index, idx) > max_d {
+            return false;
+        }
+    }
+    true
+}
+
+fn sort_key_ucrs_content_id(r: &MemoryRecord) -> (u64, &str) {
+    (r.observed_at.ucrs_seq.unwrap_or(0), r.content_id.as_str())
+}
+
 /// Pure filter morphism over memory rows.
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Query filter over row slice; L1/Morton sort when requested.
 #[must_use]
 pub fn filter_records(rows: &[MemoryRecord], query: &MemoryQuery) -> Vec<MemoryRecord> {
+    query_page(rows, query).rows
+}
+
+/// Pure paginated query — stable sort on `(ucrs_seq, content_id)` unless `near_mix_spec` sorts by L1.
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Page envelope for MCP `umst_memory_query`; cursor is prior `content_id`.
+#[must_use]
+pub fn query_page(rows: &[MemoryRecord], query: &MemoryQuery) -> MemoryQueryPage {
     let mut out: Vec<MemoryRecord> = rows
         .iter()
-        .filter(|r| {
-            if query.admissible_only && !r.payload.gate_summary.admissible {
-                return false;
-            }
-            if let Some(regime) = &query.curing_regime {
-                let actual = r
-                    .payload
-                    .process
-                    .get("curing_regime")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
-                if actual != regime {
-                    return false;
-                }
-            }
-            if let Some(idx) = query.hilbert_index {
-                let max_d = query.max_hilbert_distance.unwrap_or(0);
-                let Some(geom) = r.mix_geometry.as_ref() else {
-                    return false;
-                };
-                if morton_index_distance(geom.hilbert_index, idx) > max_d {
-                    return false;
-                }
-            }
-            true
-        })
+        .filter(|r| row_matches_query(r, query))
         .cloned()
         .collect();
 
@@ -118,11 +166,32 @@ pub fn filter_records(rows: &[MemoryRecord], query: &MemoryQuery) -> Vec<MemoryR
             let db = mix_l1_distance(near, &b.payload.mix_spec).unwrap_or(f64::MAX);
             da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
         });
+    } else {
+        out.sort_by(|a, b| {
+            let ka = sort_key_ucrs_content_id(a);
+            let kb = sort_key_ucrs_content_id(b);
+            ka.cmp(&kb)
+        });
     }
 
-    out.into_iter()
-        .take(query.limit.unwrap_or(usize::MAX))
-        .collect()
+    if let Some(ref cursor) = query.cursor {
+        if let Some(pos) = out.iter().position(|r| &r.content_id == cursor) {
+            out = out.into_iter().skip(pos + 1).collect();
+        }
+    }
+
+    let limit = query.limit.unwrap_or(usize::MAX);
+    let has_more = out.len() > limit;
+    let page_rows: Vec<MemoryRecord> = out.into_iter().take(limit).collect();
+    let next_cursor = if has_more {
+        page_rows.last().map(|r| r.content_id.clone())
+    } else {
+        None
+    };
+    MemoryQueryPage {
+        rows: page_rows,
+        next_cursor,
+    }
 }
 
 /// In-memory store — append returns a new store value (no interior mutation).

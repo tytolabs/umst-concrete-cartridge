@@ -133,6 +133,18 @@ pub struct MemoryQuery {
     pub admissible_only: bool,
     pub curing_regime: Option<String>,
     pub limit: Option<usize>,
+    /// Pagination cursor — `content_id` of the last row from the prior page.
+    pub cursor: Option<String>,
+    /// Filter rows whose `catalog_ids` contains this catalog witness id.
+    pub catalog_id: Option<String>,
+    /// Filter on `observed_at.stamp_tier`.
+    pub stamp_tier: Option<String>,
+    /// Filter on `payload.outcome.source` string field.
+    pub outcome_source: Option<String>,
+    /// Inclusive lower bound on `observed_at.wall_ms`.
+    pub wall_ms_min: Option<u64>,
+    /// Inclusive upper bound on `observed_at.wall_ms`.
+    pub wall_ms_max: Option<u64>,
     /// Anchor mix for L1 distance in normalized mix space (w_c, T, φ_agg).
     pub near_mix_spec: Option<Value>,
     /// Keep rows with L1 distance ≤ this threshold (requires `near_mix_spec`).
@@ -141,6 +153,17 @@ pub struct MemoryQuery {
     pub hilbert_index: Option<u32>,
     /// Max Morton index distance from `hilbert_index` (default exact match).
     pub max_hilbert_distance: Option<u32>,
+}
+
+/// Paginated memory query result (`umst_memory_query` wire).
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Stable-sort page envelope; `next_cursor` for MCP agents.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MemoryQueryPage {
+    pub rows: Vec<MemoryRecord>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
 }
 
 /// Result of successful `contribution::accept`.

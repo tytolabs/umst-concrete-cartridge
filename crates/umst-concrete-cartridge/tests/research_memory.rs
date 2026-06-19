@@ -148,6 +148,173 @@ fn near_mix_l1_query_sorts_by_distance() {
 }
 
 #[test]
+fn memory_query_pagination_cursor() {
+    use umst_concrete_cartridge::research::query_page;
+    let profile = Profile::load_bundled("default").expect("default profile");
+    let v = load_fixture("admissible_mix_01.json");
+    let ctx = GateContext { profile: &profile };
+    let (store, _, _) = accept(
+        ResearchStore::default(),
+        ProvenanceClock::default(),
+        WallClock,
+        &ctx,
+        &v,
+    )
+    .expect("accept");
+    let base = store.rows()[0].clone();
+    let rows: Vec<_> = (0..3)
+        .map(|i| {
+            let mut r = base.clone();
+            r.content_id = format!("cid-{i}");
+            r.observed_at.ucrs_seq = Some(i);
+            r
+        })
+        .collect();
+    let page1 = query_page(
+        &rows,
+        &MemoryQuery {
+            admissible_only: true,
+            limit: Some(2),
+            ..Default::default()
+        },
+    );
+    assert_eq!(page1.rows.len(), 2);
+    assert!(page1.next_cursor.is_some());
+    let page2 = query_page(
+        &rows,
+        &MemoryQuery {
+            admissible_only: true,
+            limit: Some(2),
+            cursor: page1.next_cursor,
+            ..Default::default()
+        },
+    );
+    assert_eq!(page2.rows.len(), 1);
+    assert!(page2.next_cursor.is_none());
+}
+
+#[test]
+fn gate_check_result_includes_reject_and_explain() {
+    use umst_concrete_cartridge::research::{gate_check_mix_result, ObservedAt};
+    let profile = Profile::load_bundled("default").expect("default profile");
+    let mix = serde_json::json!({ "w_c": "not-rational", "temperature_k": "29315/100" });
+    let observed = ObservedAt {
+        stamp_tier: "Synthetic".into(),
+        ucrs_seq: Some(0),
+        phase_entropy_bits_q: None,
+        phase_entropy_bits_scale: None,
+        credit_head_bits_q: None,
+        credit_head_bits_scale: None,
+        wall_ms: None,
+    };
+    let result = gate_check_mix_result(&profile, &mix, true, observed);
+    assert!(!result.gate_summary.admissible);
+    assert!(result.gate_reject.is_some());
+    let explain = result.explain.expect("explain block");
+    assert!(explain
+        .regime_violations
+        .contains(&"mix_spec_rational_parse_fail".to_string()));
+}
+
+#[test]
+fn hilbert_index_query_golden() {
+    use umst_concrete_cartridge::research::{mix_geometry_key, query_page};
+    let profile = Profile::load_bundled("default").expect("default profile");
+    let v = load_fixture("admissible_mix_01.json");
+    let ctx = GateContext { profile: &profile };
+    let (store, _, _) = accept(
+        ResearchStore::default(),
+        ProvenanceClock::default(),
+        WallClock,
+        &ctx,
+        &v,
+    )
+    .unwrap();
+    let mix = v.get("mix_spec").cloned().unwrap();
+    let regime = v
+        .get("process")
+        .and_then(|p| p.get("curing_regime"))
+        .and_then(|r| r.as_str());
+    let geom = mix_geometry_key(&mix, regime).expect("geometry");
+    let page = query_page(
+        &store.rows(),
+        &MemoryQuery {
+            admissible_only: true,
+            hilbert_index: Some(geom.hilbert_index),
+            max_hilbert_distance: Some(0),
+            ..Default::default()
+        },
+    );
+    assert_eq!(page.rows.len(), 1);
+}
+
+#[test]
+fn query_filters_catalog_stamp_and_wall_ms() {
+    use umst_concrete_cartridge::research::query_page;
+    let profile = Profile::load_bundled("default").expect("default profile");
+    let v = load_fixture("admissible_mix_01.json");
+    let ctx = GateContext { profile: &profile };
+    let (store, _, _) = accept(
+        ResearchStore::default(),
+        ProvenanceClock::default(),
+        WallClock,
+        &ctx,
+        &v,
+    )
+    .unwrap();
+    let row = store.rows()[0].clone();
+    let witness = row.catalog_ids.first().expect("catalog_ids").clone();
+    assert_eq!(
+        query_page(
+            &[row.clone()],
+            &MemoryQuery {
+                catalog_id: Some(witness),
+                ..Default::default()
+            },
+        )
+        .rows
+        .len(),
+        1
+    );
+    assert!(query_page(
+        &[row.clone()],
+        &MemoryQuery {
+            catalog_id: Some("nonexistent.catalog".into()),
+            ..Default::default()
+        },
+    )
+    .rows
+    .is_empty());
+    let tier = row.observed_at.stamp_tier.clone();
+    assert_eq!(
+        query_page(
+            &[row.clone()],
+            &MemoryQuery {
+                stamp_tier: Some(tier),
+                ..Default::default()
+            },
+        )
+        .rows
+        .len(),
+        1
+    );
+    let wall = row.observed_at.wall_ms.unwrap_or(0);
+    assert_eq!(
+        query_page(
+            &[row],
+            &MemoryQuery {
+                wall_ms_min: Some(wall),
+                wall_ms_max: Some(wall),
+                ..Default::default()
+            },
+        )
+        .rows
+        .len(),
+        1
+    );
+}
+
+#[test]
 fn gate_reject_row_not_in_admissible_memory() {
     use umst_concrete_cartridge::research::ObservedAt;
     use umst_concrete_cartridge::research::{

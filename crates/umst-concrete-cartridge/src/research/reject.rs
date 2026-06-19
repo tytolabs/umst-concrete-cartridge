@@ -150,7 +150,6 @@ pub fn mix_spec_hashable(mix_spec: &Value) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::research::types::GateSummary;
     use serde_json::json;
 
     #[test]

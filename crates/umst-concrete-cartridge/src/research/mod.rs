@@ -4,7 +4,7 @@
 //! Per-cartridge research memory — **pure core** + effects at store/IO boundaries.
 //!
 //! ## FP discipline
-//! - **Pure:** `validation::*`, `filter_records`, `content_id`, `gate_check_mix`, `build_promotion_record`, `ProvenanceClock::advance`.
+//! - **Pure:** `validation::*`, `filter_records`, `query_page`, `content_id`, `gate_check_mix`, `gate_check_mix_result`, `build_promotion_record`, `ProvenanceClock::advance`.
 //! - **Functional store:** `InMemoryStore::append` returns a new store (`MemoryStore` trait).
 //! - **Effects only at boundary:** `WallClock::epoch_ms`, `SqliteStore`, `apply_promotion_writes`, MCP/CLI session loop.
 //! - **No** global `Mutex`/`RefCell` in this module.
@@ -40,9 +40,10 @@ pub use checkpoint::{
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports gate/accept morphisms; Mechanised on `gate_check_mix` / `accept` in `contribution`.
 pub use contribution::{
-    accept, content_hash_preimage, content_id, gate_check_mix, gate_recheck,
-    gate_reject_row_for_mix, memory_record_from_contribution, mix_wire_from_spec_value, query,
-    rational_to_f64, AcceptError, ContributeError, GateContext, DEFAULT_CATALOG_HASH,
+    accept, content_hash_preimage, content_id, gate_check_mix, gate_check_mix_result,
+    gate_recheck, gate_reject_row_for_mix, memory_record_from_contribution,
+    mix_wire_from_spec_value, query, rational_to_f64, AcceptError, ContributeError, GateCheckExplain,
+    GateCheckResult, GateContext, DEFAULT_CATALOG_HASH,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -74,8 +75,8 @@ pub use memory::SqliteStore;
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports functional memory store port and filter morphisms.
 pub use memory::{
-    filter_records, find_by_memory_id, InMemoryStore, MemoryError, MemoryStore, ResearchStore,
-    StoreError,
+    filter_records, find_by_memory_id, query_page, InMemoryStore, MemoryError, MemoryStore,
+    ResearchStore, StoreError,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -118,8 +119,8 @@ pub use sidecar::{append_memory_jsonl, SidecarError, MEMORY_JSONL_DEFAULT};
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports contribution.v1 / memory_record.v1 wire types.
 pub use types::{
-    AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery, MemoryRecord,
-    ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA,
+    AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery,
+    MemoryQueryPage, MemoryRecord, ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE

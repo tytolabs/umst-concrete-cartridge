@@ -274,8 +274,53 @@ fn tool_umst_certify(id: Value, args: &Value) -> Value {
 }
 
 #[cfg(feature = "agent-layer")]
+fn parse_memory_query(args: &Value) -> MemoryQuery {
+    MemoryQuery {
+        admissible_only: args
+            .get("admissible_only")
+            .and_then(|x| x.as_bool())
+            .unwrap_or(true),
+        curing_regime: args
+            .get("curing_regime")
+            .and_then(|x| x.as_str())
+            .map(str::to_string),
+        limit: args
+            .get("limit")
+            .and_then(|x| x.as_u64())
+            .map(|n| n as usize),
+        cursor: args
+            .get("cursor")
+            .and_then(|x| x.as_str())
+            .map(str::to_string),
+        catalog_id: args
+            .get("catalog_id")
+            .and_then(|x| x.as_str())
+            .map(str::to_string),
+        stamp_tier: args
+            .get("stamp_tier")
+            .and_then(|x| x.as_str())
+            .map(str::to_string),
+        outcome_source: args
+            .get("outcome_source")
+            .and_then(|x| x.as_str())
+            .map(str::to_string),
+        wall_ms_min: args.get("wall_ms_min").and_then(|x| x.as_u64()),
+        wall_ms_max: args.get("wall_ms_max").and_then(|x| x.as_u64()),
+        near_mix_spec: args.get("near_mix_spec").cloned(),
+        max_mix_l1: args.get("max_mix_l1").and_then(|x| x.as_f64()),
+        hilbert_index: args
+            .get("hilbert_index")
+            .and_then(|x| x.as_u64())
+            .map(|n| n as u32),
+        max_hilbert_distance: args
+            .get("max_hilbert_distance")
+            .and_then(|x| x.as_u64())
+            .map(|n| n as u32),
+    }
+}
+
+#[cfg(feature = "agent-layer")]
 fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Value {
-    let _ = session;
     let profile_id = args
         .get("profile")
         .and_then(|v| v.as_str())
@@ -284,15 +329,17 @@ fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Valu
         Some(m) => m.clone(),
         None => return err_frame(id, "missing mix"),
     };
+    let explain = args.get("explain").and_then(|x| x.as_bool()).unwrap_or(false);
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
         Err(e) => return err_frame(id, format!("profile load error: {e}")),
     };
-    let summary = session.gate_check(&profile, &mix);
+    let result = session.gate_check(&profile, &mix, explain);
+    let is_error = !result.gate_summary.admissible;
     text_result(
         id,
-        serde_json::to_string_pretty(&summary).unwrap_or_default(),
-        false,
+        serde_json::to_string_pretty(&result).unwrap_or_default(),
+        is_error,
     )
 }
 
@@ -371,34 +418,11 @@ fn tool_umst_mi_estimate(id: Value, args: &Value, session: &AgentSession) -> Val
 
 #[cfg(feature = "agent-layer")]
 fn tool_umst_memory_query(id: Value, args: &Value, session: &AgentSession) -> Value {
-    let q = MemoryQuery {
-        admissible_only: args
-            .get("admissible_only")
-            .and_then(|x| x.as_bool())
-            .unwrap_or(true),
-        curing_regime: args
-            .get("curing_regime")
-            .and_then(|x| x.as_str())
-            .map(str::to_string),
-        limit: args
-            .get("limit")
-            .and_then(|x| x.as_u64())
-            .map(|n| n as usize),
-        near_mix_spec: args.get("near_mix_spec").cloned(),
-        max_mix_l1: args.get("max_mix_l1").and_then(|x| x.as_f64()),
-        hilbert_index: args
-            .get("hilbert_index")
-            .and_then(|x| x.as_u64())
-            .map(|n| n as u32),
-        max_hilbert_distance: args
-            .get("max_hilbert_distance")
-            .and_then(|x| x.as_u64())
-            .map(|n| n as u32),
-    };
-    let rows = session.memory_query(&q);
+    let q = parse_memory_query(args);
+    let page = session.memory_query(&q);
     text_result(
         id,
-        serde_json::to_string_pretty(&rows).unwrap_or_default(),
+        serde_json::to_string_pretty(&page).unwrap_or_default(),
         false,
     )
 }

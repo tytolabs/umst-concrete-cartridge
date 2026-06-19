@@ -5,19 +5,59 @@
 
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::research::{
     accept, append_gate_reject_jsonl, append_memory_jsonl, estimate_mi_bits_from_mix,
-    gate_check_mix, gate_reject_row_for_mix, query, synthetic_observed_at, AcceptError,
-    AcceptResult, GateContext, GateSummary, MemoryQuery, MemoryRecord, ProvenanceClock,
-    ResearchStore, WallClock,
+    gate_check_mix_result, query_page, synthetic_observed_at, AcceptError, AcceptResult,
+    GateCheckResult, GateContext, MemoryQuery, MemoryQueryPage, ProvenanceClock, ResearchStore,
+    WallClock,
 };
+
+const JSON_SCHEMA_2020: &str = "https://json-schema.org/draft/2020-12/schema";
+
+fn contribute_jobs_path() -> Option<PathBuf> {
+    std::env::var("UMST_MEMORY_DB").ok().map(|db| {
+        let parent = Path::new(&db).parent().unwrap_or_else(|| Path::new("."));
+        parent.join("contribute_jobs.json")
+    })
+}
+
+fn load_contribute_jobs() -> HashMap<String, ContributeJob> {
+    let Some(path) = contribute_jobs_path() else {
+        return HashMap::new();
+    };
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
+}
+
+fn persist_contribute_jobs(jobs: &HashMap<String, ContributeJob>) {
+    let Some(path) = contribute_jobs_path() else {
+        return;
+    };
+    if let Ok(text) = serde_json::to_string_pretty(jobs) {
+        let _ = std::fs::write(path, text);
+    }
+}
+
+fn with_schema_2020(mut tool: Value, read_only: bool) -> Value {
+    tool["annotations"] = json!({
+        "readOnlyHint": read_only,
+        "destructiveHint": false,
+    });
+    if let Some(schema) = tool.get_mut("inputSchema").and_then(|s| s.as_object_mut()) {
+        schema.insert("$schema".into(), json!(JSON_SCHEMA_2020));
+    }
+    tool
+}
 
 /// Async contribute job state (in-memory stub for heavy physics path).
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: MCP job status wire; physics on `gate_check_mix` / `accept`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ContributeJobStatus {
     Pending,
@@ -30,7 +70,7 @@ pub enum ContributeJobStatus {
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: MCP async job envelope; gate on synchronous `contribute` delegate.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ContributeJob {
     pub job_id: String,
     pub status: ContributeJobStatus,
@@ -56,26 +96,24 @@ impl Default for AgentSession {
         Self {
             store: ResearchStore::from_env().unwrap_or_default(),
             clock: ProvenanceClock::default(),
-            jobs: HashMap::new(),
+            jobs: load_contribute_jobs(),
         }
     }
 }
 
 impl AgentSession {
-    /// MCP `umst_gate_check` — delegates to cartridge `gate_check_mix`.
+    /// MCP `umst_gate_check` — structured result with optional `gate_reject.v1` + explain.
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_anchor_rationale: stdio JSON-RPC transport; CD admissibility on `gate_check_mix`.
+    /// formal_anchor_rationale: stdio JSON-RPC transport; CD admissibility on `gate_check_mix_result`.
     #[must_use]
-    pub fn gate_check(&self, profile: &Profile, mix: &Value) -> GateSummary {
-        let summary = gate_check_mix(profile, mix);
-        if !summary.admissible {
-            let observed = synthetic_observed_at(self.clock.sequence());
-            if let Some(row) = gate_reject_row_for_mix(mix, &summary, observed) {
-                let _ = append_gate_reject_jsonl(&row, None);
-            }
+    pub fn gate_check(&self, profile: &Profile, mix: &Value, explain: bool) -> GateCheckResult {
+        let observed = synthetic_observed_at(self.clock.sequence());
+        let result = gate_check_mix_result(profile, mix, explain, observed);
+        if let Some(ref row) = result.gate_reject {
+            let _ = append_gate_reject_jsonl(row, None);
         }
-        summary
+        result
     }
 
     /// MCP `umst_mi_estimate` — advisory Landauer surrogate only.
@@ -122,44 +160,69 @@ impl AgentSession {
     /// formal_anchor: NONE
     /// formal_status: NONE
     /// formal_anchor_rationale: In-process async wrapper; same gate path as `contribute`.
-    pub fn contribute_async(mut self, profile: &Profile, contribution: &Value) -> (Self, String) {
+    pub fn contribute_async(self, profile: &Profile, contribution: &Value) -> (Self, String) {
         let job_id = uuid::Uuid::new_v4().to_string();
-        self.jobs.insert(
-            job_id.clone(),
-            ContributeJob {
-                job_id: job_id.clone(),
-                status: ContributeJobStatus::Running,
-                result: None,
-                error: None,
-            },
-        );
+        let jobs = {
+            let mut jobs = self.jobs;
+            jobs.insert(
+                job_id.clone(),
+                ContributeJob {
+                    job_id: job_id.clone(),
+                    status: ContributeJobStatus::Running,
+                    result: None,
+                    error: None,
+                },
+            );
+            jobs
+        };
+        let pending = Self {
+            jobs,
+            store: self.store,
+            clock: self.clock,
+        };
         let profile = profile.clone();
         let contribution = contribution.clone();
-        match self.clone().contribute(&profile, &contribution) {
+        match pending.clone().contribute(&profile, &contribution) {
             Ok((session, result)) => {
-                let mut jobs = session.jobs;
-                jobs.insert(
-                    job_id.clone(),
-                    ContributeJob {
-                        job_id: job_id.clone(),
-                        status: ContributeJobStatus::Succeeded,
-                        result: Some(result),
-                        error: None,
-                    },
-                );
+                let jobs = {
+                    let mut jobs = session.jobs;
+                    jobs.insert(
+                        job_id.clone(),
+                        ContributeJob {
+                            job_id: job_id.clone(),
+                            status: ContributeJobStatus::Succeeded,
+                            result: Some(result),
+                            error: None,
+                        },
+                    );
+                    persist_contribute_jobs(&jobs);
+                    jobs
+                };
                 (Self { jobs, ..session }, job_id)
             }
             Err(e) => {
-                self.jobs.insert(
-                    job_id.clone(),
-                    ContributeJob {
-                        job_id: job_id.clone(),
-                        status: ContributeJobStatus::Failed,
-                        result: None,
-                        error: Some(e),
+                let jobs = {
+                    let mut jobs = pending.jobs;
+                    jobs.insert(
+                        job_id.clone(),
+                        ContributeJob {
+                            job_id: job_id.clone(),
+                            status: ContributeJobStatus::Failed,
+                            result: None,
+                            error: Some(e),
+                        },
+                    );
+                    persist_contribute_jobs(&jobs);
+                    jobs
+                };
+                (
+                    Self {
+                        jobs,
+                        store: pending.store,
+                        clock: pending.clock,
                     },
-                );
-                (self, job_id)
+                    job_id,
+                )
             }
         }
     }
@@ -173,13 +236,13 @@ impl AgentSession {
         self.jobs.get(job_id).cloned()
     }
 
-    /// MCP `umst_memory_query` — pure filter over session store.
+    /// MCP `umst_memory_query` — paginated filter over session store.
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_anchor_rationale: stdio transport over cartridge `query`; filter on `filter_records`.
+    /// formal_anchor_rationale: stdio transport over cartridge `query_page`; stable `(ucrs_seq, content_id)` sort.
     #[must_use]
-    pub fn memory_query(&self, q: &MemoryQuery) -> Vec<MemoryRecord> {
-        query(&self.store, q)
+    pub fn memory_query(&self, q: &MemoryQuery) -> MemoryQueryPage {
+        query_page(&self.store.rows(), q)
     }
 }
 
@@ -255,6 +318,16 @@ pub const AGENT_PROMPTS: &[(&str, &str, &str)] = &[
         "gate-before-contribute",
         "Hard gate workflow",
         "Always call umst_gate_check before umst_contribute. Rejects are appended to gate_reject.jcs.jsonl and never enter admissible_only memory.",
+    ),
+    (
+        "interpret_gate_failure",
+        "Interpret a gate REJECT for an agent",
+        "When umst_gate_check returns isError with gate_reject.v1, read explain.regime_violations and catalog_witnesses. Typical codes: mix_spec_rational_parse_fail, thermodynamic_cd_fail. Fix mix_spec rationals or curing regime; re-run gate check before contribute.",
+    ),
+    (
+        "suggest_similar_mix",
+        "Find similar admissible mixes in memory",
+        "Call umst_memory_query with near_mix_spec (full rational mix_spec), max_mix_l1 (start at 0.05), admissible_only=true, limit=10. Use cursor from next_cursor for pagination. Optionally add hilbert_index + max_hilbert_distance for Morton locality.",
     ),
 ];
 
@@ -335,69 +408,91 @@ pub fn prompts_get_result(name: &str) -> Result<Value, String> {
 /// formal_anchor_rationale: MCP tool schema export; delegates to gate/memory/contribute impls.
 pub fn agent_tools_schema() -> Vec<Value> {
     vec![
-        json!({
-            "name": "umst_gate_check",
-            "description": "Hard admissibility verdict + catalog_ids + optional mi_bits_est for a mix_spec (manifest CD when agent-layer built). Rejects append to gate_reject.jcs.jsonl.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "mix": { "type": "object", "description": "mix_spec.v1 rational fields" },
-                    "profile": { "type": "string", "default": "default" }
-                },
-                "required": ["mix"]
-            }
-        }),
-        json!({
-            "name": "umst_contribute",
-            "description": "Gate-validated contribution ingest → local research memory (admissible rows only). Supports idempotency_key.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "contribution": { "type": "object", "description": "contribution.v1 JSON" },
-                    "profile": { "type": "string", "default": "default" },
-                    "scope_token": { "type": "string", "description": "Required when UMST_AGENT_SCOPE_TOKENS is set" },
-                    "async": { "type": "boolean", "description": "Return job_id for umst_contribute_status when true" }
-                },
-                "required": ["contribution"]
-            }
-        }),
-        json!({
-            "name": "umst_contribute_status",
-            "description": "Poll async contribute job state (in-memory stub for heavy physics path).",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "job_id": { "type": "string" }
-                },
-                "required": ["job_id"]
-            }
-        }),
-        json!({
-            "name": "umst_memory_query",
-            "description": "Filter gate-passed memory by regime, mix L1 distance, or Morton hilbert_index locality.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "admissible_only": { "type": "boolean", "default": true },
-                    "curing_regime": { "type": "string" },
-                    "limit": { "type": "integer", "minimum": 1 },
-                    "near_mix_spec": { "type": "object", "description": "Anchor mix_spec for L1 distance" },
-                    "max_mix_l1": { "type": "number", "description": "Max L1 distance from anchor" },
-                    "hilbert_index": { "type": "integer", "minimum": 0 },
-                    "max_hilbert_distance": { "type": "integer", "minimum": 0 }
+        with_schema_2020(
+            json!({
+                "name": "umst_gate_check",
+                "description": "Hard admissibility verdict + catalog_ids + optional mi_bits_est for a mix_spec (manifest CD when agent-layer built). On REJECT returns isError with embedded gate_reject.v1; set explain:true for regime_violations.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "mix": { "type": "object", "description": "mix_spec.v1 rational fields (w_c, temperature_k, …)" },
+                        "profile": { "type": "string", "default": "default" },
+                        "explain": { "type": "boolean", "default": false, "description": "Include regime_violations + catalog_witnesses diagnostics" }
+                    },
+                    "required": ["mix"]
                 }
-            }
-        }),
-        json!({
-            "name": "umst_mi_estimate",
-            "description": "Advisory MI bits estimate (Landauer envelope surrogate; not an admissibility gate).",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "mix": { "type": "object", "description": "mix_spec.v1 rational fields" }
-                },
-                "required": ["mix"]
-            }
-        }),
+            }),
+            true,
+        ),
+        with_schema_2020(
+            json!({
+                "name": "umst_contribute",
+                "description": "Gate-validated contribution ingest → local research memory (admissible rows only). Supports idempotency_key.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "contribution": { "type": "object", "description": "contribution.v1 JSON" },
+                        "profile": { "type": "string", "default": "default" },
+                        "scope_token": { "type": "string", "description": "Required when UMST_AGENT_SCOPE_TOKENS is set" },
+                        "async": { "type": "boolean", "description": "Return job_id for umst_contribute_status when true" }
+                    },
+                    "required": ["contribution"]
+                }
+            }),
+            false,
+        ),
+        with_schema_2020(
+            json!({
+                "name": "umst_contribute_status",
+                "description": "Poll async contribute job state. Jobs persist in contribute_jobs.json beside UMST_MEMORY_DB when set.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "job_id": { "type": "string" }
+                    },
+                    "required": ["job_id"]
+                }
+            }),
+            true,
+        ),
+        with_schema_2020(
+            json!({
+                "name": "umst_memory_query",
+                "description": "Paginated filter on gate-passed memory: regime, catalog_id, stamp_tier, outcome.source, wall_ms window, mix L1 (near_mix_spec + max_mix_l1), or Morton hilbert_index + max_hilbert_distance.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "admissible_only": { "type": "boolean", "default": true },
+                        "curing_regime": { "type": "string" },
+                        "catalog_id": { "type": "string", "description": "Filter rows whose catalog_ids contains this witness" },
+                        "stamp_tier": { "type": "string", "description": "observed_at.stamp_tier (e.g. Synthetic, UcrsTier2)" },
+                        "outcome_source": { "type": "string", "description": "payload.outcome.source field" },
+                        "wall_ms_min": { "type": "integer", "minimum": 0 },
+                        "wall_ms_max": { "type": "integer", "minimum": 0 },
+                        "cursor": { "type": "string", "description": "content_id from prior page next_cursor" },
+                        "limit": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 },
+                        "near_mix_spec": { "type": "object", "description": "Anchor mix_spec for L1 distance sort/filter" },
+                        "max_mix_l1": { "type": "number", "description": "Max L1 distance from near_mix_spec anchor" },
+                        "hilbert_index": { "type": "integer", "minimum": 0, "description": "Morton bucket for locality query" },
+                        "max_hilbert_distance": { "type": "integer", "minimum": 0, "description": "Max Morton distance from hilbert_index (default 0 = exact)" }
+                    }
+                }
+            }),
+            true,
+        ),
+        with_schema_2020(
+            json!({
+                "name": "umst_mi_estimate",
+                "description": "Advisory MI bits estimate (Landauer envelope surrogate; not an admissibility gate).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "mix": { "type": "object", "description": "mix_spec.v1 rational fields" }
+                    },
+                    "required": ["mix"]
+                }
+            }),
+            true,
+        ),
     ]
 }

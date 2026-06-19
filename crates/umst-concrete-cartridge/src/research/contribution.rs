@@ -12,11 +12,12 @@ use super::provenance::{ensure_observed_at, is_monotonic_after, observed_at_for_
 use super::reject::{build_gate_reject, build_gate_reject_from_contribution, GateRejectRow};
 use super::types::{
     AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery, MemoryRecord,
-    CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA,
+    ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA,
 };
 use super::validation::{validate_for_accept, ValidationError};
 use crate::calibration::Profile;
 use crate::facade::{MixSpec, MixSpecWire};
+use serde::Serialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::convert::TryFrom;
@@ -120,6 +121,89 @@ pub fn gate_check_mix(profile: &Profile, mix_json: &Value) -> GateSummary {
         safety_margin: None,
         mi_bits_est,
     }
+}
+
+/// Optional explain block for MCP `umst_gate_check` when `explain: true`.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Operator diagnostics; not admissibility proof.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct GateCheckExplain {
+    pub regime_violations: Vec<String>,
+    pub catalog_witnesses: Vec<String>,
+}
+
+/// Full MCP gate-check wire (`gate_summary` + optional `gate_reject` + explain).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Structured tool result; reject row matches `gate_reject.v1`.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct GateCheckResult {
+    pub gate_summary: GateSummary,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gate_reject: Option<GateRejectRow>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub explain: Option<GateCheckExplain>,
+}
+
+/// MCP `umst_gate_check` response builder — optional explain + embedded `gate_reject.v1`.
+/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+/// catalog_id: umst.gate.cd_transition
+#[must_use]
+pub fn gate_check_mix_result(
+    profile: &Profile,
+    mix_json: &Value,
+    explain: bool,
+    observed_at: ObservedAt,
+) -> GateCheckResult {
+    let gate_summary = gate_check_mix(profile, mix_json);
+    let gate_reject = gate_reject_row_for_mix(mix_json, &gate_summary, observed_at);
+    let explain_block = if explain {
+        Some(GateCheckExplain {
+            regime_violations: collect_gate_explain_codes(profile, mix_json, gate_summary.admissible),
+            catalog_witnesses: gate_summary.catalog_ids.clone(),
+        })
+    } else {
+        None
+    };
+    GateCheckResult {
+        gate_summary,
+        gate_reject,
+        explain: explain_block,
+    }
+}
+
+fn collect_gate_explain_codes(profile: &Profile, mix_json: &Value, admissible: bool) -> Vec<String> {
+    let mut codes = Vec::new();
+    let Some(wire) = mix_wire_from_spec_value(mix_json) else {
+        codes.push("mix_spec_rational_parse_fail".into());
+        return codes;
+    };
+    let Ok(mut spec) = MixSpec::try_from(wire) else {
+        codes.push("mix_spec_wire_invalid".into());
+        return codes;
+    };
+    spec.profile_name = profile.bundle_id.clone();
+    if admissible {
+        return codes;
+    }
+    #[cfg(feature = "manifest-bridge")]
+    {
+        if !thermodynamic_ok(profile, &spec) {
+            codes.push("thermodynamic_cd_fail".into());
+        }
+    }
+    #[cfg(not(feature = "manifest-bridge"))]
+    {
+        let _ = spec;
+        codes.push("manifest_bridge_disabled".into());
+    }
+    if codes.is_empty() {
+        codes.push("thermodynamic_fail".into());
+    }
+    codes
 }
 
 /// Build `gate_reject.v1` row when mix fails gate (never enters admissible memory).

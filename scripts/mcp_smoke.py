@@ -78,6 +78,74 @@ def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
             resources = rpc(proc, {"jsonrpc": "2.0", "id": 3, "method": "resources/list"})
             assert "resources" in resources["result"]
 
+            # Phase 8: gate_check REJECT → isError + gate_reject.v1
+            reject_mix = {
+                "w_c": "not-rational",
+                "temperature_k": "29315/100",
+            }
+            gate_reject = rpc(
+                proc,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 10,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "umst_gate_check",
+                        "arguments": {
+                            "mix": reject_mix,
+                            "explain": True,
+                        },
+                    },
+                },
+            )
+            assert "result" in gate_reject, gate_reject
+            assert gate_reject["result"].get("isError") is True, gate_reject
+            body = json.loads(gate_reject["result"]["content"][0]["text"])
+            assert body.get("gate_reject") is not None
+            assert body["gate_reject"]["schema_version"] == "gate_reject.v1"
+            assert body.get("explain", {}).get("regime_violations")
+
+            gate_pass = rpc(
+                proc,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 11,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "umst_gate_check",
+                        "arguments": {
+                            "mix": {
+                                "w_c": "9/20",
+                                "temperature_k": "29315/100",
+                                "aggregate_volume_fraction": "7/10",
+                            },
+                        },
+                    },
+                },
+            )
+            assert gate_pass["result"].get("isError") is False, gate_pass
+
+            mem = rpc(
+                proc,
+                {
+                    "jsonrpc": "2.0",
+                    "id": 12,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "umst_memory_query",
+                        "arguments": {"limit": 10},
+                    },
+                },
+            )
+            mem_body = json.loads(mem["result"]["content"][0]["text"])
+            assert "rows" in mem_body
+            assert "next_cursor" in mem_body or mem_body.get("next_cursor") is None
+
+            prompts = rpc(proc, {"jsonrpc": "2.0", "id": 13, "method": "prompts/list"})
+            prompt_names = {p["name"] for p in prompts.get("result", {}).get("prompts", [])}
+            for required_prompt in ("interpret_gate_failure", "suggest_similar_mix"):
+                assert required_prompt in prompt_names, f"missing prompt {required_prompt}"
+
         profiles = rpc(
             proc,
             {

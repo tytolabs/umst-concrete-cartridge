@@ -62,7 +62,92 @@ Docker agent image should enable `agent-layer` + `manifest-bridge`.
 
 `umst_transition_propose` — async heavy predict uses `umst_contribute` + `umst_contribute_status`.
 
-**Transport:** shipped as **hand-rolled stdio JSON-RPC** (MCP 2024-11-05). `rmcp` 1.7 migration deferred — no behavior change required for agents today.
+**Transport:** shipped as **hand-rolled stdio JSON-RPC** (MCP 2024-11-05). `rmcp` 1.7 migration **deferred** — spike shows no Cursor regression requirement; revisit when upstream MCP prompts stabilize.
+
+### MCP prompts (`agent-layer`)
+
+| Prompt | Purpose |
+|--------|---------|
+| `contribute-admissible` | Safe contribute workflow |
+| `query-near-mix` | L1 locality query |
+| `gate-before-contribute` | Hard gate ordering |
+| `interpret_gate_failure` | Read `gate_reject.v1` + `explain.regime_violations` |
+| `suggest_similar_mix` | Paginated `near_mix_spec` search |
+
+Call `prompts/list` then `prompts/get` with the prompt name.
+
+---
+
+## Tool ↔ schema cross-link
+
+| MCP tool | JSON Schema resource | Example request | Example response shape |
+|----------|---------------------|-----------------|------------------------|
+| `umst_gate_check` | *(inline `GateSummary` + optional `gate_reject.v1`)* | `{"mix":{"w_c":"1/2","temperature_k":"29315/100"},"explain":true}` | `{"gate_summary":{...},"gate_reject":{...},"explain":{"regime_violations":[...],"catalog_witnesses":[...]}}` — `isError: true` on REJECT |
+| `umst_contribute` | `umst://schemas/contribution.v1.json` | `{"contribution":{...}}` | `AcceptResult` (`memory_id`, `content_id`, `observed_at`) |
+| `umst_memory_query` | `umst://schemas/memory_record.v1.json` | `{"near_mix_spec":{...},"max_mix_l1":0.05,"limit":10}` | `{"rows":[...],"next_cursor":"..."}` |
+| `umst_contribute_status` | — | `{"job_id":"..."}` | `ContributeJob` status enum |
+| `umst_mi_estimate` | — | `{"mix":{...}}` | `{"mi_bits_est":"...","advisory":true}` |
+
+All agent tool `inputSchema` objects declare `$schema: https://json-schema.org/draft/2020-12/schema` and MCP annotations (`readOnlyHint` / `destructiveHint`).
+
+---
+
+## Error catalog
+
+| Error / signal | When | Agent action |
+|----------------|------|--------------|
+| `AcceptError::Validation` | `contribution.v1` schema / rational parse fail | Fix wire against `contribution.v1.json`; re-validate |
+| `AcceptError::GateReject` | `gate_summary.admissible=false` or gate re-check fail | Run `umst_gate_check`; never bypass |
+| `AcceptError::Scope` | `UMST_AGENT_SCOPE_TOKENS` mismatch | Supply valid `scope_token` |
+| `AcceptError::NonMonotonicStamp` | `observed_at` regresses session clock | Use server-assigned stamps on accept |
+| `AcceptError::Store` duplicate | Same `content_id` / idempotency key | Treat as success if idempotent retry |
+| `gate_summary.verdict: REJECT` | Thermodynamic CD fail | Read `explain.regime_violations`; adjust mix |
+| MCP `isError: true` on gate_check | Same as REJECT | Parse embedded `gate_reject.v1`; do not contribute |
+| `unknown job_id` | Stale async poll | Re-submit contribute or check `contribute_jobs.json` beside DB |
+
+---
+
+## Operator runbook (one page)
+
+```text
+1. Bootstrap (optional)
+   python3 scripts/bootstrap_memory_from_audit.py … | python3 scripts/ingest_contributions.py --db .umst-memory/memory.db
+
+2. Export UMST_MEMORY_DB + UMST_UCRS_WITNESS (synthetic for CI, live for promotion path)
+   export UMST_MEMORY_DB=.umst-memory/memory.db
+
+3. Gate every proposal
+   umst_gate_check(mix, explain:true) → admissible before contribute
+
+4. Contribute admissible rows
+   umst_contribute(contribution) → memory_id
+
+5. Query similar cases
+   umst_memory_query(near_mix_spec, max_mix_l1, cursor pagination)
+
+6. Export signed checkpoint (CLI, not MCP)
+   cargo run -p umst-cli --features agent-layer -- memory export --db .umst-memory/memory.db --out exports/run-001/
+   → memory_export_bundle.v1.json + memory.jcs.jsonl + hash_chain
+
+7. Human promotion (never automatic)
+   umst promote-contribution --approval promotion_approval.v1.json
+```
+
+Async contribute jobs persist in `contribute_jobs.json` next to `UMST_MEMORY_DB` when set.
+
+---
+
+## Environment variables (extended)
+
+| Variable | Values | Role |
+|----------|--------|------|
+| `UMST_UCRS_WITNESS` | `live` \| `synthetic` (default) | Session clock mode |
+| `UMST_MEMORY_DB` | SQLite file path | Durable `memory_records` + `contribute_jobs.json` sidecar |
+| `UMST_MEMORY_JSONL` | Optional path override | JSONL sidecar destination |
+| `UMST_MEMORY_REGIME` | e.g. `standard_20C_water` | Default curing regime filter hint (manifold registry) |
+| `UMST_MEMORY_L1_RADIUS` | rational string | Default `max_mix_l1` hint for locality queries |
+| `UMST_MEMORY_MORTON_DEPTH` | integer | Morton depth for geometry indexing (concrete cartridge) |
+| `UMST_AGENT_SCOPE_TOKENS` | comma-separated | Required scope tokens on contribute when set |
 
 ---
 
