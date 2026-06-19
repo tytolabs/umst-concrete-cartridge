@@ -82,7 +82,8 @@ pub use mi::{estimate_mi_bits_from_mix, estimate_mi_bits_rational};
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports promotion policy YAML validation; human-gated CLI only.
 pub use policy::{
-    holdout_rmse_passes, parse_promotion_policy_yaml, validate_promotion_policy, PolicyError,
+    holdout_rmse_passes, live_witness_enabled, parse_promotion_policy_yaml,
+    validate_promotion_policy, validate_track_a_stamp_tier, PolicyError,
     PromotionPolicy,
 };
 /// formal_anchor: NONE

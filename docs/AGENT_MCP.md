@@ -84,7 +84,25 @@ python3 scripts/bootstrap_memory_from_audit.py fixtures/bootstrap_audit_slice.cs
 
 **Litestream → S3 Object Lock:** deferred (storage research). Per-deployment SQLite + JSONL sidecar is v1; replicate via signed export bundles or external backup tooling.
 
-**Sigstore / in-toto on promotion bundle:** deferred for v1 CI; document human `promote-contribution` path only.
+**Sigstore / in-toto on promotion bundle:** deferred for v1 CI; document human `promote-contribution` path only. **RFC 3161 TSA** countersign on promotion bundles is likewise deferred — not required per MCP tool call.
+
+---
+
+## Environment variables
+
+| Variable | Values | Role |
+|----------|--------|------|
+| `UMST_UCRS_WITNESS` | `live` \| `synthetic` (default) | Session clock mode. `live` → `TemporalWitness::stamp()` emits `stamp_tier: UcrsTier2` on accept; `synthetic` → CI-safe deterministic stamps. |
+| `UMST_MEMORY_DB` | SQLite file path | Enables durable `memory_records` (STRICT + WAL). When unset, session is in-memory only. |
+| `UMST_MEMORY_JSONL` | Optional path override | JSONL sidecar destination (default: `.umst-memory/memory.jcs.jsonl` beside the DB). |
+
+**Live witness + promotion (Track A):** When `UMST_UCRS_WITNESS=live`, human promotion (`umst promote-contribution`) requires the memory row `observed_at.stamp_tier` to be **`UcrsTier2`**. Synthetic stamps are rejected on the promotion path. Hold-out metrics and human `promotion_approval.v1` are still required; RFC 3161 / Sigstore on the promotion bundle remain deferred.
+
+```bash
+export UMST_UCRS_WITNESS=live
+export UMST_MEMORY_DB=.umst-memory/memory.db
+cargo run -p umst-mcp --features agent-layer,ucrs-provenance
+```
 
 ---
 
@@ -117,6 +135,12 @@ umst_gate_check → umst_predict (optional detail) → umst_contribute
 Pure morphisms live in `src/research/` (`validation`, `gate_check_mix`, `accept`, `filter_records`). The MCP server holds an `AgentSession` at the **stdio boundary only**; each `umst_contribute` returns an updated session value internally. With `UMST_MEMORY_DB`, the session backs onto SQLite; otherwise in-memory.
 
 `umst-py` exposes `gate_check`, `memory_query`, `contribute` when built with `--features agent-layer`.
+
+---
+
+## UCRS sidecar (constitutional time)
+
+For **live Tier-2 observation stamps** (`UMST_UCRS_WITNESS=live`), operators may run the [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) daemon as a **sidecar process** alongside `umst-mcp`: the MCP agent stays material-memory-only while the sidecar owns the thermodynamic clock, credit ledger, and Prometheus metrics (`:9090/metrics`). Wire `ProvenanceClock` to the sidecar via env (`UMST_UCRS_WITNESS=live`) or in-process `umst_ucrs` when embedding the library; P2P gossip is optional (`p2p` feature / `umst-ucrs-p2p` binary). See `scripts/umst-ucrs.service` and the umst-ucrs `Dockerfile` for production layout.
 
 ---
 

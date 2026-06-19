@@ -4,6 +4,10 @@
 //! Human-gated promotion — pure record morphism + isolated filesystem writes.
 
 use super::memory::{find_by_memory_id, MemoryError, ResearchStore};
+use super::policy::{
+    parse_promotion_policy_yaml, validate_promotion_policy, validate_track_a_stamp_tier,
+    PromotionPolicy,
+};
 use super::types::MemoryRecord;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -62,6 +66,11 @@ pub struct PromotionRecordOut {
     pub hash_chain: Value,
 }
 
+fn validate_promotion_stamp_tier(memory: &MemoryRecord) -> Result<(), PromotionError> {
+    validate_track_a_stamp_tier(&memory.observed_at.stamp_tier)
+        .map_err(|e| PromotionError::Approval(e.to_string()))
+}
+
 /// Pure: validate approval wire + build promotion record (no I/O).
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -75,6 +84,7 @@ pub fn build_promotion_record(
     created_at: String,
 ) -> Result<PromotionRecordOut, PromotionError> {
     validate_approval(approval)?;
+    validate_promotion_stamp_tier(memory)?;
 
     let contribution_hash = memory.content_id.clone();
     let approval_hash = sha256_hex(approval_text);
@@ -195,6 +205,19 @@ pub fn promote_contribution(
     let approval_text = fs::read_to_string(approval_path)?;
     let approval: PromotionApproval = serde_json::from_str(&approval_text)?;
     let memory = find_by_memory_id(store, memory_id)?;
+    let policy_text = include_str!("../../../../governance/promotion_policy.yaml");
+    let policy: PromotionPolicy =
+        parse_promotion_policy_yaml(policy_text).map_err(|e| PromotionError::Approval(e.to_string()))?;
+    validate_promotion_policy(&policy).map_err(|e| PromotionError::Approval(e.to_string()))?;
+    if !policy
+        .allowed_stamp_tiers
+        .contains(&memory.observed_at.stamp_tier)
+    {
+        return Err(PromotionError::Approval(format!(
+            "stamp_tier {} not in policy allowed_stamp_tiers",
+            memory.observed_at.stamp_tier
+        )));
+    }
     let record_id = Uuid::new_v4().to_string();
     let created_at = format!(
         "{}",
@@ -236,6 +259,16 @@ mod tests {
     use crate::research::types::{
         GateSummary, GateVerdict, MemoryPayload, ObservedAt, CANON_VERSION, MEMORY_SCHEMA,
     };
+    use std::sync::Mutex;
+
+    static WITNESS_ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn with_isolated_witness_env<F: FnOnce()>(f: F) {
+        let _guard = WITNESS_ENV_LOCK.lock().expect("witness env lock");
+        std::env::set_var("UMST_UCRS_WITNESS", "synthetic");
+        f();
+        std::env::remove_var("UMST_UCRS_WITNESS");
+    }
 
     fn sample_memory() -> MemoryRecord {
         MemoryRecord {
@@ -272,6 +305,7 @@ mod tests {
 
     #[test]
     fn build_record_is_pure() {
+        with_isolated_witness_env(|| {
         let approval = PromotionApproval {
             schema_version: "promotion_approval.v1".into(),
             proposal_hash: "sha256:def".into(),
@@ -298,5 +332,33 @@ mod tests {
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .starts_with("sha256:"));
+        });
+    }
+
+    #[test]
+    fn build_record_rejects_synthetic_when_live_witness() {
+        with_isolated_witness_env(|| {
+        std::env::set_var("UMST_UCRS_WITNESS", "live");
+        let approval = PromotionApproval {
+            schema_version: "promotion_approval.v1".into(),
+            proposal_hash: "sha256:def".into(),
+            ucrs_observation_tier: "UcrsTier2".into(),
+            decision: "approve".into(),
+            approver: "human".into(),
+            approved_at: "2026-01-01T00:00:00Z".into(),
+            jws: None,
+        };
+        let text = serde_json::to_string(&approval).unwrap();
+        let err = build_promotion_record(
+            &sample_memory(),
+            "mem-1",
+            &approval,
+            &text,
+            "rid".into(),
+            "ts".into(),
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("UcrsTier2"));
+        });
     }
 }
