@@ -2,7 +2,7 @@
 
 **Audience:** Cursor agents, SDK integrations, `umst-mcp` stdio consumers  
 **Schemas:** [`schemas/`](../schemas/) (CI-validated)  
-**ADR:** [`outputs/.plans/ai-physical-reasoning-layer.md`](../../outputs/.plans/ai-physical-reasoning-layer.md)
+**ADR:** [`outputs/.plans/_archive/prl-shipped/ai-physical-reasoning-layer.md`](../../outputs/.plans/_archive/prl-shipped/ai-physical-reasoning-layer.md)
 
 ---
 
