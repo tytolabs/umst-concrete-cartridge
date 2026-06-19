@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
+use umst_cli::cli::{predict_with_options, serialize_prediction, PredictOptions};
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::facade::{MixSpec, PredictionWireVersion};
 use umst_concrete_cartridge::research::{
@@ -16,7 +17,6 @@ use umst_concrete_cartridge::research::{
     ProvenanceClock, ResearchStore, WallClock, CANON_VERSION, CONTRIBUTION_SCHEMA,
     DEFAULT_CATALOG_HASH,
 };
-use umst_cli::cli::{predict_with_options, serialize_prediction, PredictOptions};
 
 const JSON_SCHEMA_2020: &str = "https://json-schema.org/draft/2020-12/schema";
 
@@ -296,8 +296,8 @@ impl AgentSession {
             },
         )
         .map_err(|e| e.to_string())?;
-        let prediction = serialize_prediction(&bundle, PredictionWireVersion::V2)
-            .map_err(|e| e.to_string())?;
+        let prediction =
+            serialize_prediction(&bundle, PredictionWireVersion::V2).map_err(|e| e.to_string())?;
 
         let gate = self.gate_check(profile, mix, false);
         if !gate.gate_summary.admissible {

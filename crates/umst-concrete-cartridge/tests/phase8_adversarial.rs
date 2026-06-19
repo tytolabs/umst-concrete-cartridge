@@ -8,8 +8,8 @@
 use serde_json::json;
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::research::{
-    accept, gate_check_mix_result, query_page, GateContext, GateVerdict, MemoryQuery,
-    MemoryRecord, ProvenanceClock, ResearchStore, WallClock, GATE_REJECT_SCHEMA,
+    accept, gate_check_mix_result, query_page, GateContext, GateVerdict, MemoryQuery, MemoryRecord,
+    ProvenanceClock, ResearchStore, WallClock, GATE_REJECT_SCHEMA,
 };
 
 fn repo_root() -> String {

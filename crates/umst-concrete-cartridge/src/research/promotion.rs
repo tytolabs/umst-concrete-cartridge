@@ -206,8 +206,8 @@ pub fn promote_contribution(
     let approval: PromotionApproval = serde_json::from_str(&approval_text)?;
     let memory = find_by_memory_id(store, memory_id)?;
     let policy_text = include_str!("../../../../governance/promotion_policy.yaml");
-    let policy: PromotionPolicy =
-        parse_promotion_policy_yaml(policy_text).map_err(|e| PromotionError::Approval(e.to_string()))?;
+    let policy: PromotionPolicy = parse_promotion_policy_yaml(policy_text)
+        .map_err(|e| PromotionError::Approval(e.to_string()))?;
     validate_promotion_policy(&policy).map_err(|e| PromotionError::Approval(e.to_string()))?;
     if !policy
         .allowed_stamp_tiers
@@ -256,10 +256,10 @@ fn sha256_hex(text: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::research::witness_test_lock::with_witness_mode;
     use crate::research::types::{
         GateSummary, GateVerdict, MemoryPayload, ObservedAt, CANON_VERSION, MEMORY_SCHEMA,
     };
+    use crate::research::witness_test_lock::with_witness_mode;
 
     fn sample_memory() -> MemoryRecord {
         MemoryRecord {
@@ -297,58 +297,58 @@ mod tests {
     #[test]
     fn build_record_is_pure() {
         with_witness_mode("synthetic", || {
-        let approval = PromotionApproval {
-            schema_version: "promotion_approval.v1".into(),
-            proposal_hash: "sha256:def".into(),
-            ucrs_observation_tier: "Synthetic".into(),
-            decision: "approve".into(),
-            approver: "human".into(),
-            approved_at: "2026-01-01T00:00:00Z".into(),
-            jws: None,
-        };
-        let text = serde_json::to_string(&approval).unwrap();
-        let out = build_promotion_record(
-            &sample_memory(),
-            "mem-1",
-            &approval,
-            &text,
-            "rid".into(),
-            "ts".into(),
-        )
-        .unwrap();
-        assert_eq!(out.schema_version, "promotion_record.v1");
-        assert!(out
-            .hash_chain
-            .get("record_hash")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .starts_with("sha256:"));
+            let approval = PromotionApproval {
+                schema_version: "promotion_approval.v1".into(),
+                proposal_hash: "sha256:def".into(),
+                ucrs_observation_tier: "Synthetic".into(),
+                decision: "approve".into(),
+                approver: "human".into(),
+                approved_at: "2026-01-01T00:00:00Z".into(),
+                jws: None,
+            };
+            let text = serde_json::to_string(&approval).unwrap();
+            let out = build_promotion_record(
+                &sample_memory(),
+                "mem-1",
+                &approval,
+                &text,
+                "rid".into(),
+                "ts".into(),
+            )
+            .unwrap();
+            assert_eq!(out.schema_version, "promotion_record.v1");
+            assert!(out
+                .hash_chain
+                .get("record_hash")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .starts_with("sha256:"));
         });
     }
 
     #[test]
     fn build_record_rejects_synthetic_when_live_witness() {
         with_witness_mode("live", || {
-        let approval = PromotionApproval {
-            schema_version: "promotion_approval.v1".into(),
-            proposal_hash: "sha256:def".into(),
-            ucrs_observation_tier: "UcrsTier2".into(),
-            decision: "approve".into(),
-            approver: "human".into(),
-            approved_at: "2026-01-01T00:00:00Z".into(),
-            jws: None,
-        };
-        let text = serde_json::to_string(&approval).unwrap();
-        let err = build_promotion_record(
-            &sample_memory(),
-            "mem-1",
-            &approval,
-            &text,
-            "rid".into(),
-            "ts".into(),
-        )
-        .unwrap_err();
-        assert!(err.to_string().contains("UcrsTier2"));
+            let approval = PromotionApproval {
+                schema_version: "promotion_approval.v1".into(),
+                proposal_hash: "sha256:def".into(),
+                ucrs_observation_tier: "UcrsTier2".into(),
+                decision: "approve".into(),
+                approver: "human".into(),
+                approved_at: "2026-01-01T00:00:00Z".into(),
+                jws: None,
+            };
+            let text = serde_json::to_string(&approval).unwrap();
+            let err = build_promotion_record(
+                &sample_memory(),
+                "mem-1",
+                &approval,
+                &text,
+                "rid".into(),
+                "ts".into(),
+            )
+            .unwrap_err();
+            assert!(err.to_string().contains("UcrsTier2"));
         });
     }
 }

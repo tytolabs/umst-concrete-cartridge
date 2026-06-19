@@ -1,10 +1,10 @@
 # Promote merged inbox PRs (maintainer bot)
-
-Runs when a PR to `main` is **merged** and adds files under `contributions/inbox/`.
-
-Moves each new inbox JSONL to `contributions/merged/YYYY-MM/`, appends `MANIFEST.jsonl`, and pushes a follow-up commit.
-
-**Manual alternative:** `./scripts/promote_inbox_to_merged.sh contributions/inbox/<file>.jsonl`
+#
+# Runs when a PR to `main` is merged and adds files under `contributions/inbox/`.
+# Moves each new inbox JSONL to `contributions/merged/YYYY-MM/`, appends MANIFEST.jsonl,
+# and pushes a follow-up commit.
+#
+# Manual alternative: ./scripts/promote_inbox_to_merged.sh contributions/inbox/<file>.jsonl
 
 name: contribution-inbox-promote
 
@@ -19,8 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: main
           fetch-depth: 0

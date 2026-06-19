@@ -83,8 +83,7 @@ pub fn live_witness_enabled() -> bool {
 pub fn validate_track_a_stamp_tier(stamp_tier: &str) -> Result<(), PolicyError> {
     if live_witness_enabled() && stamp_tier != "UcrsTier2" {
         return Err(PolicyError::Policy(
-            "UMST_UCRS_WITNESS=live requires stamp_tier UcrsTier2 for Track A promotion"
-                .into(),
+            "UMST_UCRS_WITNESS=live requires stamp_tier UcrsTier2 for Track A promotion".into(),
         ));
     }
     if !live_witness_enabled() && stamp_tier == "Absent" {

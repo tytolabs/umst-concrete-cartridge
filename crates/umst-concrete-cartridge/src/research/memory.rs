@@ -364,9 +364,7 @@ impl ResearchStore {
     /// formal_anchor: NONE
     /// formal_status: NONE
     /// formal_anchor_rationale: IO boundary for MCP job poll; JSON sidecar dual-write.
-    pub fn load_contribute_jobs_sqlite(
-        &self,
-    ) -> Option<std::collections::HashMap<String, String>> {
+    pub fn load_contribute_jobs_sqlite(&self) -> Option<std::collections::HashMap<String, String>> {
         match self {
             Self::InMemory(_) => None,
             Self::Sqlite(s) => s.load_contribute_jobs().ok(),
@@ -536,7 +534,9 @@ mod sqlite_store {
         /// formal_anchor: NONE
         /// formal_status: NONE
         /// formal_anchor_rationale: SQLite read for MCP job poll; JSON sidecar remains dual-written.
-        pub fn load_contribute_jobs(&self) -> Result<std::collections::HashMap<String, String>, StoreError> {
+        pub fn load_contribute_jobs(
+            &self,
+        ) -> Result<std::collections::HashMap<String, String>, StoreError> {
             let mut stmt = self
                 .conn
                 .prepare("SELECT job_id, job_json FROM contribute_jobs")

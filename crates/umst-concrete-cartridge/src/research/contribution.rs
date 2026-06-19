@@ -162,7 +162,11 @@ pub fn gate_check_mix_result(
     let gate_reject = gate_reject_row_for_mix(mix_json, &gate_summary, observed_at);
     let explain_block = if explain {
         Some(GateCheckExplain {
-            regime_violations: collect_gate_explain_codes(profile, mix_json, gate_summary.admissible),
+            regime_violations: collect_gate_explain_codes(
+                profile,
+                mix_json,
+                gate_summary.admissible,
+            ),
             catalog_witnesses: gate_summary.catalog_ids.clone(),
         })
     } else {
@@ -175,7 +179,11 @@ pub fn gate_check_mix_result(
     }
 }
 
-fn collect_gate_explain_codes(profile: &Profile, mix_json: &Value, admissible: bool) -> Vec<String> {
+fn collect_gate_explain_codes(
+    profile: &Profile,
+    mix_json: &Value,
+    admissible: bool,
+) -> Vec<String> {
     let mut codes = Vec::new();
     let Some(wire) = mix_wire_from_spec_value(mix_json) else {
         codes.push("mix_spec_rational_parse_fail".into());

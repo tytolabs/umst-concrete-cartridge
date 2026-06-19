@@ -329,7 +329,10 @@ fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Valu
         Some(m) => m.clone(),
         None => return err_frame(id, "missing mix"),
     };
-    let explain = args.get("explain").and_then(|x| x.as_bool()).unwrap_or(false);
+    let explain = args
+        .get("explain")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false);
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
         Err(e) => return err_frame(id, format!("profile load error: {e}")),
@@ -447,7 +450,10 @@ fn tool_umst_transition_propose(
     };
     let outcome = args.get("outcome");
     let process = args.get("process");
-    match session.clone().transition_propose(&profile, &mix, outcome, process) {
+    match session
+        .clone()
+        .transition_propose(&profile, &mix, outcome, process)
+    {
         Ok((next, body)) => (
             text_result(
                 id,

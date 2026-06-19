@@ -40,10 +40,10 @@ pub use checkpoint::{
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports gate/accept morphisms; Mechanised on `gate_check_mix` / `accept` in `contribution`.
 pub use contribution::{
-    accept, content_hash_preimage, content_id, gate_check_mix, gate_check_mix_result,
-    gate_recheck, gate_reject_row_for_mix, memory_record_from_contribution,
-    mix_wire_from_spec_value, query, rational_to_f64, AcceptError, ContributeError, GateCheckExplain,
-    GateCheckResult, GateContext, DEFAULT_CATALOG_HASH,
+    accept, content_hash_preimage, content_id, gate_check_mix, gate_check_mix_result, gate_recheck,
+    gate_reject_row_for_mix, memory_record_from_contribution, mix_wire_from_spec_value, query,
+    rational_to_f64, AcceptError, ContributeError, GateCheckExplain, GateCheckResult, GateContext,
+    DEFAULT_CATALOG_HASH,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -87,8 +87,7 @@ pub use mi::{estimate_mi_bits_from_mix, estimate_mi_bits_rational};
 /// formal_anchor_rationale: Re-exports promotion policy YAML validation; human-gated CLI only.
 pub use policy::{
     holdout_rmse_passes, live_witness_enabled, parse_promotion_policy_yaml,
-    validate_promotion_policy, validate_track_a_stamp_tier, PolicyError,
-    PromotionPolicy,
+    validate_promotion_policy, validate_track_a_stamp_tier, PolicyError, PromotionPolicy,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE

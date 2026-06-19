@@ -505,11 +505,10 @@ fn main() -> ExitCode {
         .map_err(|e| e.to_string()),
         #[cfg(feature = "agent-layer")]
         Command::Memory { cmd } => match cmd {
-            MemoryCmd::Export { db, out } => umst_cli::memory_export::run_memory_export(
-                db.as_deref(),
-                out.as_path(),
-            )
-            .map_err(|e| e.to_string()),
+            MemoryCmd::Export { db, out } => {
+                umst_cli::memory_export::run_memory_export(db.as_deref(), out.as_path())
+                    .map_err(|e| e.to_string())
+            }
         },
     };
 
