@@ -53,6 +53,9 @@ pub enum UcrsStampMode {
 
 impl UcrsStampMode {
     /// Read mode from `UMST_UCRS_WITNESS` (`live` | default synthetic).
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Env IO at session boundary; stamp mode selection only.
     #[must_use]
     pub fn from_env() -> Self {
         match std::env::var("UMST_UCRS_WITNESS").as_deref() {
@@ -115,6 +118,9 @@ impl ProvenanceClock {
     }
 
     /// Construct clock with explicit stamp mode.
+    /// formal_anchor: STRUCTURAL
+    /// formal_status: Structural
+    /// formal_anchor_rationale: Clock initializer with live/synthetic witness functor.
     #[must_use]
     pub fn with_mode(seq: u64, mode: UcrsStampMode) -> Self {
         #[cfg(feature = "ucrs-provenance")]
@@ -136,6 +142,9 @@ impl ProvenanceClock {
     }
 
     /// Current UCRS stamp mode.
+    /// formal_anchor: STRUCTURAL
+    /// formal_status: Structural
+    /// formal_anchor_rationale: Read-only stamp mode for session threading.
     #[must_use]
     pub const fn mode(&self) -> UcrsStampMode {
         #[cfg(feature = "ucrs-provenance")]
