@@ -20,7 +20,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Structural** | 86 |
 | **Empirical** | 34 |
 | **Literature** | 50 |
-| **NONE** | 244 |
+| **NONE** | 246 |
 
 ## Mechanised
 
@@ -59,7 +59,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `gate_recheck` | `crates/umst-concrete-cartridge/src/research/contribution.rs:317` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 | `accept` | `crates/umst-concrete-cartridge/src/research/contribution.rs:387` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 | `gate_check` | `crates/umst-py/src/lib.rs:244` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `contribute` | `crates/umst-py/src/lib.rs:292` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `contribute` | `crates/umst-py/src/lib.rs:336` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 
 ## Structural
 
@@ -263,6 +263,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `parse_optimize_target` | `crates/umst-cli/src/cli.rs:183` | `NONE` | — | String-parse glue for `FIELD=VALUE` optimise CLI syntax. |
 | `proposed_next_mix_value` | `crates/umst-cli/src/cli.rs:247` | `NONE` | — | Track A sidecar for experiment loop. |
 | `optimize_mix_with_gate` | `crates/umst-cli/src/cli.rs:284` | `NONE` | — | CLI driver; gate semantics from `pipeline::dual_gate`. |
+| `run_memory_export` | `crates/umst-cli/src/memory_export.rs:12` | `NONE` | — | Operator filesystem IO; rows already gate-validated at ingest. |
 | `default_memory_record_path` | `crates/umst-cli/src/promote.rs:13` | `NONE` | — | CLI filesystem path helper; human-gated promotion only. |
 | `load_memory_record` | `crates/umst-cli/src/promote.rs:21` | `NONE` | — | Filesystem read for promote-contribution; row already gate-validated. |
 | `run_promote_contribution` | `crates/umst-cli/src/promote.rs:30` | `NONE` | — | CLI orchestration; never MCP-exposed; approval file required. |
@@ -473,25 +474,26 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `CANON_VERSION` | `crates/umst-concrete-cartridge/src/research/types.rs:20` | `NONE` | — | JCS profile label on wire; not a physics claim. |
 | `OBSERVED_AT_V2_SCHEMA` | `crates/umst-concrete-cartridge/src/research/wire_v2.rs:9` | `NONE` | — | Schema version string for integer-only UCRS wire. |
 | `with_witness_mode` | `crates/umst-concrete-cartridge/src/research/witness_test_lock.rs:10` | `NONE` | — | Test-only env serialization; not production gate semantics. |
-| `ContributeJobStatus` | `crates/umst-mcp/src/agent_layer.rs:56` | `NONE` | — | MCP job status wire; physics on `gate_check_mix` / `accept`. |
-| `ContributeJob` | `crates/umst-mcp/src/agent_layer.rs:69` | `NONE` | — | MCP async job envelope; gate on synchronous `contribute` delegate. |
-| `AgentSession` | `crates/umst-mcp/src/agent_layer.rs:83` | `NONE` | — | MCP session state carrier; thermodynamic gate on cartridge `accept`. |
-| `gate_check` | `crates/umst-mcp/src/agent_layer.rs:105` | `NONE` | — | stdio JSON-RPC transport; CD admissibility on `gate_check_mix_result`. |
-| `mi_estimate` | `crates/umst-mcp/src/agent_layer.rs:119` | `NONE` | — | MI enrichment wire; not admissibility gate. |
-| `contribute` | `crates/umst-mcp/src/agent_layer.rs:131` | `NONE` | — | stdio transport; gate re-check before memory append on cartridge. |
-| `contribute_async` | `crates/umst-mcp/src/agent_layer.rs:159` | `NONE` | — | In-process async wrapper; same gate path as `contribute`. |
-| `contribute_status` | `crates/umst-mcp/src/agent_layer.rs:230` | `NONE` | — | In-memory job map lookup; no new physics claim. |
-| `memory_query` | `crates/umst-mcp/src/agent_layer.rs:239` | `NONE` | — | stdio transport over cartridge `query_page`; stable `(ucrs_seq, content_id)` sort. |
-| `SCHEMA_RESOURCES` | `crates/umst-mcp/src/agent_layer.rs:268` | `NONE` | — | Schema fixture bytes for MCP discovery; versioned wire only. |
-| `AGENT_PROMPTS` | `crates/umst-mcp/src/agent_layer.rs:303` | `NONE` | — | MCP prompt templates; operational guidance only. |
-| `resources_list_result` | `crates/umst-mcp/src/agent_layer.rs:334` | `NONE` | — | MCP resource enumeration; schema bytes are versioned fixtures. |
-| `resources_read_result` | `crates/umst-mcp/src/agent_layer.rs:351` | `NONE` | — | MCP resource read; returns pinned JSON schema text. |
-| `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:371` | `NONE` | — | MCP prompts list; names only. |
-| `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:387` | `NONE` | — | MCP prompt body fetch; operational text. |
-| `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:406` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
+| `ContributeJobStatus` | `crates/umst-mcp/src/agent_layer.rs:60` | `NONE` | — | MCP job status wire; physics on `gate_check_mix` / `accept`. |
+| `ContributeJob` | `crates/umst-mcp/src/agent_layer.rs:73` | `NONE` | — | MCP async job envelope; gate on synchronous `contribute` delegate. |
+| `AgentSession` | `crates/umst-mcp/src/agent_layer.rs:87` | `NONE` | — | MCP session state carrier; thermodynamic gate on cartridge `accept`. |
+| `gate_check` | `crates/umst-mcp/src/agent_layer.rs:109` | `NONE` | — | stdio JSON-RPC transport; CD admissibility on `gate_check_mix_result`. |
+| `mi_estimate` | `crates/umst-mcp/src/agent_layer.rs:123` | `NONE` | — | MI enrichment wire; not admissibility gate. |
+| `contribute` | `crates/umst-mcp/src/agent_layer.rs:135` | `NONE` | — | stdio transport; gate re-check before memory append on cartridge. |
+| `contribute_async` | `crates/umst-mcp/src/agent_layer.rs:163` | `NONE` | — | In-process async wrapper; same gate path as `contribute`. |
+| `contribute_status` | `crates/umst-mcp/src/agent_layer.rs:234` | `NONE` | — | In-memory job map lookup; no new physics claim. |
+| `memory_query` | `crates/umst-mcp/src/agent_layer.rs:243` | `NONE` | — | stdio transport over cartridge `query_page`; stable `(ucrs_seq, content_id)` sort. |
+| `transition_propose` | `crates/umst-mcp/src/agent_layer.rs:252` | `NONE` | — | Chained operator workflow; gate must pass before async ingest. |
+| `SCHEMA_RESOURCES` | `crates/umst-mcp/src/agent_layer.rs:332` | `NONE` | — | Schema fixture bytes for MCP discovery; versioned wire only. |
+| `AGENT_PROMPTS` | `crates/umst-mcp/src/agent_layer.rs:367` | `NONE` | — | MCP prompt templates; operational guidance only. |
+| `resources_list_result` | `crates/umst-mcp/src/agent_layer.rs:403` | `NONE` | — | MCP resource enumeration; schema bytes are versioned fixtures. |
+| `resources_read_result` | `crates/umst-mcp/src/agent_layer.rs:420` | `NONE` | — | MCP resource read; returns pinned JSON schema text. |
+| `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:440` | `NONE` | — | MCP prompts list; names only. |
+| `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:456` | `NONE` | — | MCP prompt body fetch; operational text. |
+| `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:475` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
 | `audit_rows` | `crates/umst-py/src/lib.rs:147` | `NONE` | — | Encodes iterable of row dicts into dataset-style CSV then reuses **`audit_csv_buf`** (aligned with **`audit`** string path). |
 | `audit` | `crates/umst-py/src/lib.rs:167` | `NONE` | — | Python transport over CLI audit glue; no extra physical claim beyond CSV→facade audit. |
 | `bundled_profile_ids` | `crates/umst-py/src/lib.rs:217` | `NONE` | — | Bundled id manifest for packaging smoke tests. |
 | `canonical_json` | `crates/umst-py/src/lib.rs:229` | `NONE` | — | Byte-stable JSON for golden tests; matches **`umst-canonical`** binary. |
-| `memory_query` | `crates/umst-py/src/lib.rs:263` | `NONE` | — | Python transport over pure [`query`] filter; no new physical claim. |
+| `memory_query` | `crates/umst-py/src/lib.rs:271` | `NONE` | — | Python transport over [`query_page`]; paginated filter over env-backed store. |
 
