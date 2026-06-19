@@ -17,10 +17,10 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | formal_status | Symbols |
 |---------------|---------|
 | **Mechanised** | 33 |
-| **Structural** | 80 |
+| **Structural** | 84 |
 | **Empirical** | 34 |
 | **Literature** | 50 |
-| **NONE** | 238 |
+| **NONE** | 239 |
 
 ## Mechanised
 
@@ -118,13 +118,17 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `from_rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:151` | `STRUCTURAL` | — | Test/fixture constructor; no duplicate checks on load. |
 | `query` | `crates/umst-concrete-cartridge/src/research/memory.rs:163` | `STRUCTURAL` | — | Delegates to `filter_records` on owned row slice. |
 | `in_memory` | `crates/umst-concrete-cartridge/src/research/memory.rs:206` | `STRUCTURAL` | — | Constructs functional in-memory arm only. |
-| `ProvenanceClock` | `crates/umst-concrete-cartridge/src/research/provenance.rs:41` | `STRUCTURAL` | — | Immutable clock state; `advance` is pure given injected wall. |
-| `new` | `crates/umst-concrete-cartridge/src/research/provenance.rs:51` | `STRUCTURAL` | — | Clock initializer; sequence threaded through accept. |
-| `sequence` | `crates/umst-concrete-cartridge/src/research/provenance.rs:60` | `STRUCTURAL` | — | Read-only access to threaded sequence state. |
-| `advance` | `crates/umst-concrete-cartridge/src/research/provenance.rs:69` | `STRUCTURAL` | — | Functional clock step; wall_ms injected at boundary only. |
-| `observed_at_for_tick` | `crates/umst-concrete-cartridge/src/research/provenance.rs:81` | `STRUCTURAL` | — | Pure stamp from seq + wall; UCRS fields when feature enabled. |
-| `ensure_observed_at` | `crates/umst-concrete-cartridge/src/research/provenance.rs:107` | `STRUCTURAL` | — | Stamp merge on accept; monotonicity checked via `is_monotonic_after`. |
-| `is_monotonic_after` | `crates/umst-concrete-cartridge/src/research/provenance.rs:128` | `STRUCTURAL` | — | Monotonic ordering on UCRS seq with wall_ms tie-break. |
+| `UcrsStampMode` | `crates/umst-concrete-cartridge/src/research/provenance.rs:41` | `STRUCTURAL` | — | Live vs synthetic stamp functor selection on accept. |
+| `ProvenanceClock` | `crates/umst-concrete-cartridge/src/research/provenance.rs:68` | `STRUCTURAL` | — | Immutable clock state; `advance` is pure given injected wall. |
+| `from_env` | `crates/umst-concrete-cartridge/src/research/provenance.rs:102` | `STRUCTURAL` | — | Session boundary initializer; IO on env read only. |
+| `new` | `crates/umst-concrete-cartridge/src/research/provenance.rs:111` | `STRUCTURAL` | — | Clock initializer; sequence threaded through accept. |
+| `with_mode` | `crates/umst-concrete-cartridge/src/research/provenance.rs:120` | `STRUCTURAL` | — | Clock initializer with live/synthetic witness functor. |
+| `mode` | `crates/umst-concrete-cartridge/src/research/provenance.rs:144` | `STRUCTURAL` | — | Read-only stamp mode for session threading. |
+| `sequence` | `crates/umst-concrete-cartridge/src/research/provenance.rs:158` | `STRUCTURAL` | — | Read-only access to threaded sequence state. |
+| `advance` | `crates/umst-concrete-cartridge/src/research/provenance.rs:167` | `STRUCTURAL` | — | Functional clock step; wall_ms injected at boundary only. |
+| `observed_at_for_tick` | `crates/umst-concrete-cartridge/src/research/provenance.rs:205` | `STRUCTURAL` | — | Pure stamp from seq + wall; UCRS fields when feature enabled. |
+| `ensure_observed_at` | `crates/umst-concrete-cartridge/src/research/provenance.rs:231` | `STRUCTURAL` | — | Stamp merge on accept; monotonicity checked via `is_monotonic_after`. |
+| `is_monotonic_after` | `crates/umst-concrete-cartridge/src/research/provenance.rs:252` | `STRUCTURAL` | — | Monotonic ordering on UCRS seq with wall_ms and phase_q tie-break. |
 | `GateVerdict` | `crates/umst-concrete-cartridge/src/research/types.rs:26` | `STRUCTURAL` | — | Serde-shaped verdict tag; admissibility on `GateSummary.admissible`. |
 | `GateSummary` | `crates/umst-concrete-cartridge/src/research/types.rs:38` | `STRUCTURAL` | — | Wire bundle of verdict + catalog_id witnesses from gate path. |
 | `ObservedAt` | `crates/umst-concrete-cartridge/src/research/types.rs:53` | `STRUCTURAL` | — | observed_at.v1/v2 wire; monotonicity checked in provenance. |
@@ -423,7 +427,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `estimate_mi_bits_from_mix, estimate_mi_bits_rational` | `crates/umst-concrete-cartridge/src/research/mod.rs:77` | `NONE` | — | Re-exports Landauer advisory MI surrogates; not admissibility gate. |
 | `holdout_rmse_passes, parse_promotion_policy_yaml, validate_promotion_policy, PolicyError, PromotionPolicy` | `crates/umst-concrete-cartridge/src/research/mod.rs:81` | `NONE` | — | Re-exports promotion policy YAML validation; human-gated CLI only. |
 | `apply_promotion_writes, build_promotion_record, promote_contribution, PromotionApproval, PromotionError, PromotionRecordOut` | `crates/umst-concrete-cartridge/src/research/mod.rs:88` | `NONE` | — | Re-exports human-gated promotion record morphisms; never MCP. |
-| `ensure_observed_at, is_monotonic_after, observed_at_for_tick, synthetic_observed_at, ProvenanceClock, WallClock` | `crates/umst-concrete-cartridge/src/research/mod.rs:95` | `NONE` | — | Re-exports UCRS provenance clock and monotonic stamp helpers. |
+| `ensure_observed_at, is_monotonic_after, observed_at_for_tick, synthetic_observed_at, ProvenanceClock, UcrsStampMode, WallClock` | `crates/umst-concrete-cartridge/src/research/mod.rs:95` | `NONE` | — | Re-exports UCRS provenance clock and monotonic stamp helpers. |
 | `append_gate_reject_jsonl, build_gate_reject, build_gate_reject_from_contribution, GateRejectRow, RejectError, GATE_REJECT_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:102` | `NONE` | — | Re-exports gate reject audit stream; excluded from admissible memory. |
 | `append_memory_jsonl, SidecarError, MEMORY_JSONL_DEFAULT` | `crates/umst-concrete-cartridge/src/research/mod.rs:109` | `NONE` | — | Re-exports accepted-memory JSONL sidecar append hook. |
 | `AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery, MemoryRecord, ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:113` | `NONE` | — | Re-exports contribution.v1 / memory_record.v1 wire types. |
@@ -444,7 +448,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `promote_contribution` | `crates/umst-concrete-cartridge/src/research/promotion.rs:178` | `NONE` | — | CLI orchestration; physics gate already on accepted memory row. |
 | `WallClock` | `crates/umst-concrete-cartridge/src/research/provenance.rs:13` | `NONE` | — | System time IO injection; stamp semantics on `ProvenanceClock`. |
 | `epoch_ms` | `crates/umst-concrete-cartridge/src/research/provenance.rs:21` | `NONE` | — | `SystemTime` / UCRS wall hook; not monotonic sequence logic. |
-| `synthetic_observed_at` | `crates/umst-concrete-cartridge/src/research/provenance.rs:159` | `NONE` | — | Convenience wrapper calling wall IO; reject stream not memory. |
+| `from_env` | `crates/umst-concrete-cartridge/src/research/provenance.rs:55` | `NONE` | — | Env IO at session boundary; stamp mode selection only. |
+| `synthetic_observed_at` | `crates/umst-concrete-cartridge/src/research/provenance.rs:290` | `NONE` | — | Convenience wrapper calling wall IO; reject stream not memory. |
 | `GATE_REJECT_SCHEMA` | `crates/umst-concrete-cartridge/src/research/reject.rs:16` | `NONE` | — | Reject stream schema label; rows excluded from admissible memory. |
 | `RejectError` | `crates/umst-concrete-cartridge/src/research/reject.rs:22` | `NONE` | — | Audit stream IO errors; not admissible memory store. |
 | `GateRejectRow` | `crates/umst-concrete-cartridge/src/research/reject.rs:34` | `NONE` | — | Audit wire for failed gate; never in `admissible_only` query. |
