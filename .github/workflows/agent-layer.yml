@@ -8,6 +8,7 @@ on:
       - 'fixtures/golden-adversarial/**'
       - 'scripts/mcp_smoke.py'
       - '.github/workflows/agent-layer.yml'
+  workflow_dispatch:
   pull_request:
     paths:
       - 'crates/umst-concrete-cartridge/src/research/**'
