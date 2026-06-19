@@ -18,6 +18,7 @@ publish = false
 default = []
 blas-accelerate = ["umst-cli/blas-accelerate"]
 agent-layer = ["umst-cli/agent-layer", "umst-concrete-cartridge/agent-layer"]
+ucrs-provenance = ["umst-concrete-cartridge/ucrs-provenance"]
 
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }

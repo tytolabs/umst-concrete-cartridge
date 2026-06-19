@@ -548,6 +548,7 @@ In practice, the cartridge is a **software** runtime: mixes and **simulated** pr
 ### Related repositories
 
 - [**UMST Manifold**](https://github.com/tytolabs/umst-manifold) — core DEC substrate and thermodynamic gate this cartridge mounts on
+- [**UMST-UCRS**](https://github.com/tytolabs/umst-ucrs) — Universal Calendar Resolution Spine; optional `ucrs-provenance` Tier-2 `observed_at` stamps on agent memory
 - [**UMST Formal**](https://github.com/tytolabs/umst-formal) — Lean 4 / Coq proof anchors for the conservation laws
 - [**UMST Formal Double-Slit**](https://github.com/tytolabs/umst-formal-double-slit) — quantum-information proofs anchoring the Thermodynamic CBF
 

@@ -97,7 +97,7 @@ pub use promotion::{
 /// formal_anchor_rationale: Re-exports UCRS provenance clock and monotonic stamp helpers.
 pub use provenance::{
     ensure_observed_at, is_monotonic_after, observed_at_for_tick, synthetic_observed_at,
-    ProvenanceClock, WallClock,
+    ProvenanceClock, UcrsStampMode, WallClock,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE

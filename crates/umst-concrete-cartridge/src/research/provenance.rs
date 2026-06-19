@@ -38,23 +38,112 @@ impl WallClock {
     }
 }
 
+/// UCRS observation stamp mode (`UMST_UCRS_WITNESS` at session boundary).
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Live vs synthetic stamp functor selection on accept.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum UcrsStampMode {
+    /// Deterministic synthetic stamps (CI default).
+    #[default]
+    Synthetic,
+    /// Live `TemporalWitness::stamp()` path.
+    Live,
+}
+
+impl UcrsStampMode {
+    /// Read mode from `UMST_UCRS_WITNESS` (`live` | default synthetic).
+    #[must_use]
+    pub fn from_env() -> Self {
+        match std::env::var("UMST_UCRS_WITNESS").as_deref() {
+            Ok("live") => Self::Live,
+            _ => Self::Synthetic,
+        }
+    }
+}
+
 /// Monotonic observation sequence — threaded through accept pipeline (pure transitions).
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Immutable clock state; `advance` is pure given injected wall.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug)]
 pub struct ProvenanceClock {
     seq: u64,
+    #[cfg(feature = "ucrs-provenance")]
+    mode: UcrsStampMode,
+    #[cfg(feature = "ucrs-provenance")]
+    live: Option<umst_ucrs::observation::TemporalWitness>,
+}
+
+impl Clone for ProvenanceClock {
+    fn clone(&self) -> Self {
+        Self::with_mode(self.seq, self.mode())
+    }
+}
+
+impl PartialEq for ProvenanceClock {
+    fn eq(&self, other: &Self) -> bool {
+        self.seq == other.seq && self.mode() == other.mode()
+    }
+}
+
+impl Eq for ProvenanceClock {}
+
+impl Default for ProvenanceClock {
+    fn default() -> Self {
+        Self::from_env()
+    }
 }
 
 impl ProvenanceClock {
-    /// Construct clock at a given UCRS sequence baseline.
+    /// Construct clock from environment (`UMST_UCRS_WITNESS`).
+    /// formal_anchor: STRUCTURAL
+    /// formal_status: Structural
+    /// formal_anchor_rationale: Session boundary initializer; IO on env read only.
+    #[must_use]
+    pub fn from_env() -> Self {
+        Self::with_mode(0, UcrsStampMode::from_env())
+    }
+
+    /// Construct clock at a given UCRS sequence baseline (synthetic mode).
     /// formal_anchor: STRUCTURAL
     /// formal_status: Structural
     /// formal_anchor_rationale: Clock initializer; sequence threaded through accept.
     #[must_use]
-    pub const fn new(seq: u64) -> Self {
-        Self { seq }
+    pub fn new(seq: u64) -> Self {
+        Self::with_mode(seq, UcrsStampMode::Synthetic)
+    }
+
+    /// Construct clock with explicit stamp mode.
+    #[must_use]
+    pub fn with_mode(seq: u64, mode: UcrsStampMode) -> Self {
+        #[cfg(feature = "ucrs-provenance")]
+        {
+            let live = if mode == UcrsStampMode::Live {
+                Some(umst_ucrs::witness_for_agent(
+                    &umst_ucrs::AgentConfig::default(),
+                ))
+            } else {
+                None
+            };
+            Self { seq, mode, live }
+        }
+        #[cfg(not(feature = "ucrs-provenance"))]
+        {
+            let _ = mode;
+            Self { seq }
+        }
+    }
+
+    /// Current UCRS stamp mode.
+    #[must_use]
+    pub const fn mode(&self) -> UcrsStampMode {
+        #[cfg(feature = "ucrs-provenance")]
+        {
+            return self.mode;
+        }
+        #[cfg(not(feature = "ucrs-provenance"))]
+        UcrsStampMode::Synthetic
     }
 
     /// Current UCRS sequence counter.
@@ -72,9 +161,35 @@ impl ProvenanceClock {
     /// formal_anchor_rationale: Functional clock step; wall_ms injected at boundary only.
     #[must_use]
     pub fn advance(self, wall: WallClock) -> (Self, ObservedAt) {
+        #[cfg(feature = "ucrs-provenance")]
+        if self.mode == UcrsStampMode::Live {
+            if let Some(mut witness) = self.live {
+                let stamp = witness.stamp();
+                let next_seq = stamp.ucrs_seq.unwrap_or(self.seq.saturating_add(1));
+                let obs = ucrs_to_wire(&stamp, wall.epoch_ms());
+                return (
+                    Self {
+                        seq: next_seq,
+                        mode: self.mode,
+                        live: Some(witness),
+                    },
+                    obs,
+                );
+            }
+        }
+
         let next_seq = self.seq.saturating_add(1);
         let obs = observed_at_for_tick(next_seq, wall.epoch_ms());
-        (Self { seq: next_seq }, obs)
+        (
+            Self {
+                seq: next_seq,
+                #[cfg(feature = "ucrs-provenance")]
+                mode: self.mode,
+                #[cfg(feature = "ucrs-provenance")]
+                live: self.live,
+            },
+            obs,
+        )
     }
 }
 
@@ -125,10 +240,10 @@ pub fn ensure_observed_at(
     clock.advance(wall)
 }
 
-/// Pure: candidate observation stamp is not before baseline (UCRS seq + wall tie-break).
+/// Pure: candidate observation stamp is not before baseline (UCRS seq + wall + phase tie-break).
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
-/// formal_anchor_rationale: Monotonic ordering on UCRS seq with wall_ms tie-break.
+/// formal_anchor_rationale: Monotonic ordering on UCRS seq with wall_ms and phase_q tie-break.
 #[must_use]
 pub fn is_monotonic_after(baseline: &ObservedAt, candidate: &ObservedAt) -> bool {
     let b = baseline.ucrs_seq.unwrap_or(0);
@@ -137,7 +252,14 @@ pub fn is_monotonic_after(baseline: &ObservedAt, candidate: &ObservedAt) -> bool
         return false;
     }
     if c == b {
-        return candidate.wall_ms.unwrap_or(0) >= baseline.wall_ms.unwrap_or(0);
+        let cw = candidate.wall_ms.unwrap_or(0);
+        let bw = baseline.wall_ms.unwrap_or(0);
+        if cw != bw {
+            return cw >= bw;
+        }
+        let cp = candidate.phase_entropy_bits_q.unwrap_or(0);
+        let bp = baseline.phase_entropy_bits_q.unwrap_or(0);
+        return cp >= bp;
     }
     true
 }
@@ -171,7 +293,6 @@ mod tests {
 
     #[test]
     fn is_monotonic_after_ucrs_seq() {
-        use super::*;
         let a = ObservedAt {
             stamp_tier: "Synthetic".into(),
             ucrs_seq: Some(1),
@@ -195,13 +316,47 @@ mod tests {
     }
 
     #[test]
+    fn is_monotonic_after_phase_q_when_seq_equal() {
+        let a = ObservedAt {
+            stamp_tier: "UcrsTier2".into(),
+            ucrs_seq: Some(5),
+            phase_entropy_bits_q: Some(100),
+            phase_entropy_bits_scale: Some(1_000_000),
+            credit_head_bits_q: None,
+            credit_head_bits_scale: None,
+            wall_ms: Some(200),
+        };
+        let b = ObservedAt {
+            stamp_tier: "UcrsTier2".into(),
+            ucrs_seq: Some(5),
+            phase_entropy_bits_q: Some(200),
+            phase_entropy_bits_scale: Some(1_000_000),
+            credit_head_bits_q: None,
+            credit_head_bits_scale: None,
+            wall_ms: Some(200),
+        };
+        assert!(is_monotonic_after(&a, &b));
+        assert!(!is_monotonic_after(&b, &a));
+    }
+
+    #[test]
     fn clock_advance_is_pure() {
-        let c0 = ProvenanceClock::default();
+        let c0 = ProvenanceClock::new(0);
         let wall = WallClock;
         let (c1, a) = c0.clone().advance(wall);
         let (c2, b) = c0.advance(wall);
         assert_eq!(c1, c2);
         assert_eq!(a.stamp_tier, b.stamp_tier);
         assert!(b.ucrs_seq.unwrap_or(0) >= a.ucrs_seq.unwrap_or(0));
+    }
+
+    #[cfg(feature = "ucrs-provenance")]
+    #[test]
+    fn live_advance_emits_ucrs_tier2() {
+        let clock = ProvenanceClock::with_mode(0, UcrsStampMode::Live);
+        let (clock, obs) = clock.advance(WallClock);
+        assert_eq!(obs.stamp_tier, "UcrsTier2");
+        assert!(obs.ucrs_seq.unwrap_or(0) >= 1);
+        assert_eq!(clock.sequence(), obs.ucrs_seq.unwrap_or(0));
     }
 }

@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
+from pathlib import Path
 from typing import Any
 
 
@@ -20,19 +22,18 @@ def rpc(proc: subprocess.Popen[str], payload: dict[str, Any]) -> dict[str, Any]:
     return json.loads(line)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--agent-layer",
-        action="store_true",
-        help="Build/run umst-mcp with agent-layer feature",
-    )
-    args = parser.parse_args()
+def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
+    features: list[str] = []
+    if agent_layer:
+        features.extend(["agent-layer", "ucrs-provenance"])
 
-    features = ["agent-layer"] if args.agent_layer else []
     cargo_args = ["cargo", "run", "-q", "-p", "umst-mcp"]
     if features:
         cargo_args.extend(["--features", ",".join(features)])
+
+    env = os.environ.copy()
+    if witness_mode is not None:
+        env["UMST_UCRS_WITNESS"] = witness_mode
 
     proc = subprocess.Popen(
         cargo_args,
@@ -40,7 +41,8 @@ def main() -> int:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        cwd=str(__import__("pathlib").Path(__file__).resolve().parents[1]),
+        cwd=str(Path(__file__).resolve().parents[1]),
+        env=env,
     )
 
     try:
@@ -64,7 +66,7 @@ def main() -> int:
         for required in ("umst_predict", "umst_profiles"):
             assert required in names, f"missing tool {required}"
 
-        if args.agent_layer:
+        if agent_layer:
             for required in (
                 "umst_gate_check",
                 "umst_contribute",
@@ -86,11 +88,29 @@ def main() -> int:
             },
         )
         assert "result" in profiles, profiles
-        print("mcp_smoke: ok", file=sys.stderr)
-        return 0
+        label = witness_mode or "default"
+        print(f"mcp_smoke: ok (witness={label})", file=sys.stderr)
     finally:
         proc.terminate()
-        proc.wait(timeout=10)
+        proc.wait(timeout=120)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--agent-layer",
+        action="store_true",
+        help="Build/run umst-mcp with agent-layer + ucrs-provenance features",
+    )
+    args = parser.parse_args()
+
+    run_smoke(agent_layer=args.agent_layer, witness_mode=None)
+
+    if args.agent_layer:
+        run_smoke(agent_layer=True, witness_mode="synthetic")
+        run_smoke(agent_layer=True, witness_mode="live")
+
+    return 0
 
 
 if __name__ == "__main__":

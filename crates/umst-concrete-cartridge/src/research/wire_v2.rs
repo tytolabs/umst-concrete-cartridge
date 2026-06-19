@@ -71,3 +71,20 @@ pub fn ucrs_observed_at_to_v2(u: &umst_ucrs::observation::UcrsObservedAt) -> Obs
         wall_ms: u.wall_ms,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "ucrs-provenance")]
+    #[test]
+    fn ucrs_observed_at_roundtrip_v2() {
+        use umst_ucrs::observation::UcrsObservedAt;
+        let u = UcrsObservedAt::synthetic(7, 0.5);
+        let v2 = ucrs_observed_at_to_v2(&u);
+        assert_eq!(v2.ucrs_seq, Some(7));
+        assert_eq!(v2.stamp_tier, "Synthetic");
+        assert_eq!(v2.phase_entropy_bits_q, u.phase_entropy_bits_q);
+        assert_eq!(v2.schema_version, OBSERVED_AT_V2_SCHEMA);
+    }
+}
