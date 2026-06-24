@@ -303,6 +303,8 @@ Gate REJECT on `umst_gate_check` still returns `gate_reject.v1` + `explain` (not
 
 Each code has a matching entry in `explain.remediation` and optional `explain.fields`.
 
+**Golden vectors (SSOT):** adversarial gate + `query_page` expectations are pinned in [`tests/fixtures/phase8_adversarial.json`](../tests/fixtures/phase8_adversarial.json). See [`GOLDEN_VECTORS.md`](GOLDEN_VECTORS.md) for manifest layout, fixture paths, and `python3 scripts/validate_golden_vectors.py`.
+
 ### Contribute / transport errors
 
 | Error / signal | When | Agent action |
@@ -492,6 +494,7 @@ Pure morphisms live in `src/research/` (`validation`, `gate_check_mix`, `accept`
 
 ## Related
 
+- [`GOLDEN_VECTORS.md`](GOLDEN_VECTORS.md) — phase8 adversarial golden-vector SSOT + CI parity
 - [`README.md`](../README.md) — agent callout + §9
 - [`examples/agent/`](../examples/agent/) — runnable workflows
 - [`PROMOTION_TRUST.md`](PROMOTION_TRUST.md) — TSA + Sigstore operator scripts
