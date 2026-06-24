@@ -282,6 +282,37 @@ fn apply_non_design_skin(rho: &mut [f32], nx: usize, ny: usize, nz: usize) {
     }
 }
 
+/// B6 thesis `policy_editable_mask`: 1.0 = design DOF (ribs), 0.0 = fixed solid top skin.
+fn policy_editable_mask_vec(nx: usize, ny: usize, nz: usize) -> Vec<f32> {
+    let nx1 = nx + 1;
+    let ny1 = ny + 1;
+    let n = nx1 * ny1 * (nz + 1);
+    let mut mask = vec![1.0_f32; n];
+    if !thesis_reconfig_enabled() {
+        return mask;
+    }
+    let iz_top = nz;
+    for ix in 0..=nx {
+        for iy in 0..=ny {
+            let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
+            mask[nid] = 0.0;
+        }
+    }
+    mask
+}
+
+/// ρ ← mask·ρ + (1−mask)·1 on fixed skin nodes (straight-through on interior).
+fn apply_policy_editable_mask<Bk: BackendTrait<FloatElem = f32>>(
+    rho: Tensor<Bk, 3>,
+    mask: &Tensor<Bk, 3>,
+) -> Tensor<Bk, 3> {
+    if !thesis_reconfig_enabled() {
+        return rho;
+    }
+    let fixed = Tensor::<Bk, 3>::ones_like(&rho);
+    rho.mul(mask.clone()).add(fixed.sub(mask.clone()))
+}
+
 fn greyness_mean(rho: &[f32]) -> f32 {
     let n = rho.len().max(1) as f32;
     rho.iter().map(|&r| 4.0 * r * (1.0 - r)).sum::<f32>() / n
@@ -1041,6 +1072,7 @@ fn projected_vf_at_b_detached<Bk: BackendTrait<FloatElem = f32>>(
     helm: &HelmholtzFilter,
     edges_b1: &Tensor<Bk, 2, Int>,
     dx_f: f32,
+    policy_mask: Option<&Tensor<Bk, 3>>,
 ) -> f32 {
     let rho = sigmoid(logits_det.clone().add_scalar(b));
     let rho_tilde = apply_rho_raw_pipeline_detached(
@@ -1054,6 +1086,10 @@ fn projected_vf_at_b_detached<Bk: BackendTrait<FloatElem = f32>>(
         edges_b1,
         dx_f,
     );
+    let rho_tilde = match policy_mask {
+        Some(m) => apply_policy_editable_mask(rho_tilde, m),
+        None => rho_tilde,
+    };
     let rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA).project(rho_tilde);
     let n = rho_mid.dims()[1].max(1) as f32;
     rho_mid.into_data().value.iter().sum::<f32>() / n
@@ -1074,6 +1110,7 @@ fn bisect_logit_offset_b_detached<Bk: BackendTrait<FloatElem = f32>>(
     helm: &HelmholtzFilter,
     edges_b1: &Tensor<Bk, 2, Int>,
     dx_f: f32,
+    policy_mask: Option<&Tensor<Bk, 3>>,
 ) -> f32 {
     let logits_flat = logits_det.clone().into_data().value;
     let eval_vf = |b: f32| {
@@ -1089,6 +1126,7 @@ fn bisect_logit_offset_b_detached<Bk: BackendTrait<FloatElem = f32>>(
             helm,
             edges_b1,
             dx_f,
+            policy_mask,
         )
     };
     let mut width = 8.0_f32;
@@ -1135,6 +1173,7 @@ fn b_finisher_predicted_vf<Bk: BackendTrait<FloatElem = f32>>(
     helm: &HelmholtzFilter,
     edges_b1: &Tensor<Bk, 2, Int>,
     dx_f: f32,
+    policy_mask: Option<&Tensor<Bk, 3>>,
 ) -> (f32, f32) {
     let b = bisect_logit_offset_b_detached(
         logits_det,
@@ -1150,6 +1189,7 @@ fn b_finisher_predicted_vf<Bk: BackendTrait<FloatElem = f32>>(
         helm,
         edges_b1,
         dx_f,
+        policy_mask,
     );
     let vf = projected_vf_at_b_detached(
         logits_det,
@@ -1163,6 +1203,7 @@ fn b_finisher_predicted_vf<Bk: BackendTrait<FloatElem = f32>>(
         helm,
         edges_b1,
         dx_f,
+        policy_mask,
     );
     (vf, b)
 }
@@ -1311,6 +1352,11 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         .mul_scalar(2.0)
         .sub_scalar(1.0);
     let edges_b1 = plate.edges_b1::<B>(device);
+    let policy_mask: Tensor<B, 3> = {
+        let mask_data = policy_editable_mask_vec(nx, ny, nz);
+        Tensor::from_data(Data::new(mask_data, Shape::new([1, n, 1])), device)
+    };
+    let policy_mask_inner = policy_mask.clone().inner();
     let boundary_b = {
         let nx1 = nx + 1;
         let ny1 = ny + 1;
@@ -1537,6 +1583,7 @@ audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_r
                 &helm,
                 &edges_inner,
                 dx_f,
+                Some(&policy_mask_inner),
             );
             let vf = projected_vf_at_b_detached(
                 &logits_det,
@@ -1550,6 +1597,7 @@ audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_r
                 &helm,
                 &edges_inner,
                 dx_f,
+                Some(&policy_mask_inner),
             );
             (b, vf, (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND)
         };
@@ -1570,6 +1618,7 @@ audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_r
             &edges_b1,
             dx_f,
         );
+        let rho_tilde = apply_policy_editable_mask(rho_tilde, &policy_mask);
         let rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
             .project(rho_tilde.clone())
             .reshape([1, n, 1]);
@@ -1849,6 +1898,7 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
             &helm,
             &edges_inner,
             dx_f,
+            Some(&policy_mask_inner),
         );
         let rho_raw_f = vol_logit.apply_shift(logits_f.clone(), b_star);
         let rho_tilde_f = apply_rho_raw_pipeline_taped(
@@ -1862,6 +1912,7 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
             &edges_b1,
             dx_f,
         );
+        let rho_tilde_f = apply_policy_editable_mask(rho_tilde_f, &policy_mask);
         let grey_tilde = greyness_mean(
             &HeavisideProjection::new(finisher_beta, STRIATUS_HEAVISIDE_ETA)
                 .project(rho_tilde_f.clone())

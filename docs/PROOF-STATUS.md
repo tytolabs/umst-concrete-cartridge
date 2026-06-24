@@ -5,6 +5,8 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 # Proof status (Rust cartridge sources)
 
+**Smoke vs acceptance (Track C / Wave 0):** the symbol table below is **formal-doc coverage**, not physics acceptance. **B6 / shell topology** acceptance is **`shell_topology_rib_pattern_full_v04`** with **`UMST_SHELL_RIB_FULL_ITERS=200`** (post-finisher export) — **`UMST_SHELL_RIB_FULL_ITERS` < 200** is **smoke only** (finite metrics + loose VF; greyness / xy_var / c1 gates skipped). Thesis re-config (`UMST_SHELL_THESIS_RECONFIG=1`) is **`#[ignore]`** — not default CI. See [`Solver-Status.md`](Solver-Status.md) § P0 runbook and manifold [`SOLVER_NEVER_RUN_LEDGER.md`](../../umst-manifold/docs/SOLVER_NEVER_RUN_LEDGER.md).
+
 Generated from `crates/umst-concrete-cartridge/src/**/*.rs`, `crates/umst-cli/src/**/*.rs`, `crates/umst-mcp/src/**/*.rs`, and `crates/umst-py/src/**/*.rs` formal documentation blocks. Regenerate with:
 
 ```bash
