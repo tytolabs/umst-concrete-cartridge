@@ -45,7 +45,9 @@ use crate::pipeline::report::{
     PHYSICS_PIPELINE_SCHEMA_VERSION,
 };
 
-fn layout_snapshot<B: Backend<FloatElem = f32>>(mix: &MaterialCompositionTensor<B>) -> [f32; MIX_FEATURE_COUNT] {
+fn layout_snapshot<B: Backend<FloatElem = f32>>(
+    mix: &MaterialCompositionTensor<B>,
+) -> [f32; MIX_FEATURE_COUNT] {
     let data = mix.fractions.clone().into_data().value;
     let mut arr = [0_f32; MIX_FEATURE_COUNT];
     for (i, v) in data.iter().copied().enumerate().take(MIX_FEATURE_COUNT) {
