@@ -173,7 +173,21 @@ See [`examples/agent/03_export_inbox.sh`](../examples/agent/03_export_inbox.sh).
 
 ## Error handling
 
-### Gate violation codes (`explain.regime_violations`)
+Errors arrive on **three layers**. Parse the layer first — gate REJECT is not a transport failure.
+
+| Layer | Signal | Where |
+|-------|--------|-------|
+| **Transport** | JSON-RPC `error` (`-32601`, `-32603`) or `isError: true` tool text without `gate_reject` | `crates/umst-mcp/src/main.rs` |
+| **Gate** | `isError: true` + `gate_reject.v1` + `explain` on `umst_gate_check` | `gate_check_mix_result` in cartridge `research/` |
+| **Contribute** | JSON-RPC `-32603` with `AcceptError` / validation text on `umst_contribute` | `accept` in cartridge `research/` |
+
+> **Planned:** structured recoverable failures will migrate to `agent_error.v1` (`code`, `message`, `remediation`) on agent-layer tools — see [Usability U7](../../outputs/.plans/umst-master-reengineering.md#u7--structured-recoverable-mcp-errors-agent_errorv1). Today most transport failures are bare `-32603` strings; gate REJECT already carries structured `explain`.
+
+Use prompt `interpret_gate_failure` when parsing REJECT payloads.
+
+### Error catalog — gate (`explain.regime_violations`)
+
+Returned inside `umst_gate_check` when `gate_summary.admissible` is false (`isError: true`). Each code has matching `explain.remediation` and optional `explain.fields`.
 
 | Code | Meaning | Agent action |
 |------|---------|--------------|
@@ -183,21 +197,57 @@ See [`examples/agent/03_export_inbox.sh`](../examples/agent/03_export_inbox.sh).
 | `manifest_bridge_disabled` | Gate not compiled with manifest-bridge | Build with `agent-layer` + `manifest-bridge` |
 | `thermodynamic_fail` | Generic CD fail | Read `explain.remediation`; iterate gate check |
 
-Each code has a matching entry in `explain.remediation` and optional `explain.fields`.
+Schema: `umst://schemas/gate_reject.v1.json` (also embedded in tool result).
 
-### Contribute / transport errors
+### Error catalog — contribute (`AcceptError`)
 
-| Error / signal | When | Agent action |
-|----------------|------|--------------|
+`umst_contribute` and `umst_transition_propose` surface these as JSON-RPC `-32603` `message` strings (not yet `agent_error.v1`).
+
+| Variant / message | When | Agent action |
+|-------------------|------|--------------|
 | `AcceptError::Validation` | Schema / rational parse fail | Fix wire against `contribution.v1.json` |
-| `AcceptError::GateReject` | Gate re-check fail on contribute | Run `umst_gate_check` first; never bypass |
-| `AcceptError::Scope` | `UMST_AGENT_SCOPE_TOKENS` mismatch | Supply valid `scope_token` |
-| `AcceptError::NonMonotonicStamp` | `observed_at` regresses session clock | Use server-assigned stamps |
-| `AcceptError::Store` duplicate | Same `content_id` / idempotency key | Treat as success if idempotent retry |
-| MCP `isError: true` on gate_check | REJECT verdict | Parse `gate_reject.v1` + `explain`; do not contribute |
-| `unknown job_id` | Stale async poll | Re-submit or check `contribute_jobs` beside DB |
+| `invalid JSON: …` | Malformed contribution JSON | Repair JSON syntax |
+| `schema_version must be contribution.v1` | Wrong `schema_version` | Set `"schema_version": "contribution.v1"` |
+| `canon_version must be …` | Stale canon pin | Match `canon_version` in schema resource |
+| `missing required field: …` | Required key absent | Compare against schema `required` |
+| `invalid rational at {path}: {value}` | Bad `n/d` wire | Fix rational at `path` |
+| `gate_summary.admissible must be true for accept` | Contribution claims REJECT | Run `umst_gate_check` first; set admissible summary |
+| `catalog_hash must match sha256:…` | Bad catalog digest | Use pinned `catalog_hash` from gate result |
+| `observed_at.stamp_tier required` | Missing stamp tier | Include `observed_at` with `stamp_tier` |
+| `gate re-check failed: mix not thermodynamically admissible` | `AcceptError::GateReject` on contribute | Run `umst_gate_check` first; never bypass |
+| `gate reject: mix not admissible for transition propose` | `umst_transition_propose` gate fail | Fix mix; re-run gate check |
+| `scope_token required for umst_contribute` | `AcceptError::Scope::Missing` | Supply `scope_token` when allowlist set |
+| `scope_token not in allowlist` | `AcceptError::Scope::Denied` | Use token from `UMST_AGENT_SCOPE_TOKENS` |
+| `observed_at stamp is not monotonic after session clock` | `AcceptError::NonMonotonicStamp` | Use server-assigned stamps |
+| `duplicate content_id: …` / `duplicate idempotency_key: …` | `AcceptError::Store` | Treat as success if idempotent retry |
+| Async job `error` field | `umst_contribute` with `async: true` failed | Poll `umst_contribute_status`; read `error` string |
 
-Use prompt `interpret_gate_failure` when parsing REJECT payloads.
+### Error catalog — transport (JSON-RPC)
+
+Bare `error.message` strings from `umst-mcp` stdio dispatch. Recoverable cases will move to `agent_error.v1` (U7).
+
+| Message pattern | Tool / method | Agent action |
+|-----------------|---------------|--------------|
+| `Unknown tool: {name}` | `tools/call` (`-32601`) | Call `tools/list`; use shipped tool name |
+| `Method not found: {method}` | any RPC (`-32601`) | Use `initialize`, `tools/list`, `tools/call`, `resources/*`, `prompts/*` |
+| `profile load error: {e}` | predict, audit, certify, gate, contribute | Call `umst_profiles`; use bundled id (e.g. `default`) |
+| `missing mix` | gate_check, mi_estimate, transition_propose | Pass full rational `mix` object |
+| `missing contribution` | contribute | Pass `contribution` object |
+| `missing job_id` | contribute_status | Pass `job_id` from async contribute |
+| `unknown job_id: {id}` | contribute_status | Re-submit or check `contribute_jobs.json` beside `UMST_MEMORY_DB` |
+| `missing csv_text` | audit | Pass full CSV string |
+| `missing profile` | certify | Pass `profile` arg |
+| `mix parse error: {e}` | predict | Fix rational `mix` wire |
+| `predict error: {e}` | predict, transition_propose | Check mix fields and profile compatibility |
+| `serialize_prediction: {e}` | predict, transition_propose | Report upstream; usually internal wire issue |
+| `audit csv: {e}` | audit | Fix CSV headers / rows (dataset_d1-compatible) |
+| `canonical JSON: {e}` | predict, audit, certify (`canonical: true`) | Retry without `canonical` or fix payload |
+| `unknown resource: {uri}` | `resources/read` | Call `resources/list`; use `umst://schemas/…` URI |
+| `unknown prompt: {name}` | `prompts/get` | Call `prompts/list` |
+| `mix_spec rational parse fail` | transition_propose (pre-gate) | Fix rational mix before propose |
+| Bad JSON-RPC frame | stdin parse | One JSON object per line; valid JSON-RPC 2.0 |
+
+**Gate vs transport on `umst_gate_check`:** REJECT returns `result.isError: true` with structured `gate_reject` — **not** JSON-RPC `error`. Missing `mix` is transport (`-32603`).
 
 ---
 
@@ -353,3 +403,4 @@ Pure morphisms live in `src/research/` (`validation`, `gate_check_mix`, `accept`
 - [`docker/README.md`](../docker/README.md) — OCI agent image + `server.json`
 - [`CARTRIDGE_PORT.md`](CARTRIDGE_PORT.md) — cross-cartridge port guide
 - [`MEMORY_REPLICATION.md`](MEMORY_REPLICATION.md) — durability + Litestream defer
+- [`umst-master-reengineering.md`](../../outputs/.plans/umst-master-reengineering.md#u7--structured-recoverable-mcp-errors-agent_errorv1) — planned `agent_error.v1` structured transport errors (U7)
