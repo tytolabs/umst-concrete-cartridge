@@ -9,6 +9,18 @@
 //! so rejected proposals receive analytical slack gradients before the hard witness.
 //!
 //! See [`docs/AGENT_MCP.md`](../../../../docs/AGENT_MCP.md#soft-gates).
+//!
+//! ## Cold vs hot boundary (post-Wave 10)
+//!
+//! | Layer | Role |
+//! |-------|------|
+//! | **Cold (this module)** | Differentiable `smoothstep` ramps for MCP / training templates |
+//! | **Warm (`umst-manifold` `ManifoldGateway`)** | `constraint_loss_penalty` + `RejectionTelemetry` on CBF witness |
+//! | **Hot (Burn graph)** | `clausius_duhem_violation` only when `kleisli-ppo-hot-bind` / `epistemic-ppo` enabled |
+//!
+//! Cartridge `soft_gate` outputs are **not** wired directly into `ThmcSolver::step`; manifold penalize
+//! consumes host `TransitionEvidence` / tensor CD slack instead. Bridge future work: map smoothstep
+//! slack → `lambda_cd` episode weight at cold orchestration only.
 
 /// formal_anchor: NONE
 /// formal_status: NONE
