@@ -39,9 +39,12 @@ pub mod material_transition;
 
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled.
+/// formal_anchor_rationale: Re-exports concrete transition gate cartridge when `manifold-gate` is enabled.
 #[cfg(feature = "manifold-gate")]
 pub use gate_evidence::ConcreteTransitionCartridge;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled.
 #[cfg(feature = "tier2c-handshake")]
 pub use material_transition::{
     cement_reaction_extent_kinetics_spec, CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA,

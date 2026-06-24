@@ -9,11 +9,17 @@ use umst_manifold::runtime::gate::GateCartridge;
 
 use crate::material_transition::{CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA};
 
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Zero-sized [`GateCartridge`] witness binding cement SSOT into manifold transition evidence.
 /// Cartridge-backed transition witness — lifts mix-calibrated snapshots with cement SSOT constants.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ConcreteTransitionCartridge;
 
 impl ConcreteTransitionCartridge {
+    /// formal_anchor: STRUCTURAL
+    /// formal_status: Structural
+    /// formal_anchor_rationale: Deterministic lift of mix scalars into [`ThermodynamicStateSnapshot`] via cartridge cement params.
     /// Lift admissible mix coordinates into a gate snapshot (hydration + strength scale).
     #[must_use]
     pub fn snapshot_from_mix(
@@ -30,6 +36,9 @@ impl ConcreteTransitionCartridge {
         )
     }
 
+    /// formal_anchor: STRUCTURAL
+    /// formal_status: Structural
+    /// formal_anchor_rationale: Delegates dissipation to manifold `transition_outcome` host path for telemetry parity.
     /// Host dissipation scalar for telemetry (joules-equivalent, same contract as manifold gate).
     #[must_use]
     pub fn dissipation_joules(
