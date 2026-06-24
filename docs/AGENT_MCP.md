@@ -274,6 +274,8 @@ Each code has a matching entry in `explain.remediation` and optional `explain.fi
 | MCP `isError: true` + `agent_error.v1` | Recoverable tool mistake | Read `code` + `remediation`; fix wire and retry |
 | `unknown job_id` | Stale async poll | Re-submit or check `contribute_jobs` beside DB |
 
+**Fatal JSON-RPC (`error`, not `isError`):** unknown tool/method (`-32601`), unhandled internal faults (`-32603`). Most recoverable paths above now return `agent_error.v1` instead of bare `-32603` — if you still see a plain `message` string, treat it as fatal or report upstream.
+
 Use prompt `interpret_gate_failure` when parsing REJECT payloads.
 
 ---
