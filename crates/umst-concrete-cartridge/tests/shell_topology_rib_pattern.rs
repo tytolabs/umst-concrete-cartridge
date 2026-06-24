@@ -246,7 +246,11 @@ fn thesis_reconfig_enabled() -> bool {
 }
 
 fn parse_target_vf() -> f32 {
-    let default = if thesis_reconfig_enabled() { 0.30_f32 } else { 0.15_f32 };
+    let default = if thesis_reconfig_enabled() {
+        0.30_f32
+    } else {
+        0.15_f32
+    };
     env::var("UMST_SHELL_VF")
         .ok()
         .and_then(|s| s.parse().ok())

@@ -23,9 +23,9 @@ mod agent_layer;
 #[cfg(feature = "agent-layer")]
 use agent_layer::AgentSession;
 #[cfg(feature = "agent-layer")]
-use umst_concrete_cartridge::research::MemoryQuery;
-#[cfg(feature = "agent-layer")]
 use umst_concrete_cartridge::research::ContributeError;
+#[cfg(feature = "agent-layer")]
+use umst_concrete_cartridge::research::MemoryQuery;
 
 fn err_frame(id: Value, msg: impl Into<String>) -> Value {
     json!({
@@ -47,12 +47,7 @@ fn text_result(id: Value, text: String, is_error: bool) -> Value {
 }
 
 /// Recoverable tool failures: structured `agent_error.v1` + `isError: true` (not JSON-RPC `-32603`).
-fn agent_tool_error(
-    id: Value,
-    code: &str,
-    message: impl Into<String>,
-    remediation: &str,
-) -> Value {
+fn agent_tool_error(id: Value, code: &str, message: impl Into<String>, remediation: &str) -> Value {
     let body = json!({
         "agent_error": {
             "schema_version": "agent_error.v1",
