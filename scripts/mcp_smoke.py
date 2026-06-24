@@ -66,6 +66,58 @@ def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
         for required in ("umst_predict", "umst_profiles"):
             assert required in names, f"missing tool {required}"
 
+        # W0: base facade tools return agent_error.v1 on recoverable failures (not JSON-RPC -32603).
+        bad_predict = rpc(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "tools/call",
+                "params": {
+                    "name": "umst_predict",
+                    "arguments": {
+                        "profile": "nonexistent_profile_xyz",
+                        "mix": {"w_c": "9/20", "temperature_k": "29315/100"},
+                    },
+                },
+            },
+        )
+        assert "result" in bad_predict, bad_predict
+        assert "error" not in bad_predict, bad_predict
+        assert bad_predict["result"].get("isError") is True, bad_predict
+        pred_err = json.loads(bad_predict["result"]["content"][0]["text"])
+        assert pred_err.get("agent_error", {}).get("schema_version") == "agent_error.v1"
+        assert pred_err["agent_error"].get("remediation")
+
+        bad_audit = rpc(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 6,
+                "method": "tools/call",
+                "params": {
+                    "name": "umst_audit",
+                    "arguments": {"profile": "default"},
+                },
+            },
+        )
+        assert bad_audit["result"].get("isError") is True, bad_audit
+        audit_err = json.loads(bad_audit["result"]["content"][0]["text"])
+        assert audit_err.get("agent_error", {}).get("code") == "audit_missing_csv"
+
+        bad_certify = rpc(
+            proc,
+            {
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "tools/call",
+                "params": {"name": "umst_certify", "arguments": {}},
+            },
+        )
+        assert bad_certify["result"].get("isError") is True, bad_certify
+        certify_err = json.loads(bad_certify["result"]["content"][0]["text"])
+        assert certify_err.get("agent_error", {}).get("code") == "certify_missing_profile"
+
         if agent_layer:
             for required in (
                 "umst_gate_check",

@@ -9,6 +9,7 @@ Runnable scripts for the Physical Reasoning Layer MCP server. See [`docs/AGENT_M
 | [`03_export_inbox.sh`](03_export_inbox.sh) | Export → validate → dry-run ingest for federated git inbox PRs | optional |
 | [`04_memory_query_batch.py`](04_memory_query_batch.py) | Seed one row, then batch `umst_memory_query` filters (L1, regime, admissible_only) | yes |
 | [`05_explain_violations.py`](05_explain_violations.py) | `explain: true` on rational parse fail + thermodynamic REJECT golden mix | yes |
+| [`06_arena_batch.py`](06_arena_batch.py) | In-process batch pattern (no MCP round-trips); see arena benchmark doc | optional |
 
 **Prerequisites:** Rust toolchain, repo root as cwd. CI prebuilds `umst-mcp --features agent-layer`; local runs may invoke `cargo run` on first launch.
 

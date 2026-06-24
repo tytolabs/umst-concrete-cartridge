@@ -247,13 +247,27 @@ fn tool_umst_predict(id: Value, args: &Value) -> Value {
     };
     let out = match serialize_prediction(&bundle, wire) {
         Ok(v) => v,
-        Err(e) => return err_frame(id, format!("serialize_prediction: {e}")),
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "serialize_fail",
+                format!("serialize_prediction: {e}"),
+                "Verify mix fields and profile calibration; see umst_predict schema.",
+            )
+        }
     };
 
     if canon {
         let bytes = match canonical_json_bytes(&out) {
             Ok(b) => b,
-            Err(e) => return err_frame(id, format!("canonical JSON: {e}")),
+            Err(e) => {
+                return agent_tool_error(
+                    id,
+                    "canonical_json_fail",
+                    format!("canonical JSON: {e}"),
+                    "Retry without canonical=true or fix prediction output shape.",
+                )
+            }
         };
         let escaped =
             serde_json::to_string(&String::from_utf8_lossy(&bytes).to_string()).unwrap_or_default();
@@ -271,7 +285,14 @@ fn tool_umst_audit(id: Value, args: &Value) -> Value {
         .unwrap_or("uci_d1");
     let csv_text = match args.get("csv_text").and_then(|v| v.as_str()) {
         Some(t) => t.to_string(),
-        None => return err_frame(id, String::from("missing csv_text")),
+        None => {
+            return agent_tool_error(
+                id,
+                "audit_missing_csv",
+                "missing csv_text",
+                "Supply csv_text with header row and mix columns; see umst_audit schema.",
+            )
+        }
     };
     let limit = args.get("limit").and_then(|v| {
         let n = v.as_u64()? as usize;
@@ -284,18 +305,39 @@ fn tool_umst_audit(id: Value, args: &Value) -> Value {
 
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
-        Err(e) => return err_frame(id, format!("profile load error: {e}")),
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "profile_load_fail",
+                format!("profile load error: {e}"),
+                "Call umst_profiles for bundled ids (e.g. default, uci_d1) or fix the profile argument.",
+            )
+        }
     };
 
     let v = match audit_csv_buf(&profile, &csv_text, limit) {
         Ok(x) => x,
-        Err(e) => return err_frame(id, format!("audit csv: {e}")),
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "audit_fail",
+                format!("audit csv: {e}"),
+                "Verify CSV headers and rational mix fields; see umst_audit schema.",
+            )
+        }
     };
 
     if canon {
         let bytes = match canonical_json_bytes(&v) {
             Ok(b) => b,
-            Err(e) => return err_frame(id, format!("canonical JSON: {e}")),
+            Err(e) => {
+                return agent_tool_error(
+                    id,
+                    "canonical_json_fail",
+                    format!("canonical JSON: {e}"),
+                    "Retry without canonical=true or fix audit output shape.",
+                )
+            }
         };
         let escaped =
             serde_json::to_string(&String::from_utf8_lossy(&bytes).to_string()).unwrap_or_default();
@@ -333,7 +375,14 @@ fn tool_umst_profiles(id: Value) -> Value {
 fn tool_umst_certify(id: Value, args: &Value) -> Value {
     let profile_id = match args.get("profile").and_then(|v| v.as_str()) {
         Some(x) => x,
-        None => return err_frame(id, String::from("missing profile")),
+        None => {
+            return agent_tool_error(
+                id,
+                "certify_missing_profile",
+                "missing profile",
+                "Supply profile id from umst_profiles (e.g. default, uci_d1).",
+            )
+        }
     };
     let canon = args
         .get("canonical")
@@ -342,13 +391,27 @@ fn tool_umst_certify(id: Value, args: &Value) -> Value {
 
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
-        Err(e) => return err_frame(id, format!("profile load error: {e}")),
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "profile_load_fail",
+                format!("profile load error: {e}"),
+                "Call umst_profiles for bundled ids (e.g. default, uci_d1) or fix the profile argument.",
+            )
+        }
     };
     let v = certify_profile_json(&profile);
     if canon {
         let bytes = match canonical_json_bytes(&v) {
             Ok(b) => b,
-            Err(e) => return err_frame(id, format!("canonical JSON: {e}")),
+            Err(e) => {
+                return agent_tool_error(
+                    id,
+                    "canonical_json_fail",
+                    format!("canonical JSON: {e}"),
+                    "Retry without canonical=true or fix certify output shape.",
+                )
+            }
         };
         let escaped =
             serde_json::to_string(&String::from_utf8_lossy(&bytes).to_string()).unwrap_or_default();
