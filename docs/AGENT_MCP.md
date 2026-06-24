@@ -63,7 +63,7 @@ Honest capability map for agent authors (stdio MCP unless noted). Full evidence:
 | Federated git inbox export | [`03_export_inbox.sh`](../examples/agent/03_export_inbox.sh) | shell + CLI | **Shipped** |
 | Gate + memory without MCP round-trips | `umst-py` / `gate_check_mix` in-process | library (`agent-layer` feature) | **Shipped** |
 | Replay adversarial gate wire offline | `cargo test --test phase8_adversarial` | Rust integration | **Shipped** · no MCP process |
-| Arena batch predict (≥5× MCP target) | `umst-runtime-arena` | in-process mmap | **Skeleton** — see [Library vs MCP](#library-vs-mcp) |
+| Arena batch predict (≥5× MCP target) | [`06_arena_batch.py`](../examples/agent/06_arena_batch.py) + `umst-runtime-arena` | in-process | **Partial** — batch gate shipped; ≥5× benchmark harness in manifold |
 | Hosted multi-tenant MCP | — | — | **Deferred** |
 | Auto calibration promotion | `umst promote-contribution` | CLI, human only | **Never via MCP** |
 

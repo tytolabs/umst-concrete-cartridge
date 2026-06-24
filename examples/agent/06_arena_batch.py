@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Document in-process batch pattern — prefer library/arena over MCP round-trips.
+"""In-process batch gate checks — prefer library path over MCP round-trips.
 
-This example does **not** spawn MCP. It exercises the agent-layer gate path in-process
-(the same physics MCP calls, without JSON-RPC overhead). For mmap arena batching see
-umst-manifold `umst-runtime-arena` (`feature = "mmap"`).
+Runs `gate_check_mix` in a tight loop (same physics as `umst_gate_check`, no JSON-RPC).
+See `umst-manifold/docs/benchmarks/arena_vs_mcp.md` for mmap fast path.
 """
 
 from __future__ import annotations
 
 import json
-import tempfile
+import subprocess
+import sys
 from pathlib import Path
 
 from mcp_rpc import repo_root
@@ -19,24 +19,37 @@ def main() -> int:
     fixture = repo_root() / "fixtures" / "golden-adversarial" / "admissible_mix_01.json"
     contribution = json.loads(fixture.read_text())
     mix = contribution["mix_spec"]
+    iters = int(__import__("os").environ.get("UMST_BATCH_GATE_ITERS", "50"))
 
-    # In-process gate via umst-cli / cartridge research API (no MCP process).
-    proc_code = """
-import json, sys
-from umst_concrete_cartridge.research import gate_check_mix_result
+    proc = subprocess.run(
+        [
+            "cargo",
+            "test",
+            "-p",
+            "umst-concrete-cartridge",
+            "--features",
+            "agent-layer",
+            "--test",
+            "inprocess_gate_batch",
+            "inprocess_gate_batch_hot_loop",
+            "--",
+            "--exact",
+            "--nocapture",
+        ],
+        cwd=repo_root(),
+        env={**__import__("os").environ, "UMST_INPROCESS_GATE_ITERS": str(iters)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stdout)
+        sys.stderr.write(proc.stderr)
+        return proc.returncode
 
-mix = json.loads(sys.argv[1])
-for _ in range(50):
-    gate_check_mix_result(mix, explain=False)
-print("batch_ok")
-"""
-    # Fallback: subprocess cargo test golden_gate_check as offline witness
-    print("06_arena_batch: in-process pattern documented")
+    print(f"06_arena_batch: in-process gate batch ok ({iters} iters)")
     print("  mix keys:", list(mix.keys()))
-    print("  See docs/benchmarks/arena_vs_mcp.md for mmap fast path")
-    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-        json.dump(mix, f)
-        print("  fixture mix:", f.name)
+    print("  fixture:", fixture)
     return 0
 
 

@@ -64,6 +64,18 @@ mod tests {
     use umst_manifold::runtime::gate::evidence::AdmissibilityToken;
 
     #[test]
+    fn concrete_transition_cartridge_matches_cd_on_identity_mix() {
+        use umst_manifold::runtime::gate::{CdTransitionCartridge, GateCartridge};
+
+        let old = ConcreteTransitionCartridge::snapshot_from_mix(0.45, 0.3, 293.15);
+        let new = old;
+        let concrete = ConcreteTransitionCartridge.transition_evidence(&old, &new, 1.0);
+        let cd = CdTransitionCartridge.transition_evidence(&old, &new, 1.0);
+        assert_eq!(concrete.catalog_id, cd.catalog_id);
+        assert_eq!(concrete.admissibility, cd.admissibility);
+    }
+
+    #[test]
     fn concrete_transition_cartridge_admits_idle_mix() {
         let old = ConcreteTransitionCartridge::snapshot_from_mix(0.45, 0.3, 293.15);
         let new = old;
