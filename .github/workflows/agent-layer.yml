@@ -6,6 +6,7 @@ on:
       - 'crates/umst-concrete-cartridge/src/research/**'
       - 'crates/umst-mcp/**'
       - 'fixtures/golden-adversarial/**'
+      - 'examples/agent/**'
       - 'scripts/mcp_smoke.py'
       - '.github/workflows/agent-layer.yml'
   workflow_dispatch:
@@ -14,6 +15,7 @@ on:
       - 'crates/umst-concrete-cartridge/src/research/**'
       - 'crates/umst-mcp/**'
       - 'fixtures/golden-adversarial/**'
+      - 'examples/agent/**'
       - 'scripts/mcp_smoke.py'
       - '.github/workflows/agent-layer.yml'
 
@@ -53,3 +55,7 @@ jobs:
       - name: MCP smoke (agent-layer)
         working-directory: .
         run: python3 scripts/mcp_smoke.py --agent-layer
+
+      - name: Agent example smoke (01_gate_explore, stdio — no Docker MCP)
+        working-directory: .
+        run: python3 examples/agent/01_gate_explore.py
