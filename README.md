@@ -13,16 +13,7 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`.
-
-### Current capabilities (today vs planned)
-
-| Works today | Planned (UMST master re-engineering) |
-|-------------|-------------------------------------|
-| stdio MCP: `umst_gate_check`, `umst_contribute`, `umst_memory_query`, prompts | Hosted HTTP MCP (frozen — local agents only) |
-| `explain: true` gate diagnostics with remediation + field paths | Shared violation SSOT with manifold `constraint_loss` training telemetry |
-| Runnable [`examples/agent/`](examples/agent/) workflows + federated git inbox export | `umst-runtime-arena` batch path (library/arena over Docker MCP for inner loops) |
-| Golden adversarial fixtures + `agent-layer` CI | Full P6 public readiness checklist on tyto.studio |
+> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`. **Roadmap:** [Stack roadmap (shipped vs in flight)](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/.plans/umst-master-reengineering.md#stack-roadmap-shipped-vs-in-flight) in the UMST master plan.
 
 > Release notes in [CHANGELOG.md](CHANGELOG.md).
 
