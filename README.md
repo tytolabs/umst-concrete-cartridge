@@ -569,7 +569,7 @@ In practice, the cartridge is a **software** runtime: mixes and **simulated** pr
 ### For Agents & Researchers
 
 - **MCP contract:** [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) — Quick Start, tool reference, `agent_error.v1` / `gate_reject.v1` remediation.
-- **Examples (CI-gated):** [`examples/agent/`](examples/agent/) — `01` gate explore, `02` contribute, `04` memory batch, `05` explain violations, `06` arena batch, `07` arena mmap + MCP session.
+- **Examples (CI-gated):** [`examples/agent/`](examples/agent/) — `01` gate explore, `02` contribute, `04` memory batch, `05` explain violations, `06` arena batch, `07` arena mmap, `08` MCP arena session.
 - **Golden fixtures:** [`fixtures/golden-adversarial/`](fixtures/golden-adversarial/) — agent wire SSOT (2 mixes); manifold owns 75-case physics gate.
 - **Evidence SSOT:** [IMPLEMENTATION_EVIDENCE.md](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/IMPLEMENTATION_EVIDENCE.md) — shipped vs partial vs USER-gated (**Current State** lives there, not in this README).
 

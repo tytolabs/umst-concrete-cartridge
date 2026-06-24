@@ -2,7 +2,7 @@
 
 Runnable scripts for the Physical Reasoning Layer. See [`docs/AGENT_MCP.md`](../../docs/AGENT_MCP.md) for the full contract.
 
-> **Performance:** Prefer **arena / in-process** examples (`06`–`07`) for batch gate loops and optimization sweeps (≥5× stdio MCP, CI-pinned). Use **MCP stdio** examples (`01`–`05`) for prototyping, discovery, and cross-language agents.
+> **Performance:** Prefer **arena / in-process** examples (`06`–`08`) for batch gate loops and optimization sweeps (≥5× stdio MCP, CI-pinned). Use **MCP stdio** examples (`01`–`05`) for prototyping, discovery, and cross-language agents.
 
 ## Fast path — arena / in-process (recommended for heavy use)
 
@@ -10,7 +10,7 @@ Runnable scripts for the Physical Reasoning Layer. See [`docs/AGENT_MCP.md`](../
 |--------|----------------|-----|
 | [`06_arena_batch.py`](06_arena_batch.py) | In-process `gate_check_mix` batch loop — no JSON-RPC overhead | yes |
 | [`07_arena_mmap_load.py`](07_arena_mmap_load.py) | `load_arena` → `UmstArenaView` hot loop (mmap proxy via CI test) | yes |
-| [`07_arena_mcp_session.py`](07_arena_mcp_session.py) | MCP arena session: `umst_arena_open` → `umst_gate_check_arena` → close | yes |
+| [`08_arena_mcp_session.py`](08_arena_mcp_session.py) | MCP arena session: `umst_arena_open` → `umst_gate_check_arena` → close | yes |
 
 Benchmarks: [`umst-manifold/docs/benchmarks/arena_vs_mcp.md`](../../../umst-manifold/docs/benchmarks/arena_vs_mcp.md).
 
@@ -31,7 +31,7 @@ cargo build -p umst-mcp --features agent-layer
 # Fast path (batch / mmap)
 python3 examples/agent/06_arena_batch.py
 python3 examples/agent/07_arena_mmap_load.py
-python3 examples/agent/07_arena_mcp_session.py
+python3 examples/agent/08_arena_mcp_session.py
 # MCP prototyping
 python3 examples/agent/01_gate_explore.py
 python3 examples/agent/02_contribute_admissible.py

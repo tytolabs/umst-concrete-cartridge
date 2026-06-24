@@ -185,7 +185,7 @@ fn thmc_state_from_umst<B: Backend<FloatElem = f32>>(
     }
 }
 
-/// The concrete domain [`IScienceCartridge`] implementation: bulk `MixTensor` → tensor physics → [`PhysicalResult`] summary.
+/// The concrete domain [`IScienceCartridge`] implementation: bulk [`MaterialCompositionTensor`] → tensor physics → [`PhysicalResult`] summary.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Cartridge functor F: mix layout → constitutive summaries; topology pass remains separate DEC hook.

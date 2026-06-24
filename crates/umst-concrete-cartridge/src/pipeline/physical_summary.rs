@@ -166,7 +166,7 @@ pub fn nominal_mix_tensor_for_mix_spec<B: Backend<FloatElem = f32>>(
     mix_tensor_from_layout(&layout, device)
 }
 
-/// Regime-centered nominal [`MixTensor`] when topology receives only a [`UnifiedMaterialStateTensor`](umst_manifold::core::tensors::UnifiedMaterialStateTensor)
+/// Regime-centered nominal [`MaterialCompositionTensor`] when topology receives only a [`UnifiedMaterialStateTensor`](umst_manifold::core::tensors::UnifiedMaterialStateTensor)
 /// (no explicit recipe). Uses profile `[regime]` midpoints and conservative SCM splits from optional caps.
 /// formal_anchor: NONE
 /// formal_status: NONE

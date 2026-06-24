@@ -76,7 +76,7 @@ Honest capability map for agent authors (stdio MCP unless noted). Full evidence:
 | Replay adversarial gate wire offline | `cargo test --test phase8_adversarial` | Rust integration | **Shipped** · no MCP process |
 | Arena batch predict (≥5× MCP target) | [`06_arena_batch.py`](../examples/agent/06_arena_batch.py) + `umst-runtime-arena` | in-process | **Shipped** — batch gate + mmap hot loop |
 | Arena mmap hot loop | [`07_arena_mmap_load.py`](../examples/agent/07_arena_mmap_load.py) | in-process | **Shipped** · CI |
-| MCP arena session (open/gate/close) | [`07_arena_mcp_session.py`](../examples/agent/07_arena_mcp_session.py) | stdio MCP | **Shipped** · CI |
+| MCP arena session (open/gate/close) | [`08_arena_mcp_session.py`](../examples/agent/08_arena_mcp_session.py) | stdio MCP | **Shipped** · CI |
 | Hosted multi-tenant MCP | — | — | **Deferred** |
 | Auto calibration promotion | `umst promote-contribution` | CLI, human only | **Never via MCP** |
 
@@ -111,7 +111,7 @@ MCP is the **stable default** for agents you do not control. Prefer library or a
 | `umst_gate_check_arena` | Gate check against open session + mix (same physics as `umst_gate_check`) |
 | `umst_arena_close` | Drop session bytes from MCP session map |
 
-Example workflow: [`07_arena_mcp_session.py`](../examples/agent/07_arena_mcp_session.py).
+Example workflow: [`08_arena_mcp_session.py`](../examples/agent/08_arena_mcp_session.py).
 
 **Security — untrusted arena bytes:** Only open arena files from trusted sources (your commit pipeline, signed catalog digest). Malformed headers fail closed at `load_arena`; do not point `umst_arena_open` at arbitrary uploads without validation. Arena bytes are **not** a substitute for gate admissibility — always run `umst_gate_check` / `umst_gate_check_arena` before contribute.
 

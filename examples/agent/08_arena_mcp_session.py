@@ -75,7 +75,7 @@ def main() -> int:
         close_body = parse_tool_text(closed)
         assert close_body.get("closed") == session_id
 
-        print("07_arena_mcp_session: ok")
+        print("08_arena_mcp_session: ok")
         return 0
     finally:
         proc.terminate()
