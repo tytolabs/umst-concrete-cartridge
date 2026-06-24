@@ -350,7 +350,7 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
                 let edges: Tensor<B, 2, Int> = manifold.edges_b1.clone();
                 let damage_pf = fracture.update_damage(strain, damage_bn1, gc_bn1, edges);
 
-                let thmc = ThmcSolver {
+                let mut thmc = ThmcSolver {
                     dt: 1.0_f32,
                     max_newton: 1_usize,
                     tol: 1e-2_f32,
