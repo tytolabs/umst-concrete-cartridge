@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use umst_cli::cli::{predict_with_options, serialize_prediction, PredictOptions};
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::facade::{MixSpec, PredictionWireVersion};
@@ -117,6 +118,7 @@ pub struct AgentSession {
     pub store: ResearchStore,
     pub clock: ProvenanceClock,
     pub jobs: HashMap<String, ContributeJob>,
+    pub arena_sessions: HashMap<uuid::Uuid, Arc<[u8]>>,
 }
 
 impl Default for AgentSession {
@@ -125,6 +127,7 @@ impl Default for AgentSession {
             store: ResearchStore::from_env().unwrap_or_default(),
             clock: ProvenanceClock::default(),
             jobs: load_contribute_jobs(),
+            arena_sessions: HashMap::new(),
         }
     }
 }
@@ -172,6 +175,7 @@ impl AgentSession {
                     store: store.clone(),
                     clock,
                     jobs: self.jobs,
+                    arena_sessions: self.arena_sessions,
                 };
                 persist_memory_row(&result.memory_id, &store)
                     .map_err(|e| AcceptError::Store(StoreError::Sqlite(e)))?;
@@ -208,6 +212,7 @@ impl AgentSession {
             jobs,
             store: self.store,
             clock: self.clock,
+            arena_sessions: self.arena_sessions,
         };
         let profile = profile.clone();
         let contribution = contribution.clone();
@@ -249,6 +254,7 @@ impl AgentSession {
                         jobs,
                         store: pending.store,
                         clock: pending.clock,
+                        arena_sessions: pending.arena_sessions,
                     },
                     job_id,
                 )
@@ -332,6 +338,89 @@ impl AgentSession {
                 "gate_summary": gate.gate_summary,
             }),
         ))
+    }
+
+    /// MCP `umst_arena_open` — load arena bytes at the Warm boundary, return session id.
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: stdio transport; parse-once arena session for hot gate loops.
+    pub fn arena_open(self, arena_path: &Path) -> Result<(Self, uuid::Uuid), String> {
+        let bytes = std::fs::read(arena_path).map_err(|e| format!("arena read: {e}"))?;
+        Self::arena_open_bytes(self, bytes)
+    }
+
+    /// Open arena session from owned bytes (validates header once via `load_arena`).
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Warm-boundary parse-once; gate physics on `gate_check_arena` delegate.
+    pub fn arena_open_bytes(self, bytes: Vec<u8>) -> Result<(Self, uuid::Uuid), String> {
+        #[cfg(feature = "arena-session")]
+        {
+            umst_runtime_arena::load_arena(&bytes).map_err(|e| format!("arena parse: {e}"))?;
+            let id = uuid::Uuid::new_v4();
+            let mut sessions = self.arena_sessions;
+            sessions.insert(id, Arc::from(bytes.into_boxed_slice()));
+            Ok((Self { arena_sessions: sessions, ..self }, id))
+        }
+        #[cfg(not(feature = "arena-session"))]
+        {
+            let _ = bytes;
+            Err("umst-mcp built without arena-session feature".into())
+        }
+    }
+
+    /// MCP `umst_gate_check_arena` — gate check against a warm arena session + mix wire.
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Warm parse + in-process gate; no per-iter MCP round-trip.
+    #[must_use]
+    pub fn gate_check_arena(
+        &self,
+        profile: &Profile,
+        arena_session_id: uuid::Uuid,
+        mix: &Value,
+        explain: bool,
+    ) -> Result<GateCheckResult, String> {
+        #[cfg(feature = "arena-session")]
+        {
+            let bytes = self
+                .arena_sessions
+                .get(&arena_session_id)
+                .ok_or_else(|| format!("unknown arena_session_id: {arena_session_id}"))?;
+            let view = umst_runtime_arena::load_arena(bytes).map_err(|e| format!("arena parse: {e}"))?;
+            let mut result = self.gate_check(profile, mix, explain);
+            let header = view.header();
+            result.gate_summary.catalog_ids.push(format!(
+                "arena.abi_v{}",
+                header.abi_version
+            ));
+            result.gate_summary.catalog_ids.push(format!(
+                "arena.state_bytes.{}",
+                header.state_bytes
+            ));
+            Ok(result)
+        }
+        #[cfg(not(feature = "arena-session"))]
+        {
+            let _ = (profile, arena_session_id, mix, explain);
+            Err("umst-mcp built without arena-session feature".into())
+        }
+    }
+
+    /// MCP `umst_arena_close` — drop warm arena session bytes.
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Session lifecycle; releases mmap-owned buffer handle.
+    pub fn arena_close(self, arena_session_id: uuid::Uuid) -> Result<Self, String> {
+        if !self.arena_sessions.contains_key(&arena_session_id) {
+            return Err(format!("unknown arena_session_id: {arena_session_id}"));
+        }
+        let mut sessions = self.arena_sessions;
+        sessions.remove(&arena_session_id);
+        Ok(Self {
+            arena_sessions: sessions,
+            ..self
+        })
     }
 }
 
@@ -611,6 +700,51 @@ pub fn agent_tools_schema() -> Vec<Value> {
                         "process": { "type": "object", "description": "Optional process metadata (curing_regime, etc.)" }
                     },
                     "required": ["mix"]
+                }
+            }),
+            false,
+        ),
+        with_schema_2020(
+            json!({
+                "name": "umst_arena_open",
+                "description": "Load arena bytes at the Warm boundary and return arena_session_id for hot gate loops. Validates header via load_arena once. Example: {\"arena_path\":\"fixtures/arena/minimal.v1.bin\"}.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "arena_path": { "type": "string", "description": "Path to versioned arena file (ABI v1)" }
+                    },
+                    "required": ["arena_path"]
+                }
+            }),
+            false,
+        ),
+        with_schema_2020(
+            json!({
+                "name": "umst_gate_check_arena",
+                "description": "Gate check using a warm arena session (parse-once) plus mix wire. Same physics as umst_gate_check; adds arena catalog witnesses.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "arena_session_id": { "type": "string", "description": "UUID from umst_arena_open" },
+                        "mix": { "type": "object", "description": "mix_spec.v1 rational fields" },
+                        "profile": { "type": "string", "default": "default" },
+                        "explain": { "type": "boolean", "default": true }
+                    },
+                    "required": ["arena_session_id", "mix"]
+                }
+            }),
+            true,
+        ),
+        with_schema_2020(
+            json!({
+                "name": "umst_arena_close",
+                "description": "Release warm arena session bytes. Idempotent drop of arena_session_id from MCP session map.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "arena_session_id": { "type": "string" }
+                    },
+                    "required": ["arena_session_id"]
                 }
             }),
             false,

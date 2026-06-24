@@ -30,6 +30,9 @@ pub mod gate_policy;
 #[cfg(feature = "manifold-gate")]
 pub mod gate_evidence;
 
+#[cfg(all(feature = "manifold-gate", feature = "solver-experimental"))]
+pub mod thmc_gate;
+
 #[cfg(feature = "agent-layer")]
 /// Gate-validated research memory (Physical Reasoning Layer).
 pub mod research;
@@ -41,7 +44,12 @@ pub mod material_transition;
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports concrete transition gate cartridge when `manifold-gate` is enabled.
 #[cfg(feature = "manifold-gate")]
-pub use gate_evidence::ConcreteTransitionCartridge;
+pub use gate_evidence::{ConcreteTransitionCartridge, ConcreteTransitionWitness};
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports THMC injectable gate helpers when `solver-experimental` enabled.
+#[cfg(all(feature = "manifold-gate", feature = "solver-experimental"))]
+pub use thmc_gate::{gate_cartridge_witness, with_gate_cartridge};
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled.

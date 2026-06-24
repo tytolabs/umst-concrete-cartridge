@@ -63,7 +63,9 @@ Honest capability map for agent authors (stdio MCP unless noted). Full evidence:
 | Federated git inbox export | [`03_export_inbox.sh`](../examples/agent/03_export_inbox.sh) | shell + CLI | **Shipped** |
 | Gate + memory without MCP round-trips | `umst-py` / `gate_check_mix` in-process | library (`agent-layer` feature) | **Shipped** |
 | Replay adversarial gate wire offline | `cargo test --test phase8_adversarial` | Rust integration | **Shipped** · no MCP process |
-| Arena batch predict (≥5× MCP target) | [`06_arena_batch.py`](../examples/agent/06_arena_batch.py) + `umst-runtime-arena` | in-process | **Partial** — batch gate shipped; ≥5× benchmark harness in manifold |
+| Arena batch predict (≥5× MCP target) | [`06_arena_batch.py`](../examples/agent/06_arena_batch.py) + `umst-runtime-arena` | in-process | **Shipped** — batch gate + mmap hot loop |
+| Arena mmap hot loop | [`07_arena_mmap_load.py`](../examples/agent/07_arena_mmap_load.py) | in-process | **Shipped** · CI |
+| MCP arena session (open/gate/close) | [`07_arena_mcp_session.py`](../examples/agent/07_arena_mcp_session.py) | stdio MCP | **Shipped** · CI |
 | Hosted multi-tenant MCP | — | — | **Deferred** |
 | Auto calibration promotion | `umst promote-contribution` | CLI, human only | **Never via MCP** |
 
@@ -71,15 +73,36 @@ Honest capability map for agent authors (stdio MCP unless noted). Full evidence:
 
 ---
 
-## Library vs MCP
+## Library vs MCP vs arena
 
-| Surface | When to use | Trade-off |
-|---------|-------------|-----------|
-| **MCP stdio** (`umst-mcp`) | External agents, SDK integrations, safe exploration | Stable JSON-RPC contract; one round-trip per call |
-| **Rust library** (`umst-concrete-cartridge`, `umst-cli`, `umst-py`) | Batch audits, notebooks, in-repo integration tests | In-process; no wire overhead |
-| **Arena fast path** (`umst-runtime-arena`) | High-volume gate/predict after mmap load | Opt-in; target ≥5× MCP — see [`RUNTIME_TOPOLOGY.md`](../../umst-manifold/docs/RUNTIME_TOPOLOGY.md) |
+Choose the surface by **who owns the process** and **call volume**:
+
+```text
+Need stable agent contract?     → stdio MCP (umst-mcp)
+Own the Rust/Python process?    → in-process library (gate_check_mix)
+High-volume after warm load?    → arena session (load_arena / mmap)
+```
+
+| Surface | Boundary | When to use | Trade-off |
+|---------|----------|-------------|-----------|
+| **MCP stdio** (`umst-mcp`) | Cold — JSON-RPC per call | External agents, SDK integrations, safe exploration | Stable contract; one round-trip per tool |
+| **In-process gate** (`gate_check_mix`, `06_arena_batch.py`) | Warm — same process, no wire | Batch gate loops you control | No MCP overhead; requires `agent-layer` feature |
+| **Arena session** (`umst_arena_open` → `umst_gate_check_arena`) | Warm — parse arena once, reuse bytes | Repeated gate checks on the same committed arena | Session map holds `Arc<[u8]>`; `load_arena` at open |
+| **Arena mmap** (`umst-runtime-arena`, `07_arena_mmap_load.py`) | Warm — file-backed zero-copy | Highest throughput after mmap | Requires trusted arena bytes; see security note |
 
 MCP is the **stable default** for agents you do not control. Prefer library or arena only when you own the process and need throughput. CI agent examples use **stdio only** (no Docker MCP).
+
+### Arena session tools (`agent-layer` + `arena-session`)
+
+| Tool | Role |
+|------|------|
+| `umst_arena_open` | Read arena file, validate ABI v1 header via `load_arena`, return `arena_session_id` |
+| `umst_gate_check_arena` | Gate check against open session + mix (same physics as `umst_gate_check`) |
+| `umst_arena_close` | Drop session bytes from MCP session map |
+
+Example workflow: [`07_arena_mcp_session.py`](../examples/agent/07_arena_mcp_session.py).
+
+**Security — untrusted arena bytes:** Only open arena files from trusted sources (your commit pipeline, signed catalog digest). Malformed headers fail closed at `load_arena`; do not point `umst_arena_open` at arbitrary uploads without validation. Arena bytes are **not** a substitute for gate admissibility — always run `umst_gate_check` / `umst_gate_check_arena` before contribute.
 
 ---
 

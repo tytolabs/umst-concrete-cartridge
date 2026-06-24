@@ -102,6 +102,11 @@ path = "tests/tier2c_closure_parity.rs"
 required-features = ["tier2c-handshake", "manifold-gate", "solver-experimental"]
 
 [[test]]
+name = "thmc_concrete_gate_integration"
+path = "tests/thmc_concrete_gate_integration.rs"
+required-features = ["tier2c-handshake", "manifold-gate", "solver-experimental"]
+
+[[test]]
 name = "manifest_bridge_catalog_grounding"
 path = "tests/manifest_bridge_catalog_grounding.rs"
 required-features = ["manifest-bridge"]

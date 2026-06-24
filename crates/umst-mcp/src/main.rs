@@ -679,6 +679,173 @@ fn tool_umst_transition_propose(
 }
 
 #[cfg(feature = "agent-layer")]
+fn tool_umst_arena_open(id: Value, args: &Value, session: AgentSession) -> (Value, AgentSession) {
+    let arena_path = match args.get("arena_path").and_then(|v| v.as_str()) {
+        Some(p) => p,
+        None => {
+            return (
+                agent_tool_error(
+                    id,
+                    "missing_argument",
+                    "missing arena_path",
+                    "Supply arena_path to a versioned ABI v1 arena file.",
+                ),
+                session,
+            );
+        }
+    };
+    match session.clone().arena_open(std::path::Path::new(arena_path)) {
+        Ok((next, arena_session_id)) => (
+            text_result(
+                id,
+                serde_json::to_string_pretty(&json!({
+                    "arena_session_id": arena_session_id.to_string(),
+                    "arena_path": arena_path,
+                }))
+                .unwrap_or_default(),
+                false,
+            ),
+            next,
+        ),
+        Err(e) => (
+            agent_tool_error(
+                id,
+                "arena_open_fail",
+                e,
+                "Verify arena file exists and matches ABI v1 header layout.",
+            ),
+            session,
+        ),
+    }
+}
+
+#[cfg(feature = "agent-layer")]
+fn tool_umst_gate_check_arena(id: Value, args: &Value, session: &AgentSession) -> Value {
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let arena_session_id = match args.get("arena_session_id").and_then(|v| v.as_str()) {
+        Some(s) => s,
+        None => {
+            return agent_tool_error(
+                id,
+                "missing_argument",
+                "missing arena_session_id",
+                "Call umst_arena_open first; pass returned arena_session_id.",
+            );
+        }
+    };
+    let session_uuid = match uuid::Uuid::parse_str(arena_session_id) {
+        Ok(u) => u,
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "invalid_arena_session_id",
+                format!("invalid arena_session_id: {e}"),
+                "Use the UUID string returned from umst_arena_open.",
+            );
+        }
+    };
+    let mix = match args.get("mix") {
+        Some(m) => m.clone(),
+        None => {
+            return agent_tool_error(
+                id,
+                "missing_argument",
+                "missing mix",
+                "Supply mix with rational fields per contribution.v1.",
+            );
+        }
+    };
+    let explain = args
+        .get("explain")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(true);
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "profile_load_fail",
+                format!("profile load error: {e}"),
+                "Call umst_profiles for bundled ids or use profile: \"default\".",
+            );
+        }
+    };
+    match session.gate_check_arena(&profile, session_uuid, &mix, explain) {
+        Ok(result) => {
+            let is_error = !result.gate_summary.admissible;
+            text_result(
+                id,
+                serde_json::to_string_pretty(&result).unwrap_or_default(),
+                is_error,
+            )
+        }
+        Err(e) => agent_tool_error(
+            id,
+            "arena_gate_check_fail",
+            e,
+            "Ensure arena_session_id is open; re-open with umst_arena_open if MCP restarted.",
+        ),
+    }
+}
+
+#[cfg(feature = "agent-layer")]
+fn tool_umst_arena_close(id: Value, args: &Value, session: AgentSession) -> (Value, AgentSession) {
+    let arena_session_id = match args.get("arena_session_id").and_then(|v| v.as_str()) {
+        Some(s) => s,
+        None => {
+            return (
+                agent_tool_error(
+                    id,
+                    "missing_argument",
+                    "missing arena_session_id",
+                    "Pass arena_session_id from umst_arena_open.",
+                ),
+                session,
+            );
+        }
+    };
+    let session_uuid = match uuid::Uuid::parse_str(arena_session_id) {
+        Ok(u) => u,
+        Err(e) => {
+            return (
+                agent_tool_error(
+                    id,
+                    "invalid_arena_session_id",
+                    format!("invalid arena_session_id: {e}"),
+                    "Use the UUID string returned from umst_arena_open.",
+                ),
+                session,
+            );
+        }
+    };
+    match session.clone().arena_close(session_uuid) {
+        Ok(next) => (
+            text_result(
+                id,
+                serde_json::to_string_pretty(&json!({
+                    "closed": arena_session_id,
+                }))
+                .unwrap_or_default(),
+                false,
+            ),
+            next,
+        ),
+        Err(e) => (
+            agent_tool_error(
+                id,
+                "arena_close_fail",
+                e,
+                "Session may have expired after MCP restart; call umst_arena_open again.",
+            ),
+            session,
+        ),
+    }
+}
+
+#[cfg(feature = "agent-layer")]
 fn handle_tools_call(
     id: Value,
     params: Option<&Value>,
@@ -705,6 +872,9 @@ fn handle_tools_call(
         "umst_memory_query" => (tool_umst_memory_query(id, &args, &session), session),
         "umst_mi_estimate" => (tool_umst_mi_estimate(id, &args, &session), session),
         "umst_transition_propose" => tool_umst_transition_propose(id, &args, session),
+        "umst_arena_open" => tool_umst_arena_open(id, &args, session),
+        "umst_gate_check_arena" => (tool_umst_gate_check_arena(id, &args, &session), session),
+        "umst_arena_close" => tool_umst_arena_close(id, &args, session),
         other => (
             json!({
                 "jsonrpc": "2.0",

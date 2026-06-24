@@ -4042,6 +4042,7 @@ dependencies = [
  "tracing-subscriber",
  "umst-cli",
  "umst-concrete-cartridge",
+ "umst-runtime-arena",
  "uuid",
 ]
 
@@ -4055,6 +4056,14 @@ dependencies = [
  "serde_json",
  "umst-cli",
  "umst-concrete-cartridge",
+]
+
+[[package]]
+name = "umst-runtime-arena"
+version = "0.1.0"
+source = "git+https://github.com/tytolabs/umst-manifold.git?rev=6f628f1fab84b1ef89453567fea368581486c213#6f628f1fab84b1ef89453567fea368581486c213"
+dependencies = [
+ "thiserror 1.0.69",
 ]
 
 [[package]]

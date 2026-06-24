@@ -10,6 +10,8 @@ Runnable scripts for the Physical Reasoning Layer MCP server. See [`docs/AGENT_M
 | [`04_memory_query_batch.py`](04_memory_query_batch.py) | Seed one row, then batch `umst_memory_query` filters (L1, regime, admissible_only) | yes |
 | [`05_explain_violations.py`](05_explain_violations.py) | `explain: true` on rational parse fail + thermodynamic REJECT golden mix | yes |
 | [`06_arena_batch.py`](06_arena_batch.py) | In-process batch gate loop (no MCP round-trips) | yes |
+| [`07_arena_mmap_load.py`](07_arena_mmap_load.py) | Arena `load_arena` hot loop via umst-mcp test proxy | yes |
+| [`07_arena_mcp_session.py`](07_arena_mcp_session.py) | MCP arena session: open → gate_check_arena → close | yes |
 
 **Prerequisites:** Rust toolchain, repo root as cwd. CI prebuilds `umst-mcp --features agent-layer`; local runs may invoke `cargo run` on first launch.
 

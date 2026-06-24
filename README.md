@@ -16,17 +16,6 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`. **Roadmap:** [Stack roadmap (shipped vs in flight)](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/.plans/umst-master-reengineering.md#stack-roadmap-shipped-vs-in-flight) in the UMST master plan.
-
-### For Agents & Researchers
-
-- **MCP contract:** [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) — Quick Start, tool reference, `agent_error.v1` / `gate_reject.v1` remediation.
-- **Examples (CI-gated):** [`examples/agent/`](examples/agent/) — `01` gate explore, `02` contribute, `04` memory batch, `05` explain violations.
-- **Golden fixtures:** [`fixtures/golden-adversarial/`](fixtures/golden-adversarial/) — agent wire SSOT (2 mixes); manifold owns 75-case physics gate.
-- **Evidence SSOT:** [IMPLEMENTATION_EVIDENCE.md](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/IMPLEMENTATION_EVIDENCE.md) — shipped vs partial vs USER-gated (**Current State** lives there, not in this README).
-
-> Release notes in [CHANGELOG.md](CHANGELOG.md).
-
 > *When water meets cement, nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a load-bearing structure. If the temperature or chemistry is off, the material cracks. The cartridge does not regress this from past test data; it simulates the chemical reactions and stresses directly.*
 
 **UMST Concrete Cartridge** is the applied physical brain of the [UMST Manifold](https://github.com/tytolabs/umst-manifold) for **cementitious materials**. It provides the specific chemical-physical equations, real-world data calibration, and programming connections for cement, concrete, and mineral binders.
@@ -562,6 +551,21 @@ In practice, the cartridge is a **software** runtime: mixes and **simulated** pr
 - [**UMST-UCRS**](https://github.com/tytolabs/umst-ucrs) — Universal Calendar Resolution Spine; optional `ucrs-provenance` Tier-2 `observed_at` stamps on agent memory
 - [**UMST Formal**](https://github.com/tytolabs/umst-formal) — Lean 4 / Coq proof anchors for the conservation laws
 - [**UMST Formal Double-Slit**](https://github.com/tytolabs/umst-formal-double-slit) — quantum-information proofs anchoring the Thermodynamic CBF
+
+---
+
+## Release & agent path
+
+> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`. **Roadmap:** [Stack roadmap (shipped vs in flight)](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/.plans/umst-master-reengineering.md#stack-roadmap-shipped-vs-in-flight) in the UMST master plan.
+
+### For Agents & Researchers
+
+- **MCP contract:** [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) — Quick Start, tool reference, `agent_error.v1` / `gate_reject.v1` remediation.
+- **Examples (CI-gated):** [`examples/agent/`](examples/agent/) — `01` gate explore, `02` contribute, `04` memory batch, `05` explain violations, `06` arena batch, `07` arena mmap + MCP session.
+- **Golden fixtures:** [`fixtures/golden-adversarial/`](fixtures/golden-adversarial/) — agent wire SSOT (2 mixes); manifold owns 75-case physics gate.
+- **Evidence SSOT:** [IMPLEMENTATION_EVIDENCE.md](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/IMPLEMENTATION_EVIDENCE.md) — shipped vs partial vs USER-gated (**Current State** lives there, not in this README).
+
+> Release notes in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

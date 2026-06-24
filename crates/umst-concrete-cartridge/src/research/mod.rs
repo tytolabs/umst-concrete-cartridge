@@ -12,6 +12,7 @@
 pub mod checkpoint;
 pub mod contribution;
 pub mod export;
+pub mod gate_explain_ssot;
 pub mod geometry;
 pub mod governance;
 pub mod layer;

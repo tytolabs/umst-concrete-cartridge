@@ -60,7 +60,7 @@ jobs:
         working-directory: .
         run: cargo build -p umst-mcp --features agent-layer --quiet
 
-      - name: Agent example smoke (01, 02, 04, 05, 06 — stdio, no Docker MCP)
+      - name: Agent example smoke (01–07 — stdio, no Docker MCP)
         working-directory: .
         run: |
           python3 examples/agent/01_gate_explore.py
@@ -68,4 +68,5 @@ jobs:
           python3 examples/agent/04_memory_query_batch.py
           python3 examples/agent/05_explain_violations.py
           python3 examples/agent/06_arena_batch.py
-          python3 examples/agent/06_arena_batch.py
+          python3 examples/agent/07_arena_mmap_load.py
+          python3 examples/agent/07_arena_mcp_session.py

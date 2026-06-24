@@ -3,11 +3,26 @@
 
 //! Concrete-cartridge [`GateCartridge::transition_evidence`] — dissipation / strength / hydration SSOT.
 
-use umst_manifold::gate::transition_proposal::ThermodynamicStateSnapshot;
+use umst_manifold::gate::transition_proposal::{
+    transition_outcome, ThermodynamicStateSnapshot, TRANSITION_TOLERANCE,
+};
 use umst_manifold::runtime::gate::evidence::{explain_cd_transition_host, TransitionEvidence};
 use umst_manifold::runtime::gate::GateCartridge;
 
 use crate::material_transition::{CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA};
+
+/// Cartridge-enriched transition witness — core [`TransitionEvidence`] plus scalar telemetry.
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Telemetry envelope around manifold [`TransitionEvidence`]; CD admissibility on `core` leg.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ConcreteTransitionWitness {
+    pub core: TransitionEvidence,
+    pub strength_mpa: f64,
+    pub hydration_alpha: f64,
+    pub temperature_k: f64,
+    pub dissipation_joules: f64,
+}
 
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
@@ -47,9 +62,28 @@ impl ConcreteTransitionCartridge {
         dt: f64,
         tolerance: f64,
     ) -> f64 {
-        let host =
-            umst_manifold::gate::transition_proposal::transition_outcome(old, new, dt, tolerance);
-        host.dissipation
+        transition_outcome(old, new, dt, tolerance).dissipation
+    }
+
+    /// Enriched witness with cartridge scalar snapshots and dissipation metadata.
+    /// formal_anchor: STRUCTURAL
+    /// formal_status: Structural
+    /// formal_anchor_rationale: Composes manifold `transition_evidence` with cartridge dissipation telemetry.
+    #[must_use]
+    pub fn transition_witness(
+        &self,
+        old: &ThermodynamicStateSnapshot,
+        new: &ThermodynamicStateSnapshot,
+        dt: f64,
+    ) -> ConcreteTransitionWitness {
+        let core = self.transition_evidence(old, new, dt);
+        ConcreteTransitionWitness {
+            core,
+            strength_mpa: new.strength,
+            hydration_alpha: new.reaction_extent,
+            temperature_k: new.temperature,
+            dissipation_joules: Self::dissipation_joules(old, new, dt, TRANSITION_TOLERANCE),
+        }
     }
 }
 
@@ -60,7 +94,7 @@ impl GateCartridge for ConcreteTransitionCartridge {
         new: &ThermodynamicStateSnapshot,
         dt: f64,
     ) -> TransitionEvidence {
-        let explanation = explain_cd_transition_host(old, new, dt, 1e-6);
+        let explanation = explain_cd_transition_host(old, new, dt, TRANSITION_TOLERANCE);
         TransitionEvidence::from_constraint_explanation(explanation)
     }
 }
@@ -101,7 +135,7 @@ mod tests {
         let old = ConcreteTransitionCartridge::snapshot_from_mix(0.45, 0.3, 293.15);
         let mut new = old;
         new.free_energy = 1.0e6;
-        let host = transition_outcome(&old, &new, 1.0, 1e-6);
+        let host = transition_outcome(&old, &new, 1.0, TRANSITION_TOLERANCE);
         assert!(
             !host.energy_positive,
             "sanity: ψ spike should reject on host"
@@ -109,8 +143,21 @@ mod tests {
         let evidence = ConcreteTransitionCartridge.transition_evidence(&old, &new, 1.0);
         assert_eq!(evidence.admissibility, AdmissibilityToken::Inadmissible);
         assert!(
-            ConcreteTransitionCartridge::dissipation_joules(&old, &new, 1.0, 1e-6) < 0.0,
+            ConcreteTransitionCartridge::dissipation_joules(&old, &new, 1.0, TRANSITION_TOLERANCE)
+                < 0.0,
             "inadmissible mix transition must show negative dissipation on host path"
         );
+    }
+
+    #[test]
+    fn concrete_transition_witness_carries_scalar_metadata() {
+        let old = ConcreteTransitionCartridge::snapshot_from_mix(0.45, 0.3, 293.15);
+        let new = ConcreteTransitionCartridge::snapshot_from_mix(0.45, 0.5, 298.0);
+        let witness = ConcreteTransitionCartridge.transition_witness(&old, &new, 3600.0);
+        assert!(witness.strength_mpa.is_finite());
+        assert!((witness.hydration_alpha - 0.5).abs() < 1e-9);
+        assert!((witness.temperature_k - 298.0).abs() < 1e-9);
+        assert!(witness.dissipation_joules.is_finite());
+        assert_eq!(witness.core.catalog_id, CD_TRANSITION_CATALOG_ID);
     }
 }
