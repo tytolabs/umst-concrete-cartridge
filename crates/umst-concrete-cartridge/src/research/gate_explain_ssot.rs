@@ -71,7 +71,9 @@ pub fn fields_for_code(code: &str, mix_has_temperature_k: bool) -> Vec<(String, 
             }
             fields
         }
-        MANIFEST_BRIDGE_DISABLED => vec![("build.features".into(), "manifest_bridge_disabled".into())],
+        MANIFEST_BRIDGE_DISABLED => {
+            vec![("build.features".into(), "manifest_bridge_disabled".into())]
+        }
         _ => Vec::new(),
     }
 }

@@ -360,7 +360,13 @@ impl AgentSession {
             let id = uuid::Uuid::new_v4();
             let mut sessions = self.arena_sessions;
             sessions.insert(id, Arc::from(bytes.into_boxed_slice()));
-            Ok((Self { arena_sessions: sessions, ..self }, id))
+            Ok((
+                Self {
+                    arena_sessions: sessions,
+                    ..self
+                },
+                id,
+            ))
         }
         #[cfg(not(feature = "arena-session"))]
         {
@@ -387,17 +393,18 @@ impl AgentSession {
                 .arena_sessions
                 .get(&arena_session_id)
                 .ok_or_else(|| format!("unknown arena_session_id: {arena_session_id}"))?;
-            let view = umst_runtime_arena::load_arena(bytes).map_err(|e| format!("arena parse: {e}"))?;
+            let view =
+                umst_runtime_arena::load_arena(bytes).map_err(|e| format!("arena parse: {e}"))?;
             let mut result = self.gate_check(profile, mix, explain);
             let header = view.header();
-            result.gate_summary.catalog_ids.push(format!(
-                "arena.abi_v{}",
-                header.abi_version
-            ));
-            result.gate_summary.catalog_ids.push(format!(
-                "arena.state_bytes.{}",
-                header.state_bytes
-            ));
+            result
+                .gate_summary
+                .catalog_ids
+                .push(format!("arena.abi_v{}", header.abi_version));
+            result
+                .gate_summary
+                .catalog_ids
+                .push(format!("arena.state_bytes.{}", header.state_bytes));
             Ok(result)
         }
         #[cfg(not(feature = "arena-session"))]

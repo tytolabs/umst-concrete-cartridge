@@ -47,17 +47,17 @@ pub mod material_transition;
 pub use gate_evidence::{ConcreteTransitionCartridge, ConcreteTransitionWitness};
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Re-exports THMC injectable gate helpers when `solver-experimental` enabled.
-#[cfg(all(feature = "manifold-gate", feature = "solver-experimental"))]
-pub use thmc_gate::{gate_cartridge_witness, with_gate_cartridge};
-/// formal_anchor: NONE
-/// formal_status: NONE
 /// formal_anchor_rationale: Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled.
 #[cfg(feature = "tier2c-handshake")]
 pub use material_transition::{
     cement_reaction_extent_kinetics_spec, CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA,
     CEMENT_REACTION_ENTHALPY_J_PER_KG,
 };
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-exports THMC injectable gate helpers when `solver-experimental` enabled.
+#[cfg(all(feature = "manifold-gate", feature = "solver-experimental"))]
+pub use thmc_gate::{gate_cartridge_witness, with_gate_cartridge};
 
 mod burn_compat;
 

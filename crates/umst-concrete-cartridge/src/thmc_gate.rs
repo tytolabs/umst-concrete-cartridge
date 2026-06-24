@@ -14,7 +14,10 @@ use crate::material_transition::CEMENT_DEFAULT_S_INTRINSIC_MPA;
 /// formal_anchor_rationale: Configures [`ThmcSolver`] intrinsic strength from cement SSOT before coupled step.
 /// Configure a [`ThmcSolver`] to lift gate snapshots with cartridge cement constants.
 #[must_use]
-pub fn with_gate_cartridge(solver: ThmcSolver, cartridge: &ConcreteTransitionCartridge) -> ThmcSolver {
+pub fn with_gate_cartridge(
+    solver: ThmcSolver,
+    cartridge: &ConcreteTransitionCartridge,
+) -> ThmcSolver {
     let _ = cartridge;
     solver.with_gate_intrinsic_strength_mpa(CEMENT_DEFAULT_S_INTRINSIC_MPA)
 }
@@ -24,7 +27,9 @@ pub fn with_gate_cartridge(solver: ThmcSolver, cartridge: &ConcreteTransitionCar
 /// formal_anchor_rationale: Routes post-step evidence through cartridge [`GateCartridge`] witness.
 /// Resolve the static cartridge witness for THMC post-step telemetry.
 #[must_use]
-pub fn gate_cartridge_witness(cartridge: &ConcreteTransitionCartridge) -> &'static dyn GateCartridge {
+pub fn gate_cartridge_witness(
+    cartridge: &ConcreteTransitionCartridge,
+) -> &'static dyn GateCartridge {
     let _ = cartridge;
     &ConcreteTransitionCartridge
 }

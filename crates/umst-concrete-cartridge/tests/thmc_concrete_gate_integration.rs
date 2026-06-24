@@ -114,15 +114,9 @@ fn thmc_step_drains_cartridge_gate_evidence() {
     assert!(!drained.is_empty(), "expected post-step gate evidence");
     assert_eq!(drained[0].transition.catalog_id, CD_TRANSITION_CATALOG_ID);
 
-    let direct = ThmcSolverStep::attach_gate_evidence(
-        &solver,
-        &science,
-        &pre,
-        &post,
-        &manifold,
-        solver.dt,
-    )
-    .expect("attach gate evidence");
+    let direct =
+        ThmcSolverStep::attach_gate_evidence(&solver, &science, &pre, &post, &manifold, solver.dt)
+            .expect("attach gate evidence");
     assert_eq!(
         direct.transition.admissibility,
         AdmissibilityToken::Admissible
