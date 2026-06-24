@@ -5,7 +5,7 @@
 use burn::tensor::Int;
 use burn::tensor::{backend::Backend, Tensor};
 use umst_manifold::core::apply_physics_to_umst;
-use umst_manifold::core::tensors::MaterialCompositionTensor;
+use umst_manifold::core::tensors::StatePoint;
 use umst_manifold::core::tensors::UnifiedMaterialStateTensor;
 use umst_manifold::core::traits::{IScienceCartridge, PhysicalResult};
 #[cfg(feature = "solver-experimental")]
@@ -185,7 +185,7 @@ fn thmc_state_from_umst<B: Backend<FloatElem = f32>>(
     }
 }
 
-/// The concrete domain [`IScienceCartridge`] implementation: bulk [`MaterialCompositionTensor`] → tensor physics → [`PhysicalResult`] summary.
+/// The concrete domain [`IScienceCartridge`] implementation: bulk `MixTensor` → tensor physics → [`PhysicalResult`] summary.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Cartridge functor F: mix layout → constitutive summaries; topology pass remains separate DEC hook.
@@ -253,7 +253,7 @@ impl<B: Backend<FloatElem = f32>> Default for ConcreteCartridge<B> {
 }
 
 impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> {
-    fn compute_all(&self, mix: &MaterialCompositionTensor<B>) -> PhysicalResult<B> {
+    fn compute_all(&self, mix: &StatePoint<B>) -> PhysicalResult<B> {
         let report = run_full_physics_pipeline::<B>(&self.profile, mix);
         let dev = mix.fractions.device();
         physical_result_from_report::<B>(&self.profile, &report, &dev)
