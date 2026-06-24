@@ -226,6 +226,7 @@ Call `prompts/list` then `prompts/get`.
 - **Scope tokens:** when `UMST_AGENT_SCOPE_TOKENS` is set, include matching `scope_token` on contribute.
 - **Idempotency:** use `idempotency_key` on contribute for safe retries.
 - **MI advisory:** `mi_bits_est` and `umst_mi_estimate` are hints, not admissibility proofs.
+- **Performance / fast path:** for batched or performance-sensitive work, prefer the in-process library / arena path over per-call Docker MCP round-trips. MCP (stdio + Docker) stays the stable default; the planned `umst-runtime-arena` is an opt-in fast path that parses inputs **once** and loops in-process (target ≥10× an MCP round-trip). See [`umst-manifold/docs/RUNTIME_TOPOLOGY.md`](../../umst-manifold/docs/RUNTIME_TOPOLOGY.md) for the hot/warm/cold boundary.
 
 ---
 
