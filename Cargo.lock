@@ -4061,7 +4061,7 @@ dependencies = [
 [[package]]
 name = "umst-runtime-arena"
 version = "0.1.0"
-source = "git+https://github.com/tytolabs/umst-manifold.git?rev=c38993efa26679f8b10ce463ae49c82b54ce777c#c38993efa26679f8b10ce463ae49c82b54ce777c"
+source = "git+https://github.com/tytolabs/umst-manifold.git?rev=195bf5a76210385f1a4de40940c06bf4967cd587#195bf5a76210385f1a4de40940c06bf4967cd587"
 dependencies = [
  "thiserror 1.0.69",
 ]
