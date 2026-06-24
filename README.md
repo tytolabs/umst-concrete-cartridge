@@ -452,7 +452,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 | `manifold-gate` | Forwards `umst-manifold/manifold-gate` — host transition gate traits for predict-path parity (no duplicate CD math in cartridge). |
 | `manifold-manifest` | Forwards `umst-manifold/manifold-manifest` — typed `UmstManifest` façade (same git pin as core dep). |
 | `manifest-bridge` | `manifold-gate` + manifold `manifest-bridge` — re-export `umst_manifold::manifest::*`; `predict` runs manifold `umst.gate.cd_transition` (no duplicate CD math). **CI (G-02, closed):** `manifest-bridge` test step in [`rust.yml`](.github/workflows/rust.yml) against git-pinned manifold — **no** workspace `[patch]`. |
-| `proxy-loop` | `manifest-bridge` + `virtual-proxies` — Track A/B optimisation loop. |
+| `proxy-loop` | `manifest-bridge` + `virtual-proxies` — Continuous remote CI optimisation loop. |
 | `agent-layer` | `manifest-bridge` + research memory — `src/research/`, MCP gate/contribute/query, promotion CLI. |
 | `ucrs-provenance` | `agent-layer` + optional `umst-ucrs` — Tier-2 `observed_at` stamps on memory ingest. |
 | `ros2-contract` | Forwards `umst-manifold/ros2-contract` — serde ROS DTOs (`umst_manifold::ros`); no runtime ROS in cartridge. |
@@ -469,7 +469,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 
 For rigorous validation reports, exact mathematical constitutive equations, and generated formal proof status, consult the local `docs/` folder:
 - [`docs/Constitutive-Equations.md`](docs/Constitutive-Equations.md)
-- [`docs/Validation.md`](docs/Validation.md) — constitutive regression envelope **and** Track V physical validation / pipeline rehearsal (V1–V3 gates)
+- [`docs/Validation.md`](docs/Validation.md) — constitutive regression envelope **and** physical laboratory validation / pipeline rehearsal (V1–V3 gates)
 - [`docs/WireSchemas.md`](docs/WireSchemas.md)
 - [`docs/Solver-Status.md`](docs/Solver-Status.md)
 - [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md) — cement-specific proof/trace table
