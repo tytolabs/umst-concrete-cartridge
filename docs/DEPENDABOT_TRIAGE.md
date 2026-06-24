@@ -17,3 +17,22 @@
 | `pyo3` / `pyo3-build-config` 0.28 | major; wheel ABI wave deferred |
 
 Revisit after `umst-manifold` burn/bincode upgrade wave completes.
+
+## O6 triage (2026-06-24)
+
+**Known alerts:** ~10 open Dependabot alerts on `umst-concrete-cartridge` (open
+`dependabot/*` branches include `bincode-eq-3.0.0`, `burn-0.20.1`, `burn-ndarray-0.21.0`,
+`jsonschema-0.46`, `rand-0.10`, `actions/setup-python-6`, `docker/build-push-action-7`,
+`docker/login-action-4`).
+
+**Automation state:** `.github/dependabot.yml` enables `cargo` (weekly) + `github-actions`
+(monthly) ecosystem updates. Non-major updates are now **grouped** (`cargo-minor-patch`,
+`actions-minor-patch`) into a single PR each to cut review noise; known-incompatible
+majors stay in the `ignore` list above.
+
+**Version bumps deferred:** Actual `Cargo.toml` version bumps are **not** performed in this
+pass. Applying and validating a bump requires building with the pinned `rustc 1.88`
+toolchain, which is unavailable in the Ops/cold environment. Bumps are deferred to a
+**build-capable worker** who can run `cargo build && cargo test` + `mcp_smoke` before
+merging each (grouped) Dependabot PR. The major bumps above remain intentionally pinned per
+the table; revisit after the `umst-manifold` burn/bincode upgrade wave.

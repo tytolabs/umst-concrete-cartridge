@@ -12,6 +12,15 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 
 > **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`.
 
+### Current capabilities (today vs planned)
+
+| Works today | Planned (UMST master re-engineering) |
+|-------------|-------------------------------------|
+| stdio MCP: `umst_gate_check`, `umst_contribute`, `umst_memory_query`, prompts | Hosted HTTP MCP (frozen — local agents only) |
+| `explain: true` gate diagnostics with remediation + field paths | Shared violation SSOT with manifold `constraint_loss` training telemetry |
+| Runnable [`examples/agent/`](examples/agent/) workflows + federated git inbox export | `umst-runtime-arena` batch path (library/arena over Docker MCP for inner loops) |
+| Golden adversarial fixtures + `agent-layer` CI | Full P6 public readiness checklist on tyto.studio |
+
 > Release notes in [CHANGELOG.md](CHANGELOG.md).
 
 > *When water meets cement, nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a load-bearing structure. If the temperature or chemistry is off, the material cracks. The cartridge does not regress this from past test data; it simulates the chemical reactions and stresses directly.*
