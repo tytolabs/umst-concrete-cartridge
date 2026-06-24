@@ -238,11 +238,44 @@ fn short_mesh_and_iters() -> (usize, usize, usize, usize) {
     )
 }
 
+fn thesis_reconfig_enabled() -> bool {
+    matches!(
+        env::var("UMST_SHELL_THESIS_RECONFIG").as_deref(),
+        Ok("1") | Ok("true")
+    )
+}
+
 fn parse_target_vf() -> f32 {
+    let default = if thesis_reconfig_enabled() { 0.30_f32 } else { 0.15_f32 };
     env::var("UMST_SHELL_VF")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(0.15_f32)
+        .unwrap_or(default)
+}
+
+/// Striatus full harness slab: (nx, ny, nz, lx, ly, lz).
+fn striatus_slab_geometry() -> (usize, usize, usize, f32, f32, f32) {
+    if thesis_reconfig_enabled() {
+        (40, 40, 8, 4.0_f32, 4.0_f32, 0.3_f32)
+    } else {
+        (40, 40, 4, 4.0_f32, 4.0_f32, 0.1_f32)
+    }
+}
+
+/// Fix top z-layer ρ=1 (non-design solid skin); ribs optimize below.
+fn apply_non_design_skin(rho: &mut [f32], nx: usize, ny: usize, nz: usize) {
+    if !thesis_reconfig_enabled() {
+        return;
+    }
+    let nx1 = nx + 1;
+    let ny1 = ny + 1;
+    let iz_top = nz;
+    for ix in 0..=nx {
+        for iy in 0..=ny {
+            let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
+            rho[nid] = 1.0;
+        }
+    }
 }
 
 fn greyness_mean(rho: &[f32]) -> f32 {
@@ -1249,16 +1282,10 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         .unwrap_or(32.0_f32)
         .clamp(1.0, 512.0);
 
-    let nx = 40usize;
-    let ny = 40usize;
-    let nz = 4usize;
+    let (nx, ny, nz, lx, ly, lz) = striatus_slab_geometry();
     let iterations = parse_full_rib_adam_iters();
     let iter_total = STRIATUS_B6_SCHEDULE_OUTERS;
     let smoke_subset = iterations < STRIATUS_B6_SCHEDULE_OUTERS;
-
-    let lx = 4.0_f32;
-    let ly = 4.0_f32;
-    let lz = 0.1_f32;
     let dx = lx / nx as f32;
     let dy = ly / ny as f32;
     let dz = lz / nz as f32;
@@ -1601,6 +1628,7 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
         };
 
         last_rho = rho_mid.clone().into_data().value;
+        apply_non_design_skin(&mut last_rho, nx, ny, nz);
         let grey_now = greyness_mean(&last_rho);
         greyness_hist.push(grey_now);
         warn_greyness_jump_if_needed(
@@ -1848,7 +1876,8 @@ vf_loop={vf_loop:.6} — not exporting a bogus field"
         let rho_bar_f = HeavisideProjection::new(finisher_beta, STRIATUS_HEAVISIDE_ETA)
             .project(rho_tilde_f.reshape([1, n, 1]))
             .reshape([1, n, 1]);
-        let rho_export = rho_bar_f.clone().into_data().value;
+        let mut rho_export = rho_bar_f.clone().into_data().value;
+        apply_non_design_skin(&mut rho_export, nx, ny, nz);
         rho_acceptance = rho_export.clone();
         vf_export = rho_export.iter().sum::<f32>() / rho_export.len() as f32;
         let vf_export_err = vf_export - target_vf;
@@ -2439,4 +2468,25 @@ fn shell_topology_rib_pattern_vf_guard_synthetic_pathology() {
     env::set_var("UMST_SHELL_RIB_FULL_ITERS", "25");
     env::set_var("UMST_SHELL_SELF_WEIGHT", "1");
     let _ = run_rib_full_striatus(parse_target_vf());
+}
+
+/// Thesis re-config: 0.3 m / nz=8 / vf≈0.30 / non-design solid skin (see `outputs/.plans/b6-thesis-reconfig.md`).
+#[test]
+#[ignore = "thesis re-config: UMST_SHELL_THESIS_RECONFIG=1 UMST_SHELL_RIB_PATTERN=1 UMST_SHELL_VF=0.30 cargo test ... shell_topology_rib_pattern_thesis_reconfig --release -- --ignored --nocapture"]
+fn shell_topology_rib_pattern_thesis_reconfig() {
+    assert_eq!(
+        env::var("UMST_SHELL_RIB_PATTERN").as_deref(),
+        Ok("1"),
+        "set UMST_SHELL_RIB_PATTERN=1"
+    );
+    env::set_var("UMST_SHELL_THESIS_RECONFIG", "1");
+    if env::var("UMST_SHELL_VF").is_err() {
+        env::set_var("UMST_SHELL_VF", "0.30");
+    }
+    let target_vf = parse_target_vf();
+    let m = run_rib_full_striatus(target_vf);
+    eprintln!(
+        "thesis_reconfig: nz=8 lz=0.3 vf_target={target_vf:.2} vf_final={:.4} c0={:.4} c1={:.4}",
+        m.vf, m.c0_uniform, m.c1
+    );
 }
