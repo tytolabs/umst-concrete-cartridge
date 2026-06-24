@@ -27,14 +27,6 @@ use umst_concrete_cartridge::research::ContributeError;
 #[cfg(feature = "agent-layer")]
 use umst_concrete_cartridge::research::MemoryQuery;
 
-fn err_frame(id: Value, msg: impl Into<String>) -> Value {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "error": { "code": -32603, "message": msg.into() },
-    })
-}
-
 fn text_result(id: Value, text: String, is_error: bool) -> Value {
     json!({
         "jsonrpc": "2.0",
