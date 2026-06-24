@@ -3,6 +3,11 @@
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! MCP stdio JSON-RPC server — facade tools + optional Physical Reasoning Layer (`agent-layer`).
+//!
+//! **Performance:** stdio MCP is the stable default for external agents. For batch gate loops
+//! or optimization sweeps, prefer the in-process arena path (`umst_arena_open` →
+//! `umst_gate_check_arena`) or cartridge library (`gate_check_mix`) — see
+//! `docs/AGENT_MCP.md` and `umst-manifold/docs/benchmarks/arena_vs_mcp.md` (CI ≥5× MCP).
 
 use std::io::{self, BufRead, Write};
 

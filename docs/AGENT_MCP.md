@@ -5,6 +5,17 @@
 **Examples:** [`examples/agent/`](../examples/agent/)  
 **ADR:** [`outputs/.plans/archive/prl-shipped/ai-physical-reasoning-layer.md`](../../outputs/.plans/archive/prl-shipped/ai-physical-reasoning-layer.md)
 
+> **Performance:** Use **stdio MCP** for prototyping, IDE agents, and single-shot gate/predict. For **heavy batch work, optimization loops, or many proposals**, prefer the **in-process library or arena path** (parse once, loop hot). Cross-language integrations can use MCP or cartridge FFI.
+
+| Your goal | Recommended path |
+|-----------|------------------|
+| Fast batch / optimization sweeps | **Arena** (`load_arena` / mmap) or in-process `gate_check_mix` |
+| Prototyping, discovery, single-shot | **MCP stdio** (`umst-mcp`) |
+| Cross-language agent (no Rust dep) | **MCP** or cartridge **FFI** |
+| Long proposal loops (many gate checks) | **Arena** — load once per session, reuse `UmstArenaView` |
+
+**Migration:** If your agent issues many `umst_gate_check` calls in a loop, open an arena session once (`umst_arena_open` or `load_arena`) and gate against the warm bytes instead of paying a JSON-RPC round-trip per proposal. See [`06_arena_batch.py`](../examples/agent/06_arena_batch.py) and [`07_arena_mmap_load.py`](../examples/agent/07_arena_mmap_load.py). Benchmarks: [`umst-manifold/docs/benchmarks/arena_vs_mcp.md`](../../umst-manifold/docs/benchmarks/arena_vs_mcp.md) — CI enforces arena ≥**5×** stdio MCP (10× aspirational on reference hardware).
+
 ---
 
 ## Quick Start (< 5 minutes)

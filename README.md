@@ -556,7 +556,15 @@ In practice, the cartridge is a **software** runtime: mixes and **simulated** pr
 
 ## Release & agent path
 
-> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`. **Roadmap:** [Stack roadmap (shipped vs in flight)](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/.plans/umst-master-reengineering.md#stack-roadmap-shipped-vs-in-flight) in the UMST master plan.
+> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`. For **batch gate loops**, prefer the arena fast path — [`06_arena_batch.py`](examples/agent/06_arena_batch.py), [`07_arena_mmap_load.py`](examples/agent/07_arena_mmap_load.py) (≥5× MCP, CI-pinned). **Roadmap:** [Stack roadmap (shipped vs in flight)](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/.plans/umst-master-reengineering.md#stack-roadmap-shipped-vs-in-flight) in the UMST master plan.
+
+### Fast Path for Agents
+
+| Goal | Start here |
+|------|------------|
+| Batch / optimization / many proposals | [`examples/agent/06_arena_batch.py`](examples/agent/06_arena_batch.py), [`07_arena_mmap_load.py`](examples/agent/07_arena_mmap_load.py) |
+| Prototyping, discovery, cross-language | [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) + `01`–`05` MCP examples |
+| Benchmarks | [`umst-manifold/docs/benchmarks/arena_vs_mcp.md`](../umst-manifold/docs/benchmarks/arena_vs_mcp.md) |
 
 ### For Agents & Researchers
 

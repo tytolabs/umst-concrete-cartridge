@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Arena mmap load hot loop — CI proxy for `umst-runtime-arena` bench_load_arena_hot_loop."""
+"""Arena mmap load hot loop — parse once, read `UmstArenaView` in a tight loop.
+
+Performance path: `load_arena(bytes)` validates ABI v1 header + commit_stamp witness,
+returns a zero-copy `UmstArenaView`; hot loops call `state_bytes()` without re-parsing.
+Typical gain vs stdio MCP: **5–10×+** (CI enforces ≥5× via `bench_arena_vs_mcp.py`).
+
+This script proxies the Rust CI test `arena_mmap_hot_loop` (see `crates/umst-mcp/tests/`).
+For the in-process gate batch without arena bytes, use `06_arena_batch.py`.
+"""
 
 from __future__ import annotations
 

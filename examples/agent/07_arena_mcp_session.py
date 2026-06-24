@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""MCP arena session workflow — open → gate_check_arena → close."""
+"""MCP arena session workflow — open → gate_check_arena → close.
+
+Use when an external agent owns the MCP process but needs repeated gate checks:
+`umst_arena_open` parses arena bytes once (Warm boundary); subsequent
+`umst_gate_check_arena` calls skip per-proposal JSON parse overhead.
+For highest throughput in your own process, prefer `06_arena_batch.py` or
+`load_arena` / mmap directly (see `07_arena_mmap_load.py`).
+"""
 
 from __future__ import annotations
 

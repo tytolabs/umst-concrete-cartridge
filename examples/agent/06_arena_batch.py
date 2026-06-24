@@ -2,7 +2,9 @@
 """In-process batch gate checks — prefer library path over MCP round-trips.
 
 Runs `gate_check_mix` in a tight loop (same physics as `umst_gate_check`, no JSON-RPC).
-See `umst-manifold/docs/benchmarks/arena_vs_mcp.md` for mmap fast path.
+Typical gain vs stdio MCP: **5–10×+** (CI enforces ≥5×). For parse-once arena bytes
+and `UmstArenaView` hot reads, see `07_arena_mmap_load.py` and
+`umst-manifold/docs/benchmarks/arena_vs_mcp.md`.
 """
 
 from __future__ import annotations
