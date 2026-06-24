@@ -65,7 +65,7 @@ mod burn_compat;
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports manifold façade symbols for ergonomics only.
 pub use core::{
-    apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, PhysicalResult, StatePoint,
+    apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, PhysicalResult, MaterialCompositionTensor,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE

@@ -13,7 +13,7 @@
 //! Differentiable potentials live in manifold adapters; this module is pure assembly (no duplicate CD).
 
 use burn::tensor::{backend::Backend, Data, Shape, Tensor};
-use umst_manifold::core::tensors::StatePoint;
+use umst_manifold::core::tensors::MaterialCompositionTensor;
 use umst_manifold::core::traits::PhysicalResult;
 
 use crate::calibration::Profile;
@@ -61,7 +61,7 @@ pub fn topology_pipeline_report<B: Backend<FloatElem = f32>>(
     device: &B::Device,
     nominal: Option<TopologyNominalMix>,
 ) -> PhysicsPipelineReport {
-    let mix: StatePoint<B> = match nominal {
+    let mix: MaterialCompositionTensor<B> = match nominal {
         Some(n) => mix_tensor_from_topology_nominal::<B>(profile, n, device),
         None => nominal_mix_tensor_for_topology::<B>(profile, device),
     };
@@ -72,7 +72,7 @@ fn mix_tensor_from_topology_nominal<B: Backend<FloatElem = f32>>(
     profile: &Profile,
     n: TopologyNominalMix,
     device: &B::Device,
-) -> StatePoint<B> {
+) -> MaterialCompositionTensor<B> {
     let row = mix_row_from_scalar_spec(
         profile,
         n.w_c,
@@ -151,7 +151,7 @@ pub fn nominal_mix_tensor_for_mix_spec<B: Backend<FloatElem = f32>>(
     profile: &Profile,
     spec: &crate::facade::MixSpec,
     device: &B::Device,
-) -> StatePoint<B> {
+) -> MaterialCompositionTensor<B> {
     let w_c = spec.w_c.value();
     let sp_pct = spec.superplasticiser_pct;
     let fly_pct = spec.fly_ash_pct;
@@ -175,7 +175,7 @@ pub fn nominal_mix_tensor_for_mix_spec<B: Backend<FloatElem = f32>>(
 pub fn nominal_mix_tensor_for_topology<B: Backend<FloatElem = f32>>(
     profile: &Profile,
     device: &B::Device,
-) -> StatePoint<B> {
+) -> MaterialCompositionTensor<B> {
     let w_c = (((profile.regime.w_c_min + profile.regime.w_c_max) * 0.5) as f32).clamp(0.10, 1.0);
     let age_h =
         (((profile.regime.age_hours_min + profile.regime.age_hours_max) * 0.5) as f32).max(0.0);
