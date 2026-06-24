@@ -20,7 +20,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Structural** | 86 |
 | **Empirical** | 34 |
 | **Literature** | 50 |
-| **NONE** | 251 |
+| **NONE** | 265 |
 
 ## Mechanised
 
@@ -305,8 +305,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `prediction_wire_v2` | `crates/umst-concrete-cartridge/src/facade/mod.rs:973` | `NONE` | — | Pure wire projection; nested objects merged by CLI/MCP `serde_json`. |
 | `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/facade/mod.rs:1094` | `NONE` | — | Round-trip mix spec view for CLI `mix print` / MCP. |
 | `mix_spec_wire_out` | `crates/umst-concrete-cartridge/src/facade/mod.rs:1107` | `NONE` | — | Serialize-friendly mix view without JSON crate in core. |
-| `ConcretePolicyEvaluator` | `crates/umst-concrete-cartridge/src/gate_policy.rs:8` | `NONE` | — | Zero-sized policy evaluator; HTTP gate catalog row without spatial physics. |
-| `default_gate_manifest` | `crates/umst-concrete-cartridge/src/gate_policy.rs:15` | `NONE` | — | Powers closure defaults for HTTP manifest shim. |
+| `ConcretePolicyEvaluator` | `crates/umst-concrete-cartridge/src/gate_policy.rs:9` | `NONE` | — | Zero-sized policy evaluator; HTTP gate catalog row without spatial physics. |
+| `gate_manifest_from` | `crates/umst-concrete-cartridge/src/gate_policy.rs:16` | `NONE` | — | Injection-only HTTP gate manifest from explicit [`UmstManifest`] (see `docs/RUNTIME_TOPOLOGY.md` § HTTP gate defaults). |
 | `HomogeneousError` | `crates/umst-concrete-cartridge/src/homogeneous.rs:28` | `NONE` | — | Dispatch error: Jennings-not-yet, invalid mix; no formal claim. |
 | `mix_hydration_state` | `crates/umst-concrete-cartridge/src/homogeneous.rs:76` | `NONE` | — | Internal homogeneous helper composing calibrated α(t,T,scm) and effective w/c from profile parameters. |
 | `cement_reaction_extent_kinetics_spec, CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA, CEMENT_REACTION_ENTHALPY_J_PER_KG` | `crates/umst-concrete-cartridge/src/lib.rs:37` | `NONE` | — | Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled. |
@@ -485,17 +485,31 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `gate_check` | `crates/umst-mcp/src/agent_layer.rs:133` | `NONE` | — | stdio JSON-RPC transport; CD admissibility on `gate_check_mix_result`. |
 | `mi_estimate` | `crates/umst-mcp/src/agent_layer.rs:147` | `NONE` | — | MI enrichment wire; not admissibility gate. |
 | `contribute` | `crates/umst-mcp/src/agent_layer.rs:159` | `NONE` | — | stdio transport; gate re-check before memory append on cartridge. |
-| `contribute_async` | `crates/umst-mcp/src/agent_layer.rs:187` | `NONE` | — | In-process async wrapper; same gate path as `contribute`. |
-| `contribute_status` | `crates/umst-mcp/src/agent_layer.rs:258` | `NONE` | — | In-memory job map lookup; no new physics claim. |
-| `memory_query` | `crates/umst-mcp/src/agent_layer.rs:267` | `NONE` | — | stdio transport over cartridge `query_page`; stable `(ucrs_seq, content_id)` sort. |
-| `transition_propose` | `crates/umst-mcp/src/agent_layer.rs:276` | `NONE` | — | Chained operator workflow; gate must pass before async ingest. |
-| `SCHEMA_RESOURCES` | `crates/umst-mcp/src/agent_layer.rs:356` | `NONE` | — | Schema fixture bytes for MCP discovery; versioned wire only. |
-| `AGENT_PROMPTS` | `crates/umst-mcp/src/agent_layer.rs:391` | `NONE` | — | MCP prompt templates; operational guidance only. |
-| `resources_list_result` | `crates/umst-mcp/src/agent_layer.rs:437` | `NONE` | — | MCP resource enumeration; schema bytes are versioned fixtures. |
-| `resources_read_result` | `crates/umst-mcp/src/agent_layer.rs:454` | `NONE` | — | MCP resource read; returns pinned JSON schema text. |
-| `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:474` | `NONE` | — | MCP prompts list; names only. |
-| `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:490` | `NONE` | — | MCP prompt body fetch; operational text. |
-| `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:509` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
+| `contribute_async` | `crates/umst-mcp/src/agent_layer.rs:188` | `NONE` | — | In-process async wrapper; same gate path as `contribute`. |
+| `contribute_status` | `crates/umst-mcp/src/agent_layer.rs:259` | `NONE` | — | In-memory job map lookup; no new physics claim. |
+| `memory_query` | `crates/umst-mcp/src/agent_layer.rs:268` | `NONE` | — | stdio transport over cartridge `query_page`; stable `(ucrs_seq, content_id)` sort. |
+| `transition_propose` | `crates/umst-mcp/src/agent_layer.rs:277` | `NONE` | — | Chained operator workflow; gate must pass before async ingest. |
+| `SCHEMA_RESOURCES` | `crates/umst-mcp/src/agent_layer.rs:357` | `NONE` | — | Schema fixture bytes for MCP discovery; versioned wire only. |
+| `AGENT_PROMPTS` | `crates/umst-mcp/src/agent_layer.rs:392` | `NONE` | — | MCP prompt templates; operational guidance only. |
+| `resources_list_result` | `crates/umst-mcp/src/agent_layer.rs:438` | `NONE` | — | MCP resource enumeration; schema bytes are versioned fixtures. |
+| `resources_read_result` | `crates/umst-mcp/src/agent_layer.rs:455` | `NONE` | — | MCP resource read; returns pinned JSON schema text. |
+| `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:475` | `NONE` | — | MCP prompts list; names only. |
+| `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:491` | `NONE` | — | MCP prompt body fetch; operational text. |
+| `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:510` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
+| `saturate01` | `crates/umst-mcp/src/soft_gate.rs:25` | `NONE` | — | Scalar clamp utility; no thermodynamic gate claim. |
+| `smoothstep01` | `crates/umst-mcp/src/soft_gate.rs:34` | `NONE` | — | Hermite smoothstep kernel; training slack only. |
+| `smoothstep` | `crates/umst-mcp/src/soft_gate.rs:44` | `NONE` | — | Bounded Hermite ramp; not a hard admissibility witness. |
+| `soft_lower_gate` | `crates/umst-mcp/src/soft_gate.rs:59` | `NONE` | — | Soft lower-bound multiplier for policy loss; hard gate is separate. |
+| `soft_upper_gate` | `crates/umst-mcp/src/soft_gate.rs:71` | `NONE` | — | Soft upper-bound multiplier for policy loss; hard gate is separate. |
+| `soft_band_gate` | `crates/umst-mcp/src/soft_gate.rs:83` | `NONE` | — | Product of soft lower/upper ramps; exploration slack only. |
+| `connected_fraction_gate` | `crates/umst-mcp/src/soft_gate.rs:92` | `NONE` | — | Supercap percolation soft ramp; not connected-fraction witness. |
+| `network_conductivity_factor` | `crates/umst-mcp/src/soft_gate.rs:101` | `NONE` | — | Alias for supercap conductivity nomenclature; soft ramp only. |
+| `soft_violation_penalty` | `crates/umst-mcp/src/soft_gate.rs:110` | `NONE` | — | Upper slack penalty for policy loss; not CD reject. |
+| `soft_deficit_penalty` | `crates/umst-mcp/src/soft_gate.rs:119` | `NONE` | — | Lower slack penalty for policy loss; not CD reject. |
+| `band_margin_penalty` | `crates/umst-mcp/src/soft_gate.rs:128` | `NONE` | — | Combined band margin penalty; hard band gate remains on cartridge. |
+| `printability_tau_gate` | `crates/umst-mcp/src/soft_gate.rs:137` | `NONE` | — | Roussel τ₀ window soft multiplier; printability gate is hard path. |
+| `extrudability_gate` | `crates/umst-mcp/src/soft_gate.rs:146` | `NONE` | — | Extrudability floor soft ramp; hard extrudability gate is separate. |
+| `printability_dual_gate` | `crates/umst-mcp/src/soft_gate.rs:155` | `NONE` | — | Product of printability soft gates; dual hard gate on cartridge path. |
 | `audit_rows` | `crates/umst-py/src/lib.rs:147` | `NONE` | — | Encodes iterable of row dicts into dataset-style CSV then reuses **`audit_csv_buf`** (aligned with **`audit`** string path). |
 | `audit` | `crates/umst-py/src/lib.rs:167` | `NONE` | — | Python transport over CLI audit glue; no extra physical claim beyond CSV→facade audit. |
 | `bundled_profile_ids` | `crates/umst-py/src/lib.rs:217` | `NONE` | — | Bundled id manifest for packaging smoke tests. |
