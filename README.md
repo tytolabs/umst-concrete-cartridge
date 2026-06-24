@@ -37,9 +37,7 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
 
 **Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here. How this cartridge sits in the full proof stack (the merged Lean catalog → manifold digest pin → this cartridge) is documented in [§8 Deep documentation and citations](#8-deep-documentation-and-citations).
 
-<p align="center">
-  <img src="docs/assets/beam_strut_and_tie.gif" alt="RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)" width="960" />
-</p>
+![RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)](./docs/assets/beam_strut_and_tie.gif)
 
 *32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row. The yellow density (ρ) shows exactly where the engine placed material, guided entirely by mechanical force gradients—rendered via the mechanics façade.*
 
