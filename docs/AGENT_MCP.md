@@ -99,6 +99,8 @@ commit = hard_gate(scalar)   // umst_gate_check at f64 boundary only
 
 **Tests:** `cargo test soft_gate`
 
+**Manifold Kleisli pipeline:** Agent MCP ordering mirrors the manifold **propose → penalize → witness** composition in [`umst-manifold/docs/KLEISLI_GATE_PIPELINE.md`](../../umst-manifold/docs/KLEISLI_GATE_PIPELINE.md). `umst_transition_propose` (predict → gate → async contribute) is the commit-facing **propose** stage; `soft_gate` / `band_margin_penalty` supply the differentiable **penalize** tier during Burn/PPO exploration; `umst_gate_check` with `catalog_ids` and `explain` is the cold **witness** that alone authorizes `umst_contribute`. Training backprops through soft penalties; memory writes require hard admissibility — the same dual-path contract as manifold `witness ∘ penalize ∘ propose`.
+
 ---
 
 ## Build profiles
