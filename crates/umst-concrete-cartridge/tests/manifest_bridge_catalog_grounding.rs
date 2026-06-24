@@ -18,7 +18,7 @@ use umst_manifold::runtime::catalog::{
 const EXPECTED_UPSTREAM_CATALOG_DIGEST_HEX: &str =
     "c61b1befdec77a82bbb9f6c3f7562e754218ef635f0e3b9990752138df5f4bb5";
 /// SHA-256 of verbatim `umst-manifold/artifacts/catalog.lock.json` (v2 dual-pin lock file).
-/// Matches `umst-manifold` git pin in workspace `Cargo.toml` (`rev = 4bc7a7c…`).
+/// Matches `umst-manifold` git pin in workspace `Cargo.toml` (`rev = 6f628f1…`).
 const EXPECTED_CATALOG_LOCK_BUNDLE_SHA256_HEX: &str =
     "904f01b18d939d72ea63de27f639f94885b761ebad92b96082a602a620ace46c";
 
