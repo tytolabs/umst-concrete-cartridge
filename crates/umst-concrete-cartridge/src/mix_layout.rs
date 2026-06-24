@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! Canonical `[Batch, Features]` layout for [`StatePoint`](umst_manifold::core::tensors::StatePoint) used by tensor physics.
+//! Canonical `[Batch, Features]` layout for [`StatePoint`](umst_manifold::StatePoint) used by tensor physics.
 //!
 //! Hydration kernels (`physics::hydration`) read cement at column **1**, slag **5**, fly ash **6** — unchanged.
 
