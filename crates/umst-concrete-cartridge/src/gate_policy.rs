@@ -3,7 +3,8 @@
 
 //! Cartridge-owned HTTP gate policy marker (`GateEvaluator` only — orthogonal to [`crate::core::ConcreteCartridge`] `IScienceCartridge`).
 
-use umst_manifold::gate::{default_gate_manifest, GateEvaluator, HttpGateManifest as GateManifest};
+use umst_manifold::gate::{GateEvaluator, HttpGateManifest as GateManifest};
+use umst_manifold::manifest::UmstManifest;
 
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -14,10 +15,10 @@ pub struct ConcretePolicyEvaluator;
 impl ConcretePolicyEvaluator {
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_anchor_rationale: Powers closure defaults for HTTP manifest shim.
+    /// formal_anchor_rationale: Injection-only HTTP gate manifest from explicit [`UmstManifest`] (see `docs/RUNTIME_TOPOLOGY.md` § HTTP gate defaults).
     #[must_use]
-    pub fn default_gate_manifest() -> GateManifest {
-        default_gate_manifest()
+    pub fn gate_manifest_from(manifest: &UmstManifest) -> GateManifest {
+        GateManifest::from(manifest)
     }
 }
 

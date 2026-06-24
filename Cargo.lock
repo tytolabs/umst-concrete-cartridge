@@ -4007,6 +4007,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "umst-layout-codegen"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "umst-manifold"
 version = "0.1.0"
 dependencies = [
@@ -4020,6 +4029,7 @@ dependencies = [
  "sha2",
  "time",
  "tracing",
+ "umst-layout-codegen",
 ]
 
 [[package]]
