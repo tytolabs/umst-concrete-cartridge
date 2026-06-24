@@ -71,6 +71,8 @@ See [`AGENT_MCP.md`](AGENT_MCP.md#error-handling) for the full gate REJECT remed
 
 ## Related
 
-- [`fixtures/golden-adversarial/README.md`](../fixtures/golden-adversarial/README.md) — fixture pack overview + CI commands
-- [`AGENT_MCP.md`](AGENT_MCP.md) — MCP gate tool contract
+- [`fixtures/golden-adversarial/README.md`](../fixtures/golden-adversarial/README.md) — fixture pack overview, explain JSON samples, CI commands
+- [`umst-manifold/docs/GOLDEN_FIXTURES.md`](../../umst-manifold/docs/GOLDEN_FIXTURES.md) — manifold `gate_adversarial` (75-case FNR/FPR = 0)
+- [`AGENT_MCP.md`](AGENT_MCP.md) — MCP gate tool contract + [Golden vectors (SSOT)](AGENT_MCP.md#golden-vectors-ssot)
+- [`examples/agent/05_explain_violations.py`](../examples/agent/05_explain_violations.py) — runnable `explain: true` walkthrough
 - [`schemas/gate_reject.v1.json`](../schemas/gate_reject.v1.json) — REJECT payload schema

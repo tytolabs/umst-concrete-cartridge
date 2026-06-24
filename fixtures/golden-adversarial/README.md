@@ -90,3 +90,40 @@ cargo test -p umst-concrete-cartridge --features agent-layer \
 - Bootstrap corpus row-count assertion in CI is optional locally (`fixtures/corpus/audit_corpus.v1.csv` may be absent in shallow checkouts).
 
 **Honest scope:** these fixtures validate the in-process gate and research-memory API at the agent wire boundary. They do not substitute for manifold `gate_adversarial` (FNR/FPR = 0 on 75 cases), hosted MCP integration tests, or live contribution promotion.
+
+## Explain samples (`explain: true` on REJECT)
+
+Pinned violation codes agents should parse from `umst_gate_check` (`result.isError: true`). Full remediation loop: [`docs/AGENT_MCP.md`](../../docs/AGENT_MCP.md#error-handling). Runnable walkthrough: [`examples/agent/05_explain_violations.py`](../../examples/agent/05_explain_violations.py).
+
+**SSOT cross-links:** [`docs/GOLDEN_VECTORS.md`](../../docs/GOLDEN_VECTORS.md) · [`tests/fixtures/phase8_adversarial.json`](../../tests/fixtures/phase8_adversarial.json) · [`umst-manifold/docs/GOLDEN_FIXTURES.md`](../../../umst-manifold/docs/GOLDEN_FIXTURES.md)
+
+### 1. `mix_spec_rational_parse_fail` (inline vector)
+
+```json
+{
+  "gate_summary": { "admissible": false, "verdict": "REJECT" },
+  "gate_reject": { "schema_version": "gate_reject.v1", "verdict": "REJECT" },
+  "explain": {
+    "regime_violations": ["mix_spec_rational_parse_fail"],
+    "remediation": ["Use rational strings like \"9/20\" for w_c and temperature_k; see contribution.v1 schema."],
+    "fields": [{ "path": "mix.w_c", "issue": "rational_parse_fail" }],
+    "catalog_witnesses": ["umst.gate.cd_transition"]
+  }
+}
+```
+
+Trigger: `mix.w_c: "not-rational"` (see manifest `inline_vectors.rational_parse_fail`).
+
+### 2. `thermodynamic_cd_fail` (`reject_mix_01.json`)
+
+High w/c (`3/4`) contribution fixture — gate re-check returns thermodynamic REJECT. Run:
+
+```bash
+cargo test -p umst-concrete-cartridge --features agent-layer --test phase8_adversarial -- --nocapture
+```
+
+Expect `explain.regime_violations` containing `thermodynamic_cd_fail` or `thermodynamic_fail`, paired `remediation` strings, and optional `explain.fields` pointing at mix coordinates.
+
+### 3. `mix_spec_wire_invalid`
+
+Parsed rationals that fail `MixSpec` validation (missing required field or out-of-envelope wire). Expect `explain.fields` listing paths; remediation references `contribution.v1.json`. Golden coverage: `phase8_adversarial` + schema CI on both JSON fixtures in this directory.
