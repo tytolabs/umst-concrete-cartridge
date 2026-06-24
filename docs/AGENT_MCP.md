@@ -173,6 +173,82 @@ See [`examples/agent/03_export_inbox.sh`](../examples/agent/03_export_inbox.sh).
 
 ## Error handling
 
+Recoverable failures use **two complementary transports**. Agents must distinguish them:
+
+| Transport | JSON-RPC `error`? | `result.isError` | Payload shape | When |
+|-----------|-------------------|------------------|---------------|------|
+| **Fatal** | yes (`-32603` / `-32601`) | — | plain `message` string | Unknown tool/method, protocol bugs |
+| **Recoverable tool** | no | `true` | `agent_error.v1` or domain schema | Missing args, profile load, contribute reject, gate REJECT |
+| **Recoverable gate** | no | `true` | `gate_reject.v1` + `explain` | `umst_gate_check` thermodynamic REJECT |
+
+**Rule:** If `result.isError` is `true`, parse the text `content[0].text` as JSON — never treat the call as a hard JSON-RPC failure.
+
+### `agent_error.v1` (recoverable tool errors)
+
+Structured errors for agent-correctable mistakes (bad profile, missing `mix`, contribute validation, etc.). Returned inside a normal `tools/call` **result** with `isError: true` — not a JSON-RPC `error` frame.
+
+**MCP envelope:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [{ "type": "text", "text": "{ … agent_error body … }" }],
+    "isError": true
+  }
+}
+```
+
+**Body shape (`agent_error.v1`):**
+
+```json
+{
+  "agent_error": {
+    "schema_version": "agent_error.v1",
+    "code": "mix_parse_fail",
+    "message": "mix parse error: …",
+    "remediation": "Use rational strings like \"9/20\" for w_c and temperature_k; see contribution.v1 schema."
+  }
+}
+```
+
+| Field | Type | Role |
+|-------|------|------|
+| `schema_version` | `"agent_error.v1"` | Wire version pin |
+| `code` | string | Stable machine code (see table below) |
+| `message` | string | Human-readable detail |
+| `remediation` | string | Actionable fix for the agent |
+
+**Agent remediation loop:**
+
+1. Check `result.isError` on every `tools/call` response.
+2. If `true`, `JSON.parse(content[0].text)`.
+3. If `agent_error` is present → read `code` + `remediation`; fix wire and retry.
+4. If `gate_reject` / `explain` is present → use prompt `interpret_gate_failure` or read `explain.remediation`.
+5. Do **not** retry blindly on `contribute_gate_reject` — re-run `umst_gate_check` first.
+
+**Stable `code` values (umst-mcp `agent-layer`):**
+
+| `code` | Tool(s) | Agent action |
+|--------|---------|--------------|
+| `missing_argument` | gate, contribute, status, MI, transition | Supply required field (`mix`, `contribution`, `job_id`) |
+| `profile_load_fail` | predict, gate, contribute, transition | Call `umst_profiles`; use bundled id (`default`, `uci_d1`) |
+| `mix_parse_fail` | predict, transition | Rational strings for all mix fields |
+| `predict_fail` | predict | Verify mix + profile calibration |
+| `contribute_validation_fail` | contribute, transition | Fix wire against `contribution.v1.json` |
+| `contribute_gate_reject` | contribute, transition | Run `umst_gate_check` first |
+| `contribute_scope_fail` | contribute | Supply valid `scope_token` |
+| `contribute_non_monotonic_stamp` | contribute | Use server-assigned `observed_at` |
+| `contribute_store_fail` | contribute | Check `UMST_MEMORY_DB`; duplicate may be idempotent |
+| `unknown_job_id` | contribute_status | Re-submit or check `contribute_jobs.json` beside DB |
+| `transition_gate_reject` | transition_propose | Gate must PASS before async propose |
+| `transition_propose_fail` | transition_propose | Verify mix/outcome/process wire |
+| `resource_read_fail` | resources/read | Use `resources/list` URIs |
+| `prompt_not_found` | prompts/get | Use `prompts/list` names |
+
+Gate REJECT on `umst_gate_check` still returns `gate_reject.v1` + `explain` (not `agent_error.v1`) with `isError: true` — see Quick Start example above.
+
 ### Gate violation codes (`explain.regime_violations`)
 
 | Code | Meaning | Agent action |
@@ -195,6 +271,7 @@ Each code has a matching entry in `explain.remediation` and optional `explain.fi
 | `AcceptError::NonMonotonicStamp` | `observed_at` regresses session clock | Use server-assigned stamps |
 | `AcceptError::Store` duplicate | Same `content_id` / idempotency key | Treat as success if idempotent retry |
 | MCP `isError: true` on gate_check | REJECT verdict | Parse `gate_reject.v1` + `explain`; do not contribute |
+| MCP `isError: true` + `agent_error.v1` | Recoverable tool mistake | Read `code` + `remediation`; fix wire and retry |
 | `unknown job_id` | Stale async poll | Re-submit or check `contribute_jobs` beside DB |
 
 Use prompt `interpret_gate_failure` when parsing REJECT payloads.

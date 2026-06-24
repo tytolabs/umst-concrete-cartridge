@@ -14,7 +14,7 @@ use umst_concrete_cartridge::research::{
     accept, append_gate_reject_jsonl, append_memory_jsonl, estimate_mi_bits_from_mix,
     gate_check_mix_result, mix_wire_from_spec_value, query_page, synthetic_observed_at,
     AcceptError, AcceptResult, GateCheckResult, GateContext, MemoryQuery, MemoryQueryPage,
-    ProvenanceClock, ResearchStore, WallClock, CANON_VERSION, CONTRIBUTION_SCHEMA,
+    ProvenanceClock, ResearchStore, StoreError, WallClock, CANON_VERSION, CONTRIBUTION_SCHEMA,
     DEFAULT_CATALOG_HASH,
 };
 
@@ -164,7 +164,7 @@ impl AgentSession {
         self,
         profile: &Profile,
         contribution: &Value,
-    ) -> Result<(Self, AcceptResult), String> {
+    ) -> Result<(Self, AcceptResult), AcceptError> {
         let ctx = GateContext { profile };
         match accept(self.store, self.clock, WallClock, &ctx, contribution) {
             Ok((store, clock, result)) => {
@@ -173,14 +173,15 @@ impl AgentSession {
                     clock,
                     jobs: self.jobs,
                 };
-                persist_memory_row(&result.memory_id, &store)?;
+                persist_memory_row(&result.memory_id, &store)
+                    .map_err(|e| AcceptError::Store(StoreError::Sqlite(e)))?;
                 Ok((session, result))
             }
             Err(AcceptError::GateReject(row)) => {
                 let _ = append_gate_reject_jsonl(&row, None);
-                Err("gate re-check failed: mix not thermodynamically admissible".into())
+                Err(AcceptError::GateReject(row))
             }
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(e),
         }
     }
 
@@ -237,7 +238,7 @@ impl AgentSession {
                             job_id: job_id.clone(),
                             status: ContributeJobStatus::Failed,
                             result: None,
-                            error: Some(e),
+                            error: Some(e.to_string()),
                         },
                     );
                     persist_contribute_jobs(&jobs);
