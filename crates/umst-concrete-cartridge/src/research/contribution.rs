@@ -228,7 +228,10 @@ fn gate_fields_for_code(code: &str, mix_json: &Value) -> Vec<GateFieldIssue> {
     } else {
         ssot_fields_for_code(code, mix_json.get("temperature_k").is_some())
             .into_iter()
-            .map(|(path, issue)| GateFieldIssue { path, issue })
+            .map(|f| GateFieldIssue {
+                path: f.path,
+                issue: f.issue,
+            })
             .collect()
     }
 }

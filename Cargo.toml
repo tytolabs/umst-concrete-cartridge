@@ -25,8 +25,8 @@ repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 
 # Single CI pin for all workspace crates (bump after umst-manifold releases).
 [workspace.dependencies]
-umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "6f628f1fab84b1ef89453567fea368581486c213" }
-umst-runtime-arena = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "6f628f1fab84b1ef89453567fea368581486c213", package = "umst-runtime-arena" }
+umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "97c108bff3f445b15acd14b89a559fe38c022af1" }
+umst-runtime-arena = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "97c108bff3f445b15acd14b89a559fe38c022af1", package = "umst-runtime-arena" }
 umst-ucrs = { git = "https://github.com/tytolabs/umst-ucrs.git", rev = "eda7ac052a05cff82e64027799ad42124872518a" }
 
 # Local dev: copy `.cargo/config.toml.example` → `.cargo/config.toml` to patch sibling umst-manifold.
