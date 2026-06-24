@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 use burn::tensor::{backend::Backend, Tensor};
-use umst_manifold::core::tensors::StatePoint;
+use umst_manifold::core::tensors::MaterialCompositionTensor;
 
 /// Pure function to calculate the hydration degree alpha over time.
 ///
@@ -13,7 +13,7 @@ use umst_manifold::core::tensors::StatePoint;
 /// formal_status: Mechanised
 /// formal_axioms: NONE
 pub fn compute_hydration_degree<B: Backend>(
-    mix: &StatePoint<B>,
+    mix: &MaterialCompositionTensor<B>,
     age_days: Tensor<B, 2>,
     temperature_c: Tensor<B, 2>,
 ) -> Tensor<B, 2> {
