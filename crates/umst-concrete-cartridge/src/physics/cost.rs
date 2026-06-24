@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 use burn::tensor::{backend::Backend, Tensor};
-use umst_manifold::core::tensors::StatePoint;
+use umst_manifold::core::tensors::MaterialCompositionTensor;
 
 /// Pure function to calculate economic metrics (Pareto Front targets).
 ///
@@ -12,7 +12,7 @@ use umst_manifold::core::tensors::StatePoint;
 /// formal_status: NONE
 /// formal_anchor_rationale: Auxiliary objective; linear cost vector, no physical claim.
 pub fn compute_cost<B: Backend>(
-    mix: &StatePoint<B>,
+    mix: &MaterialCompositionTensor<B>,
     unit_cost_factors: Tensor<B, 2>,
 ) -> Tensor<B, 2> {
     // Assumes mix.fractions and unit_cost_factors are [Batch, Features]
