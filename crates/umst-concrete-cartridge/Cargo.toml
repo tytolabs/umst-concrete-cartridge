@@ -52,6 +52,8 @@ tier2c-handshake = ["manifold-gate"]
 b6-c1-diagnosis = ["solver-experimental"]
 # Optional ROS serde DTOs (no runtime ROS dep); forwards `umst_manifold::ros` when enabled.
 ros2-contract = ["umst-manifold/ros2-contract"]
+# Forwards manifold `catalog_schema_digest` field on UMST tensors in integration tests.
+formal-witness = ["umst-manifold/formal-witness"]
 # Virtual stack + extrusion proxies (Roussel / Bingham drivers); default off.
 virtual-proxies = ["solver-research", "umst-manifold/rheology-bingham"]
 # Track A/B optimisation loop: manifest CD + virtual proxies + local manifold patch.
