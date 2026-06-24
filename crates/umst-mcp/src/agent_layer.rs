@@ -514,13 +514,13 @@ pub fn agent_tools_schema() -> Vec<Value> {
         with_schema_2020(
             json!({
                 "name": "umst_gate_check",
-                "description": "Hard admissibility verdict + catalog_ids + optional mi_bits_est for a mix_spec (manifest CD when agent-layer built). On REJECT returns isError with embedded gate_reject.v1; explain defaults true and includes regime_violations, remediation, and fields.",
+                "description": "Hard thermodynamic admissibility check (read-only). Always run before umst_contribute; never ingest when gate_summary.admissible is false. Example input: {\"mix\":{\"w_c\":\"9/20\",\"temperature_k\":\"29315/100\",\"aggregate_volume_fraction\":\"7/10\"},\"explain\":true}. Example output (PASS): {\"gate_summary\":{\"admissible\":true,\"verdict\":\"PASS\",\"catalog_ids\":[\"gate.clausius_duhem.v1\"]}}. On REJECT: isError:true with gate_reject.v1 + explain.regime_violations, explain.remediation, explain.fields (explain defaults true). Resource: umst://schemas/gate_reject.v1.json.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "mix": { "type": "object", "description": "mix_spec.v1 rational fields (w_c, temperature_k, …)" },
-                        "profile": { "type": "string", "default": "default" },
-                        "explain": { "type": "boolean", "default": true, "description": "Include regime_violations, remediation, fields, and catalog_witnesses diagnostics" }
+                        "mix": { "type": "object", "description": "mix_spec.v1 rational fields — e.g. {\"w_c\":\"9/20\",\"temperature_k\":\"29315/100\",\"aggregate_volume_fraction\":\"7/10\"}; use \"n/d\" strings, never JSON floats" },
+                        "profile": { "type": "string", "default": "default", "description": "Bundled calibration profile id (call umst_profiles when unsure)" },
+                        "explain": { "type": "boolean", "default": true, "description": "When true (default), include regime_violations, remediation, fields, and catalog_witnesses on REJECT" }
                     },
                     "required": ["mix"]
                 }
@@ -530,14 +530,14 @@ pub fn agent_tools_schema() -> Vec<Value> {
         with_schema_2020(
             json!({
                 "name": "umst_contribute",
-                "description": "Gate-validated contribution ingest → local research memory (admissible rows only). Supports idempotency_key.",
+                "description": "Gate-validated contribution ingest → local research memory (admissible rows only; destructive). Requires prior umst_gate_check PASS and contribution.v1 with matching gate_summary.admissible:true. Validate wire via umst://schemas/contribution.v1.json. Example input: {\"contribution\":{\"schema_version\":\"contribution.v1\",\"mix_spec\":{\"w_c\":\"9/20\",...},\"gate_summary\":{\"admissible\":true,\"verdict\":\"PASS\"},...}}. Example output: {\"memory_id\":\"<uuid>\",\"content_id\":\"sha256:...\",\"observed_at\":{\"stamp_tier\":\"Synthetic\",...}}. Supports idempotency_key; set async:true for job_id + umst_contribute_status poll. scope_token required when UMST_AGENT_SCOPE_TOKENS is set.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "contribution": { "type": "object", "description": "contribution.v1 JSON" },
-                        "profile": { "type": "string", "default": "default" },
-                        "scope_token": { "type": "string", "description": "Required when UMST_AGENT_SCOPE_TOKENS is set" },
-                        "async": { "type": "boolean", "description": "Return job_id for umst_contribute_status when true" }
+                        "contribution": { "type": "object", "description": "contribution.v1 JSON — see umst://schemas/contribution.v1.json; gate_summary.admissible must be true" },
+                        "profile": { "type": "string", "default": "default", "description": "Bundled calibration profile id used for gate re-check on ingest" },
+                        "scope_token": { "type": "string", "description": "Required when UMST_AGENT_SCOPE_TOKENS is set; must match an allowed token" },
+                        "async": { "type": "boolean", "description": "When true, return job_id immediately; poll umst_contribute_status until SUCCEEDED or FAILED" }
                     },
                     "required": ["contribution"]
                 }
