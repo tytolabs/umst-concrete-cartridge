@@ -20,7 +20,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Structural** | 93 |
 | **Empirical** | 34 |
 | **Literature** | 50 |
-| **NONE** | 273 |
+| **NONE** | 274 |
 
 ## Mechanised
 
@@ -291,9 +291,10 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `apply_topology_result_to_umst` | `crates/umst-concrete-cartridge/src/core/implementation.rs:232` | `NONE` | — | Mutable UMST merge path for topology tensors; proof witnesses remain caller-owned. |
 | `ConcreteCartridge` | `crates/umst-concrete-cartridge/src/core/mod.rs:6` | `NONE` | — | Re-export; classification follows the underlying symbol. |
 | `apply_physics_to_umst` | `crates/umst-concrete-cartridge/src/core/mod.rs:10` | `NONE` | — | Forwards manifold UMST write-back helper used after topology physics. |
-| `MaterialCompositionTensor` | `crates/umst-concrete-cartridge/src/core/mod.rs:14` | `NONE` | — | W9 agnostic state-point re-export; classification follows manifold `MaterialCompositionTensor`. |
+| `MaterialCompositionTensor` | `crates/umst-concrete-cartridge/src/core/mod.rs:14` | `NONE` | — | W9 agnostic composition tensor re-export; classification follows manifold `MaterialCompositionTensor`. |
 | `IScienceCartridge, PhysicalResult` | `crates/umst-concrete-cartridge/src/core/mod.rs:18` | `NONE` | — | Forwards manifold cartridge façade trait and tensor bundles. |
 | `MixTensor` | `crates/umst-concrete-cartridge/src/core/mod.rs:22` | `NONE` | — | Deprecated W9 alias for `MaterialCompositionTensor`; retained one release for cartridge callers. |
+| `StatePoint` | `crates/umst-concrete-cartridge/src/core/mod.rs:28` | `NONE` | — | Deprecated W9 alias for `MaterialCompositionTensor`; retained one release for cartridge callers. |
 | `umst_manifold::manifest::*` | `crates/umst-concrete-cartridge/src/facade/mod.rs:46` | `NONE` | — | Forwards manifold manifest types when `manifest-bridge` is enabled. |
 | `UmstManifest` | `crates/umst-concrete-cartridge/src/facade/mod.rs:53` | `NONE` | — | Local serde mirror until `manifest-bridge` pins manifold wire types. |
 | `value` | `crates/umst-concrete-cartridge/src/facade/mod.rs:110` | `NONE` | — | Trivial accessor; getter for the wrapped `f32`. |
