@@ -24,6 +24,8 @@ mod agent_layer;
 use agent_layer::AgentSession;
 #[cfg(feature = "agent-layer")]
 use umst_concrete_cartridge::research::MemoryQuery;
+#[cfg(feature = "agent-layer")]
+use umst_concrete_cartridge::research::ContributeError;
 
 fn err_frame(id: Value, msg: impl Into<String>) -> Value {
     json!({
@@ -42,6 +44,55 @@ fn text_result(id: Value, text: String, is_error: bool) -> Value {
             "isError": is_error,
         },
     })
+}
+
+/// Recoverable tool failures: structured `agent_error.v1` + `isError: true` (not JSON-RPC `-32603`).
+fn agent_tool_error(
+    id: Value,
+    code: &str,
+    message: impl Into<String>,
+    remediation: &str,
+) -> Value {
+    let body = json!({
+        "agent_error": {
+            "schema_version": "agent_error.v1",
+            "code": code,
+            "message": message.into(),
+            "remediation": remediation,
+        }
+    });
+    text_result(
+        id,
+        serde_json::to_string_pretty(&body).unwrap_or_default(),
+        true,
+    )
+}
+
+#[cfg(feature = "agent-layer")]
+fn contribute_tool_error(id: Value, err: ContributeError) -> Value {
+    let (code, remediation) = match &err {
+        ContributeError::Validation(_) => (
+            "contribute_validation_fail",
+            "Fix contribution wire against umst://schemas/contribution.v1.json; use rational strings.",
+        ),
+        ContributeError::GateReject(_) => (
+            "contribute_gate_reject",
+            "Run umst_gate_check first; gate_summary.admissible must be true before contribute.",
+        ),
+        ContributeError::Scope(_) => (
+            "contribute_scope_fail",
+            "Supply a valid scope_token when UMST_AGENT_SCOPE_TOKENS is set.",
+        ),
+        ContributeError::NonMonotonicStamp => (
+            "contribute_non_monotonic_stamp",
+            "Use server-assigned observed_at stamps; do not regress session clock.",
+        ),
+        ContributeError::Store(_) => (
+            "contribute_store_fail",
+            "Check UMST_MEMORY_DB path and permissions; duplicate content_id may be idempotent success.",
+        ),
+    };
+    agent_tool_error(id, code, err.to_string(), remediation)
 }
 
 fn base_tools() -> Vec<Value> {
@@ -139,11 +190,25 @@ fn tool_umst_predict(id: Value, args: &Value) -> Value {
     let mix_v = args.get("mix").cloned().unwrap_or(json!({}));
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
-        Err(e) => return err_frame(id, format!("profile load error: {e}")),
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "profile_load_fail",
+                format!("profile load error: {e}"),
+                "Call umst_profiles for bundled ids (e.g. default, uci_d1) or fix the profile argument.",
+            )
+        }
     };
     let mut spec: MixSpec = match mix_spec_from_json_value(mix_v.clone()) {
         Ok(s) => s,
-        Err(e) => return err_frame(id, format!("mix parse error: {e}")),
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "mix_parse_fail",
+                format!("mix parse error: {e}"),
+                "Use rational strings like \"9/20\" for w_c and temperature_k; see contribution.v1 schema.",
+            )
+        }
     };
     spec.profile_name = profile_id.to_string();
 
@@ -155,7 +220,14 @@ fn tool_umst_predict(id: Value, args: &Value) -> Value {
         },
     ) {
         Ok(b) => b,
-        Err(e) => return err_frame(id, format!("predict error: {e}")),
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "predict_fail",
+                format!("predict error: {e}"),
+                "Verify mix fields and profile calibration; see umst_predict schema.",
+            )
+        }
     };
     let out = match serialize_prediction(&bundle, wire) {
         Ok(v) => v,
@@ -327,7 +399,14 @@ fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Valu
         .unwrap_or("default");
     let mix = match args.get("mix") {
         Some(m) => m.clone(),
-        None => return err_frame(id, "missing mix"),
+        None => {
+            return agent_tool_error(
+                id,
+                "missing_argument",
+                "missing mix",
+                "Supply mix with rational fields (w_c, temperature_k, …) per contribution.v1.",
+            )
+        }
     };
     let explain = args
         .get("explain")
@@ -335,7 +414,14 @@ fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Valu
         .unwrap_or(true);
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
-        Err(e) => return err_frame(id, format!("profile load error: {e}")),
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "profile_load_fail",
+                format!("profile load error: {e}"),
+                "Call umst_profiles for bundled ids or use profile: \"default\".",
+            )
+        }
     };
     let result = session.gate_check(&profile, &mix, explain);
     let is_error = !result.gate_summary.admissible;
@@ -355,13 +441,29 @@ fn tool_umst_contribute(id: Value, args: &Value, session: AgentSession) -> (Valu
     let contribution = match args.get("contribution") {
         Some(c) => c.clone(),
         None => {
-            return (err_frame(id, "missing contribution"), session);
+            return (
+                agent_tool_error(
+                    id,
+                    "missing_argument",
+                    "missing contribution",
+                    "Supply contribution object matching contribution.v1 schema.",
+                ),
+                session,
+            );
         }
     };
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
         Err(e) => {
-            return (err_frame(id, format!("profile load error: {e}")), session);
+            return (
+                agent_tool_error(
+                    id,
+                    "profile_load_fail",
+                    format!("profile load error: {e}"),
+                    "Call umst_profiles for bundled ids or use profile: \"default\".",
+                ),
+                session,
+            );
         }
     };
     let async_mode = args.get("async").and_then(|x| x.as_bool()).unwrap_or(false);
@@ -385,7 +487,7 @@ fn tool_umst_contribute(id: Value, args: &Value, session: AgentSession) -> (Valu
             ),
             next,
         ),
-        Err(e) => (err_frame(id, e), session),
+        Err(e) => (contribute_tool_error(id, e), session),
     }
 }
 
@@ -393,7 +495,14 @@ fn tool_umst_contribute(id: Value, args: &Value, session: AgentSession) -> (Valu
 fn tool_umst_contribute_status(id: Value, args: &Value, session: &AgentSession) -> Value {
     let job_id = match args.get("job_id").and_then(|x| x.as_str()) {
         Some(j) => j,
-        None => return err_frame(id, "missing job_id"),
+        None => {
+            return agent_tool_error(
+                id,
+                "missing_argument",
+                "missing job_id",
+                "Poll umst_contribute_status with job_id returned from umst_contribute async:true.",
+            );
+        }
     };
     match session.contribute_status(job_id) {
         Some(job) => text_result(
@@ -401,7 +510,12 @@ fn tool_umst_contribute_status(id: Value, args: &Value, session: &AgentSession) 
             serde_json::to_string_pretty(&job).unwrap_or_default(),
             false,
         ),
-        None => err_frame(id, format!("unknown job_id: {job_id}")),
+        None => agent_tool_error(
+            id,
+            "unknown_job_id",
+            format!("unknown job_id: {job_id}"),
+            "Re-submit contribute or check contribute_jobs.json beside UMST_MEMORY_DB; job may have expired after MCP restart.",
+        ),
     }
 }
 
@@ -409,7 +523,14 @@ fn tool_umst_contribute_status(id: Value, args: &Value, session: &AgentSession) 
 fn tool_umst_mi_estimate(id: Value, args: &Value, session: &AgentSession) -> Value {
     let mix = match args.get("mix") {
         Some(m) => m.clone(),
-        None => return err_frame(id, "missing mix"),
+        None => {
+            return agent_tool_error(
+                id,
+                "missing_argument",
+                "missing mix",
+                "Supply mix with rational fields for MI advisory estimate.",
+            )
+        }
     };
     let out = session.mi_estimate(&mix);
     text_result(
@@ -442,11 +563,31 @@ fn tool_umst_transition_propose(
         .unwrap_or("default");
     let mix = match args.get("mix") {
         Some(m) => m.clone(),
-        None => return (err_frame(id, "missing mix"), session),
+        None => {
+            return (
+                agent_tool_error(
+                    id,
+                    "missing_argument",
+                    "missing mix",
+                    "Supply mix with rational fields (w_c, temperature_k, …).",
+                ),
+                session,
+            );
+        }
     };
     let profile = match Profile::load_bundled(profile_id) {
         Ok(p) => p,
-        Err(e) => return (err_frame(id, format!("profile load error: {e}")), session),
+        Err(e) => {
+            return (
+                agent_tool_error(
+                    id,
+                    "profile_load_fail",
+                    format!("profile load error: {e}"),
+                    "Call umst_profiles for bundled ids or use profile: \"default\".",
+                ),
+                session,
+            );
+        }
     };
     let outcome = args.get("outcome");
     let process = args.get("process");
@@ -462,7 +603,7 @@ fn tool_umst_transition_propose(
             ),
             next,
         ),
-        Err(e) => (err_frame(id, e), session),
+        Err(e) => (contribute_tool_error(id, e), session),
     }
 }
 
@@ -575,7 +716,7 @@ fn dispatch(req: &Value, session: AgentSession) -> (Value, AgentSession) {
                     }),
                     session,
                 ),
-                Err(e) => (err_frame(id, e), session),
+                Err(e) => (contribute_tool_error(id, e), session),
             }
         }
         "prompts/list" => (
@@ -601,7 +742,7 @@ fn dispatch(req: &Value, session: AgentSession) -> (Value, AgentSession) {
                     }),
                     session,
                 ),
-                Err(e) => (err_frame(id, e), session),
+                Err(e) => (contribute_tool_error(id, e), session),
             }
         }
         _ => (
