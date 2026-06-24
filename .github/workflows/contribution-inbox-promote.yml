@@ -52,12 +52,19 @@ jobs:
           done < /tmp/inbox_added.txt
           YM="$(date -u +%Y-%m)"
           mkdir -p "contributions/merged/${YM}"
+          : > /tmp/promoted.txt
           while IFS= read -r f; do
             [ -f "$f" ] || continue
             base="$(basename "$f")"
-            git mv "$f" "contributions/merged/${YM}/${base}"
-            python3 scripts/update_contribution_manifest.py --append "contributions/merged/${YM}/${base}"
+            dest="contributions/merged/${YM}/${base}"
+            git mv "$f" "$dest"
+            python3 scripts/update_contribution_manifest.py --append "$dest"
+            echo "$dest" >> /tmp/promoted.txt
           done < /tmp/inbox_added.txt
+          mapfile -t promoted < /tmp/promoted.txt
+          if [ ${#promoted[@]} -gt 0 ]; then
+            bash scripts/inbox_promote_pre_commit_guard.sh "${promoted[@]}"
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add contributions/
