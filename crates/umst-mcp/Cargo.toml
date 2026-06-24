@@ -14,6 +14,14 @@ repository.workspace = true
 description = "Model Context Protocol (MCP) server exposing the UMST concrete engine to AI agents."
 publish = false
 
+[lib]
+name = "umst_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "umst-mcp"
+path = "src/main.rs"
+
 [features]
 default = []
 blas-accelerate = ["umst-cli/blas-accelerate"]

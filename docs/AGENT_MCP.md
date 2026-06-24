@@ -75,6 +75,32 @@ umst_gate_check → umst_predict (optional) → umst_contribute
 
 ---
 
+## Soft gates
+
+Hard gates (`umst_gate_check`) return `gate_summary.admissible` and commit with exact `f64` witnesses. **Soft gates** are pure `f32` smoothstep templates in `umst_mcp::soft_gate` for differentiable constraint penalties during training and exploration — they **multiply** into policy loss; they do **not** replace hard admissibility for `umst_contribute`.
+
+| Function | Role |
+|----------|------|
+| `smoothstep` / `smoothstep01` | C¹ Hermite ramp `3t² − 2t³` |
+| `soft_lower_gate` / `soft_upper_gate` | One-sided bound multipliers |
+| `soft_band_gate` | Product of lower + upper (admissible band) |
+| `connected_fraction_gate` / `network_conductivity_factor` | Percolation threshold ramp (supercap template) |
+| `band_margin_penalty` | Slack surrogate outside `[lo, hi]` |
+| `printability_dual_gate` | Concrete τ₀ band × extrudability floor |
+
+**Usage pattern (Burn / PPO):**
+
+```text
+loss = task_loss + λ * band_margin_penalty(scalar, lo, hi, width)
+commit = hard_gate(scalar)   // umst_gate_check at f64 boundary only
+```
+
+**Concrete anchors:** τ₀ band `180–360` Pa and extrudability `≥ 0.35` mirror [`dual_gate.rs`](../crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs) hard legs; soft gates supply gradients before REJECT.
+
+**Tests:** `cargo test soft_gate`
+
+---
+
 ## Build profiles
 
 | Profile | Features | Use |
