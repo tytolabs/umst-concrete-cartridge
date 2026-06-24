@@ -17,10 +17,10 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | formal_status | Symbols |
 |---------------|---------|
 | **Mechanised** | 34 |
-| **Structural** | 89 |
+| **Structural** | 93 |
 | **Empirical** | 34 |
 | **Literature** | 50 |
-| **NONE** | 266 |
+| **NONE** | 273 |
 
 ## Mechanised
 
@@ -54,10 +54,10 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `compute_chloride_diffusivity` | `crates/umst-concrete-cartridge/src/physics/transport.rs:46` | `lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy` | umst.gate.landauer_cbf | NONE |
 | `CD_TRANSITION_CATALOG_ID` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:21` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 | `thermodynamic_ok` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:97` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `gate_check_mix` | `crates/umst-concrete-cartridge/src/research/contribution.rs:96` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `gate_check_mix_result` | `crates/umst-concrete-cartridge/src/research/contribution.rs:163` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `gate_recheck` | `crates/umst-concrete-cartridge/src/research/contribution.rs:443` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `accept` | `crates/umst-concrete-cartridge/src/research/contribution.rs:513` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `gate_check_mix` | `crates/umst-concrete-cartridge/src/research/contribution.rs:100` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `gate_check_mix_result` | `crates/umst-concrete-cartridge/src/research/contribution.rs:167` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `gate_recheck` | `crates/umst-concrete-cartridge/src/research/contribution.rs:438` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `accept` | `crates/umst-concrete-cartridge/src/research/contribution.rs:508` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 | `gate_check` | `crates/umst-py/src/lib.rs:244` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 | `contribute` | `crates/umst-py/src/lib.rs:336` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 
@@ -93,17 +93,19 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `schema_result_v1_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:827` | `STRUCTURAL` | — | SSOT `include_str!` of repo-root schema for CLI/MCP/Python. |
 | `schema_result_v2_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:836` | `STRUCTURAL` | — | SSOT `include_str!` of repo-root schema for CLI/MCP/Python. |
 | `schema_audit_v1_json` | `crates/umst-concrete-cartridge/src/facade/mod.rs:845` | `STRUCTURAL` | — | SSOT `include_str!` of repo-root schema for CLI `umst audit`. |
-| `ConcreteTransitionCartridge` | `crates/umst-concrete-cartridge/src/gate_evidence.rs:12` | `STRUCTURAL` | — | Zero-sized [`GateCartridge`] witness binding cement SSOT into manifold transition evidence. |
-| `snapshot_from_mix` | `crates/umst-concrete-cartridge/src/gate_evidence.rs:20` | `STRUCTURAL` | — | Deterministic lift of mix scalars into [`ThermodynamicStateSnapshot`] via cartridge cement params. |
-| `dissipation_joules` | `crates/umst-concrete-cartridge/src/gate_evidence.rs:39` | `STRUCTURAL` | — | Delegates dissipation to manifold `transition_outcome` host path for telemetry parity. |
+| `ConcreteTransitionWitness` | `crates/umst-concrete-cartridge/src/gate_evidence.rs:14` | `STRUCTURAL` | — | Telemetry envelope around manifold [`TransitionEvidence`]; CD admissibility on `core` leg. |
+| `ConcreteTransitionCartridge` | `crates/umst-concrete-cartridge/src/gate_evidence.rs:27` | `STRUCTURAL` | — | Zero-sized [`GateCartridge`] witness binding cement SSOT into manifold transition evidence. |
+| `snapshot_from_mix` | `crates/umst-concrete-cartridge/src/gate_evidence.rs:35` | `STRUCTURAL` | — | Deterministic lift of mix scalars into [`ThermodynamicStateSnapshot`] via cartridge cement params. |
+| `dissipation_joules` | `crates/umst-concrete-cartridge/src/gate_evidence.rs:54` | `STRUCTURAL` | — | Delegates dissipation to manifold `transition_outcome` host path for telemetry parity. |
+| `transition_witness` | `crates/umst-concrete-cartridge/src/gate_evidence.rs:68` | `STRUCTURAL` | — | Composes manifold `transition_evidence` with cartridge dissipation telemetry. |
 | `MixRow` | `crates/umst-concrete-cartridge/src/homogeneous.rs:14` | `STRUCTURAL` | — | kg/m³ tagged scalars; structural carrier of mix design components for homogeneous routing. |
 | `mix_row_from_scalar_spec` | `crates/umst-concrete-cartridge/src/homogeneous.rs:294` | `STRUCTURAL` | — | Deterministic projection of `MixSpec` scalar inputs into `MixRow` mass fractions. |
-| `query` | `crates/umst-concrete-cartridge/src/research/contribution.rs:61` | `STRUCTURAL` | — | Functor to store `query`; filter semantics on `filter_records`. |
-| `content_hash_preimage` | `crates/umst-concrete-cartridge/src/research/contribution.rs:70` | `STRUCTURAL` | — | Deterministic field bundle for SHA-256; no admissibility claim. |
-| `rational_to_f64` | `crates/umst-concrete-cartridge/src/research/contribution.rs:388` | `STRUCTURAL` | — | Wire decode only; physical units validated downstream on `MixSpec`. |
-| `mix_wire_from_spec_value` | `crates/umst-concrete-cartridge/src/research/contribution.rs:411` | `STRUCTURAL` | — | Serde routing to facade wire; gate on `MixSpec::try_from`. |
-| `content_id` | `crates/umst-concrete-cartridge/src/research/contribution.rs:469` | `STRUCTURAL` | — | Content-addressed memory key; hash of wire fields not physics. |
-| `memory_record_from_contribution` | `crates/umst-concrete-cartridge/src/research/contribution.rs:480` | `STRUCTURAL` | — | memory_record.v1 projection; mix_geometry from Morton on mix_spec. |
+| `query` | `crates/umst-concrete-cartridge/src/research/contribution.rs:65` | `STRUCTURAL` | — | Functor to store `query`; filter semantics on `filter_records`. |
+| `content_hash_preimage` | `crates/umst-concrete-cartridge/src/research/contribution.rs:74` | `STRUCTURAL` | — | Deterministic field bundle for SHA-256; no admissibility claim. |
+| `rational_to_f64` | `crates/umst-concrete-cartridge/src/research/contribution.rs:383` | `STRUCTURAL` | — | Wire decode only; physical units validated downstream on `MixSpec`. |
+| `mix_wire_from_spec_value` | `crates/umst-concrete-cartridge/src/research/contribution.rs:406` | `STRUCTURAL` | — | Serde routing to facade wire; gate on `MixSpec::try_from`. |
+| `content_id` | `crates/umst-concrete-cartridge/src/research/contribution.rs:464` | `STRUCTURAL` | — | Content-addressed memory key; hash of wire fields not physics. |
+| `memory_record_from_contribution` | `crates/umst-concrete-cartridge/src/research/contribution.rs:475` | `STRUCTURAL` | — | memory_record.v1 projection; mix_geometry from Morton on mix_spec. |
 | `PhysicalReasoningLayer` | `crates/umst-concrete-cartridge/src/research/layer.rs:10` | `STRUCTURAL` | — | Cartridge port trait; geometry hook defers to `mix_geometry_key`. |
 | `cartridge_slug` | `crates/umst-concrete-cartridge/src/research/layer.rs:18` | `STRUCTURAL` | — | Namespace id for MCP resource URIs; no physics claim. |
 | `contribution_schema` | `crates/umst-concrete-cartridge/src/research/layer.rs:24` | `STRUCTURAL` | — | Default contribution.v1 schema id re-export. |
@@ -151,6 +153,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `ObservedAtV2` | `crates/umst-concrete-cartridge/src/research/wire_v2.rs:15` | `STRUCTURAL` | — | UCRS wire functor; monotonicity checked on v1 `provenance` path. |
 | `observed_at_to_v2` | `crates/umst-concrete-cartridge/src/research/wire_v2.rs:37` | `STRUCTURAL` | — | Field-preserving projection to observed_at.v2; no new stamp semantics. |
 | `ucrs_observed_at_to_v2` | `crates/umst-concrete-cartridge/src/research/wire_v2.rs:56` | `STRUCTURAL` | — | UCRS crate → v2 wire functor; monotonicity on `is_monotonic_after`. |
+| `with_gate_cartridge` | `crates/umst-concrete-cartridge/src/thmc_gate.rs:12` | `STRUCTURAL` | — | Configures [`ThmcSolver`] intrinsic strength from cement SSOT before coupled step. |
+| `gate_cartridge_witness` | `crates/umst-concrete-cartridge/src/thmc_gate.rs:25` | `STRUCTURAL` | — | Routes post-step evidence through cartridge [`GateCartridge`] witness. |
 | `predict` | `crates/umst-py/src/lib.rs:115` | `STRUCTURAL` | — | Python transport wrapper over **[`predict_with_options`]**; anchored on facade predict path. |
 | `certify` | `crates/umst-py/src/lib.rs:186` | `STRUCTURAL` | — | Dict view of **[`certify_profile_json`]**; structural mirror of CLI `umst certify`. |
 | `schema` | `crates/umst-py/src/lib.rs:198` | `STRUCTURAL` | — | SSOT schema text from facade `include_str!` for notebooks and packaging checks. |
@@ -208,7 +212,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `ultimate_doh` | `crates/umst-concrete-cartridge/src/homogeneous.rs:67` | `literature://Mills-1966-gel-stiffness-closure` | — | "Mills (1966); α_inf = 1.031 w/c / (0.194 + w/c)" \| "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)" |
 | `embodied_co2_kg_per_m3` | `crates/umst-concrete-cartridge/src/homogeneous.rs:243` | `literature://EN-15804+A2-indicative-EPD-intensities` | — | "EN 15804+A2 (2019) environmental product declarations — indicative cradle-to-gate CO₂e intensities per constituent class" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3); inline coefficients match bundled EPD intensity convention" |
 | `constituent_masses_kg_m3` | `crates/umst-concrete-cartridge/src/homogeneous.rs:271` | `literature://ACI-211.1-binder-dosage-convention` | — | "ACI 211.1 — Standard Practice for Selecting Proportions for Normal, Heavyweight, and Mass Concrete" \| "350 kg/m³ binder dosage convention for constituent mass reconstruction from scalar mix spec" |
-| `PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/lib.rs:87` | `literature://wire-schema-physics-pipeline-v1` | — | "physics_pipeline schema tag (`physics_pipeline.v1`)" \| "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape." |
+| `PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/lib.rs:95` | `literature://wire-schema-physics-pipeline-v1` | — | "physics_pipeline schema tag (`physics_pipeline.v1`)" \| "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape." |
 | `CEMENT_REACTION_ENTHALPY_J_PER_KG` | `crates/umst-concrete-cartridge/src/material_transition.rs:12` | `literature://cement-hydration-enthalpy-order-of-magnitude` | — | "Representative cementitious hydration enthalpy scale (order 450 J/g binder mass basis)." \| "`CEMENT_REACTION_ENTHALPY_J_PER_KG` feeds Clausius–Duhem transition gate via [`MaterialTransitionParams`]." |
 | `CEMENT_DEFAULT_S_INTRINSIC_MPA` | `crates/umst-concrete-cartridge/src/material_transition.rs:19` | `literature://powers-intrinsic-strength-scale` | — | "Powers-style monotonic strength closure intrinsic scale (order 240 MPa)." \| "`CEMENT_DEFAULT_S_INTRINSIC_MPA` upper-bounds admissible strength jumps in transition gate." |
 | `ClinkerPhase` | `crates/umst-concrete-cartridge/src/physics/clinker_eos.rs:22` | `literature://stat-mech/vinet-clinker-phase-enum` | — | "Manzano et al. 2009 J. Am. Chem. Soc. 131:7416; Speziale et al. 2008 Phys. Chem. Miner. 35:573; Clark et al. 2008 Cem. Concr. Res. 38:19; Pellenq et al. 2009 PNAS 106:16102" \| "Discrete phase tags carrying (V0, K0, K0') for Vinet P(V) calibration" |
@@ -287,9 +291,9 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `apply_topology_result_to_umst` | `crates/umst-concrete-cartridge/src/core/implementation.rs:232` | `NONE` | — | Mutable UMST merge path for topology tensors; proof witnesses remain caller-owned. |
 | `ConcreteCartridge` | `crates/umst-concrete-cartridge/src/core/mod.rs:6` | `NONE` | — | Re-export; classification follows the underlying symbol. |
 | `apply_physics_to_umst` | `crates/umst-concrete-cartridge/src/core/mod.rs:10` | `NONE` | — | Forwards manifold UMST write-back helper used after topology physics. |
-| `StatePoint` | `crates/umst-concrete-cartridge/src/core/mod.rs:14` | `NONE` | — | W9 agnostic state-point re-export; classification follows manifold `StatePoint`. |
+| `MaterialCompositionTensor` | `crates/umst-concrete-cartridge/src/core/mod.rs:14` | `NONE` | — | W9 agnostic state-point re-export; classification follows manifold `MaterialCompositionTensor`. |
 | `IScienceCartridge, PhysicalResult` | `crates/umst-concrete-cartridge/src/core/mod.rs:18` | `NONE` | — | Forwards manifold cartridge façade trait and tensor bundles. |
-| `MixTensor` | `crates/umst-concrete-cartridge/src/core/mod.rs:22` | `NONE` | — | Deprecated W9 alias for `StatePoint`; retained one release for cartridge callers. |
+| `MixTensor` | `crates/umst-concrete-cartridge/src/core/mod.rs:22` | `NONE` | — | Deprecated W9 alias for `MaterialCompositionTensor`; retained one release for cartridge callers. |
 | `umst_manifold::manifest::*` | `crates/umst-concrete-cartridge/src/facade/mod.rs:46` | `NONE` | — | Forwards manifold manifest types when `manifest-bridge` is enabled. |
 | `UmstManifest` | `crates/umst-concrete-cartridge/src/facade/mod.rs:53` | `NONE` | — | Local serde mirror until `manifest-bridge` pins manifold wire types. |
 | `value` | `crates/umst-concrete-cartridge/src/facade/mod.rs:110` | `NONE` | — | Trivial accessor; getter for the wrapped `f32`. |
@@ -312,18 +316,19 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `gate_manifest_from` | `crates/umst-concrete-cartridge/src/gate_policy.rs:16` | `NONE` | — | Injection-only HTTP gate manifest from explicit [`UmstManifest`] (see `docs/RUNTIME_TOPOLOGY.md` § HTTP gate defaults). |
 | `HomogeneousError` | `crates/umst-concrete-cartridge/src/homogeneous.rs:28` | `NONE` | — | Dispatch error: Jennings-not-yet, invalid mix; no formal claim. |
 | `mix_hydration_state` | `crates/umst-concrete-cartridge/src/homogeneous.rs:76` | `NONE` | — | Internal homogeneous helper composing calibrated α(t,T,scm) and effective w/c from profile parameters. |
-| `ConcreteTransitionCartridge` | `crates/umst-concrete-cartridge/src/lib.rs:40` | `NONE` | — | Re-exports concrete transition gate cartridge when `manifold-gate` is enabled. |
-| `cement_reaction_extent_kinetics_spec, CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA, CEMENT_REACTION_ENTHALPY_J_PER_KG` | `crates/umst-concrete-cartridge/src/lib.rs:45` | `NONE` | — | Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled. |
-| `apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, PhysicalResult, StatePoint` | `crates/umst-concrete-cartridge/src/lib.rs:56` | `NONE` | — | Re-exports manifold façade symbols for ergonomics only. |
-| `ConcretePolicyEvaluator` | `crates/umst-concrete-cartridge/src/lib.rs:62` | `NONE` | — | Re-exports cartridge HTTP gate policy evaluator. |
-| `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/lib.rs:66` | `NONE` | — | Stable import path for MCP/CLI integration tests. |
-| `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/lib.rs:70` | `NONE` | — | JSON envelope for staged tensor outputs. |
-| `PhysicsPipelineSummary` | `crates/umst-concrete-cartridge/src/lib.rs:75` | `NONE` | — | Scalar digest accompanying report JSON. |
-| `PipelineStageRecord` | `crates/umst-concrete-cartridge/src/lib.rs:79` | `NONE` | — | Stage record type embedded in [`PhysicsPipelineReport`]. |
-| `PipelineStageStatus` | `crates/umst-concrete-cartridge/src/lib.rs:83` | `NONE` | — | Serialized stage disposition enum for MCP/CLI audit trails. |
-| `GateEvaluator, ThermodynamicTransitionEvaluator, TransitionGateEvaluator` | `crates/umst-concrete-cartridge/src/lib.rs:93` | `NONE` | — | Re-exports host transition gate traits when `manifold-gate` is enabled. |
-| `UmstManifest` | `crates/umst-concrete-cartridge/src/lib.rs:100` | `NONE` | — | Re-exports manifold deployment manifest when `manifold-manifest` is enabled. |
-| `ros` | `crates/umst-concrete-cartridge/src/lib.rs:105` | `NONE` | — | Re-exports manifold ROS serde DTOs when `ros2-contract` is enabled. |
+| `ConcreteTransitionCartridge, ConcreteTransitionWitness` | `crates/umst-concrete-cartridge/src/lib.rs:43` | `NONE` | — | Re-exports concrete transition gate cartridge when `manifold-gate` is enabled. |
+| `cement_reaction_extent_kinetics_spec, CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA, CEMENT_REACTION_ENTHALPY_J_PER_KG` | `crates/umst-concrete-cartridge/src/lib.rs:48` | `NONE` | — | Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled. |
+| `gate_cartridge_witness, with_gate_cartridge` | `crates/umst-concrete-cartridge/src/lib.rs:56` | `NONE` | — | Re-exports THMC injectable gate helpers when `solver-experimental` enabled. |
+| `apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, PhysicalResult, MaterialCompositionTensor` | `crates/umst-concrete-cartridge/src/lib.rs:64` | `NONE` | — | Re-exports manifold façade symbols for ergonomics only. |
+| `ConcretePolicyEvaluator` | `crates/umst-concrete-cartridge/src/lib.rs:70` | `NONE` | — | Re-exports cartridge HTTP gate policy evaluator. |
+| `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/lib.rs:74` | `NONE` | — | Stable import path for MCP/CLI integration tests. |
+| `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/lib.rs:78` | `NONE` | — | JSON envelope for staged tensor outputs. |
+| `PhysicsPipelineSummary` | `crates/umst-concrete-cartridge/src/lib.rs:83` | `NONE` | — | Scalar digest accompanying report JSON. |
+| `PipelineStageRecord` | `crates/umst-concrete-cartridge/src/lib.rs:87` | `NONE` | — | Stage record type embedded in [`PhysicsPipelineReport`]. |
+| `PipelineStageStatus` | `crates/umst-concrete-cartridge/src/lib.rs:91` | `NONE` | — | Serialized stage disposition enum for MCP/CLI audit trails. |
+| `GateEvaluator, ThermodynamicTransitionEvaluator, TransitionGateEvaluator` | `crates/umst-concrete-cartridge/src/lib.rs:101` | `NONE` | — | Re-exports host transition gate traits when `manifold-gate` is enabled. |
+| `UmstManifest` | `crates/umst-concrete-cartridge/src/lib.rs:108` | `NONE` | — | Re-exports manifold deployment manifest when `manifold-manifest` is enabled. |
+| `ros` | `crates/umst-concrete-cartridge/src/lib.rs:113` | `NONE` | — | Re-exports manifold ROS serde DTOs when `ros2-contract` is enabled. |
 | `cement_reaction_extent_kinetics_spec` | `crates/umst-concrete-cartridge/src/material_transition.rs:26` | `NONE` | — | Bundled THMC kinetics witness for parity harnesses; values mirror cartridge calibration lane. |
 | `CementMaterialParams` | `crates/umst-concrete-cartridge/src/material_transition.rs:58` | `NONE` | — | Zero-sized cement closure witness for harnesses without a loaded [`Profile`]. |
 | `MIX_FEATURE_COUNT` | `crates/umst-concrete-cartridge/src/mix_layout.rs:13` | `NONE` | — | Structural convention for CLI ↔ tensor engines; documented here as SSOT for column indices. |
@@ -386,20 +391,21 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `merkle_root_from_leaves` | `crates/umst-concrete-cartridge/src/research/checkpoint.rs:44` | `NONE` | — | Hash combiner for batch audit; no thermodynamic claim. |
 | `build_checkpoint` | `crates/umst-concrete-cartridge/src/research/checkpoint.rs:80` | `NONE` | — | Pure record morphism over content_id leaves; persistence is IO. |
 | `append_checkpoint_jsonl` | `crates/umst-concrete-cartridge/src/research/checkpoint.rs:99` | `NONE` | — | Append-only checkpoint JSONL; not queryable admissible memory. |
-| `AcceptError` | `crates/umst-concrete-cartridge/src/research/contribution.rs:30` | `NONE` | — | Error sum type; thermodynamic verdict on `GateReject` leg only. |
-| `ContributeError` | `crates/umst-concrete-cartridge/src/research/contribution.rs:48` | `NONE` | — | Type alias for wire ergonomics; gate reject leg documented on `AcceptError`. |
-| `DEFAULT_CATALOG_HASH` | `crates/umst-concrete-cartridge/src/research/contribution.rs:54` | `NONE` | — | Build-time pin override in manifest_bridge tests; not a physics claim. |
-| `GateContext` | `crates/umst-concrete-cartridge/src/research/contribution.rs:88` | `NONE` | — | Profile carrier for `gate_recheck`; CD math on manifold when manifest-bridge on. |
-| `GateFieldIssue` | `crates/umst-concrete-cartridge/src/research/contribution.rs:126` | `NONE` | — | Operator diagnostics; not admissibility proof. |
-| `GateCheckExplain` | `crates/umst-concrete-cartridge/src/research/contribution.rs:136` | `NONE` | — | Operator diagnostics; not admissibility proof. |
-| `GateCheckResult` | `crates/umst-concrete-cartridge/src/research/contribution.rs:150` | `NONE` | — | Structured tool result; reject row matches `gate_reject.v1`. |
-| `gate_reject_row_for_mix` | `crates/umst-concrete-cartridge/src/research/contribution.rs:335` | `NONE` | — | Audit stream morphism; reject rows excluded from `admissible_only` query. |
-| `encode` | `crates/umst-concrete-cartridge/src/research/contribution.rs:574` | `NONE` | — | Formatting helper; content addressing on `content_id`. |
+| `AcceptError` | `crates/umst-concrete-cartridge/src/research/contribution.rs:34` | `NONE` | — | Error sum type; thermodynamic verdict on `GateReject` leg only. |
+| `ContributeError` | `crates/umst-concrete-cartridge/src/research/contribution.rs:52` | `NONE` | — | Type alias for wire ergonomics; gate reject leg documented on `AcceptError`. |
+| `DEFAULT_CATALOG_HASH` | `crates/umst-concrete-cartridge/src/research/contribution.rs:58` | `NONE` | — | Build-time pin override in manifest_bridge tests; not a physics claim. |
+| `GateContext` | `crates/umst-concrete-cartridge/src/research/contribution.rs:92` | `NONE` | — | Profile carrier for `gate_recheck`; CD math on manifold when manifest-bridge on. |
+| `GateFieldIssue` | `crates/umst-concrete-cartridge/src/research/contribution.rs:130` | `NONE` | — | Operator diagnostics; not admissibility proof. |
+| `GateCheckExplain` | `crates/umst-concrete-cartridge/src/research/contribution.rs:140` | `NONE` | — | Operator diagnostics; not admissibility proof. |
+| `GateCheckResult` | `crates/umst-concrete-cartridge/src/research/contribution.rs:154` | `NONE` | — | Structured tool result; reject row matches `gate_reject.v1`. |
+| `gate_reject_row_for_mix` | `crates/umst-concrete-cartridge/src/research/contribution.rs:330` | `NONE` | — | Audit stream morphism; reject rows excluded from `admissible_only` query. |
+| `encode` | `crates/umst-concrete-cartridge/src/research/contribution.rs:569` | `NONE` | — | Formatting helper; content addressing on `content_id`. |
 | `ExportError` | `crates/umst-concrete-cartridge/src/research/export.rs:14` | `NONE` | — | Bundle handoff error sum type; rows already gate-validated. |
 | `hash_chain_for_rows` | `crates/umst-concrete-cartridge/src/research/export.rs:26` | `NONE` | — | Deterministic audit chain over exported rows; not admissibility. |
 | `MemoryExportBundle` | `crates/umst-concrete-cartridge/src/research/export.rs:56` | `NONE` | — | Signed export envelope; physics witnesses on row `gate_summary`. |
 | `build_memory_export_bundle` | `crates/umst-concrete-cartridge/src/research/export.rs:71` | `NONE` | — | Pure bundle morphism; operator handoff artifact not MCP gate. |
 | `write_memory_export_bundle` | `crates/umst-concrete-cartridge/src/research/export.rs:91` | `NONE` | — | Filesystem export write; never exposed via MCP tools. |
+| `fields_for_code, remediation_for_code, MANIFEST_BRIDGE_DISABLED, MIX_SPEC_RATIONAL_PARSE_FAIL, MIX_SPEC_WIRE_INVALID, THERMODYNAMIC_CD_FAIL, THERMODYNAMIC_FAIL, TOP_GATE_EXPLAIN_CODES` | `crates/umst-concrete-cartridge/src/research/gate_explain_ssot.rs:6` | `NONE` | — | Cartridge mirror of manifold gate reject codes and field/remediation SSOT for MCP explain parity. |
 | `MixGeometryKey` | `crates/umst-concrete-cartridge/src/research/geometry.rs:13` | `NONE` | — | Design-coordinate locality index; no thermodynamic claim. |
 | `quantize_w_c` | `crates/umst-concrete-cartridge/src/research/geometry.rs:28` | `NONE` | — | Morton grid quantization on w_c; retrieval heuristic only. |
 | `quantize_temperature_k` | `crates/umst-concrete-cartridge/src/research/geometry.rs:38` | `NONE` | — | Morton grid quantization on temperature; no constitutive law. |
@@ -431,25 +437,26 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `SqliteStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:598` | `NONE` | — | Re-export of IO-backed store; see `sqlite_store::SqliteStore`. |
 | `estimate_mi_bits_rational` | `crates/umst-concrete-cartridge/src/research/mi.rs:17` | `NONE` | — | Epistemic surrogate for MCP enrichment; not admissibility. |
 | `estimate_mi_bits_from_mix` | `crates/umst-concrete-cartridge/src/research/mi.rs:35` | `NONE` | — | `umst_mi_estimate` advisory wire; histogram MI on manifold PPO path. |
-| `append_checkpoint_jsonl, build_checkpoint, merkle_root_from_leaves, CheckpointError, CheckpointRecord, CHECKPOINTS_JSONL_DEFAULT` | `crates/umst-concrete-cartridge/src/research/mod.rs:32` | `NONE` | — | Re-exports Merkle checkpoint helpers; audit IO on defining module. |
-| `accept, content_hash_preimage, content_id, gate_check_mix, gate_check_mix_result, gate_recheck, gate_reject_row_for_mix, memory_record_from_contribution, mix_wire_from_spec_value, query, rational_to_f64, AcceptError, ContributeError, GateCheckExplain, GateCheckResult, GateContext, GateFieldIssue, DEFAULT_CATALOG_HASH` | `crates/umst-concrete-cartridge/src/research/mod.rs:39` | `NONE` | — | Re-exports gate/accept morphisms; Mechanised on `gate_check_mix` / `accept` in `contribution`. |
-| `build_memory_export_bundle, hash_chain_for_rows, write_memory_export_bundle, ExportError, MemoryExportBundle` | `crates/umst-concrete-cartridge/src/research/mod.rs:48` | `NONE` | — | Re-exports memory export bundle builders; human handoff only. |
-| `mix_geometry_key, mix_l1_distance, morton_index, morton_index_distance, MixGeometryKey` | `crates/umst-concrete-cartridge/src/research/mod.rs:55` | `NONE` | — | Re-exports Morton mix geometry; locality index not admissibility gate. |
-| `validate_scope_token, ScopeError` | `crates/umst-concrete-cartridge/src/research/mod.rs:61` | `NONE` | — | Re-exports scope token validation; operator governance only. |
-| `ConcretePhysicalReasoningLayer, PhysicalReasoningLayer` | `crates/umst-concrete-cartridge/src/research/mod.rs:65` | `NONE` | — | Re-exports Physical Reasoning Layer port trait and concrete impl. |
-| `SqliteStore` | `crates/umst-concrete-cartridge/src/research/mod.rs:70` | `NONE` | — | Re-export of SQLite IO store when `agent-layer` enabled. |
-| `filter_records, find_by_memory_id, query_page, InMemoryStore, MemoryError, MemoryStore, ResearchStore, StoreError` | `crates/umst-concrete-cartridge/src/research/mod.rs:74` | `NONE` | — | Re-exports functional memory store port and filter morphisms. |
-| `estimate_mi_bits_from_mix, estimate_mi_bits_rational` | `crates/umst-concrete-cartridge/src/research/mod.rs:81` | `NONE` | — | Re-exports Landauer advisory MI surrogates; not admissibility gate. |
-| `holdout_rmse_passes, live_witness_enabled, parse_promotion_policy_yaml, validate_promotion_policy, validate_track_a_stamp_tier, PolicyError, PromotionPolicy` | `crates/umst-concrete-cartridge/src/research/mod.rs:85` | `NONE` | — | Re-exports promotion policy YAML validation; human-gated CLI only. |
-| `apply_promotion_writes, build_promotion_record, promote_contribution, PromotionApproval, PromotionError, PromotionRecordOut` | `crates/umst-concrete-cartridge/src/research/mod.rs:92` | `NONE` | — | Re-exports human-gated promotion record morphisms; never MCP. |
-| `ensure_observed_at, is_monotonic_after, observed_at_for_tick, synthetic_observed_at, ProvenanceClock, UcrsStampMode, WallClock` | `crates/umst-concrete-cartridge/src/research/mod.rs:99` | `NONE` | — | Re-exports UCRS provenance clock and monotonic stamp helpers. |
-| `append_gate_reject_jsonl, build_gate_reject, build_gate_reject_from_contribution, GateRejectRow, RejectError, GATE_REJECT_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:106` | `NONE` | — | Re-exports gate reject audit stream; excluded from admissible memory. |
-| `append_memory_jsonl, SidecarError, MEMORY_JSONL_DEFAULT` | `crates/umst-concrete-cartridge/src/research/mod.rs:113` | `NONE` | — | Re-exports accepted-memory JSONL sidecar append hook. |
-| `AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery, MemoryQueryPage, MemoryRecord, ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:117` | `NONE` | — | Re-exports contribution.v1 / memory_record.v1 wire types. |
-| `parse_contribution_json, validate_contribution_value, validate_for_accept, ValidationError` | `crates/umst-concrete-cartridge/src/research/mod.rs:124` | `NONE` | — | Re-exports contribution.v1 schema validators. |
-| `ucrs_observed_at_to_v2` | `crates/umst-concrete-cartridge/src/research/mod.rs:131` | `NONE` | — | Re-export UCRS → v2 wire when `ucrs-provenance` feature enabled. |
-| `observed_at_to_v2, ObservedAtV2, OBSERVED_AT_V2_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:135` | `NONE` | — | Re-exports observed_at.v2 integer wire mapping. |
-| `memory_record_from_contribution as build_memory_record` | `crates/umst-concrete-cartridge/src/research/mod.rs:140` | `NONE` | — | Re-export alias for `memory_record_from_contribution`; see `contribution`. |
+| `fields_for_code as gate_fields_for_code_ssot, remediation_for_code as gate_remediation_for_code, MANIFEST_BRIDGE_DISABLED, MIX_SPEC_RATIONAL_PARSE_FAIL, MIX_SPEC_WIRE_INVALID, THERMODYNAMIC_CD_FAIL, THERMODYNAMIC_FAIL, TOP_GATE_EXPLAIN_CODES` | `crates/umst-concrete-cartridge/src/research/mod.rs:16` | `NONE` | — | SSOT re-exports of manifold gate explain vocabulary. |
+| `append_checkpoint_jsonl, build_checkpoint, merkle_root_from_leaves, CheckpointError, CheckpointRecord, CHECKPOINTS_JSONL_DEFAULT` | `crates/umst-concrete-cartridge/src/research/mod.rs:42` | `NONE` | — | Re-exports Merkle checkpoint helpers; audit IO on defining module. |
+| `accept, content_hash_preimage, content_id, gate_check_mix, gate_check_mix_result, gate_recheck, gate_reject_row_for_mix, memory_record_from_contribution, mix_wire_from_spec_value, query, rational_to_f64, AcceptError, ContributeError, GateCheckExplain, GateCheckResult, GateContext, GateFieldIssue, DEFAULT_CATALOG_HASH` | `crates/umst-concrete-cartridge/src/research/mod.rs:49` | `NONE` | — | Re-exports gate/accept morphisms; Mechanised on `gate_check_mix` / `accept` in `contribution`. |
+| `build_memory_export_bundle, hash_chain_for_rows, write_memory_export_bundle, ExportError, MemoryExportBundle` | `crates/umst-concrete-cartridge/src/research/mod.rs:58` | `NONE` | — | Re-exports memory export bundle builders; human handoff only. |
+| `mix_geometry_key, mix_l1_distance, morton_index, morton_index_distance, MixGeometryKey` | `crates/umst-concrete-cartridge/src/research/mod.rs:65` | `NONE` | — | Re-exports Morton mix geometry; locality index not admissibility gate. |
+| `validate_scope_token, ScopeError` | `crates/umst-concrete-cartridge/src/research/mod.rs:71` | `NONE` | — | Re-exports scope token validation; operator governance only. |
+| `ConcretePhysicalReasoningLayer, PhysicalReasoningLayer` | `crates/umst-concrete-cartridge/src/research/mod.rs:75` | `NONE` | — | Re-exports Physical Reasoning Layer port trait and concrete impl. |
+| `SqliteStore` | `crates/umst-concrete-cartridge/src/research/mod.rs:80` | `NONE` | — | Re-export of SQLite IO store when `agent-layer` enabled. |
+| `filter_records, find_by_memory_id, query_page, InMemoryStore, MemoryError, MemoryStore, ResearchStore, StoreError` | `crates/umst-concrete-cartridge/src/research/mod.rs:84` | `NONE` | — | Re-exports functional memory store port and filter morphisms. |
+| `estimate_mi_bits_from_mix, estimate_mi_bits_rational` | `crates/umst-concrete-cartridge/src/research/mod.rs:91` | `NONE` | — | Re-exports Landauer advisory MI surrogates; not admissibility gate. |
+| `holdout_rmse_passes, live_witness_enabled, parse_promotion_policy_yaml, validate_promotion_policy, validate_track_a_stamp_tier, PolicyError, PromotionPolicy` | `crates/umst-concrete-cartridge/src/research/mod.rs:95` | `NONE` | — | Re-exports promotion policy YAML validation; human-gated CLI only. |
+| `apply_promotion_writes, build_promotion_record, promote_contribution, PromotionApproval, PromotionError, PromotionRecordOut` | `crates/umst-concrete-cartridge/src/research/mod.rs:102` | `NONE` | — | Re-exports human-gated promotion record morphisms; never MCP. |
+| `ensure_observed_at, is_monotonic_after, observed_at_for_tick, synthetic_observed_at, ProvenanceClock, UcrsStampMode, WallClock` | `crates/umst-concrete-cartridge/src/research/mod.rs:109` | `NONE` | — | Re-exports UCRS provenance clock and monotonic stamp helpers. |
+| `append_gate_reject_jsonl, build_gate_reject, build_gate_reject_from_contribution, GateRejectRow, RejectError, GATE_REJECT_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:116` | `NONE` | — | Re-exports gate reject audit stream; excluded from admissible memory. |
+| `append_memory_jsonl, SidecarError, MEMORY_JSONL_DEFAULT` | `crates/umst-concrete-cartridge/src/research/mod.rs:123` | `NONE` | — | Re-exports accepted-memory JSONL sidecar append hook. |
+| `AcceptResult, Contribution, GateSummary, GateVerdict, MemoryPayload, MemoryQuery, MemoryQueryPage, MemoryRecord, ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA, MEMORY_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:127` | `NONE` | — | Re-exports contribution.v1 / memory_record.v1 wire types. |
+| `parse_contribution_json, validate_contribution_value, validate_for_accept, ValidationError` | `crates/umst-concrete-cartridge/src/research/mod.rs:134` | `NONE` | — | Re-exports contribution.v1 schema validators. |
+| `ucrs_observed_at_to_v2` | `crates/umst-concrete-cartridge/src/research/mod.rs:141` | `NONE` | — | Re-export UCRS → v2 wire when `ucrs-provenance` feature enabled. |
+| `observed_at_to_v2, ObservedAtV2, OBSERVED_AT_V2_SCHEMA` | `crates/umst-concrete-cartridge/src/research/mod.rs:145` | `NONE` | — | Re-exports observed_at.v2 integer wire mapping. |
+| `memory_record_from_contribution as build_memory_record` | `crates/umst-concrete-cartridge/src/research/mod.rs:150` | `NONE` | — | Re-export alias for `memory_record_from_contribution`; see `contribution`. |
 | `PolicyError` | `crates/umst-concrete-cartridge/src/research/policy.rs:9` | `NONE` | — | Human-gated calibration governance; not MCP admissibility. |
 | `PromotionPolicy` | `crates/umst-concrete-cartridge/src/research/policy.rs:21` | `NONE` | — | Operator policy record; hold-out metrics are empirical gates only. |
 | `parse_promotion_policy_yaml` | `crates/umst-concrete-cartridge/src/research/policy.rs:35` | `NONE` | — | YAML ingest for propose-promotion CLI; never MCP-exposed. |
@@ -483,23 +490,27 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `CANON_VERSION` | `crates/umst-concrete-cartridge/src/research/types.rs:20` | `NONE` | — | JCS profile label on wire; not a physics claim. |
 | `OBSERVED_AT_V2_SCHEMA` | `crates/umst-concrete-cartridge/src/research/wire_v2.rs:9` | `NONE` | — | Schema version string for integer-only UCRS wire. |
 | `with_witness_mode` | `crates/umst-concrete-cartridge/src/research/witness_test_lock.rs:10` | `NONE` | — | Test-only env serialization; not production gate semantics. |
-| `ContributeJobStatus` | `crates/umst-mcp/src/agent_layer.rs:84` | `NONE` | — | MCP job status wire; physics on `gate_check_mix` / `accept`. |
-| `ContributeJob` | `crates/umst-mcp/src/agent_layer.rs:97` | `NONE` | — | MCP async job envelope; gate on synchronous `contribute` delegate. |
-| `AgentSession` | `crates/umst-mcp/src/agent_layer.rs:111` | `NONE` | — | MCP session state carrier; thermodynamic gate on cartridge `accept`. |
-| `gate_check` | `crates/umst-mcp/src/agent_layer.rs:133` | `NONE` | — | stdio JSON-RPC transport; CD admissibility on `gate_check_mix_result`. |
-| `mi_estimate` | `crates/umst-mcp/src/agent_layer.rs:147` | `NONE` | — | MI enrichment wire; not admissibility gate. |
-| `contribute` | `crates/umst-mcp/src/agent_layer.rs:159` | `NONE` | — | stdio transport; gate re-check before memory append on cartridge. |
-| `contribute_async` | `crates/umst-mcp/src/agent_layer.rs:188` | `NONE` | — | In-process async wrapper; same gate path as `contribute`. |
-| `contribute_status` | `crates/umst-mcp/src/agent_layer.rs:259` | `NONE` | — | In-memory job map lookup; no new physics claim. |
-| `memory_query` | `crates/umst-mcp/src/agent_layer.rs:268` | `NONE` | — | stdio transport over cartridge `query_page`; stable `(ucrs_seq, content_id)` sort. |
-| `transition_propose` | `crates/umst-mcp/src/agent_layer.rs:277` | `NONE` | — | Chained operator workflow; gate must pass before async ingest. |
-| `SCHEMA_RESOURCES` | `crates/umst-mcp/src/agent_layer.rs:357` | `NONE` | — | Schema fixture bytes for MCP discovery; versioned wire only. |
-| `AGENT_PROMPTS` | `crates/umst-mcp/src/agent_layer.rs:392` | `NONE` | — | MCP prompt templates; operational guidance only. |
-| `resources_list_result` | `crates/umst-mcp/src/agent_layer.rs:438` | `NONE` | — | MCP resource enumeration; schema bytes are versioned fixtures. |
-| `resources_read_result` | `crates/umst-mcp/src/agent_layer.rs:455` | `NONE` | — | MCP resource read; returns pinned JSON schema text. |
-| `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:475` | `NONE` | — | MCP prompts list; names only. |
-| `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:491` | `NONE` | — | MCP prompt body fetch; operational text. |
-| `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:510` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
+| `ContributeJobStatus` | `crates/umst-mcp/src/agent_layer.rs:85` | `NONE` | — | MCP job status wire; physics on `gate_check_mix` / `accept`. |
+| `ContributeJob` | `crates/umst-mcp/src/agent_layer.rs:98` | `NONE` | — | MCP async job envelope; gate on synchronous `contribute` delegate. |
+| `AgentSession` | `crates/umst-mcp/src/agent_layer.rs:112` | `NONE` | — | MCP session state carrier; thermodynamic gate on cartridge `accept`. |
+| `gate_check` | `crates/umst-mcp/src/agent_layer.rs:136` | `NONE` | — | stdio JSON-RPC transport; CD admissibility on `gate_check_mix_result`. |
+| `mi_estimate` | `crates/umst-mcp/src/agent_layer.rs:150` | `NONE` | — | MI enrichment wire; not admissibility gate. |
+| `contribute` | `crates/umst-mcp/src/agent_layer.rs:162` | `NONE` | — | stdio transport; gate re-check before memory append on cartridge. |
+| `contribute_async` | `crates/umst-mcp/src/agent_layer.rs:192` | `NONE` | — | In-process async wrapper; same gate path as `contribute`. |
+| `contribute_status` | `crates/umst-mcp/src/agent_layer.rs:265` | `NONE` | — | In-memory job map lookup; no new physics claim. |
+| `memory_query` | `crates/umst-mcp/src/agent_layer.rs:274` | `NONE` | — | stdio transport over cartridge `query_page`; stable `(ucrs_seq, content_id)` sort. |
+| `transition_propose` | `crates/umst-mcp/src/agent_layer.rs:283` | `NONE` | — | Chained operator workflow; gate must pass before async ingest. |
+| `arena_open` | `crates/umst-mcp/src/agent_layer.rs:343` | `NONE` | — | stdio transport; parse-once arena session for hot gate loops. |
+| `arena_open_bytes` | `crates/umst-mcp/src/agent_layer.rs:352` | `NONE` | — | Warm-boundary parse-once; gate physics on `gate_check_arena` delegate. |
+| `gate_check_arena` | `crates/umst-mcp/src/agent_layer.rs:378` | `NONE` | — | Warm parse + in-process gate; no per-iter MCP round-trip. |
+| `arena_close` | `crates/umst-mcp/src/agent_layer.rs:417` | `NONE` | — | Session lifecycle; releases mmap-owned buffer handle. |
+| `SCHEMA_RESOURCES` | `crates/umst-mcp/src/agent_layer.rs:453` | `NONE` | — | Schema fixture bytes for MCP discovery; versioned wire only. |
+| `AGENT_PROMPTS` | `crates/umst-mcp/src/agent_layer.rs:488` | `NONE` | — | MCP prompt templates; operational guidance only. |
+| `resources_list_result` | `crates/umst-mcp/src/agent_layer.rs:534` | `NONE` | — | MCP resource enumeration; schema bytes are versioned fixtures. |
+| `resources_read_result` | `crates/umst-mcp/src/agent_layer.rs:551` | `NONE` | — | MCP resource read; returns pinned JSON schema text. |
+| `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:571` | `NONE` | — | MCP prompts list; names only. |
+| `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:587` | `NONE` | — | MCP prompt body fetch; operational text. |
+| `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:606` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
 | `saturate01` | `crates/umst-mcp/src/soft_gate.rs:25` | `NONE` | — | Scalar clamp utility; no thermodynamic gate claim. |
 | `smoothstep01` | `crates/umst-mcp/src/soft_gate.rs:34` | `NONE` | — | Hermite smoothstep kernel; training slack only. |
 | `smoothstep` | `crates/umst-mcp/src/soft_gate.rs:44` | `NONE` | — | Bounded Hermite ramp; not a hard admissibility witness. |
