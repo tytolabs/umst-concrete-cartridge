@@ -139,7 +139,7 @@ Use MCP prompt `safe-exploration` (`prompts/get`).
 3. `umst_memory_query` for similar admissible cases.
 4. **Never** call `umst_contribute` when `gate_summary.admissible` is false.
 
-**Dry-run pattern:** gate check and predict are read-only. For inbox files without writing memory: `python3 scripts/ingest_contributions.py <file> --dry-run --skip-gate`.
+**Dry-run pattern:** gate check and predict are read-only. For inbox JSONL without writing memory, use the [Federated git inbox](#federated-git-inbox) validate + `ingest_contributions.py <file> --dry-run --skip-gate` path.
 
 ### Contribute admissible row
 
@@ -152,20 +152,62 @@ Use prompts `gate-before-contribute` + `contribute-admissible`.
 
 See [`examples/agent/02_contribute_admissible.py`](../examples/agent/02_contribute_admissible.py).
 
+**No contribute preview flag (v1):** `umst_contribute` always writes on success — there is no `preview: true` or dry-run mode on the MCP tool. Treat `umst_gate_check` (with default `explain: true`) plus `resources/read` on `umst://schemas/contribution.v1.json` as the preflight path. A dedicated contribute preview arg is deferred; inbox JSONL uses `ingest_contributions.py --dry-run` instead (see below).
+
 ### Federated git inbox
 
-Local `umst_contribute` writes to **your** `UMST_MEMORY_DB` only. To propose rows for the **shared corpus**:
+Local `umst_contribute` writes to **your** `UMST_MEMORY_DB` only. To propose rows for the **shared corpus**, export JSONL and open a PR — federation latency is review time, not live MCP sync.
+
+| Step | Who | Action |
+|------|-----|--------|
+| 1 | Lab | `umst_gate_check` → `umst_contribute` with `UMST_MEMORY_DB` set |
+| 2 | Lab | Export admissible rows not already in `contributions/merged/` |
+| 3 | Lab | Local validate + dry-run ingest (no SQLite write) |
+| 4 | Lab | PR adding **one** file under `contributions/inbox/` |
+| 5 | CI | Schema, admissible flag, duplicate scan vs `MANIFEST.jsonl`, dry-run ingest |
+| 6 | Maintainer | Merge → move shard to `contributions/merged/YYYY-MM/` → append manifest |
+
+**Naming:** `contributions/inbox/<lab-slug>-<YYYYMMDD>-<6char>.jsonl` (example: `tyto-20260619-a1b2c3.jsonl`). One JSONL per PR preferred.
+
+**Contributor commands** (from repo root):
 
 ```bash
+export UMST_MEMORY_DB=.umst-memory/memory.db
+
+# Export: skips content_ids already in contributions/merged/MANIFEST.jsonl
 python3 scripts/export_contributions_jsonl.py \
-  --db .umst-memory/memory.db --lab <slug> \
+  --db "$UMST_MEMORY_DB" --lab <slug> \
   --out contributions/inbox/<slug>-<YYYYMMDD>-<id>.jsonl
+
+# Validate: schema + gate_summary.admissible + duplicate scan (add --gate-check for local MCP re-check)
 python3 scripts/validate_contribution_inbox.py contributions/inbox/<file>.jsonl
+
+# Dry-run ingest: parse + structure check only; writes nothing (--skip-gate trusts embedded gate_summary; CI re-checks gate separately)
 python3 scripts/ingest_contributions.py contributions/inbox/<file>.jsonl --dry-run --skip-gate
-# Open PR; CI validates schema + gate re-check + MANIFEST duplicate scan
+# Success prints {"counts":{"would_insert":N},...,"dry_run":true} and exits 0
 ```
 
-MCP prompt `export_for_git_inbox` walks the same flow. See [`contributions/README.md`](../contributions/README.md). **Not** live git push from MCP — human PR merge required.
+**Dry-run vs live ingest:**
+
+| Flag | Effect |
+|------|--------|
+| `--dry-run` | No SQLite or JSONL writes; rows that would insert report `would_insert` in `counts` |
+| `--skip-gate` | Trust `gate_summary.admissible` on each line (bootstrap / inbox CI speed); **do not** use for untrusted input without `validate_contribution_inbox.py --gate-check` |
+| *(neither)* | Full MCP `umst_gate_check` re-run per line before insert |
+
+After maintainer merge, other labs refresh local memory:
+
+```bash
+cat contributions/merged/*/*.jsonl | python3 scripts/ingest_contributions.py --db .umst-memory/memory.db
+```
+
+MCP prompt `export_for_git_inbox` walks the same flow. See [`contributions/README.md`](../contributions/README.md). **Not** live git push from MCP — human PR merge required. Merge does **not** auto-update calibration profiles (`umst promote-contribution` stays human-only).
+
+**Runnable example:**
+
+```bash
+UMST_MEMORY_DB=.umst-memory/memory.db bash examples/agent/03_export_inbox.sh
+```
 
 See [`examples/agent/03_export_inbox.sh`](../examples/agent/03_export_inbox.sh).
 
@@ -369,6 +411,8 @@ python3 scripts/bootstrap_memory_from_audit.py fixtures/bootstrap_audit_slice.cs
 
 ## Troubleshooting
 
+### MCP session
+
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | `profile load error` | Unknown `profile` arg | Call `umst_profiles`; use bundled id (e.g. `default`) |
@@ -378,6 +422,29 @@ python3 scripts/bootstrap_memory_from_audit.py fixtures/bootstrap_audit_slice.cs
 | `unknown job_id` | Stale poll or wrong DB path | Check `contribute_jobs.json` beside `UMST_MEMORY_DB` |
 | Memory query always empty | In-memory session or strict filters | Set `UMST_MEMORY_DB`; relax `max_mix_l1` / regime filters |
 | Contribute fails after gate PASS | Contribution wire mismatch | Validate against `umst://schemas/contribution.v1.json` |
+| Need to test contribute wire without writing | No `preview` on `umst_contribute` | Run `umst_gate_check` first; validate JSON against `contribution.v1` schema |
+
+### Federated inbox export
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Export writes 0 rows | All `content_id`s already in `MANIFEST.jsonl` / merged shards, or DB has no admissible rows | Contribute new rows locally first; use `--since-content-id` for incremental export |
+| `error: database not found` | `UMST_MEMORY_DB` unset or empty | Run `02_contribute_admissible.py` or set `--db` explicitly |
+| `validate_contribution_inbox: duplicate content_id` | Row already merged into shared corpus | Export skips known IDs; do not re-export merged rows |
+| `gate_summary.admissible` not true | REJECT row in JSONL | Only export gate-passed rows; rejects stay local |
+| PR CI fails on inbox | Schema, duplicate, or dry-run ingest | Run the three local commands in [Federated git inbox](#federated-git-inbox) before pushing |
+
+### Dry-run ingest (`ingest_contributions.py --dry-run`)
+
+| `counts` key | Meaning | Fix |
+|--------------|---------|-----|
+| `would_insert` | Line would insert on live ingest | Expected on success |
+| `skip_schema` | Not `contribution.v1` | Fix line against `schemas/contribution.v1.json` |
+| `skip_gate` | MCP gate re-check failed (without `--skip-gate`) | Re-run `umst_gate_check`; fix mix |
+| `skip_not_admissible` | `gate_summary.admissible` is false | Remove line or re-gate locally |
+| Exit code 1 with `dry_run: true` | Any skip_* count > 0 | Fix failing lines; inbox CI uses the same dry-run path |
+
+For trusted inbox shards in CI, `--dry-run --skip-gate` checks structure only; `validate_contribution_inbox.py` (without `--gate-check` in the default workflow) still enforces schema + admissible flag + manifest duplicate scan. Add `--gate-check` locally when you want per-line MCP gate re-check before opening a PR.
 
 ---
 
