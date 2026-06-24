@@ -8,40 +8,62 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
 
-def rpc(proc: subprocess.Popen[str], payload: dict[str, Any]) -> dict[str, Any]:
+def repo_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def mcp_binary(features: list[str]) -> Path:
+    """Prebuild umst-mcp once, then launch the binary (avoids cold-start stdout flake)."""
+    root = repo_root()
+    cargo_args = ["cargo", "build", "-q", "-p", "umst-mcp"]
+    if features:
+        cargo_args.extend(["--features", ",".join(features)])
+    subprocess.run(cargo_args, cwd=str(root), check=True)
+    exe = "umst-mcp.exe" if os.name == "nt" else "umst-mcp"
+    return root / "target" / "debug" / exe
+
+
+def rpc(proc: subprocess.Popen[str], payload: dict[str, Any], *, startup: bool = False) -> dict[str, Any]:
     assert proc.stdin and proc.stdout
     proc.stdin.write(json.dumps(payload) + "\n")
     proc.stdin.flush()
-    line = proc.stdout.readline()
-    if not line:
-        raise RuntimeError("MCP server closed stdout")
-    return json.loads(line)
+    deadline = time.monotonic() + (300.0 if startup else 30.0)
+    while time.monotonic() < deadline:
+        line = proc.stdout.readline()
+        if line:
+            return json.loads(line)
+        if proc.poll() is not None:
+            stderr = proc.stderr.read() if proc.stderr else ""
+            raise RuntimeError(
+                f"MCP server exited before response (code={proc.returncode}): {stderr[:500]}"
+            )
+        time.sleep(0.05)
+    raise RuntimeError("MCP server closed stdout (timeout waiting for response)")
 
 
-def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
+def run_smoke(*, agent_layer: bool, witness_mode: str | None, mcp_exe: Path | None = None) -> None:
     features: list[str] = []
     if agent_layer:
         features.extend(["agent-layer", "ucrs-provenance"])
 
-    cargo_args = ["cargo", "run", "-q", "-p", "umst-mcp"]
-    if features:
-        cargo_args.extend(["--features", ",".join(features)])
+    binary = mcp_exe or mcp_binary(features)
 
     env = os.environ.copy()
     if witness_mode is not None:
         env["UMST_UCRS_WITNESS"] = witness_mode
 
     proc = subprocess.Popen(
-        cargo_args,
+        [str(binary)],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        cwd=str(Path(__file__).resolve().parents[1]),
+        cwd=str(repo_root()),
         env=env,
     )
 
@@ -58,6 +80,7 @@ def run_smoke(*, agent_layer: bool, witness_mode: str | None) -> None:
                     "clientInfo": {"name": "mcp_smoke", "version": "0.1"},
                 },
             },
+            startup=True,
         )
         assert "result" in init, init
 
@@ -290,12 +313,17 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    run_smoke(agent_layer=args.agent_layer, witness_mode=None)
+    features: list[str] = []
+    if args.agent_layer:
+        features.extend(["agent-layer", "ucrs-provenance"])
+    mcp_exe = mcp_binary(features) if features else mcp_binary([])
+
+    run_smoke(agent_layer=args.agent_layer, witness_mode=None, mcp_exe=mcp_exe)
 
     if args.agent_layer:
-        run_smoke(agent_layer=True, witness_mode="synthetic")
-        run_smoke(agent_layer=True, witness_mode="live")
-        run_memory_export_cli(Path(__file__).resolve().parents[1])
+        run_smoke(agent_layer=True, witness_mode="synthetic", mcp_exe=mcp_exe)
+        run_smoke(agent_layer=True, witness_mode="live", mcp_exe=mcp_exe)
+        run_memory_export_cli(repo_root())
 
     return 0
 

@@ -52,15 +52,15 @@ jobs:
           print(f"bootstrap corpus rows: {n}")
           PY
 
-      - name: MCP smoke (agent-layer)
-        working-directory: .
-        run: python3 scripts/mcp_smoke.py --agent-layer
-
       - name: Prebuild umst-mcp (agent-layer)
         working-directory: .
         run: cargo build -p umst-mcp --features agent-layer --quiet
 
-      - name: Agent example smoke (01–07 — stdio, no Docker MCP)
+      - name: MCP smoke (agent-layer)
+        working-directory: .
+        run: python3 scripts/mcp_smoke.py --agent-layer
+
+      - name: Agent example smoke (01–08 — stdio, no Docker MCP)
         working-directory: .
         run: |
           python3 examples/agent/01_gate_explore.py
