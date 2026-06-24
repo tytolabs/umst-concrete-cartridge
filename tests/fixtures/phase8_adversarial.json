@@ -1,0 +1,99 @@
+{
+  "schema_version": "phase8_adversarial_golden.v1",
+  "description": "Single source of truth for phase8_adversarial gate + memory query golden vectors",
+  "rust_test_binary": "phase8_adversarial",
+  "cargo_invocation": "cargo test -p umst-concrete-cartridge --features agent-layer --test phase8_adversarial",
+  "fixture_dir": "fixtures/golden-adversarial",
+  "fixtures": [
+    {
+      "file": "admissible_mix_01.json",
+      "role": "contribution.v1 admissible OPC mix (w/c = 9/20)",
+      "gate_expect": {
+        "admissible": true,
+        "verdict": "PASS",
+        "gate_reject_when_explain_true": false,
+        "regime_violations_empty": true,
+        "catalog_witnesses_nonempty": true
+      }
+    },
+    {
+      "file": "reject_mix_01.json",
+      "role": "contribution.v1 inadmissible high w/c mix (w/c = 3/4)",
+      "gate_expect": {
+        "admissible": false,
+        "verdict": "REJECT",
+        "explain_has_regime_violations": true,
+        "explain_has_fields": true,
+        "remediation_len_matches_violations": true,
+        "gate_reject_when_explain_false": true
+      }
+    }
+  ],
+  "inline_vectors": [
+    {
+      "id": "rational_parse_fail",
+      "mix_spec": {
+        "w_c": "not-rational",
+        "temperature_k": "29315/100"
+      },
+      "gate_expect": {
+        "admissible": false,
+        "verdict": "REJECT",
+        "gate_reject_schema": "gate_reject.v1",
+        "regime_violations": ["mix_spec_rational_parse_fail"],
+        "remediation_contains": "rational",
+        "fields": [
+          {
+            "path_contains": "w_c",
+            "issue": "rational_parse_fail"
+          }
+        ]
+      }
+    }
+  ],
+  "query_page_cases": [
+    {
+      "id": "impossible_regime_filter",
+      "fixture": "admissible_mix_01.json",
+      "query": { "curing_regime": "impossible_regime" },
+      "expect": { "rows_empty": true, "next_cursor_null": true }
+    },
+    {
+      "id": "unknown_cursor_no_skip",
+      "fixture": "admissible_mix_01.json",
+      "query": { "cursor": "nonexistent-content-id", "limit": 10 },
+      "expect": { "rows_len": 1 }
+    },
+    {
+      "id": "limit_exhausted",
+      "fixture": "admissible_mix_01.json",
+      "query": { "limit": 100 },
+      "expect": { "rows_len": 1, "next_cursor_null": true }
+    },
+    {
+      "id": "admissible_only_excludes_tampered",
+      "fixture": "admissible_mix_01.json",
+      "tamper": { "gate_summary_admissible": false },
+      "query": { "admissible_only": true },
+      "expect": { "rows_empty": true }
+    },
+    {
+      "id": "outcome_source_filter",
+      "fixture": "admissible_mix_01.json",
+      "patch_outcome": { "source": "lab_batch_a" },
+      "query_hit": { "outcome_source": "lab_batch_a", "admissible_only": false },
+      "query_miss": { "outcome_source": "other", "admissible_only": false },
+      "expect": { "hit_rows_len": 1, "miss_rows_empty": true }
+    },
+    {
+      "id": "wall_ms_window_miss",
+      "synthetic_row": { "wall_ms": 1000 },
+      "query": { "wall_ms_min": 9999, "wall_ms_max": 9999, "admissible_only": false },
+      "expect": { "rows_empty": true }
+    }
+  ],
+  "related_ssot": {
+    "verdict_parity": "fixtures/golden-adversarial/expected_verdicts.json",
+    "rust_test_golden_gate": "golden_gate_check"
+  }
+}
