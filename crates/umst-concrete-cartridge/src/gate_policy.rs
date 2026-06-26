@@ -37,7 +37,9 @@ impl GateEvaluator for ConcretePolicyEvaluator {
     }
 }
 
-/// Domain HTTP shim overlay — supplies cartridge `gate_family` for mix prediction vs physics telemetry.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Zero-sized HTTP shim overlay; supplies cartridge `gate_family` for mix prediction vs physics telemetry.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct HttpMixDomainEvaluator;
 
