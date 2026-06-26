@@ -2587,20 +2587,40 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
             m.greyness_outer1,
             m.greyness
         );
-        assert!(
-            m.min_xy_var_from_outer_18.is_finite() && m.min_xy_var_from_outer_18 > 1e-6,
-            "smoke A′ xy_var past outer 18: min_xy_var={} final_xy_var={}",
-            m.min_xy_var_from_outer_18,
-            m.xy_var
-        );
-        // Smoke c1: final below peak (outer-1 c0 at vf≈0.48 is meaningless once AL drives vf→0.15).
-        assert!(
-            m.c1_peak.is_finite() && m.c1 < m.c1_peak - 1e-3,
-            "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
-            m.c1,
-            m.c1_peak,
-            m.c0
-        );
+        if adam_iters >= 18 {
+            assert!(
+                m.min_xy_var_from_outer_18.is_finite() && m.min_xy_var_from_outer_18 > 1e-6,
+                "smoke A′ xy_var past outer 18: min_xy_var={} final_xy_var={}",
+                m.min_xy_var_from_outer_18,
+                m.xy_var
+            );
+            // Smoke c1: final below peak (outer-1 c0 at vf≈0.48 is meaningless once AL drives vf→0.15).
+            assert!(
+                m.c1_peak.is_finite() && m.c1 < m.c1_peak - 1e-3,
+                "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
+                m.c1,
+                m.c1_peak,
+                m.c0
+            );
+        } else {
+            assert!(
+                m.xy_var.is_finite(),
+                "smoke short-run xy_var finite: {}",
+                m.xy_var
+            );
+        }
+        if thesis_reconfig_enabled() {
+            assert!(
+                m.h_c1_a_comp_frac.is_finite() && m.h_c1_a_comp_frac < 0.5,
+                "thesis smoke H-c1-A: void_column_compliance={:.1}%",
+                m.h_c1_a_comp_frac * 100.0
+            );
+            assert!(
+                m.c0_uniform_raw.is_finite() && m.c0_uniform_raw > 0.0,
+                "thesis smoke c0_uniform_raw recorded: {}",
+                m.c0_uniform_raw
+            );
+        }
         eprintln!(
             "shell_topology_rib_pattern_full_v04: smoke logit-offset PASS ({adam_iters} outer) — \
 GREYNESS={:.6} (outer1={:.6}) max_grad_l2={:.6} vf_loop={:.6} vf_export={:.6} \
