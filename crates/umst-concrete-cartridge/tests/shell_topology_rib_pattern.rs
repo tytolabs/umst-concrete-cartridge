@@ -26,6 +26,7 @@
 
 use std::cell::Cell;
 use std::env;
+use std::time::Instant;
 
 use burn::backend::Autodiff;
 use burn::module::{AutodiffModule, Module, ModuleMapper, ModuleVisitor, ParamId};
@@ -741,6 +742,26 @@ struct RibMetrics {
     h_c1_a_se_frac: f32,
     /// Greyness on in-loop `ρ_mid` at the last outer (may differ from acceptance when sym boundary fires).
     greyness_loop_last: f32,
+    /// Wall-clock for the last completed Adam outer (ms).
+    last_outer_wall_ms: f64,
+    /// Cumulative wall-clock from first outer through last (s).
+    total_wall_s: f64,
+    /// Deterministic seed passed to the Burn backend (`run_rib_full_striatus` fixes **42**).
+    seed: u64,
+    /// Active Cargo feature set for this binary (e.g. `solver-experimental+blas-accelerate`).
+    active_backend_features: String,
+}
+
+/// Active Cargo feature set for BLAS / solver lane (logged on pre-gate metrics; no numeric effect).
+fn active_backend_feature_set() -> String {
+    let mut feats = vec!["solver-experimental".to_string()];
+    #[cfg(feature = "render")]
+    feats.push("render".to_string());
+    #[cfg(feature = "blas-accelerate")]
+    feats.push("blas-accelerate".to_string());
+    #[cfg(feature = "mac-fast")]
+    feats.push("mac-fast".to_string());
+    feats.join("+")
 }
 
 /// Continuation schedule index for outer `it` — instance of the **absorbing-step invariant**:
@@ -1080,6 +1101,10 @@ fn run_rib_quick_metrics() -> RibMetrics {
         h_c1_a_comp_frac: f32::NAN,
         h_c1_a_se_frac: f32::NAN,
         greyness_loop_last: greyness,
+        last_outer_wall_ms: 0.0,
+        total_wall_s: 0.0,
+        seed: 42,
+        active_backend_features: active_backend_feature_set(),
     }
     .also_pcg_gate("shell_topology_rib_pattern_quick", pcg_tol)
 }
@@ -1716,8 +1741,12 @@ audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_r
     let mut prev_greyness_outer = f32::NAN;
     let pcg_tol = cg_cfg.pcg_tolerance.max(cg_cfg.cg_tolerance);
     let beta_max_sched = heaviside_beta_max.max(64.0);
+    const RIB_SEED: u64 = 42;
+    let t_run_start = Instant::now();
+    let mut last_outer_wall_ms = 0.0_f64;
 
     for it in 1..=iterations {
+        let t_outer_start = Instant::now();
         let sched_k = outer_schedule_k(it, iterations);
         let base_beta =
             BetaContinuation::beta(sched_k, iter_total, heaviside_beta0, beta_max_sched);
@@ -1919,6 +1948,15 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_b_on={vol_b_on}, max_cg=
             eprintln!(
                 "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} skipped Adam (non-finite loss={loss_scalar})"
             );
+            last_outer_wall_ms = t_outer_start.elapsed().as_secs_f64() * 1000.0;
+            if metrics_on || smoke_subset {
+                eprintln!(
+                    "shell_topology_rib_pattern_full_v04: outer {it}/{iterations} wall_ms={last_outer_wall_ms:.1} \
+total_s={:.3} seed={RIB_SEED} backend_features={}",
+                    t_run_start.elapsed().as_secs_f64(),
+                    active_backend_feature_set(),
+                );
+            }
             continue;
         }
 
@@ -2037,8 +2075,18 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
             }
         }
         opt.density_net = adam.step(0.005, opt.density_net, grads_params);
+        last_outer_wall_ms = t_outer_start.elapsed().as_secs_f64() * 1000.0;
+        if metrics_on || smoke_subset {
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: outer {it}/{iterations} wall_ms={last_outer_wall_ms:.1} \
+total_s={:.3} seed={RIB_SEED} backend_features={}",
+                t_run_start.elapsed().as_secs_f64(),
+                active_backend_feature_set(),
+            );
+        }
     }
 
+    let total_wall_s = t_run_start.elapsed().as_secs_f64();
     assert!(!last_rho.is_empty(), "full rib run produced no ρ");
     let vf_loop = last_rho.iter().sum::<f32>() / last_rho.len() as f32;
     let greyness_loop_last = greyness_mean(&last_rho);
@@ -2236,6 +2284,10 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         h_c1_a_comp_frac,
         h_c1_a_se_frac,
         greyness_loop_last,
+        last_outer_wall_ms,
+        total_wall_s,
+        seed: RIB_SEED,
+        active_backend_features: active_backend_feature_set(),
     };
     log_striatus_acceptance_line("shell_topology_rib_pattern_full_v04", nx, ny, nz, &metrics);
     metrics.also_pcg_gate("shell_topology_rib_pattern_full_v04", pcg_tol)
@@ -2502,7 +2554,8 @@ fn shell_topology_rib_pattern_full_v04() {
 GREYNESS(4ρ(1−ρ))={:.6} vf={:.6} target_vf={:.4} vf_err={:+.6} \
 UMST_SHELL_ROOF_RAMP={} ramp_strength={:.3} z_rho_mean={} \
 xy_var_z_avg={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
-max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} UMST_SHELL_GREY_LAMBDA={:.6} UMST_SHELL_XY_VAR_LAMBDA={:.6} UMST_SHELL_HEAVISIDE_BETA0={:.6} UMST_SHELL_DENSITY_INIT_JITTER={:.6} UMST_SHELL_XY_RIB_PRIOR_AMP={:.6}",
+max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} UMST_SHELL_GREY_LAMBDA={:.6} UMST_SHELL_XY_VAR_LAMBDA={:.6} UMST_SHELL_HEAVISIDE_BETA0={:.6} UMST_SHELL_DENSITY_INIT_JITTER={:.6} UMST_SHELL_XY_RIB_PRIOR_AMP={:.6} \
+last_outer_wall_ms={:.1} total_wall_s={:.3} seed={} backend_features={}",
         m.greyness,
         m.vf,
         m.target_vf,
@@ -2526,7 +2579,11 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
         xyl,
         b0,
         jit,
-        rib
+        rib,
+        m.last_outer_wall_ms,
+        m.total_wall_s,
+        m.seed,
+        m.active_backend_features,
     );
     assert!(
         m.c0.is_finite() && m.c1.is_finite(),
@@ -2753,9 +2810,41 @@ fn shell_topology_rib_pattern_thesis_reconfig() {
         env::set_var("UMST_SHELL_VF", "0.30");
     }
     let target_vf = parse_target_vf();
+    let adam_iters = parse_full_rib_adam_iters();
     let m = run_rib_full_striatus(target_vf);
+    let (gl, xyl, b0, jit, rib) = parse_umst_shell_b6_aux_env();
+    let g_uni = 4.0 * target_vf * (1.0 - target_vf);
+    eprintln!(
+        "shell_topology_rib_pattern_thesis_reconfig: pre-gate metrics \
+GREYNESS(4ρ(1−ρ))={:.6} vf={:.6} target_vf={:.4} vf_err={:+.6} \
+xy_var_z_avg={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
+max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} \
+last_outer_wall_ms={:.1} total_wall_s={:.3} seed={} backend_features={} \
+h_c1_a_comp_frac={:.4}",
+        m.greyness,
+        m.vf,
+        m.target_vf,
+        m.vf - m.target_vf,
+        m.xy_var,
+        m.c0,
+        m.c1,
+        m.last_outer_beta,
+        m.max_grad_l2,
+        m.last_grad_l2,
+        g_uni,
+        m.pcg_iters,
+        m.pcg_rel_res,
+        m.eq_rel_res,
+        m.adam_skipped,
+        adam_iters,
+        m.last_outer_wall_ms,
+        m.total_wall_s,
+        m.seed,
+        m.active_backend_features,
+        m.h_c1_a_comp_frac,
+    );
     eprintln!(
         "thesis_reconfig: nz=8 lz=0.3 vf_target={target_vf:.2} vf_final={:.4} c0={:.4} c1={:.4}",
-        m.vf, m.c0_uniform, m.c1
+        m.vf, m.c0_uniform_raw, m.c1
     );
 }
