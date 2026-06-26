@@ -25,9 +25,11 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use super::gate_explain_ssot::{
-    fields_for_code as ssot_fields_for_code, remediation_for_code, MANIFEST_BRIDGE_DISABLED,
-    MIX_SPEC_RATIONAL_PARSE_FAIL, MIX_SPEC_WIRE_INVALID, THERMODYNAMIC_CD_FAIL, THERMODYNAMIC_FAIL,
+    fields_for_code as ssot_fields_for_code, remediation_for_code, MIX_SPEC_RATIONAL_PARSE_FAIL,
+    MIX_SPEC_WIRE_INVALID, THERMODYNAMIC_CD_FAIL, THERMODYNAMIC_FAIL,
 };
+#[cfg(not(feature = "manifest-bridge"))]
+use super::gate_explain_ssot::MANIFEST_BRIDGE_DISABLED;
 #[cfg(feature = "manifest-bridge")]
 use crate::pipeline::dual_gate::thermodynamic_ok;
 
@@ -319,6 +321,7 @@ fn explain_code_cd_fail() -> String {
     THERMODYNAMIC_CD_FAIL.into()
 }
 
+#[cfg(not(feature = "manifest-bridge"))]
 fn explain_code_manifest_bridge_disabled() -> String {
     MANIFEST_BRIDGE_DISABLED.into()
 }
