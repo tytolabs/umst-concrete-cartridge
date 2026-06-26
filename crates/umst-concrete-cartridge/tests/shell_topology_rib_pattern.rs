@@ -2594,14 +2594,16 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
                 m.min_xy_var_from_outer_18,
                 m.xy_var
             );
-            // Smoke c1: final below peak (outer-1 c0 at vf≈0.48 is meaningless once AL drives vf→0.15).
-            assert!(
-                m.c1_peak.is_finite() && m.c1 < m.c1_peak - 1e-3,
-                "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
-                m.c1,
-                m.c1_peak,
-                m.c0
-            );
+            // Legacy Striatus: in-loop c1 should trend down before acceptance finisher reshapes ρ.
+            if !thesis_reconfig_enabled() {
+                assert!(
+                    m.c1_peak.is_finite() && m.c1 < m.c1_peak - 1e-3,
+                    "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
+                    m.c1,
+                    m.c1_peak,
+                    m.c0
+                );
+            }
         } else {
             assert!(
                 m.xy_var.is_finite(),
