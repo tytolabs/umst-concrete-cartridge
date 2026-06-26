@@ -6,6 +6,11 @@
 use umst_manifold::gate::{GateEvaluator, HttpGateManifest as GateManifest};
 use umst_manifold::manifest::UmstManifest;
 
+use crate::cartridge_registry::{
+    CONCRETE_POWERS_MANIFEST_GATE_FAMILY, DOMAIN_POLICY_CATALOG_ID,
+    MIX_PREDICTION_VS_PHYSICS_GATE_FAMILY,
+};
+
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Zero-sized policy evaluator; HTTP gate catalog row without spatial physics.
@@ -24,10 +29,24 @@ impl ConcretePolicyEvaluator {
 
 impl GateEvaluator for ConcretePolicyEvaluator {
     fn catalog_id(&self) -> &'static str {
-        "umst.cartridge.concrete.policy"
+        DOMAIN_POLICY_CATALOG_ID
     }
 
     fn gate_family(&self) -> &'static str {
-        "concrete_powers_manifest_defaults"
+        CONCRETE_POWERS_MANIFEST_GATE_FAMILY
+    }
+}
+
+/// Domain HTTP shim overlay — supplies cartridge `gate_family` for mix prediction vs physics telemetry.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct HttpMixDomainEvaluator;
+
+impl GateEvaluator for HttpMixDomainEvaluator {
+    fn catalog_id(&self) -> &'static str {
+        "umst.gate.http_shim"
+    }
+
+    fn gate_family(&self) -> &'static str {
+        MIX_PREDICTION_VS_PHYSICS_GATE_FAMILY
     }
 }
