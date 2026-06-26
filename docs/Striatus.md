@@ -77,6 +77,22 @@ The UMST manifold supplies differentiable mechanics and topology hooks; the conc
 
 The differentiable stack matters for research workflows: gradients of compliance-like objectives with respect to design variables are the workhorse of first-order optimisers (here, Adam on the density field). That is not the same as claiming that every local minimum is globally optimal, nor that the discrete voxel model matches a full shell theory with drilling rotations and transverse shear refinements. The demo is a **showcase** aligned with cited numerical practice [Lazarov & Sigmund 2011; Wang, Lazarov & Sigmund 2011; Bruyneel & Duysinx 2005; Bertsekas 1996; Sigmund & Maute 2013], not a substitute for project-specific peer review.
 
+## What distinguishes this work (positioning for publication)
+
+This demo combines three well-established lineages; the contribution is not in any one of them but in their **composition under verification**. Stated so a reviewer can separate the standard from the novel.
+
+**Standard (cited practice, not claimed as new).** Density-based SIMP topology optimisation with Helmholtz filtering, tanh-Heaviside projection, and continuation [Bendsøe & Sigmund 2003; Lazarov & Sigmund 2011; Wang, Lazarov & Sigmund 2011]; gradient-based optimisation of a neural-reparameterised density field, in the spirit of neural reparameterisation of topology optimisation [Hoyer, Sohl-Dickstein & Greydanus 2019]; and compression-favouring funicular shells in the tradition of three-dimensional thrust-network analysis [Block & Lachauer 2014; Bhooshan, Van Mele & Block 2021]. None of these is original here.
+
+**Distinctive (the intended paper claims).**
+
+1. **A conservation-preserving, differentiable continuum-FEM topology substrate in Rust** — Burn tensors, Discrete Exterior Calculus, volume enforced *by construction* (in-loop projection), evaluated in-process rather than through a Python/JAX bridge. To our knowledge the intersection — differentiable continuum-FEM topology optimisation with cochain-level conservation, in Rust — is unoccupied; the closest neural-reparameterisation work [Hoyer et al. 2019] is JAX-based and does not enforce discrete conservation.
+2. **Design under a hard thermodynamic admissibility gate.** Proposals are not merely compliance-minimised; each state transition must pass a Clausius–Duhem admissibility check whose invariants are machine-checked in Lean 4 (manifold and formal repositories). We are not aware of another topology-optimisation pipeline that gates designs against a *verified* physical admissibility predicate rather than a soft penalty.
+3. **A verification-first methodology in which the gate is never relaxed to pass.** The B6 development record — operator fidelity (mechanism-free element), solver-convergence honesty (true vs recurated residual), volume enforcement, attainable-accuracy floor, and a load-on-void modelling error — each surfaced *because* the acceptance gates were held fixed. That record is itself a contribution: it is the discipline that lets a reader trust the final design, not merely admire it. Topology-optimisation papers rarely publish the failures that would justify that trust.
+
+**What this is not.** Not a built structure: Block's Striatus Bridge (Venice 2021) is a realised, load-tested footbridge; this is a simulated, research-scale shell *in dialogue with* that tradition (§ *Striatus Bridge*). Not a structural-safety certificate: the gate bounds thermodynamic admissibility, not load capacity (§ *Relation to UMST*).
+
+**Physical validation (in progress).** The prediction → gate → topology pipeline is rehearsed end-to-end; the remaining step is empirical. Casting and characterisation of cementitious specimens are planned at **Studio TYTO, Chennai**, comparing predicted against measured behaviour and folding the residuals back into the `calibration/` profiles with provenance. A prediction-versus-measurement comparison on a cast specimen is the evidence that moves the central claim from *rehearsed* to *validated*, and is the intended empirical core of a future publication.
+
 ## Voxel grid, slab proportions, and fabrication mapping
 
 The **B6** harness (`shell_topology_rib_pattern_full_v04`) fixes a **4 m × 4 m × 0.1 m** extruded brick at **40 × 40 × 4** Q1-hex cells: in-plane spacing **0.1 m**, through-thickness spacing **0.025 m**, aspect ratio **L/t ≈ 40**, and **nz = 4** layers. That grid is a **research-scale** discretisation chosen for overnight CPU on a laptop-class machine, not a literal 1:1 print voxel for the Venice footbridge.
@@ -115,6 +131,7 @@ That order keeps **intent** (compression paths) ahead of **implementation** (mes
 | [Bruyneel & Duysinx 2005] | `bruyneel2005selfweight` |
 | [Lazarov & Sigmund 2011] | `lazarov2011helmholtz` |
 | [Wang, Lazarov & Sigmund 2011] | `wang2011projection` |
+| [Hoyer, Sohl-Dickstein & Greydanus 2019] | `hoyer2019neural` |
 | [Sigmund & Maute 2013] | `sigmund2013comparative` |
 | [Block & Lachauer 2014] | `block2014funicular3d` |
 | [Liu & Tovar 2014] | `liu2014matlabtop3d` |
