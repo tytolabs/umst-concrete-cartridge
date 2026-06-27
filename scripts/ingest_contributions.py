@@ -93,7 +93,8 @@ def gate_check_admissible(contribution: dict, profile: str) -> bool:
       frame = json.loads(proc.stdout.decode().splitlines()[-1])
       text = frame["result"]["content"][0]["text"]
       summary = json.loads(text)
-      return bool(summary.get("admissible"))
+      gate = summary.get("gate_summary", summary)
+      return bool(gate.get("admissible"))
   except (KeyError, json.JSONDecodeError, IndexError):
       return bool(contribution.get("gate_summary", {}).get("admissible"))
 

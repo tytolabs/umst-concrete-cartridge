@@ -149,12 +149,46 @@ def main() -> int:
     parser.add_argument("--max-lines", type=int, default=MAX_LINES_DEFAULT)
     parser.add_argument("--gate-check", action="store_true")
     parser.add_argument(
+        "--gate-check-only",
+        action="store_true",
+        help="run live gate re-check only (no schema/duplicate/manifest; for merged golden fixtures)",
+    )
+    parser.add_argument(
         "--check-manifest",
         action="store_true",
         help="verify MANIFEST.jsonl matches merged shards (no inbox files required)",
     )
     parser.add_argument("--profile", default="default")
     args = parser.parse_args()
+
+    if args.gate_check_only:
+        if not args.files:
+            print("error: --gate-check-only requires file path(s)", file=sys.stderr)
+            return 2
+        total_errors = 0
+        for path in args.files:
+            if not path.is_file():
+                print(f"error: not a file: {path}", file=sys.stderr)
+                total_errors += 1
+                continue
+            for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError as e:
+                    print(f"error: {path}:{i}: invalid JSON: {e}", file=sys.stderr)
+                    total_errors += 1
+                    continue
+                if not gate_check_admissible(obj, args.profile):
+                    print(f"error: {path}:{i}: umst_gate_check re-check failed", file=sys.stderr)
+                    total_errors += 1
+        if total_errors:
+            print(f"validate_contribution_inbox: {total_errors} error(s)", file=sys.stderr)
+            return 1
+        print("validate_contribution_inbox: gate-check-only ok")
+        return 0
 
     if args.check_manifest:
         from update_contribution_manifest import check_manifest
