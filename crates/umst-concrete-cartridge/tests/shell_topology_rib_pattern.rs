@@ -217,6 +217,62 @@ fn top_load_inner_x_ramp(
     Tensor::from_data(Data::new(bf, Shape::new([1, n, 3])), device)
 }
 
+/// Optimizer sensitivity uses schedule `p_act`; §9 gate uses fixed `p_gate` (R1a).
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[allow(dead_code)]
+enum CompliancePenalization {
+    Schedule { outer: usize, total: usize },
+    Gate(f32),
+    Fixed(f32),
+}
+
+impl CompliancePenalization {
+    fn resolve_p(&self, schedule: impl Fn(usize, usize) -> f32) -> f32 {
+        match self {
+            Self::Schedule { outer, total } => schedule(*outer, *total),
+            Self::Gate(p) | Self::Fixed(p) => *p,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+#[allow(dead_code)]
+enum MetricProvenance {
+    FastOuter,
+    FullSolve,
+    F64Verify,
+}
+
+impl MetricProvenance {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::FastOuter => "fast_outer",
+            Self::FullSolve => "full_solve",
+            Self::F64Verify => "f64_verify",
+        }
+    }
+}
+
+/// §9 gate exponent — default **3.0** (`UMST_SHELL_GATE_P`).
+fn parse_shell_gate_p() -> f32 {
+    env::var("UMST_SHELL_GATE_P")
+        .ok()
+        .and_then(|s| s.parse::<f32>().ok())
+        .filter(|p| p.is_finite() && *p > 0.0)
+        .unwrap_or(3.0)
+}
+
+fn continuation_schedule_p(outer: usize, total: usize) -> f32 {
+    if let Ok(s) = env::var("UMST_SHELL_FIXED_P_ACT") {
+        if let Ok(p) = s.parse::<f32>() {
+            if p.is_finite() && p > 0.0 {
+                return p;
+            }
+        }
+    }
+    ContinuationSchedule::value(outer, total)
+}
+
 fn parse_usize(key: &str) -> Option<usize> {
     env::var(key).ok()?.parse().ok()
 }
@@ -680,6 +736,15 @@ struct RibMetrics {
     greyness: f32,
     xy_var: f32,
     c0: f32,
+    /// In-loop / schedule-p compliance on acceptance ρ (`p_act`).
+    c1_running: f32,
+    /// Fixed gate-p compliance on acceptance ρ (`p_gate`; §9 row).
+    c1_fixed_p3: f32,
+    /// Schedule final `p` on acceptance ρ (audit; not §9 gate).
+    p_act: f32,
+    /// §9 gate exponent (default 3.0).
+    p_gate: f32,
+    /// Legacy alias: same as `c1_fixed_p3` for greyness/VF context lines.
     c1: f32,
     adam_skipped: usize,
     /// PCG iterations on the **final** forward solve (convergence evidence vs bar-network stall).
@@ -804,11 +869,17 @@ ratio={jump:.1}x sym_apply={} (corruption signature: periodic ρ mutation withou
 
 fn log_striatus_acceptance_line(tag: &str, _nx: usize, _ny: usize, _nz: usize, m: &RibMetrics) {
     eprintln!(
-        "{tag}: acceptance diag \
+        "{tag}: acceptance diag stage=acceptance \
+p_act={:.3} p_gate={:.3} c_running={:.6} c_fixed_p3={:.6} provenance={} \
 UMST_SHELL_ROOF_RAMP={} ramp_strength={:.3} target_vf={:.4} vf_final={:.6} vf_err={:+.6} \
 GREYNESS={:.6} z_rho_mean={} xy_var={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
 max_grad_l2={:.6} max_vf_err_abs={:.6} c0_uniform={:.6} c0_uniform_raw={:.6} \
 h_c1_a_comp={:.1}% greyness_loop_last={:.6} eq_rel={:.3e}",
+        m.p_act,
+        m.p_gate,
+        m.c1_running,
+        m.c1_fixed_p3,
+        MetricProvenance::FullSolve.as_str(),
         if m.roof_ramp_on { 1 } else { 0 },
         m.roof_ramp_strength,
         m.target_vf,
@@ -1076,6 +1147,10 @@ fn run_rib_quick_metrics() -> RibMetrics {
         greyness,
         xy_var,
         c0,
+        c1_running: c1,
+        c1_fixed_p3: c1,
+        p_act: f32::NAN,
+        p_gate: parse_shell_gate_p(),
         c1,
         adam_skipped: 0,
         pcg_iters: final_diag.pcg.iterations,
@@ -1740,10 +1815,11 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     }
     // Audit only: full-schedule final `p` on uniform ρ (e.g. p=3 @ 200 outers — ~34× compliance vs Voigt p=1; not a gate).
     let p_schedule_final = ContinuationSchedule::value(iter_total.saturating_sub(1), iter_total);
+    let p_gate = parse_shell_gate_p();
     let simp_uniform_p_final = SimpElasticMaterial {
         e0: material.e0,
         nu: material.nu,
-        p: p_schedule_final,
+        p: p_gate,
         e_min: material.e_min,
     };
     let (_, c0_uniform_p_final_raw, _) = q1_compliance_with_diagnostics(
@@ -1758,9 +1834,10 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     eprintln!(
         "shell_topology_rib_pattern_full_v04: c0_uniform_at_target_vf \
 target_vf={target_vf:.4} gate_p={STRIATUS_C0_UNIFORM_SIMP_P} c0_uniform_raw={c0_uniform_raw:.6} \
-audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_raw:.6} \
-gate_threshold_matched_p={:.6} (0.6·c0_p_final; §9 pairing) eq_rel baseline",
+audit_p_final={p_schedule_final:.3} p_gate={p_gate:.3} c0_uniform_p_final_raw={c0_uniform_p_final_raw:.6} \
+gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel baseline provenance={}",
         0.6_f32 * c0_uniform_p_final_raw,
+        MetricProvenance::FullSolve.as_str(),
     );
 
     let comp_scale = c0_uniform_raw.max(1e-12);
@@ -1893,7 +1970,7 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
         } else {
             live_force.clone()
         };
-        let p_act = ContinuationSchedule::value(sched_k, iter_total);
+        let p_act = continuation_schedule_p(sched_k, iter_total);
         let simp_mat = SimpElasticMaterial {
             e0: material.e0,
             nu: material.nu,
@@ -2329,11 +2406,23 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         Data::new(rho_acceptance.clone(), Shape::new([1, n, 1])),
         device,
     );
-    let p_accept = ContinuationSchedule::value(iterations.saturating_sub(1), iter_total);
+    let p_act = CompliancePenalization::Schedule {
+        outer: iterations.saturating_sub(1),
+        total: iter_total,
+    }
+    .resolve_p(continuation_schedule_p);
+    let p_gate_accept =
+        CompliancePenalization::Gate(parse_shell_gate_p()).resolve_p(continuation_schedule_p);
     let simp_accept = SimpElasticMaterial {
         e0: material.e0,
         nu: material.nu,
-        p: p_accept,
+        p: p_act,
+        e_min: material.e_min,
+    };
+    let simp_gate = SimpElasticMaterial {
+        e0: material.e0,
+        nu: material.nu,
+        p: p_gate_accept,
         e_min: material.e_min,
     };
     let bf_accept = if use_self_weight {
@@ -2343,16 +2432,29 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
     } else {
         live_force.clone()
     };
+    let bf_accept_inner = bf_accept.inner();
     let (_, c1_accept_raw, final_diag) = q1_compliance_with_diagnostics(
-        rho_acceptance_t,
+        rho_acceptance_t.clone(),
         &plate,
         boundary_inner.clone(),
-        bf_accept.inner(),
+        bf_accept_inner.clone(),
         simp_accept,
         &cg_cfg,
         if use_self_weight { Some(sw_cfg) } else { None },
     );
-    c1 = c1_accept_raw / comp_scale;
+    let (_, c1_gate_raw, _) = q1_compliance_with_diagnostics(
+        rho_acceptance_t,
+        &plate,
+        boundary_inner.clone(),
+        bf_accept_inner,
+        simp_gate,
+        &cg_cfg,
+        if use_self_weight { Some(sw_cfg) } else { None },
+    );
+    let c1_running_accept = c1_accept_raw / comp_scale;
+    let c1_gate_norm = c1_gate_raw / comp_scale;
+    c1 = c1_gate_norm;
+    let _ = (c1_running_accept, c1);
     let (h_c1_a_comp_frac, h_c1_a_se_frac) = if thesis_reconfig_enabled() {
         let frac = h_c1_a_top_void_fractions(
             &rho_acceptance,
@@ -2384,7 +2486,11 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         greyness: greyness_mean(&rho_acceptance),
         xy_var: xy_plane_variance(&rho_acceptance, nx, ny, nz),
         c0,
-        c1,
+        c1_running: c1_running_accept,
+        c1_fixed_p3: c1_gate_norm,
+        p_act,
+        p_gate: p_gate_accept,
+        c1: c1_gate_norm,
         adam_skipped,
         pcg_iters: final_diag.pcg.iterations,
         pcg_rel_res: final_diag.pcg.rel_residual,

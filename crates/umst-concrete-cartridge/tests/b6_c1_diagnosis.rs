@@ -28,6 +28,31 @@ const VOID_RHO: f32 = 0.1;
 const C0_UNIFORM_P1: f32 = 3.881671;
 const GATE_RATIO: f32 = 0.6;
 
+fn parse_shell_gate_p() -> f32 {
+    env::var("UMST_SHELL_GATE_P")
+        .ok()
+        .and_then(|s| s.parse::<f32>().ok())
+        .filter(|p| p.is_finite() && *p > 0.0)
+        .unwrap_or(3.0)
+}
+
+/// §9 gate mode: fixed `p_gate` (R1a), not schedule `p_act`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum CompliancePenalization {
+    Schedule { outer: usize, total: usize },
+    Gate(f32),
+    Fixed(f32),
+}
+
+impl CompliancePenalization {
+    fn resolve_p(&self, schedule: impl Fn(usize, usize) -> f32) -> f32 {
+        match self {
+            Self::Schedule { outer, total } => schedule(*outer, *total),
+            Self::Gate(p) | Self::Fixed(p) => *p,
+        }
+    }
+}
+
 struct B6Mesh {
     dx: f32,
     dy: f32,
@@ -236,36 +261,43 @@ fn load_rho_bin(path: &Path) -> Vec<f32> {
         .collect()
 }
 
-fn print_triplet(mesh: &B6Mesh, p_accept: f32) {
+fn print_triplet(mesh: &B6Mesh, p_act: f32) {
+    let p_gate = CompliancePenalization::Gate(parse_shell_gate_p()).resolve_p(|_, _| p_act);
     let rho_uni = uniform_rho(TARGET_VF, mesh.n_nodes);
     let rho_rib = hand_rib_rho(7, mesh.n_nodes);
     let rho_z = z_concentrated_rho(mesh.n_nodes);
 
     let c_uni_p1 = mesh.compliance(&rho_uni, 1.0);
-    let c_uni_p = mesh.compliance(&rho_uni, p_accept);
-    let c_rib = mesh.compliance(&rho_rib, p_accept);
-    let c_z = mesh.compliance(&rho_z, p_accept);
+    let c_uni_p_gate = mesh.compliance(&rho_uni, p_gate);
+    let c_rib_act = mesh.compliance(&rho_rib, p_act);
+    let c_rib_gate = mesh.compliance(&rho_rib, p_gate);
+    let c_z_act = mesh.compliance(&rho_z, p_act);
+    let c_z_gate = mesh.compliance(&rho_z, p_gate);
 
-    let gate = GATE_RATIO * C0_UNIFORM_P1;
-    eprintln!("=== B6 c1 reference triplet (vf={TARGET_VF}, p_accept={p_accept:.3}) ===");
+    let gate_p1 = GATE_RATIO * C0_UNIFORM_P1;
+    let gate_matched = GATE_RATIO * c_uni_p_gate;
+    eprintln!(
+        "=== B6 c1 reference triplet (vf={TARGET_VF}, p_act={p_act:.3}, p_gate={p_gate:.3}, mode=Gate) ==="
+    );
     eprintln!(
         "(i)   uniform @ p=1 Voigt:  c={c_uni_p1:.6}  (ledger c0_uniform_raw={C0_UNIFORM_P1:.6})"
     );
-    eprintln!("(i')  uniform @ p={p_accept:.1}: c={c_uni_p:.6}");
+    eprintln!("(i')  uniform @ p_gate: c={c_uni_p_gate:.6}  (§9 c0 baseline)");
     eprintln!(
-        "(ii)  hand rib (period=7):   c={c_rib:.6}  ratio/c0={:.3}",
-        c_rib / C0_UNIFORM_P1
+        "(ii)  hand rib @ p_act:     c={c_rib_act:.6}  @ p_gate: c={c_rib_gate:.6}  ratio/c0_p1={:.3}",
+        c_rib_gate / C0_UNIFORM_P1
     );
     eprintln!(
-        "(iii) z-concentrated:        c={c_z:.6}  ratio/c0={:.3}",
-        c_z / C0_UNIFORM_P1
+        "(iii) z-concentrated @ p_act: c={c_z_act:.6}  @ p_gate: c={c_z_gate:.6}  ratio/c0_p1={:.3}",
+        c_z_gate / C0_UNIFORM_P1
     );
-    eprintln!("gate c1 < {gate:.6} (0.6 * c0_uniform_p1)");
     eprintln!(
-        "pass gate? uni_p1={} rib={} z={}",
-        c_uni_p1 < gate,
-        c_rib < gate,
-        c_z < gate
+        "gate (legacy p=1): c1 < {gate_p1:.6}; §9 matched-p: c1_fixed_p3 < {gate_matched:.6}"
+    );
+    eprintln!(
+        "pass §9 matched gate @ p_gate? rib={} z={}",
+        c_rib_gate < gate_matched,
+        c_z_gate < gate_matched
     );
 }
 
