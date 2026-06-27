@@ -71,6 +71,30 @@ fn validate_promotion_stamp_tier(memory: &MemoryRecord) -> Result<(), PromotionE
         .map_err(|e| PromotionError::Approval(e.to_string()))
 }
 
+/// Minimum credit head (bits) for human promotion (U2 witness gate).
+pub const MIN_PROMOTION_CREDIT_BITS: f64 = 1.0;
+
+fn credit_head_bits(obs: &super::types::ObservedAt) -> Option<f64> {
+    let q = obs.credit_head_bits_q?;
+    let scale = obs.credit_head_bits_scale?;
+    if scale <= 0 {
+        return None;
+    }
+    Some(q as f64 / scale as f64)
+}
+
+fn validate_promotion_credit(memory: &MemoryRecord) -> Result<(), PromotionError> {
+    let bits = credit_head_bits(&memory.observed_at).ok_or_else(|| {
+        PromotionError::Approval("missing credit_head on observed_at — quarantine".into())
+    })?;
+    if !bits.is_finite() || bits < MIN_PROMOTION_CREDIT_BITS {
+        return Err(PromotionError::Approval(format!(
+            "credit {bits} below promotion threshold {MIN_PROMOTION_CREDIT_BITS}"
+        )));
+    }
+    Ok(())
+}
+
 /// Pure: validate approval wire + build promotion record (no I/O).
 /// formal_anchor: NONE
 /// formal_status: NONE
@@ -85,6 +109,7 @@ pub fn build_promotion_record(
 ) -> Result<PromotionRecordOut, PromotionError> {
     validate_approval(approval)?;
     validate_promotion_stamp_tier(memory)?;
+    validate_promotion_credit(memory)?;
 
     let contribution_hash = memory.content_id.clone();
     let approval_hash = sha256_hex(approval_text);
@@ -271,8 +296,8 @@ mod tests {
                 ucrs_seq: Some(1),
                 phase_entropy_bits_q: None,
                 phase_entropy_bits_scale: None,
-                credit_head_bits_q: None,
-                credit_head_bits_scale: None,
+                credit_head_bits_q: Some(1_000_000),
+                credit_head_bits_scale: Some(1_000_000),
                 wall_ms: None,
             },
             payload: MemoryPayload {
@@ -323,6 +348,35 @@ mod tests {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .starts_with("sha256:"));
+        });
+    }
+
+    #[test]
+    fn build_record_rejects_low_credit() {
+        with_witness_mode("synthetic", || {
+            let mut mem = sample_memory();
+            mem.observed_at.credit_head_bits_q = Some(0);
+            mem.observed_at.credit_head_bits_scale = Some(1_000_000);
+            let approval = PromotionApproval {
+                schema_version: "promotion_approval.v1".into(),
+                proposal_hash: "sha256:def".into(),
+                ucrs_observation_tier: "Synthetic".into(),
+                decision: "approve".into(),
+                approver: "human".into(),
+                approved_at: "2026-01-01T00:00:00Z".into(),
+                jws: None,
+            };
+            let text = serde_json::to_string(&approval).unwrap();
+            let err = build_promotion_record(
+                &mem,
+                "mem-1",
+                &approval,
+                &text,
+                "rid".into(),
+                "ts".into(),
+            )
+            .unwrap_err();
+            assert!(err.to_string().contains("credit"));
         });
     }
 

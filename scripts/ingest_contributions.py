@@ -116,6 +116,11 @@ def ingest_line(
     if not obj.get("gate_summary", {}).get("admissible"):
         return "skip_not_admissible"
 
+    from validate_contribution_inbox import credit_admits_promotion
+
+    if not credit_admits_promotion(obj):
+        return "skip_low_credit"
+
     import uuid
 
     memory_id = str(uuid.uuid4())

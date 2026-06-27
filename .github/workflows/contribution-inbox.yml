@@ -38,7 +38,7 @@ jobs:
           fi
           python3 scripts/validate_contribution_inbox.py "${files[@]}"
 
-      - name: Live gate re-check on golden merged fixture (L2.b)
+      - name: Live gate + credit re-check on golden merged fixture (U2)
         run: |
           python3 scripts/validate_contribution_inbox.py --gate-check-only \
             contributions/merged/2026-06/ci-20260619-golden.jsonl
