@@ -263,6 +263,13 @@ fn parse_shell_gate_p() -> f32 {
 }
 
 fn continuation_schedule_p(outer: usize, total: usize) -> f32 {
+    if let Ok(s) = env::var("UMST_SHELL_FIXED_P_ACT") {
+        if let Ok(p) = s.parse::<f32>() {
+            if p.is_finite() && p > 0.0 {
+                return p;
+            }
+        }
+    }
     ContinuationSchedule::value(outer, total)
 }
 
@@ -1962,7 +1969,7 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
         } else {
             live_force.clone()
         };
-        let p_act = ContinuationSchedule::value(sched_k, iter_total);
+        let p_act = continuation_schedule_p(sched_k, iter_total);
         let simp_mat = SimpElasticMaterial {
             e0: material.e0,
             nu: material.nu,
