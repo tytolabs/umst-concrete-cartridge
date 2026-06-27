@@ -44,7 +44,9 @@ use umst_manifold::ai::topology::{
 use umst_manifold::physics::adjoint::{
     AdjointComplianceDiagnostics, AdjointFiniteStageAudit, SimpElasticMaterial,
 };
-use umst_manifold::physics::adjoint_q1_hex::{AdjointComplianceQ1Hex, Q1HexTopVoidColumnFractions};
+use umst_manifold::physics::adjoint_q1_hex::{
+    AdjointComplianceQ1Hex, Q1HexSolveOptions, Q1HexTopVoidColumnFractions,
+};
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
 use umst_manifold::physics::mechanics::SelfWeightConfig;
 use umst_manifold::physics::q1_hex_elasticity::{
@@ -979,6 +981,7 @@ fn q1_compliance_with_diagnostics(
         mat,
         cg,
         self_weight,
+        &Q1HexSolveOptions::default(),
     )
 }
 
