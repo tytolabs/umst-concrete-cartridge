@@ -370,15 +370,9 @@ mod tests {
                 jws: None,
             };
             let text = serde_json::to_string(&approval).unwrap();
-            let err = build_promotion_record(
-                &mem,
-                "mem-1",
-                &approval,
-                &text,
-                "rid".into(),
-                "ts".into(),
-            )
-            .unwrap_err();
+            let err =
+                build_promotion_record(&mem, "mem-1", &approval, &text, "rid".into(), "ts".into())
+                    .unwrap_err();
             assert!(err.to_string().contains("credit"));
         });
     }
