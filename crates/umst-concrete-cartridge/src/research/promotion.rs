@@ -72,9 +72,9 @@ fn validate_promotion_stamp_tier(memory: &MemoryRecord) -> Result<(), PromotionE
 }
 
 /// Minimum credit head (bits) for human promotion (U2 witness gate).
-/// formal_anchor: ucrs://MIN_PROMOTION_CREDIT_BITS
-/// formal_status: Empirical
-/// formal_anchor_rationale: UCRS credit quarantine threshold; mirrored in umst-ucrs observation.rs.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: UCRS credit quarantine threshold (umst-ucrs observation.rs); registry row in umst-math.
 pub const MIN_PROMOTION_CREDIT_BITS: f64 = 1.0;
 
 fn credit_head_bits(obs: &super::types::ObservedAt) -> Option<f64> {
