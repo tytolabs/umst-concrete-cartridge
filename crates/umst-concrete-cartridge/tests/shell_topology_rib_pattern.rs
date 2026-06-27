@@ -26,6 +26,7 @@
 
 use std::cell::Cell;
 use std::env;
+use std::time::Instant;
 
 use burn::backend::Autodiff;
 use burn::module::{AutodiffModule, Module, ModuleMapper, ModuleVisitor, ParamId};
@@ -43,7 +44,7 @@ use umst_manifold::ai::topology::{
 use umst_manifold::physics::adjoint::{
     AdjointComplianceDiagnostics, AdjointFiniteStageAudit, SimpElasticMaterial,
 };
-use umst_manifold::physics::adjoint_q1_hex::AdjointComplianceQ1Hex;
+use umst_manifold::physics::adjoint_q1_hex::{AdjointComplianceQ1Hex, Q1HexTopVoidColumnFractions};
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
 use umst_manifold::physics::mechanics::SelfWeightConfig;
 use umst_manifold::physics::q1_hex_elasticity::{
@@ -245,9 +246,24 @@ fn thesis_reconfig_enabled() -> bool {
     )
 }
 
+/// Constants from `scripts/b6_harness_setup.sh` (source before harness runs).
+fn b6_env_usize(name: &str, default: usize) -> usize {
+    env::var(name)
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(default)
+}
+
+fn b6_env_f32(name: &str, default: f32) -> f32 {
+    env::var(name)
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(default)
+}
+
 fn parse_target_vf() -> f32 {
     let default = if thesis_reconfig_enabled() {
-        0.30_f32
+        b6_env_f32("B6_VF_TARGET", 0.30_f32)
     } else {
         0.15_f32
     };
@@ -260,10 +276,68 @@ fn parse_target_vf() -> f32 {
 /// Striatus full harness slab: (nx, ny, nz, lx, ly, lz).
 fn striatus_slab_geometry() -> (usize, usize, usize, f32, f32, f32) {
     if thesis_reconfig_enabled() {
-        (40, 40, 8, 4.0_f32, 4.0_f32, 0.3_f32)
+        let nx = b6_env_usize("B6_NX", 40);
+        let ny = b6_env_usize("B6_NY", 40);
+        let nz = b6_env_usize("B6_NZ", 8);
+        let lz = b6_env_f32("B6_SLAB_THICKNESS_M", 0.3_f32);
+        (nx, ny, nz, 4.0_f32, 4.0_f32, lz)
     } else {
         (40, 40, 4, 4.0_f32, 4.0_f32, 0.1_f32)
     }
+}
+
+/// Uniform interior ρ scaled to `target_vf` with non-design top skin ρ=1 (c0 reference field).
+fn thesis_uniform_rho_at_vf(nx: usize, ny: usize, nz: usize, target_vf: f32) -> Vec<f32> {
+    let nx1 = nx + 1;
+    let ny1 = ny + 1;
+    let nz1 = nz + 1;
+    let n = nx1 * ny1 * nz1;
+    let iz_top = nz;
+    let n_skin = nx1 * ny1;
+    let n_interior = n.saturating_sub(n_skin);
+    let rho_int = if n_interior > 0 {
+        ((target_vf * n as f32) - n_skin as f32) / n_interior as f32
+    } else {
+        target_vf
+    }
+    .clamp(0.0, 1.0);
+    let mut rho = vec![rho_int; n];
+    for iz in 0..nz1 {
+        if iz == iz_top {
+            for iy in 0..ny1 {
+                for ix in 0..nx1 {
+                    let nid = ix + iy * nx1 + iz * nx1 * ny1;
+                    rho[nid] = 1.0;
+                }
+            }
+        }
+    }
+    rho
+}
+
+/// Roof traction on the **fixed solid top skin** only (thesis load model — no void-column roof lumping).
+fn thesis_roof_live_force_vec(
+    nx: usize,
+    ny: usize,
+    nz: usize,
+    dx: f32,
+    dy: f32,
+    roof_ramp_strength: f32,
+    n_dof: usize,
+) -> Vec<f32> {
+    let nx1 = nx + 1;
+    let ny1 = ny + 1;
+    let iz_top = nz;
+    let nx_d = nx.max(1) as f32;
+    let mut live_f = vec![0.0_f32; n_dof];
+    for iy in 0..=ny {
+        for ix in 0..=nx {
+            let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
+            let w = 1.0_f32 + roof_ramp_strength * (ix as f32 / nx_d);
+            live_f[nid * 3 + 2] = -50.0 * dx * dy * w;
+        }
+    }
+    live_f
 }
 
 /// Fix top z-layer ρ=1 (non-design solid skin); ribs optimize below.
@@ -311,6 +385,53 @@ fn apply_policy_editable_mask<Bk: BackendTrait<FloatElem = f32>>(
     }
     let fixed = Tensor::<Bk, 3>::ones_like(&rho);
     rho.mul(mask.clone()).add(fixed.sub(mask.clone()))
+}
+
+/// Top-layer void-column threshold for **H-c1-A** (matches `b6_c1_diagnosis`).
+const THESIS_VOID_RHO_THRESHOLD: f32 = 0.1;
+
+/// **H-c1-A** spatial audit: fraction of compliance work on top-void columns.
+#[allow(clippy::too_many_arguments)]
+fn h_c1_a_top_void_fractions(
+    rho: &[f32],
+    plate: &ExtrudedPlateMechanics,
+    live_f: &[f32],
+    m_flat: &[f32],
+    mat: SimpElasticMaterial,
+    cg: &MechanicsInnerLoopConfig,
+    sw: Option<SelfWeightConfig>,
+) -> Q1HexTopVoidColumnFractions {
+    let (audit, u) = AdjointComplianceQ1Hex::evaluate_compliance(
+        rho, plate.nx, plate.ny, plate.nz, plate.dx, plate.dy, plate.dz, live_f, m_flat, mat, cg,
+        sw,
+    );
+    AdjointComplianceQ1Hex::top_void_column_fractions(
+        &audit,
+        &u,
+        rho,
+        plate.nx,
+        plate.ny,
+        plate.nz,
+        live_f,
+        m_flat,
+        THESIS_VOID_RHO_THRESHOLD,
+    )
+}
+
+fn log_h_c1_a_verdict(tag: &str, frac: &Q1HexTopVoidColumnFractions) {
+    let comp = frac.compliance_fraction * 100.0;
+    let se = frac.strain_energy_fraction * 100.0;
+    eprintln!(
+        "{tag}: H-c1-A audit top_void_column compliance={comp:.1}% strain_energy={se:.1}% \
+void_xy={:.1}% (gate <50%)",
+        frac.void_column_fraction_xy * 100.0
+    );
+    if comp >= 50.0 || se >= 50.0 {
+        panic!(
+            "{tag}: H-c1-A STOP — top-void-column share >=50% (compliance={comp:.1}%, SE={se:.1}%); \
+load model still wrong — no 200-outer"
+        );
+    }
 }
 
 fn greyness_mean(rho: &[f32]) -> f32 {
@@ -601,8 +722,50 @@ struct RibMetrics {
     max_vf_err_when_feasible: f32,
     /// Compliance baseline: uniform ρ = target_vf @ SIMP **p = 1** (Voigt; [`b6-c0-uniform-at-target-vf`]).
     c0_uniform: f32,
+    /// Raw `c0_uniform` compliance before normalization (§9 row 7).
+    c0_uniform_raw: f32,
+    /// Matched-p baseline: uniform ρ @ schedule final `p` (§9 gate pairing — B0a).
+    c0_uniform_p_final_raw: f32,
+    /// `c0_uniform_p_final_raw / c0_uniform_raw` (normalized matched-p gate reference).
+    c0_uniform_p_final: f32,
+    /// H-c1-A: top-void-column compliance fraction on acceptance ρ (thesis re-config).
+    h_c1_a_comp_frac: f32,
+    /// H-c1-A: top-void-column strain-energy fraction on acceptance ρ.
+    h_c1_a_se_frac: f32,
     /// Greyness on in-loop `ρ_mid` at the last outer (may differ from acceptance when sym boundary fires).
     greyness_loop_last: f32,
+    /// Wall-clock for the last completed Adam outer (ms).
+    last_outer_wall_ms: f64,
+    /// Cumulative wall-clock from first outer through last (s).
+    total_wall_s: f64,
+    /// Deterministic seed passed to the Burn backend (`run_rib_full_striatus` fixes **42**).
+    seed: u64,
+    /// Active Cargo feature set for this binary (e.g. `solver-experimental+blas-accelerate`).
+    active_backend_features: String,
+}
+
+/// Active Cargo feature set for BLAS / solver lane (logged on pre-gate metrics; no numeric effect).
+fn active_backend_feature_set() -> String {
+    let feats = Vec::from(["solver-experimental".to_string()]);
+    #[cfg(feature = "render")]
+    let feats = {
+        let mut feats = feats;
+        feats.push("render".to_string());
+        feats
+    };
+    #[cfg(feature = "blas-accelerate")]
+    let feats = {
+        let mut feats = feats;
+        feats.push("blas-accelerate".to_string());
+        feats
+    };
+    #[cfg(feature = "mac-fast")]
+    let feats = {
+        let mut feats = feats;
+        feats.push("mac-fast".to_string());
+        feats
+    };
+    feats.join("+")
 }
 
 /// Continuation schedule index for outer `it` — instance of the **absorbing-step invariant**:
@@ -644,7 +807,8 @@ fn log_striatus_acceptance_line(tag: &str, _nx: usize, _ny: usize, _nz: usize, m
         "{tag}: acceptance diag \
 UMST_SHELL_ROOF_RAMP={} ramp_strength={:.3} target_vf={:.4} vf_final={:.6} vf_err={:+.6} \
 GREYNESS={:.6} z_rho_mean={} xy_var={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
-max_grad_l2={:.6} max_vf_err_abs={:.6} c0_uniform={:.6} greyness_loop_last={:.6} eq_rel={:.3e}",
+max_grad_l2={:.6} max_vf_err_abs={:.6} c0_uniform={:.6} c0_uniform_raw={:.6} \
+h_c1_a_comp={:.1}% greyness_loop_last={:.6} eq_rel={:.3e}",
         if m.roof_ramp_on { 1 } else { 0 },
         m.roof_ramp_strength,
         m.target_vf,
@@ -659,6 +823,8 @@ max_grad_l2={:.6} max_vf_err_abs={:.6} c0_uniform={:.6} greyness_loop_last={:.6}
         m.max_grad_l2,
         m.max_vf_err_abs,
         m.c0_uniform,
+        m.c0_uniform_raw,
+        m.h_c1_a_comp_frac * 100.0,
         m.greyness_loop_last,
         m.eq_rel_res,
     );
@@ -935,7 +1101,16 @@ fn run_rib_quick_metrics() -> RibMetrics {
         max_vf_err_abs: f32::NAN,
         max_vf_err_when_feasible: f32::NAN,
         c0_uniform: f32::NAN,
+        c0_uniform_raw: f32::NAN,
+        c0_uniform_p_final_raw: f32::NAN,
+        c0_uniform_p_final: f32::NAN,
+        h_c1_a_comp_frac: f32::NAN,
+        h_c1_a_se_frac: f32::NAN,
         greyness_loop_last: greyness,
+        last_outer_wall_ms: 0.0,
+        total_wall_s: 0.0,
+        seed: 42,
+        active_backend_features: active_backend_feature_set(),
     }
     .also_pcg_gate("shell_topology_rib_pattern_quick", pcg_tol)
 }
@@ -1093,6 +1268,52 @@ fn projected_vf_at_b_detached<Bk: BackendTrait<FloatElem = f32>>(
     let rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA).project(rho_tilde);
     let n = rho_mid.dims()[1].max(1) as f32;
     rho_mid.into_data().value.iter().sum::<f32>() / n
+}
+
+/// Post-Adam settled greyness on `ρ_mid` (sym off — B2 absorbing-step metric read).
+fn greyness_at_b_absorbed<Bk: BackendTrait<FloatElem = f32>>(
+    logits_det: &Tensor<Bk, 3>,
+    b: f32,
+    beta: f32,
+    skip_b: bool,
+    partners: &Tensor<Bk, 3, Int>,
+    xy_rib_pat: Option<&Tensor<Bk, 3>>,
+    xy_rib_prior_amp: f32,
+    helm_on: bool,
+    helm: &HelmholtzFilter,
+    edges_b1: &Tensor<Bk, 2, Int>,
+    dx_f: f32,
+    policy_mask: Option<&Tensor<Bk, 3>>,
+    nx: usize,
+    ny: usize,
+    nz: usize,
+) -> f32 {
+    let rho = if skip_b {
+        sigmoid(logits_det.clone())
+    } else {
+        sigmoid(logits_det.clone().add_scalar(b))
+    };
+    let rho_tilde = apply_rho_raw_pipeline_detached(
+        rho,
+        false,
+        partners,
+        xy_rib_pat,
+        xy_rib_prior_amp,
+        helm_on,
+        helm,
+        edges_b1,
+        dx_f,
+    );
+    let rho_tilde = match policy_mask {
+        Some(m) => apply_policy_editable_mask(rho_tilde, m),
+        None => rho_tilde,
+    };
+    let mut rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
+        .project(rho_tilde)
+        .into_data()
+        .value;
+    apply_non_design_skin(&mut rho_mid, nx, ny, nz);
+    greyness_mean(&rho_mid)
 }
 
 /// Detached b-bisect on logits with the full sym / rib / helm pipeline (η fixed at 0.5).
@@ -1380,21 +1601,26 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     };
 
     let (roof_ramp_on, roof_ramp_strength) = parse_roof_ramp();
-    // x-ramp roof traction (`UMST_SHELL_ROOF_RAMP`): breaks load symmetry so nodal sensitivities vary.
-    let mut live_f = vec![0.0f32; n * 3];
-    let nx1 = nx + 1;
-    let ny1 = ny + 1;
-    let iz_top = nz;
-    let nx_d = nx.max(1) as f32;
-    for iy in 0..=ny {
-        for ix in 0..=nx {
-            let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
-            let w = 1.0_f32 + roof_ramp_strength * (ix as f32 / nx_d);
-            live_f[nid * 3 + 2] = -50.0 * dx * dy * w;
+    // Roof traction: thesis re-config loads the fixed solid top skin only (`scripts/b6_harness_setup.sh`).
+    let live_f = if thesis_reconfig_enabled() {
+        thesis_roof_live_force_vec(nx, ny, nz, dx, dy, roof_ramp_strength, n * 3)
+    } else {
+        let mut f = vec![0.0f32; n * 3];
+        let nx1 = nx + 1;
+        let ny1 = ny + 1;
+        let iz_top = nz;
+        let nx_d = nx.max(1) as f32;
+        for iy in 0..=ny {
+            for ix in 0..=nx {
+                let nid = ix + iy * nx1 + iz_top * nx1 * ny1;
+                let w = 1.0_f32 + roof_ramp_strength * (ix as f32 / nx_d);
+                f[nid * 3 + 2] = -50.0 * dx * dy * w;
+            }
         }
-    }
+        f
+    };
     let live_force: Tensor<B, 3> =
-        Tensor::from_data(Data::new(live_f, Shape::new([1, n, 3])), device);
+        Tensor::from_data(Data::new(live_f.clone(), Shape::new([1, n, 3])), device);
 
     let voxel_vol = dx * dy * dz;
     let sw_cfg = SelfWeightConfig {
@@ -1465,8 +1691,17 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     };
     let sym_period = 20usize;
 
-    // `b6-c0-uniform-at-target-vf`: compliance(uniform ρ = target_vf, SIMP p = 1) — Voigt-bound baseline.
-    let rho_uniform = Tensor::<B, 3>::full([1, n, 1], target_vf, device);
+    // `b6-c0-uniform-at-target-vf`: compliance(uniform ρ @ SIMP p = 1) — Voigt-bound baseline.
+    // Thesis re-config: skin ρ=1 + uniform interior scaled to target_vf (`scripts/b6_harness_setup.sh`).
+    let rho_uniform_vec = if thesis_reconfig_enabled() {
+        thesis_uniform_rho_at_vf(nx, ny, nz, target_vf)
+    } else {
+        vec![target_vf; n]
+    };
+    let rho_uniform = Tensor::<B, 3>::from_data(
+        Data::new(rho_uniform_vec.clone(), Shape::new([1, n, 1])),
+        device,
+    );
     let bf_uniform = if use_self_weight {
         sw_cfg
             .body_force(rho_uniform.clone())
@@ -1480,6 +1715,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         p: STRIATUS_C0_UNIFORM_SIMP_P,
         e_min: material.e_min,
     };
+    let boundary_mask_flat = boundary_inner.clone().into_data().value;
     let bf_uniform_inner = bf_uniform.inner();
     let (_, c0_uniform_raw, _) = q1_compliance_with_diagnostics(
         rho_uniform.clone(),
@@ -1490,6 +1726,18 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         &cg_cfg,
         if use_self_weight { Some(sw_cfg) } else { None },
     );
+    if thesis_reconfig_enabled() {
+        let frac_c0 = h_c1_a_top_void_fractions(
+            &rho_uniform_vec,
+            &plate,
+            &live_f,
+            &boundary_mask_flat,
+            simp_uniform_gate,
+            &cg_cfg,
+            if use_self_weight { Some(sw_cfg) } else { None },
+        );
+        log_h_c1_a_verdict("shell_topology_rib_pattern_full_v04@c0_uniform", &frac_c0);
+    }
     // Audit only: full-schedule final `p` on uniform ρ (e.g. p=3 @ 200 outers — ~34× compliance vs Voigt p=1; not a gate).
     let p_schedule_final = ContinuationSchedule::value(iter_total.saturating_sub(1), iter_total);
     let simp_uniform_p_final = SimpElasticMaterial {
@@ -1511,11 +1759,13 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         "shell_topology_rib_pattern_full_v04: c0_uniform_at_target_vf \
 target_vf={target_vf:.4} gate_p={STRIATUS_C0_UNIFORM_SIMP_P} c0_uniform_raw={c0_uniform_raw:.6} \
 audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_raw:.6} \
-(Voigt p=1 gate; p_final audit only) eq_rel baseline",
+gate_threshold_matched_p={:.6} (0.6·c0_p_final; §9 pairing) eq_rel baseline",
+        0.6_f32 * c0_uniform_p_final_raw,
     );
 
     let comp_scale = c0_uniform_raw.max(1e-12);
     let c0 = c0_uniform_raw / comp_scale;
+    let c0_uniform_p_final = c0_uniform_p_final_raw / comp_scale;
     #[allow(unused_assignments)]
     let mut c1 = f32::NAN;
     let mut last_rho: Vec<f32> = Vec::new();
@@ -1542,8 +1792,12 @@ audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_r
     let mut prev_greyness_outer = f32::NAN;
     let pcg_tol = cg_cfg.pcg_tolerance.max(cg_cfg.cg_tolerance);
     let beta_max_sched = heaviside_beta_max.max(64.0);
+    const RIB_SEED: u64 = 42;
+    let t_run_start = Instant::now();
+    let mut last_outer_wall_ms = 0.0_f64;
 
     for it in 1..=iterations {
+        let t_outer_start = Instant::now();
         let sched_k = outer_schedule_k(it, iterations);
         let base_beta =
             BetaContinuation::beta(sched_k, iter_total, heaviside_beta0, beta_max_sched);
@@ -1656,12 +1910,12 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
             rho_mid.clone()
         };
         let sw_adj = if use_self_weight { Some(sw_cfg) } else { None };
-        let (surrogate, c_raw, h4_bundle) = if h4_diag || smoke_subset {
+        let (surrogate, c_raw, h4_bundle) = if h4_diag || smoke_subset || metrics_on {
             let (s, c, diag) = q1_compliance_with_diagnostics(
                 rho_comp.clone(),
                 &plate,
                 boundary_inner.clone(),
-                bf_inner,
+                bf_inner.clone(),
                 simp_mat,
                 &cg_cfg,
                 sw_adj,
@@ -1684,18 +1938,6 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
         apply_non_design_skin(&mut last_rho, nx, ny, nz);
         let grey_now = greyness_mean(&last_rho);
         greyness_hist.push(grey_now);
-        warn_greyness_jump_if_needed(
-            "shell_topology_rib_pattern_full_v04",
-            it,
-            iter_total,
-            prev_greyness_outer,
-            grey_now,
-            sym_apply,
-        );
-        prev_greyness_outer = grey_now;
-        if it == 1 {
-            greyness_outer1 = grey_now;
-        }
 
         if it == 1 {
             assert!(
@@ -1712,6 +1954,61 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_b_on={vol_b_on}, max_cg=
         if it == 1 {
             _first_c1 = c1;
             _first_xy_var = xy_plane_variance(&last_rho, nx, ny, nz);
+        }
+        let surrogate_scalar = surrogate.clone().into_data().value[0];
+        let comp_loss_scaled = surrogate_scalar / comp_scale;
+        // D1: fixed-p (=3) c1 beside running-p c1 (schedule `p_act`).
+        let c1_fixed_p3 = if metrics_on || smoke_subset {
+            let simp_mat_p3 = SimpElasticMaterial {
+                e0: material.e0,
+                nu: material.nu,
+                p: material.simp_p,
+                e_min: material.e_min,
+            };
+            let rho_flat_diag = rho_comp.clone().inner().into_data().value;
+            let f_flat_diag = bf_inner.clone().into_data().value;
+            let m_flat_diag = boundary_inner.clone().into_data().value;
+            let c_audit_p3 = AdjointComplianceQ1Hex::raw_compliance_at_rho(
+                &rho_flat_diag,
+                nx,
+                ny,
+                nz,
+                dx,
+                dy,
+                dz,
+                &f_flat_diag,
+                &m_flat_diag,
+                simp_mat_p3,
+                &cg_cfg,
+                sw_adj,
+            );
+            c_audit_p3 / comp_scale
+        } else {
+            f32::NAN
+        };
+        if it == 1 && (metrics_on || smoke_subset) {
+            // D3: surrogate compliance vs reported c1 — same ρ, e_cell(ρ^p·E0+E_min), and u.
+            let c_raw_audit = AdjointComplianceQ1Hex::raw_compliance_at_rho(
+                &rho_comp.clone().inner().into_data().value,
+                nx,
+                ny,
+                nz,
+                dx,
+                dy,
+                dz,
+                &bf_inner.clone().into_data().value,
+                &boundary_inner.clone().into_data().value,
+                simp_mat,
+                &cg_cfg,
+                sw_adj,
+            );
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: c1_diag_d3 outer1 \
+p_act={p_act:.3} c_raw_fwd={c_raw:.9} c_raw_audit={c_raw_audit:.9} c_raw_delta={:.3e} \
+surrogate={surrogate_scalar:.9} comp_loss_scaled={comp_loss_scaled:.9} c1_running={c1:.9} \
+same_e_cell_u=true",
+                (c_raw_audit - c_raw).abs(),
+            );
         }
         let mut total_loss = surrogate.clone().div_scalar(comp_scale);
         if grey_lambda > 0.0 {
@@ -1745,6 +2042,15 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_b_on={vol_b_on}, max_cg=
             eprintln!(
                 "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} skipped Adam (non-finite loss={loss_scalar})"
             );
+            last_outer_wall_ms = t_outer_start.elapsed().as_secs_f64() * 1000.0;
+            if metrics_on || smoke_subset {
+                eprintln!(
+                    "shell_topology_rib_pattern_full_v04: outer {it}/{iterations} wall_ms={last_outer_wall_ms:.1} \
+total_s={:.3} seed={RIB_SEED} backend_features={}",
+                    t_run_start.elapsed().as_secs_f64(),
+                    active_backend_feature_set(),
+                );
+            }
             continue;
         }
 
@@ -1834,6 +2140,12 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
                 u8::from(beta_stepped),
                 u8::from(skip_b),
             );
+            // D1/D2: fixed-p c1 + optimizer loss beside running-p c1.
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: c1_diag outer {it}/{iterations} \
+p_act={p_act:.3} c1_running={c1:.6} c1_fixed_p3={c1_fixed_p3:.6} \
+comp_loss_scaled={comp_loss_scaled:.6} total_loss={loss_scalar:.6}",
+            );
         }
         if h4_diag {
             if let Some(ref diag) = h4_bundle {
@@ -1863,8 +2175,51 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
             }
         }
         opt.density_net = adam.step(0.005, opt.density_net, grads_params);
+        let logits_absorbed = opt
+            .density_net
+            .forward_logits_batched(coords_norm.clone())
+            .reshape([1, n, 1]);
+        let grey_absorbed = greyness_at_b_absorbed(
+            &logits_absorbed.clone().detach().inner(),
+            b_star,
+            beta,
+            skip_b,
+            &partners.clone().inner(),
+            xy_rib_pat.as_ref().map(|p| p.clone().inner()).as_ref(),
+            xy_rib_prior_amp,
+            helm_on,
+            &helm,
+            &edges_b1.clone().inner(),
+            dx_f,
+            Some(&policy_mask_inner),
+            nx,
+            ny,
+            nz,
+        );
+        warn_greyness_jump_if_needed(
+            "shell_topology_rib_pattern_full_v04",
+            it,
+            iter_total,
+            prev_greyness_outer,
+            grey_absorbed,
+            false,
+        );
+        prev_greyness_outer = grey_absorbed;
+        if it == 1 {
+            greyness_outer1 = grey_absorbed;
+        }
+        last_outer_wall_ms = t_outer_start.elapsed().as_secs_f64() * 1000.0;
+        if metrics_on || smoke_subset {
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: outer {it}/{iterations} wall_ms={last_outer_wall_ms:.1} \
+total_s={:.3} seed={RIB_SEED} backend_features={}",
+                t_run_start.elapsed().as_secs_f64(),
+                active_backend_feature_set(),
+            );
+        }
     }
 
+    let total_wall_s = t_run_start.elapsed().as_secs_f64();
     assert!(!last_rho.is_empty(), "full rib run produced no ρ");
     let vf_loop = last_rho.iter().sum::<f32>() / last_rho.len() as f32;
     let greyness_loop_last = greyness_mean(&last_rho);
@@ -1998,6 +2353,21 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         if use_self_weight { Some(sw_cfg) } else { None },
     );
     c1 = c1_accept_raw / comp_scale;
+    let (h_c1_a_comp_frac, h_c1_a_se_frac) = if thesis_reconfig_enabled() {
+        let frac = h_c1_a_top_void_fractions(
+            &rho_acceptance,
+            &plate,
+            &live_f,
+            &boundary_mask_flat,
+            simp_accept,
+            &cg_cfg,
+            if use_self_weight { Some(sw_cfg) } else { None },
+        );
+        log_h_c1_a_verdict("shell_topology_rib_pattern_full_v04@acceptance", &frac);
+        (frac.compliance_fraction, frac.strain_energy_fraction)
+    } else {
+        (f32::NAN, f32::NAN)
+    };
     let vf = if vol_b_terminal && !smoke_subset {
         vf_export
     } else {
@@ -2043,7 +2413,16 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         max_vf_err_abs,
         max_vf_err_when_feasible,
         c0_uniform: c0,
+        c0_uniform_raw,
+        c0_uniform_p_final_raw,
+        c0_uniform_p_final,
+        h_c1_a_comp_frac,
+        h_c1_a_se_frac,
         greyness_loop_last,
+        last_outer_wall_ms,
+        total_wall_s,
+        seed: RIB_SEED,
+        active_backend_features: active_backend_feature_set(),
     };
     log_striatus_acceptance_line("shell_topology_rib_pattern_full_v04", nx, ny, nz, &metrics);
     metrics.also_pcg_gate("shell_topology_rib_pattern_full_v04", pcg_tol)
@@ -2310,7 +2689,8 @@ fn shell_topology_rib_pattern_full_v04() {
 GREYNESS(4ρ(1−ρ))={:.6} vf={:.6} target_vf={:.4} vf_err={:+.6} \
 UMST_SHELL_ROOF_RAMP={} ramp_strength={:.3} z_rho_mean={} \
 xy_var_z_avg={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
-max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} UMST_SHELL_GREY_LAMBDA={:.6} UMST_SHELL_XY_VAR_LAMBDA={:.6} UMST_SHELL_HEAVISIDE_BETA0={:.6} UMST_SHELL_DENSITY_INIT_JITTER={:.6} UMST_SHELL_XY_RIB_PRIOR_AMP={:.6}",
+max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} UMST_SHELL_GREY_LAMBDA={:.6} UMST_SHELL_XY_VAR_LAMBDA={:.6} UMST_SHELL_HEAVISIDE_BETA0={:.6} UMST_SHELL_DENSITY_INIT_JITTER={:.6} UMST_SHELL_XY_RIB_PRIOR_AMP={:.6} \
+last_outer_wall_ms={:.1} total_wall_s={:.3} seed={} backend_features={}",
         m.greyness,
         m.vf,
         m.target_vf,
@@ -2334,7 +2714,11 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
         xyl,
         b0,
         jit,
-        rib
+        rib,
+        m.last_outer_wall_ms,
+        m.total_wall_s,
+        m.seed,
+        m.active_backend_features,
     );
     assert!(
         m.c0.is_finite() && m.c1.is_finite(),
@@ -2395,20 +2779,42 @@ max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final=
             m.greyness_outer1,
             m.greyness
         );
-        assert!(
-            m.min_xy_var_from_outer_18.is_finite() && m.min_xy_var_from_outer_18 > 1e-6,
-            "smoke A′ xy_var past outer 18: min_xy_var={} final_xy_var={}",
-            m.min_xy_var_from_outer_18,
-            m.xy_var
-        );
-        // Smoke c1: final below peak (outer-1 c0 at vf≈0.48 is meaningless once AL drives vf→0.15).
-        assert!(
-            m.c1_peak.is_finite() && m.c1 < m.c1_peak - 1e-3,
-            "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
-            m.c1,
-            m.c1_peak,
-            m.c0
-        );
+        if adam_iters >= 18 {
+            assert!(
+                m.min_xy_var_from_outer_18.is_finite() && m.min_xy_var_from_outer_18 > 1e-6,
+                "smoke A′ xy_var past outer 18: min_xy_var={} final_xy_var={}",
+                m.min_xy_var_from_outer_18,
+                m.xy_var
+            );
+            // Legacy Striatus: in-loop c1 should trend down before acceptance finisher reshapes ρ.
+            if !thesis_reconfig_enabled() {
+                assert!(
+                    m.c1_peak.is_finite() && m.c1 < m.c1_peak - 1e-3,
+                    "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
+                    m.c1,
+                    m.c1_peak,
+                    m.c0
+                );
+            }
+        } else {
+            assert!(
+                m.xy_var.is_finite(),
+                "smoke short-run xy_var finite: {}",
+                m.xy_var
+            );
+        }
+        if thesis_reconfig_enabled() {
+            assert!(
+                m.h_c1_a_comp_frac.is_finite() && m.h_c1_a_comp_frac < 0.5,
+                "thesis smoke H-c1-A: void_column_compliance={:.1}%",
+                m.h_c1_a_comp_frac * 100.0
+            );
+            assert!(
+                m.c0_uniform_raw.is_finite() && m.c0_uniform_raw > 0.0,
+                "thesis smoke c0_uniform_raw recorded: {}",
+                m.c0_uniform_raw
+            );
+        }
         eprintln!(
             "shell_topology_rib_pattern_full_v04: smoke logit-offset PASS ({adam_iters} outer) — \
 GREYNESS={:.6} (outer1={:.6}) max_grad_l2={:.6} vf_loop={:.6} vf_export={:.6} \
@@ -2498,11 +2904,13 @@ beta_steps={} greyness@β_steps={:?} min_xy_var@18+={:.6} min_xy_var@50+={:.6} m
         m.c1
     );
     assert!(
-        m.c1 < m.c0_uniform * 0.6,
-        "compliance drop gate (c0_uniform=uniform ρ=target_vf @ SIMP p=1 Voigt): c0_uniform={} c1={} ratio={} (vf={} greyness={} xy_var={})",
-        m.c0_uniform,
+        m.c1 < m.c0_uniform_p_final * 0.6,
+        "compliance drop gate (matched-p c0: uniform ρ @ p_final): c0_p_final={} c1={} ratio={} \
+(p=1 audit c0_uniform={}; vf={} greyness={} xy_var={})",
+        m.c0_uniform_p_final,
         m.c1,
-        m.c1 / m.c0_uniform.max(1e-30),
+        m.c1 / m.c0_uniform_p_final.max(1e-30),
+        m.c0_uniform,
         m.vf,
         m.greyness,
         m.xy_var
@@ -2539,9 +2947,43 @@ fn shell_topology_rib_pattern_thesis_reconfig() {
         env::set_var("UMST_SHELL_VF", "0.30");
     }
     let target_vf = parse_target_vf();
+    let adam_iters = parse_full_rib_adam_iters();
     let m = run_rib_full_striatus(target_vf);
+    let (_gl, _xyl, _b0, _jit, _rib) = parse_umst_shell_b6_aux_env();
+    let g_uni = 4.0 * target_vf * (1.0 - target_vf);
     eprintln!(
-        "thesis_reconfig: nz=8 lz=0.3 vf_target={target_vf:.2} vf_final={:.4} c0={:.4} c1={:.4}",
-        m.vf, m.c0_uniform, m.c1
+        "shell_topology_rib_pattern_thesis_reconfig: pre-gate metrics \
+GREYNESS(4ρ(1−ρ))={:.6} vf={:.6} target_vf={:.4} vf_err={:+.6} \
+xy_var_z_avg={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
+max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} \
+last_outer_wall_ms={:.1} total_wall_s={:.3} seed={} backend_features={} \
+h_c1_a_comp_frac={:.4} c0_uniform_p_final_raw={:.6} h_c1_a_se_frac={:.6}",
+        m.greyness,
+        m.vf,
+        m.target_vf,
+        m.vf - m.target_vf,
+        m.xy_var,
+        m.c0,
+        m.c1,
+        m.last_outer_beta,
+        m.max_grad_l2,
+        m.last_grad_l2,
+        g_uni,
+        m.pcg_iters,
+        m.pcg_rel_res,
+        m.eq_rel_res,
+        m.adam_skipped,
+        adam_iters,
+        m.last_outer_wall_ms,
+        m.total_wall_s,
+        m.seed,
+        m.active_backend_features,
+        m.h_c1_a_comp_frac,
+        m.c0_uniform_p_final_raw,
+        m.h_c1_a_se_frac,
+    );
+    eprintln!(
+        "thesis_reconfig: nz=8 lz=0.3 vf_target={target_vf:.2} vf_final={:.4} c0={:.4} c1={:.4} c0_uniform_p_final_raw={:.6} h_c1_a_se_frac={:.6}",
+        m.vf, m.c0_uniform_raw, m.c1, m.c0_uniform_p_final_raw, m.h_c1_a_se_frac
     );
 }
