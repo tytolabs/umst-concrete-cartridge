@@ -154,6 +154,11 @@ path = "tests/shell_topology_rib_pattern.rs"
 required-features = ["solver-experimental"]
 
 [[test]]
+name = "r1_anchor_gate_parity"
+path = "tests/r1_anchor_gate_parity.rs"
+required-features = ["solver-experimental"]
+
+[[test]]
 name = "rheology_sweep"
 path = "tests/rheology_sweep.rs"
 
