@@ -746,13 +746,25 @@ struct RibMetrics {
 
 /// Active Cargo feature set for BLAS / solver lane (logged on pre-gate metrics; no numeric effect).
 fn active_backend_feature_set() -> String {
-    let mut feats = vec!["solver-experimental".to_string()];
+    let feats = Vec::from(["solver-experimental".to_string()]);
     #[cfg(feature = "render")]
-    feats.push("render".to_string());
+    let feats = {
+        let mut feats = feats;
+        feats.push("render".to_string());
+        feats
+    };
     #[cfg(feature = "blas-accelerate")]
-    feats.push("blas-accelerate".to_string());
+    let feats = {
+        let mut feats = feats;
+        feats.push("blas-accelerate".to_string());
+        feats
+    };
     #[cfg(feature = "mac-fast")]
-    feats.push("mac-fast".to_string());
+    let feats = {
+        let mut feats = feats;
+        feats.push("mac-fast".to_string());
+        feats
+    };
     feats.join("+")
 }
 
@@ -2937,7 +2949,7 @@ fn shell_topology_rib_pattern_thesis_reconfig() {
     let target_vf = parse_target_vf();
     let adam_iters = parse_full_rib_adam_iters();
     let m = run_rib_full_striatus(target_vf);
-    let (gl, xyl, b0, jit, rib) = parse_umst_shell_b6_aux_env();
+    let (_gl, _xyl, _b0, _jit, _rib) = parse_umst_shell_b6_aux_env();
     let g_uni = 4.0 * target_vf * (1.0 - target_vf);
     eprintln!(
         "shell_topology_rib_pattern_thesis_reconfig: pre-gate metrics \
@@ -2945,7 +2957,7 @@ GREYNESS(4ρ(1−ρ))={:.6} vf={:.6} target_vf={:.4} vf_err={:+.6} \
 xy_var_z_avg={:.6} c0={:.6} c1={:.6} beta_last={:.3} \
 max_grad_l2={:.6} last_grad_l2={:.6} g_uni=4·vf·(1−vf)={:.6} pcg_iter_final={} pcg_rel_res={:.3e} eq_rel_res={:.3e} adam_skipped={}/{} \
 last_outer_wall_ms={:.1} total_wall_s={:.3} seed={} backend_features={} \
-h_c1_a_comp_frac={:.4}",
+h_c1_a_comp_frac={:.4} c0_uniform_p_final_raw={:.6} h_c1_a_se_frac={:.6}",
         m.greyness,
         m.vf,
         m.target_vf,
@@ -2967,9 +2979,11 @@ h_c1_a_comp_frac={:.4}",
         m.seed,
         m.active_backend_features,
         m.h_c1_a_comp_frac,
+        m.c0_uniform_p_final_raw,
+        m.h_c1_a_se_frac,
     );
     eprintln!(
-        "thesis_reconfig: nz=8 lz=0.3 vf_target={target_vf:.2} vf_final={:.4} c0={:.4} c1={:.4}",
-        m.vf, m.c0_uniform_raw, m.c1
+        "thesis_reconfig: nz=8 lz=0.3 vf_target={target_vf:.2} vf_final={:.4} c0={:.4} c1={:.4} c0_uniform_p_final_raw={:.6} h_c1_a_se_frac={:.6}",
+        m.vf, m.c0_uniform_raw, m.c1, m.c0_uniform_p_final_raw, m.h_c1_a_se_frac
     );
 }
