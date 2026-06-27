@@ -143,6 +143,32 @@
     "printability_extrudability": {
       "type": "number",
       "description": "Printability extrudability scalar from tensor pipeline (dimensionless)."
+    },
+    "reproducibility": {
+      "type": "object",
+      "description": "Optional run reproducibility metadata (P4 GPU witness parity; L3.c).",
+      "additionalProperties": false,
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "description": "Deterministic RNG seed when applicable."
+        },
+        "device": {
+          "type": "string",
+          "description": "Compute device label (e.g. mps, cuda:0, cpu)."
+        },
+        "hardware_note": {
+          "type": "string",
+          "description": "Host hardware context for audit trails."
+        },
+        "backend_features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Enabled backend feature flags for this run."
+        }
+      }
     }
   }
 }

@@ -19,6 +19,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ingest_contributions import content_id_from_contribution, gate_check_admissible
 
+MIN_PROMOTION_CREDIT_BITS = 1.0
+
+
+def credit_head_bits_from_contribution(obj: dict) -> float | None:
+    obs = obj.get("observed_at")
+    if not isinstance(obs, dict):
+        return None
+    q = obs.get("credit_head_bits_q")
+    scale = obs.get("credit_head_bits_scale")
+    if q is None or scale is None:
+        return None
+    try:
+        scale_i = int(scale)
+        if scale_i <= 0:
+            return None
+        return int(q) / scale_i
+    except (TypeError, ValueError):
+        return None
+
+
+def credit_admits_promotion(obj: dict, min_bits: float = MIN_PROMOTION_CREDIT_BITS) -> bool:
+    credit = credit_head_bits_from_contribution(obj)
+    return credit is not None and credit >= min_bits
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = REPO_ROOT / "schemas" / "contribution.v1.json"
 DEFAULT_MANIFEST = REPO_ROOT / "contributions" / "merged" / "MANIFEST.jsonl"
@@ -90,6 +114,7 @@ def validate_file(
     known_ids: set[str],
     max_lines: int,
     gate_check: bool,
+    credit_check: bool,
     profile: str,
 ) -> int:
     errors = 0
@@ -138,6 +163,13 @@ def validate_file(
             print(f"error: {path}:{i}: umst_gate_check re-check failed", file=sys.stderr)
             errors += 1
 
+        if credit_check and not credit_admits_promotion(obj):
+            print(
+                f"error: {path}:{i}: credit below {MIN_PROMOTION_CREDIT_BITS} bits — quarantine",
+                file=sys.stderr,
+            )
+            errors += 1
+
     return errors
 
 
@@ -149,12 +181,58 @@ def main() -> int:
     parser.add_argument("--max-lines", type=int, default=MAX_LINES_DEFAULT)
     parser.add_argument("--gate-check", action="store_true")
     parser.add_argument(
+        "--credit-check",
+        action="store_true",
+        help="reject rows with credit_head below promotion threshold (U2)",
+    )
+    parser.add_argument(
+        "--gate-check-only",
+        action="store_true",
+        help="run live gate re-check only (no schema/duplicate/manifest; for merged golden fixtures)",
+    )
+    parser.add_argument(
         "--check-manifest",
         action="store_true",
         help="verify MANIFEST.jsonl matches merged shards (no inbox files required)",
     )
     parser.add_argument("--profile", default="default")
     args = parser.parse_args()
+
+    if args.gate_check_only:
+        if not args.files:
+            print("error: --gate-check-only requires file path(s)", file=sys.stderr)
+            return 2
+        total_errors = 0
+        for path in args.files:
+            if not path.is_file():
+                print(f"error: not a file: {path}", file=sys.stderr)
+                total_errors += 1
+                continue
+            for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError as e:
+                    print(f"error: {path}:{i}: invalid JSON: {e}", file=sys.stderr)
+                    total_errors += 1
+                    continue
+                if not gate_check_admissible(obj, args.profile):
+                    print(f"error: {path}:{i}: umst_gate_check re-check failed", file=sys.stderr)
+                    total_errors += 1
+                    continue
+                if not credit_admits_promotion(obj):
+                    print(
+                        f"error: {path}:{i}: credit below {MIN_PROMOTION_CREDIT_BITS} bits — quarantine",
+                        file=sys.stderr,
+                    )
+                    total_errors += 1
+        if total_errors:
+            print(f"validate_contribution_inbox: {total_errors} error(s)", file=sys.stderr)
+            return 1
+        print("validate_contribution_inbox: gate-check-only ok")
+        return 0
 
     if args.check_manifest:
         from update_contribution_manifest import check_manifest
@@ -177,6 +255,7 @@ def main() -> int:
             known_ids=known,
             max_lines=args.max_lines,
             gate_check=args.gate_check,
+            credit_check=args.credit_check,
             profile=args.profile,
         )
 
