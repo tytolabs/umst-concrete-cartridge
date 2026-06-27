@@ -24,12 +24,12 @@ use std::convert::TryFrom;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[cfg(not(feature = "manifest-bridge"))]
+use super::gate_explain_ssot::MANIFEST_BRIDGE_DISABLED;
 use super::gate_explain_ssot::{
     fields_for_code as ssot_fields_for_code, remediation_for_code, MIX_SPEC_RATIONAL_PARSE_FAIL,
     MIX_SPEC_WIRE_INVALID, THERMODYNAMIC_CD_FAIL, THERMODYNAMIC_FAIL,
 };
-#[cfg(not(feature = "manifest-bridge"))]
-use super::gate_explain_ssot::MANIFEST_BRIDGE_DISABLED;
 #[cfg(feature = "manifest-bridge")]
 use crate::pipeline::dual_gate::thermodynamic_ok;
 
