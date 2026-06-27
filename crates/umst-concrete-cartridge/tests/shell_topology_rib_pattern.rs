@@ -1834,9 +1834,10 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
     eprintln!(
         "shell_topology_rib_pattern_full_v04: c0_uniform_at_target_vf \
 target_vf={target_vf:.4} gate_p={STRIATUS_C0_UNIFORM_SIMP_P} c0_uniform_raw={c0_uniform_raw:.6} \
-audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_raw:.6} \
-gate_threshold_matched_p={:.6} (0.6·c0_p_final; §9 pairing) eq_rel baseline",
+audit_p_final={p_schedule_final:.3} p_gate={p_gate:.3} c0_uniform_p_final_raw={c0_uniform_p_final_raw:.6} \
+gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel baseline provenance={}",
         0.6_f32 * c0_uniform_p_final_raw,
+        MetricProvenance::FullSolve.as_str(),
     );
 
     let comp_scale = c0_uniform_raw.max(1e-12);
