@@ -44,9 +44,7 @@ use umst_manifold::ai::topology::{
 use umst_manifold::physics::adjoint::{
     AdjointComplianceDiagnostics, AdjointFiniteStageAudit, SimpElasticMaterial,
 };
-use umst_manifold::physics::adjoint_q1_hex::{
-    AdjointComplianceQ1Hex, Q1HexTopVoidColumnFractions,
-};
+use umst_manifold::physics::adjoint_q1_hex::{AdjointComplianceQ1Hex, Q1HexTopVoidColumnFractions};
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
 use umst_manifold::physics::mechanics::SelfWeightConfig;
 use umst_manifold::physics::q1_hex_elasticity::{
@@ -404,17 +402,7 @@ fn h_c1_a_top_void_fractions(
     sw: Option<SelfWeightConfig>,
 ) -> Q1HexTopVoidColumnFractions {
     let (audit, u) = AdjointComplianceQ1Hex::evaluate_compliance(
-        rho,
-        plate.nx,
-        plate.ny,
-        plate.nz,
-        plate.dx,
-        plate.dy,
-        plate.dz,
-        live_f,
-        m_flat,
-        mat,
-        cg,
+        rho, plate.nx, plate.ny, plate.nz, plate.dx, plate.dy, plate.dz, live_f, m_flat, mat, cg,
         sw,
     );
     AdjointComplianceQ1Hex::top_void_column_fractions(
@@ -1736,10 +1724,7 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
             &cg_cfg,
             if use_self_weight { Some(sw_cfg) } else { None },
         );
-        log_h_c1_a_verdict(
-            "shell_topology_rib_pattern_full_v04@c0_uniform",
-            &frac_c0,
-        );
+        log_h_c1_a_verdict("shell_topology_rib_pattern_full_v04@c0_uniform", &frac_c0);
     }
     // Audit only: full-schedule final `p` on uniform ρ (e.g. p=3 @ 200 outers — ~34× compliance vs Voigt p=1; not a gate).
     let p_schedule_final = ContinuationSchedule::value(iter_total.saturating_sub(1), iter_total);
