@@ -736,6 +736,10 @@ struct RibMetrics {
     c0_uniform: f32,
     /// Raw `c0_uniform` compliance before normalization (§9 row 7).
     c0_uniform_raw: f32,
+    /// Matched-p baseline: uniform ρ @ schedule final `p` (§9 gate pairing — B0a).
+    c0_uniform_p_final_raw: f32,
+    /// `c0_uniform_p_final_raw / c0_uniform_raw` (normalized matched-p gate reference).
+    c0_uniform_p_final: f32,
     /// H-c1-A: top-void-column compliance fraction on acceptance ρ (thesis re-config).
     h_c1_a_comp_frac: f32,
     /// H-c1-A: top-void-column strain-energy fraction on acceptance ρ.
@@ -1098,6 +1102,8 @@ fn run_rib_quick_metrics() -> RibMetrics {
         max_vf_err_when_feasible: f32::NAN,
         c0_uniform: f32::NAN,
         c0_uniform_raw: f32::NAN,
+        c0_uniform_p_final_raw: f32::NAN,
+        c0_uniform_p_final: f32::NAN,
         h_c1_a_comp_frac: f32::NAN,
         h_c1_a_se_frac: f32::NAN,
         greyness_loop_last: greyness,
@@ -1262,6 +1268,52 @@ fn projected_vf_at_b_detached<Bk: BackendTrait<FloatElem = f32>>(
     let rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA).project(rho_tilde);
     let n = rho_mid.dims()[1].max(1) as f32;
     rho_mid.into_data().value.iter().sum::<f32>() / n
+}
+
+/// Post-Adam settled greyness on `ρ_mid` (sym off — B2 absorbing-step metric read).
+fn greyness_at_b_absorbed<Bk: BackendTrait<FloatElem = f32>>(
+    logits_det: &Tensor<Bk, 3>,
+    b: f32,
+    beta: f32,
+    skip_b: bool,
+    partners: &Tensor<Bk, 3, Int>,
+    xy_rib_pat: Option<&Tensor<Bk, 3>>,
+    xy_rib_prior_amp: f32,
+    helm_on: bool,
+    helm: &HelmholtzFilter,
+    edges_b1: &Tensor<Bk, 2, Int>,
+    dx_f: f32,
+    policy_mask: Option<&Tensor<Bk, 3>>,
+    nx: usize,
+    ny: usize,
+    nz: usize,
+) -> f32 {
+    let rho = if skip_b {
+        sigmoid(logits_det.clone())
+    } else {
+        sigmoid(logits_det.clone().add_scalar(b))
+    };
+    let rho_tilde = apply_rho_raw_pipeline_detached(
+        rho,
+        false,
+        partners,
+        xy_rib_pat,
+        xy_rib_prior_amp,
+        helm_on,
+        helm,
+        edges_b1,
+        dx_f,
+    );
+    let rho_tilde = match policy_mask {
+        Some(m) => apply_policy_editable_mask(rho_tilde, m),
+        None => rho_tilde,
+    };
+    let mut rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
+        .project(rho_tilde)
+        .into_data()
+        .value;
+    apply_non_design_skin(&mut rho_mid, nx, ny, nz);
+    greyness_mean(&rho_mid)
 }
 
 /// Detached b-bisect on logits with the full sym / rib / helm pipeline (η fixed at 0.5).
@@ -1710,11 +1762,13 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         "shell_topology_rib_pattern_full_v04: c0_uniform_at_target_vf \
 target_vf={target_vf:.4} gate_p={STRIATUS_C0_UNIFORM_SIMP_P} c0_uniform_raw={c0_uniform_raw:.6} \
 audit_p_final={p_schedule_final:.3} c0_uniform_p_final_raw={c0_uniform_p_final_raw:.6} \
-(Voigt p=1 gate; p_final audit only) eq_rel baseline",
+gate_threshold_matched_p={:.6} (0.6·c0_p_final; §9 pairing) eq_rel baseline",
+        0.6_f32 * c0_uniform_p_final_raw,
     );
 
     let comp_scale = c0_uniform_raw.max(1e-12);
     let c0 = c0_uniform_raw / comp_scale;
+    let c0_uniform_p_final = c0_uniform_p_final_raw / comp_scale;
     #[allow(unused_assignments)]
     let mut c1 = f32::NAN;
     let mut last_rho: Vec<f32> = Vec::new();
@@ -1859,7 +1913,7 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
             rho_mid.clone()
         };
         let sw_adj = if use_self_weight { Some(sw_cfg) } else { None };
-        let (surrogate, c_raw, h4_bundle) = if h4_diag || smoke_subset {
+        let (surrogate, c_raw, h4_bundle) = if h4_diag || smoke_subset || metrics_on {
             let (s, c, diag) = q1_compliance_with_diagnostics(
                 rho_comp.clone(),
                 &plate,
@@ -1887,18 +1941,6 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
         apply_non_design_skin(&mut last_rho, nx, ny, nz);
         let grey_now = greyness_mean(&last_rho);
         greyness_hist.push(grey_now);
-        warn_greyness_jump_if_needed(
-            "shell_topology_rib_pattern_full_v04",
-            it,
-            iter_total,
-            prev_greyness_outer,
-            grey_now,
-            sym_apply,
-        );
-        prev_greyness_outer = grey_now;
-        if it == 1 {
-            greyness_outer1 = grey_now;
-        }
 
         if it == 1 {
             assert!(
@@ -2075,6 +2117,39 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
             }
         }
         opt.density_net = adam.step(0.005, opt.density_net, grads_params);
+        let logits_absorbed = opt
+            .density_net
+            .forward_logits_batched(coords_norm.clone())
+            .reshape([1, n, 1]);
+        let grey_absorbed = greyness_at_b_absorbed(
+            &logits_absorbed.clone().detach().inner(),
+            b_star,
+            beta,
+            skip_b,
+            &partners.clone().inner(),
+            xy_rib_pat.as_ref().map(|p| p.clone().inner()).as_ref(),
+            xy_rib_prior_amp,
+            helm_on,
+            &helm,
+            &edges_b1.clone().inner(),
+            dx_f,
+            Some(&policy_mask_inner),
+            nx,
+            ny,
+            nz,
+        );
+        warn_greyness_jump_if_needed(
+            "shell_topology_rib_pattern_full_v04",
+            it,
+            iter_total,
+            prev_greyness_outer,
+            grey_absorbed,
+            false,
+        );
+        prev_greyness_outer = grey_absorbed;
+        if it == 1 {
+            greyness_outer1 = grey_absorbed;
+        }
         last_outer_wall_ms = t_outer_start.elapsed().as_secs_f64() * 1000.0;
         if metrics_on || smoke_subset {
             eprintln!(
@@ -2281,6 +2356,8 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         max_vf_err_when_feasible,
         c0_uniform: c0,
         c0_uniform_raw,
+        c0_uniform_p_final_raw,
+        c0_uniform_p_final,
         h_c1_a_comp_frac,
         h_c1_a_se_frac,
         greyness_loop_last,
@@ -2769,11 +2846,13 @@ beta_steps={} greyness@β_steps={:?} min_xy_var@18+={:.6} min_xy_var@50+={:.6} m
         m.c1
     );
     assert!(
-        m.c1 < m.c0_uniform * 0.6,
-        "compliance drop gate (c0_uniform=uniform ρ=target_vf @ SIMP p=1 Voigt): c0_uniform={} c1={} ratio={} (vf={} greyness={} xy_var={})",
-        m.c0_uniform,
+        m.c1 < m.c0_uniform_p_final * 0.6,
+        "compliance drop gate (matched-p c0: uniform ρ @ p_final): c0_p_final={} c1={} ratio={} \
+(p=1 audit c0_uniform={}; vf={} greyness={} xy_var={})",
+        m.c0_uniform_p_final,
         m.c1,
-        m.c1 / m.c0_uniform.max(1e-30),
+        m.c1 / m.c0_uniform_p_final.max(1e-30),
+        m.c0_uniform,
         m.vf,
         m.greyness,
         m.xy_var
