@@ -20,7 +20,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Structural** | 93 |
 | **Empirical** | 34 |
 | **Literature** | 50 |
-| **NONE** | 278 |
+| **NONE** | 279 |
 
 ## Mechanised
 
@@ -472,9 +472,10 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `PromotionError` | `crates/umst-concrete-cartridge/src/research/promotion.rs:20` | `NONE` | — | CLI-only promotion path; never MCP-exposed. |
 | `PromotionApproval` | `crates/umst-concrete-cartridge/src/research/promotion.rs:36` | `NONE` | — | JWS-backed human decision; not agent auto-promotion. |
 | `PromotionRecordOut` | `crates/umst-concrete-cartridge/src/research/promotion.rs:52` | `NONE` | — | Calibration handoff bundle; admissibility already on memory row. |
-| `build_promotion_record` | `crates/umst-concrete-cartridge/src/research/promotion.rs:74` | `NONE` | — | Record morphism from gate-validated memory + human approval. |
-| `apply_promotion_writes` | `crates/umst-concrete-cartridge/src/research/promotion.rs:163` | `NONE` | — | Filesystem writes for human-gated calibration promotion. |
-| `promote_contribution` | `crates/umst-concrete-cartridge/src/research/promotion.rs:188` | `NONE` | — | CLI orchestration; physics gate already on accepted memory row. |
+| `MIN_PROMOTION_CREDIT_BITS` | `crates/umst-concrete-cartridge/src/research/promotion.rs:74` | `NONE` | — | UCRS credit quarantine threshold (umst-ucrs observation.rs); registry row in umst-math. |
+| `build_promotion_record` | `crates/umst-concrete-cartridge/src/research/promotion.rs:101` | `NONE` | — | Record morphism from gate-validated memory + human approval. |
+| `apply_promotion_writes` | `crates/umst-concrete-cartridge/src/research/promotion.rs:191` | `NONE` | — | Filesystem writes for human-gated calibration promotion. |
+| `promote_contribution` | `crates/umst-concrete-cartridge/src/research/promotion.rs:216` | `NONE` | — | CLI orchestration; physics gate already on accepted memory row. |
 | `WallClock` | `crates/umst-concrete-cartridge/src/research/provenance.rs:13` | `NONE` | — | System time IO injection; stamp semantics on `ProvenanceClock`. |
 | `epoch_ms` | `crates/umst-concrete-cartridge/src/research/provenance.rs:21` | `NONE` | — | `SystemTime` / UCRS wall hook; not monotonic sequence logic. |
 | `from_env` | `crates/umst-concrete-cartridge/src/research/provenance.rs:55` | `NONE` | — | Env IO at session boundary; stamp mode selection only. |
