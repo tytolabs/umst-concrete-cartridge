@@ -1918,7 +1918,7 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
                 rho_comp.clone(),
                 &plate,
                 boundary_inner.clone(),
-                bf_inner,
+                bf_inner.clone(),
                 simp_mat,
                 &cg_cfg,
                 sw_adj,
@@ -1957,6 +1957,61 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_b_on={vol_b_on}, max_cg=
         if it == 1 {
             _first_c1 = c1;
             _first_xy_var = xy_plane_variance(&last_rho, nx, ny, nz);
+        }
+        let surrogate_scalar = surrogate.clone().into_data().value[0];
+        let comp_loss_scaled = surrogate_scalar / comp_scale;
+        // D1: fixed-p (=3) c1 beside running-p c1 (schedule `p_act`).
+        let c1_fixed_p3 = if metrics_on || smoke_subset {
+            let simp_mat_p3 = SimpElasticMaterial {
+                e0: material.e0,
+                nu: material.nu,
+                p: material.simp_p,
+                e_min: material.e_min,
+            };
+            let rho_flat_diag = rho_comp.clone().inner().into_data().value;
+            let f_flat_diag = bf_inner.clone().into_data().value;
+            let m_flat_diag = boundary_inner.clone().into_data().value;
+            let c_audit_p3 = AdjointComplianceQ1Hex::raw_compliance_at_rho(
+                &rho_flat_diag,
+                nx,
+                ny,
+                nz,
+                dx,
+                dy,
+                dz,
+                &f_flat_diag,
+                &m_flat_diag,
+                simp_mat_p3,
+                &cg_cfg,
+                sw_adj,
+            );
+            c_audit_p3 / comp_scale
+        } else {
+            f32::NAN
+        };
+        if it == 1 && (metrics_on || smoke_subset) {
+            // D3: surrogate compliance vs reported c1 — same ρ, e_cell(ρ^p·E0+E_min), and u.
+            let c_raw_audit = AdjointComplianceQ1Hex::raw_compliance_at_rho(
+                &rho_comp.clone().inner().into_data().value,
+                nx,
+                ny,
+                nz,
+                dx,
+                dy,
+                dz,
+                &bf_inner.clone().into_data().value,
+                &boundary_inner.clone().into_data().value,
+                simp_mat,
+                &cg_cfg,
+                sw_adj,
+            );
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: c1_diag_d3 outer1 \
+p_act={p_act:.3} c_raw_fwd={c_raw:.9} c_raw_audit={c_raw_audit:.9} c_raw_delta={:.3e} \
+surrogate={surrogate_scalar:.9} comp_loss_scaled={comp_loss_scaled:.9} c1_running={c1:.9} \
+same_e_cell_u=true",
+                (c_raw_audit - c_raw).abs(),
+            );
         }
         let mut total_loss = surrogate.clone().div_scalar(comp_scale);
         if grey_lambda > 0.0 {
@@ -2087,6 +2142,12 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
                 u8::from(b_bisect_ok),
                 u8::from(beta_stepped),
                 u8::from(skip_b),
+            );
+            // D1/D2: fixed-p c1 + optimizer loss beside running-p c1.
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: c1_diag outer {it}/{iterations} \
+p_act={p_act:.3} c1_running={c1:.6} c1_fixed_p3={c1_fixed_p3:.6} \
+comp_loss_scaled={comp_loss_scaled:.6} total_loss={loss_scalar:.6}",
             );
         }
         if h4_diag {
