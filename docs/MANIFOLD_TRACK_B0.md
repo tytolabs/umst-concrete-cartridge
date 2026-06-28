@@ -24,6 +24,18 @@ D2 won in-loop η descent (`c1_fixed_p3` monotone @ N=200) but **terminal binari
 
 **Do not use** `UMST_SHELL_FIXED_BETA=1` on the B0 ship path — it is ignored when `EXPORT_VOL=oc`.
 
+## Literature alignment (why B0, not logit-b export)
+
+| Mechanism | Standard use | Our mistake (D2 hybrid) | B0 choice |
+|-----------|--------------|-------------------------|-----------|
+| **OC λ-bisection** | In-loop volume on ρ via KKT / λ bracket ([PyTopo3D](https://arxiv.org/abs/2504.05604), [Scikit-TOPT OC](https://kevin-tofu.github.io/scikit-topt/optimization.html)) | — | Terminal **OC λ** on post-η field — always feasible on ρ∈[0,1] |
+| **η / threshold on ρ̃** | Heaviside projection threshold; distinct from OC η ([Scikit-TOPT formulation](https://kevin-tofu.github.io/scikit-topt/formulation.html)) | In-loop η (D2 win) | Same in-loop; **η@β_fin** at export preserves layout |
+| **β continuation** | Ramp β during optimization, not post-hoc ([COMSOL density method](https://www.comsol.com/blogs/performing-topology-optimization-with-the-density-method), top99neo Δβ every 25 iters) | `FIXED_BETA=1` froze β→1, grey field | β 1→32 via `BetaContinuation`; optional `BINARIZE_OUTERS` |
+| **Logit offset `b`** | **Every forward pass** on neural TO ([Hoyer et al. 2019](https://arxiv.org/abs/1909.04240)) | One-shot terminal logit-b @ β_fin=32 on wrong field | **Rejected** for export; kept only as `EXPORT_VOL=logit` regression |
+| **Volume-preserving projection** | Post-filter binarization without losing V* ([Xu et al. 2014](https://www.doi.org/10.1016/j.engstruct.2014.11.006)) | Logit-b reshaped compliance layout | η sharpen + OC λ = volume-preserving export |
+
+**Takeaway:** Hoyer's `b` enforces volume **inside** the optimization loop. Applying logit-b only at the end—after frozen-β grey evolution—is outside its design envelope and explains the acceptance `c1` spike. B0 matches SIMP practice: continue β during descent, enforce volume at export with OC λ.
+
 ## B0 gate command (authoritative)
 
 ```bash
