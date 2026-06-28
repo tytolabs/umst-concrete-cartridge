@@ -1018,10 +1018,7 @@ fn rib_c1_fixed_p3_at_rho_inner(
             Data::new(rho_flat.clone(), Shape::new([1, rho_flat.len(), 1])),
             device,
         );
-        sw_cfg
-            .body_force(rho_b)
-            .add(live_force.clone())
-            .inner()
+        sw_cfg.body_force(rho_b).add(live_force.clone()).inner()
     } else {
         live_force.clone().inner()
     };
