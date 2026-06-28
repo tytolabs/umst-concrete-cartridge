@@ -19,7 +19,15 @@ Real-adjoint gradient is FD-correct. Compliance rises **downstream**:
 | *(default)* `logit` | Legacy logit-`b` in-loop (pre-D2 behaviour). |
 | `UMST_SHELL_FIXED_BETA=1` | Optional: freeze Heaviside β during smoke experiments. |
 
-**Hybrid export (automatic for `eta` / `lambda`):** terminal **logit-`b` finisher** @ `β_max` runs even on smoke subsets (`UMST_SHELL_RIB_FULL_ITERS` < 200). Acceptance VF gates read `vf_export`; in-loop `c1_fixed_p3` logs track descent on η path.
+**Hybrid export (automatic for `eta` / `lambda`):** terminal finisher tries **η@β_fin** (layout-preserving), then logit-`b` fallback. Acceptance VF gates read `vf_export`; in-loop `c1_fixed_p3` logs track descent on η path.
+
+### Tier 4 refinements (acceptance c1 spike mitigation)
+
+| Lever | Env / API | Effect |
+|-------|-----------|--------|
+| Mask-aware η | `VolumeEtaProjection::project_with_mask` | Bisect η on editable DOFs only (excludes fixed skin). |
+| Micro-`b` per outer | `UMST_SHELL_ETA_MICRO_B_MAX` (default `0.5`) | Capped logit shift when η VF floor binds at low β. |
+| Smoke `c1_peak` | harness metrics | Tracks peak on **fixed-p3** (`c1_peak_fixed_p3`), not running-p. |
 
 ## Run commands
 
