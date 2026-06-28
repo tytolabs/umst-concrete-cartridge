@@ -47,7 +47,7 @@ use umst_manifold::physics::adjoint::{
     SimpElasticMaterial,
 };
 use umst_manifold::physics::adjoint_q1_hex::{
-    AdjointComplianceQ1Hex, Q1HexSolveOptions, Q1HexTopVoidColumnFractions,
+    AdjointComplianceQ1Hex, Q1HexSolveOptions, Q1HexTopVoidColumnFractions, SolverRegion,
 };
 use umst_manifold::physics::extruded_plate::{ElasticMaterial, ExtrudedPlateMechanics};
 use umst_manifold::physics::mechanics::SelfWeightConfig;
@@ -56,6 +56,7 @@ use umst_manifold::physics::q1_hex_elasticity::{
 };
 use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 use umst_manifold::physics::topology_filter::HelmholtzFilter;
+use umst_research::checkpoint_policy::CompliancePeakCheckpoint;
 
 use umst_concrete_cartridge::print_ready::symmetry::{
     apply_reflection_xy_average, reflection_xy_partner_indices,
@@ -645,12 +646,16 @@ fn log_h4_outer(
     eprintln!(
         "{tag}: H4 outer {outer}/{outer_total} rho_raw=[{rmin:.6},{rmax:.6}] mean={rmean:.6} \
 sens_l2={:.6} sens_var={:.6} pcg_iter={} pcg_rel_res={:.3e} eq_rel_res={:.3e} \
+assemble_ms={:.3} pcg_ms={:.3} adjoint_ms={:.3} \
 grad_l2={:.6} adam_skipped={adam_skipped} xy_var={xy_var:.6} loss={loss_scalar:.6}",
         vec_l2_norm(sens),
         vec_spatial_variance(sens),
         diag.pcg.iterations,
         diag.pcg.rel_residual,
         diag.equilibrium_rel_residual,
+        diag.phase_timing.assemble_ms,
+        diag.phase_timing.pcg_ms,
+        diag.phase_timing.adjoint_ms,
         grad_l2,
     );
 }
@@ -988,6 +993,7 @@ MG V-cycle fails on anisotropic Striatus slab; using Jacobi (D3)"
         }
         _ => {}
     }
+    opts.pcg_warm_start = true;
     opts
 }
 
@@ -1060,6 +1066,29 @@ fn q1_compliance_with_diagnostics(
     cg: &MechanicsInnerLoopConfig,
     self_weight: Option<SelfWeightConfig>,
 ) -> (Tensor<B, 1>, f32, AdjointComplianceDiagnostics) {
+    q1_compliance_with_region(
+        rho_bar,
+        plate,
+        boundary,
+        body_force,
+        mat,
+        cg,
+        self_weight,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn q1_compliance_with_region(
+    rho_bar: Tensor<B, 3>,
+    plate: &ExtrudedPlateMechanics,
+    boundary: Tensor<Inner, 3>,
+    body_force: Tensor<Inner, 3>,
+    mat: SimpElasticMaterial,
+    cg: &MechanicsInnerLoopConfig,
+    self_weight: Option<SelfWeightConfig>,
+    region: Option<&mut SolverRegion>,
+) -> (Tensor<B, 1>, f32, AdjointComplianceDiagnostics) {
     AdjointComplianceQ1Hex::forward_loss_with_diagnostics(
         rho_bar,
         plate.nx,
@@ -1074,6 +1103,8 @@ fn q1_compliance_with_diagnostics(
         cg,
         self_weight,
         &shell_solve_options(),
+        region,
+        None,
     )
 }
 
@@ -2194,8 +2225,8 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
     let mut min_grad_l2 = f32::INFINITY;
     let mut _first_c1 = f32::NAN;
     let mut _first_xy_var = f32::NAN;
-    let mut c1_peak = f32::NEG_INFINITY;
-    let mut c1_peak_fixed_p3 = f32::NEG_INFINITY;
+    let mut c1_peak_ckpt = CompliancePeakCheckpoint::new();
+    let mut c1_peak_p3_ckpt = CompliancePeakCheckpoint::new();
     let mut c1_fixed_p3_loop_last = f32::NAN;
     let mut last_rho_raw_min = f32::NAN;
     let mut last_rho_raw_max = f32::NAN;
@@ -2210,6 +2241,7 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
     let mut max_vf_err_when_feasible = 0.0_f32;
     let mut _last_b = 0.0_f32;
     let mut prev_greyness_outer = f32::NAN;
+    let mut solver_region = SolverRegion::new();
     let pcg_tol = cg_cfg.pcg_tolerance.max(cg_cfg.cg_tolerance);
     let beta_max_sched = heaviside_beta_max.max(64.0);
     const RIB_SEED: u64 = 42;
@@ -2515,7 +2547,7 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
         };
         let sw_adj = if use_self_weight { Some(sw_cfg) } else { None };
         let (surrogate, c_raw, h4_bundle) = if h4_diag || smoke_subset || metrics_on {
-            let (s, c, diag) = q1_compliance_with_diagnostics(
+            let (s, c, diag) = q1_compliance_with_region(
                 rho_comp.clone(),
                 &plate,
                 boundary_inner.clone(),
@@ -2523,6 +2555,7 @@ vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
                 simp_mat,
                 &cg_cfg,
                 sw_adj,
+                Some(&mut solver_region),
             );
             (s, c, Some(diag))
         } else {
@@ -2553,7 +2586,7 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_b_on={vol_b_on}, max_cg=
         }
         c1 = c_raw / comp_scale;
         if c1.is_finite() {
-            c1_peak = c1_peak.max(c1);
+            c1_peak_ckpt.observe(c1 as f64);
         }
         if it == 1 {
             _first_c1 = c1;
@@ -2591,7 +2624,7 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_b_on={vol_b_on}, max_cg=
             f32::NAN
         };
         if c1_fixed_p3.is_finite() {
-            c1_peak_fixed_p3 = c1_peak_fixed_p3.max(c1_fixed_p3);
+            c1_peak_p3_ckpt.observe(c1_fixed_p3 as f64);
             c1_fixed_p3_loop_last = c1_fixed_p3;
         }
         if it == 1 && (metrics_on || smoke_subset) {
@@ -3127,8 +3160,8 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         vf_loop,
         vf_export,
         greyness_outer1,
-        c1_peak,
-        c1_peak_fixed_p3,
+        c1_peak: c1_peak_ckpt.peak_metric() as f32,
+        c1_peak_fixed_p3: c1_peak_p3_ckpt.peak_metric() as f32,
         c1_fixed_p3_loop_last,
         min_xy_var_from_outer_18: min_xy_18,
         min_xy_var_from_outer_50: if min_xy_var_from_outer_50.is_finite() {

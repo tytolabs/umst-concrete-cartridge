@@ -1,6 +1,5 @@
-# Monorepo sibling override (not used in CI). Copy to config.toml (gitignored).
+# Local dev patch — copy to `.cargo/config.toml` when testing against sibling umst-manifold.
+
 [patch."https://github.com/tytolabs/umst-manifold.git"]
 umst-manifold = { path = "../umst-manifold" }
-
-[patch."https://github.com/tytolabs/umst-ucrs.git"]
-umst-ucrs = { path = "../umst-ucrs/Rust" }
+umst-runtime-arena = { path = "../umst-manifold/umst-runtime-arena" }
