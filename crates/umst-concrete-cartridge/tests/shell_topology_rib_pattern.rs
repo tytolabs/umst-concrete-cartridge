@@ -1019,10 +1019,7 @@ fn rib_c1_fixed_p3_at_rho_inner(
             Data::new(rho_flat.clone(), Shape::new([1, rho_flat.len(), 1])),
             device,
         );
-        sw_cfg
-            .body_force(rho_b)
-            .add(live_force.clone())
-            .inner()
+        sw_cfg.body_force(rho_b).add(live_force.clone()).inner()
     } else {
         live_force.clone().inner()
     };
@@ -1532,14 +1529,18 @@ fn greyness_at_vol_absorbed<Bk: BackendTrait<FloatElem = f32>>(
         rho_tilde = vol_lambda.project(rho_tilde);
     }
     let mut rho_mid = match (vol_mode, skip_vol) {
-        (VolProjMode::EtaOc, false) => vol_eta
-            .project(rho_tilde, beta, target_vf)
-            .into_data()
-            .value,
-        _ => HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
-            .project(rho_tilde)
-            .into_data()
-            .value,
+        (VolProjMode::EtaOc, false) => {
+            vol_eta
+                .project(rho_tilde, beta, target_vf)
+                .into_data()
+                .value
+        }
+        _ => {
+            HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
+                .project(rho_tilde)
+                .into_data()
+                .value
+        }
     };
     apply_non_design_skin(&mut rho_mid, nx, ny, nz);
     greyness_mean(&rho_mid)
@@ -2182,7 +2183,11 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
                     dx_f,
                     Some(&policy_mask_inner),
                 );
-                (0.0_f32, vf, (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND)
+                (
+                    0.0_f32,
+                    vf,
+                    (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
+                )
             }
             (VolProjMode::LambdaOc, true) => (0.0_f32, f32::NAN, false),
             (VolProjMode::LambdaOc, false) => {
@@ -2201,7 +2206,11 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
                     dx_f,
                     Some(&policy_mask_inner),
                 );
-                (0.0_f32, vf, (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND)
+                (
+                    0.0_f32,
+                    vf,
+                    (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
+                )
             }
         };
         _last_b = b_star;
