@@ -39,7 +39,8 @@ use burn::tensor::{
 use burn_ndarray::NdArray;
 use umst_manifold::ai::topology::{
     logit_offset_vf_from_slice, BetaContinuation, ContinuationSchedule, HeavisideProjection,
-    PlateauBetaContinuation, TopologyOptimizer, VolumeLogitOffsetProjection, VolumeProjection,
+    PlateauBetaContinuation, TopologyOptimizer, VolumeEtaProjection, VolumeLogitOffsetProjection,
+    VolumeProjection,
 };
 use umst_manifold::physics::adjoint::{
     AdjointComplianceDiagnostics, AdjointFiniteStageAudit, HexPreconditionerKind,
@@ -776,6 +777,10 @@ struct RibMetrics {
     greyness_outer1: f32,
     /// Peak normalized compliance across outers (A′: final must sit below peak).
     c1_peak: f32,
+    /// Peak fixed-p (=3) compliance across outers (smoke gate semantics; D2 Tier 4b).
+    c1_peak_fixed_p3: f32,
+    /// Last-outer in-loop fixed-p (=3) compliance (before terminal finisher).
+    c1_fixed_p3_loop_last: f32,
     /// Min `xy_var` on `ρ_mid` for outers ≥ 18 (A′: must stay > 0 past old collapse point).
     min_xy_var_from_outer_18: f32,
     /// Min `xy_var` on `ρ_mid` for outers ≥ 50 (60-outer schedule-regime smoke).
@@ -1259,6 +1264,8 @@ fn run_rib_quick_metrics() -> RibMetrics {
         vf_export: vf,
         greyness_outer1: greyness,
         c1_peak: c1,
+        c1_peak_fixed_p3: c1,
+        c1_fixed_p3_loop_last: c1,
         min_xy_var_from_outer_18: xy_var,
         min_xy_var_from_outer_50: f32::NAN,
         beta_step_count: 0,
@@ -1337,6 +1344,63 @@ fn parse_skip_b_bisect_outers() -> usize {
         })
         .unwrap_or(0)
         .clamp(0, 200)
+}
+
+/// In-loop volume enforcement mode (D2).
+/// - `logit` (default): uniform logit shift `b` (Hoyer et al. 2019) — can undo compliance descent.
+/// - `eta`: OC-style η-bisection on fixed `ρ̃` via [`VolumeEtaProjection`] — preserves spatial layout.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum VolProjMode {
+    LogitB,
+    /// OC η-bisection on `ρ̃` (preserves layout; VF only when `ρ̃` spread allows).
+    EtaOc,
+    /// OC λ-shift on `ρ̃` pre-Heaviside (classic mean-preserving rescale).
+    LambdaOc,
+}
+
+fn parse_vol_proj_mode() -> VolProjMode {
+    match env::var("UMST_SHELL_VOL_MODE")
+        .ok()
+        .map(|s| s.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("eta") | Some("oc") | Some("eta_oc") => VolProjMode::EtaOc,
+        Some("lambda") | Some("lambda_oc") => VolProjMode::LambdaOc,
+        _ => VolProjMode::LogitB,
+    }
+}
+
+/// Per-outer capped logit-`b` nudge after η when VF floor binds at low β (D2 Tier 4c). `0` disables.
+fn parse_eta_micro_b_max() -> f32 {
+    env::var("UMST_SHELL_ETA_MICRO_B_MAX")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0.5_f32)
+        .clamp(0.0, 2.0)
+}
+
+fn d1_culprit_label(d_ab: f32, d_bc: f32) -> &'static str {
+    if d_ab <= 0.0 && d_bc <= 0.0 {
+        return "none(Adam-descent-ok)";
+    }
+    if d_ab >= d_bc {
+        "volume-projection"
+    } else {
+        "heaviside/filter/sym"
+    }
+}
+
+/// η / λ in-loop preserves compliance descent; export VF uses terminal logit-`b` (hybrid D2).
+fn hybrid_logit_b_terminal(vol_mode: VolProjMode) -> bool {
+    matches!(vol_mode, VolProjMode::EtaOc | VolProjMode::LambdaOc)
+}
+
+fn vol_mode_label(vol_mode: VolProjMode) -> &'static str {
+    match vol_mode {
+        VolProjMode::LogitB => "logit",
+        VolProjMode::EtaOc => "eta",
+        VolProjMode::LambdaOc => "lambda",
+    }
 }
 
 /// Apply sym / rib / Helmholtz on a detached density field (bisection inner loop; plain `helm.apply`).
@@ -1436,11 +1500,14 @@ fn projected_vf_at_b_detached<Bk: BackendTrait<FloatElem = f32>>(
 }
 
 /// Post-Adam settled greyness on `ρ_mid` (sym off — B2 absorbing-step metric read).
-fn greyness_at_b_absorbed<Bk: BackendTrait<FloatElem = f32>>(
+fn greyness_at_vol_absorbed<Bk: BackendTrait<FloatElem = f32>>(
     logits_det: &Tensor<Bk, 3>,
     b: f32,
     beta: f32,
-    skip_b: bool,
+    skip_vol: bool,
+    vol_mode: VolProjMode,
+    vol_eta: &VolumeEtaProjection,
+    target_vf: f32,
     partners: &Tensor<Bk, 3, Int>,
     xy_rib_pat: Option<&Tensor<Bk, 3>>,
     xy_rib_prior_amp: f32,
@@ -1453,13 +1520,12 @@ fn greyness_at_b_absorbed<Bk: BackendTrait<FloatElem = f32>>(
     ny: usize,
     nz: usize,
 ) -> f32 {
-    let rho = if skip_b {
-        sigmoid(logits_det.clone())
-    } else {
-        sigmoid(logits_det.clone().add_scalar(b))
+    let rho_raw = match vol_mode {
+        VolProjMode::LogitB if !skip_vol => sigmoid(logits_det.clone().add_scalar(b)),
+        _ => sigmoid(logits_det.clone()),
     };
     let rho_tilde = apply_rho_raw_pipeline_detached(
-        rho,
+        rho_raw,
         false,
         partners,
         xy_rib_pat,
@@ -1469,14 +1535,28 @@ fn greyness_at_b_absorbed<Bk: BackendTrait<FloatElem = f32>>(
         edges_b1,
         dx_f,
     );
-    let rho_tilde = match policy_mask {
+    let mut rho_tilde = match policy_mask {
         Some(m) => apply_policy_editable_mask(rho_tilde, m),
         None => rho_tilde,
     };
-    let mut rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
-        .project(rho_tilde)
-        .into_data()
-        .value;
+    if matches!(vol_mode, VolProjMode::LambdaOc) && !skip_vol {
+        let vol_lambda = VolumeProjection::new(target_vf, STRIATUS_B_BISECT_MAX_ITERS);
+        rho_tilde = vol_lambda.project(rho_tilde);
+    }
+    let mut rho_mid = match (vol_mode, skip_vol) {
+        (VolProjMode::EtaOc, false) => {
+            vol_eta
+                .project(rho_tilde, beta, target_vf)
+                .into_data()
+                .value
+        }
+        _ => {
+            HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
+                .project(rho_tilde)
+                .into_data()
+                .value
+        }
+    };
     apply_non_design_skin(&mut rho_mid, nx, ny, nz);
     greyness_mean(&rho_mid)
 }
@@ -1544,6 +1624,55 @@ target={target_vf:.6} beta={beta:.3} identity_vf@b=0={vf_slice:.6}"
     0.5 * (lo + hi)
 }
 
+/// Logit-`b` bisection bracketed to `[b_lo, b_hi]` (η hybrid micro-`b` per outer).
+fn bisect_logit_offset_b_bounded_detached<Bk: BackendTrait<FloatElem = f32>>(
+    logits_det: &Tensor<Bk, 3>,
+    beta: f32,
+    target_vf: f32,
+    tol: f32,
+    max_iters: usize,
+    sym_apply: bool,
+    partners: &Tensor<Bk, 3, Int>,
+    xy_rib_pat: Option<&Tensor<Bk, 3>>,
+    xy_rib_prior_amp: f32,
+    helm_on: bool,
+    helm: &HelmholtzFilter,
+    edges_b1: &Tensor<Bk, 2, Int>,
+    dx_f: f32,
+    policy_mask: Option<&Tensor<Bk, 3>>,
+    b_lo: f32,
+    b_hi: f32,
+) -> f32 {
+    let mut lo = b_lo.min(b_hi);
+    let mut hi = b_lo.max(b_hi);
+    let eval_vf = |b: f32| {
+        projected_vf_at_b_detached(
+            logits_det,
+            b,
+            beta,
+            sym_apply,
+            partners,
+            xy_rib_pat,
+            xy_rib_prior_amp,
+            helm_on,
+            helm,
+            edges_b1,
+            dx_f,
+            policy_mask,
+        )
+    };
+    for _ in 0..max_iters.max(1) {
+        let mid = 0.5 * (lo + hi);
+        let vf = eval_vf(mid);
+        if vf > target_vf + tol {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    0.5 * (lo + hi)
+}
+
 /// Predict VF after b-bisect on detached logits (same bisection as in-loop path).
 fn b_finisher_predicted_vf<Bk: BackendTrait<FloatElem = f32>>(
     logits_det: &Tensor<Bk, 3>,
@@ -1592,6 +1721,80 @@ fn b_finisher_predicted_vf<Bk: BackendTrait<FloatElem = f32>>(
         policy_mask,
     );
     (vf, b)
+}
+
+/// Predict VF after η-bisection on detached `ρ̃` (OC volume path).
+fn eta_finisher_predicted_vf<Bk: BackendTrait<FloatElem = f32>>(
+    logits_det: &Tensor<Bk, 3>,
+    beta: f32,
+    target_vf: f32,
+    vol_eta: &VolumeEtaProjection,
+    sym_apply: bool,
+    partners: &Tensor<Bk, 3, Int>,
+    xy_rib_pat: Option<&Tensor<Bk, 3>>,
+    xy_rib_prior_amp: f32,
+    helm_on: bool,
+    helm: &HelmholtzFilter,
+    edges_b1: &Tensor<Bk, 2, Int>,
+    dx_f: f32,
+    policy_mask: Option<&Tensor<Bk, 3>>,
+) -> f32 {
+    let rho_raw = sigmoid(logits_det.clone());
+    let rho_tilde = apply_rho_raw_pipeline_detached(
+        rho_raw,
+        sym_apply,
+        partners,
+        xy_rib_pat,
+        xy_rib_prior_amp,
+        helm_on,
+        helm,
+        edges_b1,
+        dx_f,
+    );
+    let rho_tilde = match policy_mask {
+        Some(m) => apply_policy_editable_mask(rho_tilde, m),
+        None => rho_tilde,
+    };
+    let rho_mid = vol_eta.project(rho_tilde, beta, target_vf);
+    let n = rho_mid.dims()[1].max(1) as f32;
+    rho_mid.into_data().value.iter().sum::<f32>() / n
+}
+
+/// Predict VF after λ-shift on `ρ̃` then Heaviside (OC lambda path).
+fn lambda_finisher_predicted_vf<Bk: BackendTrait<FloatElem = f32>>(
+    logits_det: &Tensor<Bk, 3>,
+    beta: f32,
+    vol_lambda: &VolumeProjection,
+    sym_apply: bool,
+    partners: &Tensor<Bk, 3, Int>,
+    xy_rib_pat: Option<&Tensor<Bk, 3>>,
+    xy_rib_prior_amp: f32,
+    helm_on: bool,
+    helm: &HelmholtzFilter,
+    edges_b1: &Tensor<Bk, 2, Int>,
+    dx_f: f32,
+    policy_mask: Option<&Tensor<Bk, 3>>,
+) -> f32 {
+    let rho_raw = sigmoid(logits_det.clone());
+    let rho_tilde = apply_rho_raw_pipeline_detached(
+        rho_raw,
+        sym_apply,
+        partners,
+        xy_rib_pat,
+        xy_rib_prior_amp,
+        helm_on,
+        helm,
+        edges_b1,
+        dx_f,
+    );
+    let rho_tilde = match policy_mask {
+        Some(m) => apply_policy_editable_mask(rho_tilde, m),
+        None => rho_tilde,
+    };
+    let rho_tilde = vol_lambda.project(rho_tilde);
+    let rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA).project(rho_tilde);
+    let n = rho_mid.dims()[1].max(1) as f32;
+    rho_mid.into_data().value.iter().sum::<f32>() / n
 }
 
 /// Roof traction asymmetry: `UMST_SHELL_ROOF_RAMP=0` → uniform; default **on** with
@@ -1738,9 +1941,12 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         .mul_scalar(2.0)
         .sub_scalar(1.0);
     let edges_b1 = plate.edges_b1::<B>(device);
+    let policy_mask_vec = policy_editable_mask_vec(nx, ny, nz);
     let policy_mask: Tensor<B, 3> = {
-        let mask_data = policy_editable_mask_vec(nx, ny, nz);
-        Tensor::from_data(Data::new(mask_data, Shape::new([1, n, 1])), device)
+        Tensor::from_data(
+            Data::new(policy_mask_vec.clone(), Shape::new([1, n, 1])),
+            device,
+        )
     };
     let policy_mask_inner = policy_mask.clone().inner();
     let boundary_b = {
@@ -1810,10 +2016,15 @@ fn run_rib_full_striatus(target_vf: f32) -> RibMetrics {
         .unwrap_or(true);
     let b_bisect_tol = parse_b_bisect_tol();
     let skip_b_bisect_outers = parse_skip_b_bisect_outers();
+    let vol_proj_mode = parse_vol_proj_mode();
     let metrics_on = matches!(env::var("UMST_SHELL_METRICS").as_deref(), Ok("1"));
     let h4_diag = h4_diag_enabled();
     let plateau_beta = PlateauBetaContinuation::new(5, 0.008);
     let vol_logit = VolumeLogitOffsetProjection::new(STRIATUS_B_BISECT_MAX_ITERS, b_bisect_tol);
+    let vol_eta = VolumeEtaProjection::new(STRIATUS_B_BISECT_MAX_ITERS, b_bisect_tol);
+    let vol_lambda = VolumeProjection::new(target_vf, STRIATUS_B_BISECT_MAX_ITERS);
+    let eta_micro_b_cap = parse_eta_micro_b_max();
+    let mut eta_micro_b_acc = 0.0_f32;
     let mut greyness_hist: Vec<f32> = Vec::new();
 
     let e0 = 200e6_f32;
@@ -1944,6 +2155,8 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
     let mut _first_c1 = f32::NAN;
     let mut _first_xy_var = f32::NAN;
     let mut c1_peak = f32::NEG_INFINITY;
+    let mut c1_peak_fixed_p3 = f32::NEG_INFINITY;
+    let mut c1_fixed_p3_loop_last = f32::NAN;
     let mut last_rho_raw_min = f32::NAN;
     let mut last_rho_raw_max = f32::NAN;
     let mut last_outer_beta = heaviside_beta0;
@@ -1983,51 +2196,101 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
             .reshape([1, n, 1]);
         // XY reflection is a training regularizer only — never on the final outer (no Adam step after).
         let sym_apply = sym_period > 0 && it % sym_period == 0 && it < iterations;
-        let skip_b = !vol_b_on || it <= skip_b_bisect_outers;
+        let skip_vol = !vol_b_on || it <= skip_b_bisect_outers;
         let partners_inner = partners.clone().inner();
         let edges_inner = edges_b1.clone().inner();
         let xy_rib_inner = xy_rib_pat.as_ref().map(|p| p.clone().inner());
-        let (b_star, vf_pred, b_bisect_ok) = if skip_b {
-            (0.0_f32, f32::NAN, false)
-        } else {
-            let logits_det = logits.clone().detach().inner();
-            let b = bisect_logit_offset_b_detached(
-                &logits_det,
-                beta,
-                target_vf,
-                b_bisect_tol,
-                STRIATUS_B_BISECT_MAX_ITERS,
-                sym_apply,
-                &partners_inner,
-                xy_rib_inner.as_ref(),
-                xy_rib_prior_amp,
-                helm_on,
-                &helm,
-                &edges_inner,
-                dx_f,
-                Some(&policy_mask_inner),
-            );
-            let vf = projected_vf_at_b_detached(
-                &logits_det,
-                b,
-                beta,
-                sym_apply,
-                &partners_inner,
-                xy_rib_inner.as_ref(),
-                xy_rib_prior_amp,
-                helm_on,
-                &helm,
-                &edges_inner,
-                dx_f,
-                Some(&policy_mask_inner),
-            );
-            (b, vf, (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND)
+        let (b_star, vf_pred, b_bisect_ok) = match (vol_proj_mode, skip_vol) {
+            (VolProjMode::LogitB, true) => (0.0_f32, f32::NAN, false),
+            (VolProjMode::LogitB, false) => {
+                let logits_det = logits.clone().detach().inner();
+                let b = bisect_logit_offset_b_detached(
+                    &logits_det,
+                    beta,
+                    target_vf,
+                    b_bisect_tol,
+                    STRIATUS_B_BISECT_MAX_ITERS,
+                    sym_apply,
+                    &partners_inner,
+                    xy_rib_inner.as_ref(),
+                    xy_rib_prior_amp,
+                    helm_on,
+                    &helm,
+                    &edges_inner,
+                    dx_f,
+                    Some(&policy_mask_inner),
+                );
+                let vf = projected_vf_at_b_detached(
+                    &logits_det,
+                    b,
+                    beta,
+                    sym_apply,
+                    &partners_inner,
+                    xy_rib_inner.as_ref(),
+                    xy_rib_prior_amp,
+                    helm_on,
+                    &helm,
+                    &edges_inner,
+                    dx_f,
+                    Some(&policy_mask_inner),
+                );
+                (b, vf, (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND)
+            }
+            (VolProjMode::EtaOc, true) => (0.0_f32, f32::NAN, false),
+            (VolProjMode::EtaOc, false) => {
+                let logits_det = logits.clone().detach().inner();
+                let vf = eta_finisher_predicted_vf(
+                    &logits_det,
+                    beta,
+                    target_vf,
+                    &vol_eta,
+                    sym_apply,
+                    &partners_inner,
+                    xy_rib_inner.as_ref(),
+                    xy_rib_prior_amp,
+                    helm_on,
+                    &helm,
+                    &edges_inner,
+                    dx_f,
+                    Some(&policy_mask_inner),
+                );
+                (
+                    0.0_f32,
+                    vf,
+                    (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
+                )
+            }
+            (VolProjMode::LambdaOc, true) => (0.0_f32, f32::NAN, false),
+            (VolProjMode::LambdaOc, false) => {
+                let logits_det = logits.clone().detach().inner();
+                let vf = lambda_finisher_predicted_vf(
+                    &logits_det,
+                    beta,
+                    &vol_lambda,
+                    sym_apply,
+                    &partners_inner,
+                    xy_rib_inner.as_ref(),
+                    xy_rib_prior_amp,
+                    helm_on,
+                    &helm,
+                    &edges_inner,
+                    dx_f,
+                    Some(&policy_mask_inner),
+                );
+                (
+                    0.0_f32,
+                    vf,
+                    (vf - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
+                )
+            }
         };
         _last_b = b_star;
-        let rho_raw = if skip_b {
-            sigmoid(logits.clone())
-        } else {
-            vol_logit.apply_shift(logits.clone(), b_star)
+        let rho_raw = match (vol_proj_mode, skip_vol) {
+            (VolProjMode::LogitB, false) => vol_logit.apply_shift(logits.clone(), b_star),
+            (VolProjMode::EtaOc, false) if eta_micro_b_acc.abs() > 1e-12 => {
+                sigmoid(logits.clone().add_scalar(eta_micro_b_acc))
+            }
+            _ => sigmoid(logits.clone()),
         };
         let rho_tilde = apply_rho_raw_pipeline_taped(
             rho_raw.clone(),
@@ -2040,10 +2303,71 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
             &edges_b1,
             dx_f,
         );
-        let rho_tilde = apply_policy_editable_mask(rho_tilde, &policy_mask);
-        let rho_mid = HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
-            .project(rho_tilde.clone())
-            .reshape([1, n, 1]);
+        let mut rho_tilde = apply_policy_editable_mask(rho_tilde, &policy_mask);
+        if matches!(vol_proj_mode, VolProjMode::LambdaOc) && !skip_vol {
+            rho_tilde = vol_lambda.project(rho_tilde);
+        }
+        let mut rho_mid = match (vol_proj_mode, skip_vol) {
+            (VolProjMode::EtaOc, false) => vol_eta
+                .project_with_mask(
+                    rho_tilde.clone(),
+                    beta,
+                    target_vf,
+                    Some(policy_mask_vec.as_slice()),
+                )
+                .reshape([1, n, 1]),
+            _ => HeavisideProjection::new(beta, STRIATUS_HEAVISIDE_ETA)
+                .project(rho_tilde.clone())
+                .reshape([1, n, 1]),
+        };
+        if matches!(vol_proj_mode, VolProjMode::EtaOc) && !skip_vol && eta_micro_b_cap > 0.0 {
+            let vf_after_eta = rho_mid.clone().into_data().value.iter().sum::<f32>() / n as f32;
+            if (vf_after_eta - target_vf).abs() > b_bisect_tol {
+                let logits_det = logits.clone().detach().inner();
+                let b_lo = eta_micro_b_acc - eta_micro_b_cap;
+                let b_hi = eta_micro_b_acc + eta_micro_b_cap;
+                let b_micro = bisect_logit_offset_b_bounded_detached(
+                    &logits_det,
+                    beta,
+                    target_vf,
+                    b_bisect_tol,
+                    STRIATUS_B_BISECT_MAX_ITERS,
+                    sym_apply,
+                    &partners_inner,
+                    xy_rib_inner.as_ref(),
+                    xy_rib_prior_amp,
+                    helm_on,
+                    &helm,
+                    &edges_inner,
+                    dx_f,
+                    Some(&policy_mask_inner),
+                    b_lo,
+                    b_hi,
+                );
+                eta_micro_b_acc = b_micro;
+                let rho_raw_mb = sigmoid(logits.clone().add_scalar(eta_micro_b_acc));
+                let rho_tilde_mb = apply_rho_raw_pipeline_taped(
+                    rho_raw_mb,
+                    sym_apply,
+                    &partners,
+                    xy_rib_pat.as_ref(),
+                    xy_rib_prior_amp,
+                    helm_on,
+                    &helm,
+                    &edges_b1,
+                    dx_f,
+                );
+                let rho_tilde_mb = apply_policy_editable_mask(rho_tilde_mb, &policy_mask);
+                rho_mid = vol_eta
+                    .project_with_mask(
+                        rho_tilde_mb,
+                        beta,
+                        target_vf,
+                        Some(policy_mask_vec.as_slice()),
+                    )
+                    .reshape([1, n, 1]);
+            }
+        }
         let rho_mech = rho_mid.clone();
 
         if d1_three_point_enabled() {
@@ -2060,8 +2384,12 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
                 comp_scale,
                 device,
             );
+            let rho_b_tensor = match vol_proj_mode {
+                VolProjMode::LogitB => rho_raw.clone().detach().inner(),
+                VolProjMode::EtaOc | VolProjMode::LambdaOc => rho_tilde.clone().detach().inner(),
+            };
             let c_b = rib_c1_fixed_p3_at_rho_inner(
-                rho_raw.clone().detach().inner(),
+                rho_b_tensor,
                 &plate,
                 &boundary_inner,
                 &live_force,
@@ -2084,26 +2412,15 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
                 comp_scale,
                 device,
             );
-            let culprit = if c_b > c_a * 1.001 {
-                if c_c > c_b * 1.001 {
-                    "heaviside/filter/sym"
-                } else if c_c < c_b * 0.999 {
-                    "heaviside/filter/sym(LOWERS)"
-                } else {
-                    "volume-projection"
-                }
-            } else if c_c > c_a * 1.001 {
-                "heaviside/filter/sym"
-            } else {
-                "none(Adam-descent-ok)"
-            };
+            let d_ab = c_b - c_a;
+            let d_bc = c_c - c_b;
+            let culprit = d1_culprit_label(d_ab, d_bc);
             eprintln!(
                 "shell_topology_rib_pattern_full_v04: D1 three-point outer {it}/{iter_total} \
-beta={beta:.3} sym={} | (a)post-Adam={c_a:.6} (b)post-vol={c_b:.6} (c)post-Heaviside={c_c:.6} \
-Δab={:+.6} Δbc={:+.6} Δac={:+.6} culprit={culprit}",
+beta={beta:.3} sym={} vol_mode={} | (a)post-Adam={c_a:.6} (b)post-vol={c_b:.6} (c)post-Heaviside={c_c:.6} \
+Δab={d_ab:+.6} Δbc={d_bc:+.6} Δac={:+.6} culprit={culprit}",
                 u8::from(sym_apply),
-                c_b - c_a,
-                c_c - c_b,
+                vol_mode_label(vol_proj_mode),
                 c_c - c_a,
             );
         }
@@ -2113,7 +2430,7 @@ beta={beta:.3} sym={} | (a)post-Adam={c_a:.6} (b)post-vol={c_b:.6} (c)post-Heavi
             let vf_mid_m = rho_mid.clone().into_data().value.iter().sum::<f32>() / n as f32;
             eprintln!(
                 "shell_topology_rib_pattern_full_v04: outer {it}/{iter_total} greyness_rho_mid={grey_mid:.6} \
-beta={beta:.3} b={b_star:.6} vf_mid={vf_mid_m:.6} vf_err={:+.6} skip_b={skip_b} b_bisect_ok={b_bisect_ok} helm_on={helm_on} \
+beta={beta:.3} b={b_star:.6} vf_mid={vf_mid_m:.6} vf_err={:+.6} skip_vol={skip_vol} b_bisect_ok={b_bisect_ok} helm_on={helm_on} \
 vol_b_on={vol_b_on} vol_b_terminal={vol_b_terminal}",
                 vf_mid_m - target_vf,
             );
@@ -2217,6 +2534,10 @@ Got c_raw={c_raw:?} (self_weight={use_self_weight}, vol_b_on={vol_b_on}, max_cg=
         } else {
             f32::NAN
         };
+        if c1_fixed_p3.is_finite() {
+            c1_peak_fixed_p3 = c1_peak_fixed_p3.max(c1_fixed_p3);
+            c1_fixed_p3_loop_last = c1_fixed_p3;
+        }
         if it == 1 && (metrics_on || smoke_subset) {
             // D3: surrogate compliance vs reported c1 — same ρ, e_cell(ρ^p·E0+E_min), and u.
             let c_raw_audit = AdjointComplianceQ1Hex::raw_compliance_at_rho(
@@ -2322,7 +2643,7 @@ total_s={:.3} seed={RIB_SEED} backend_features={}",
         }
 
         // Logit-offset tripwire: skipped-b pathology, or feasible bisection that tape/guard violates.
-        if skip_b && vf_err_abs > STRIATUS_VF_ERR_ABORT_BAND {
+        if skip_vol && vf_err_abs > STRIATUS_VF_ERR_ABORT_BAND {
             panic!(
                 "striatus_vf_bisect_guard: |vf-target|>{STRIATUS_VF_ERR_ABORT_BAND} with b-bisect skipped \
 (outer {it}/{iterations} vf_mid={vf_now:.6} err={vf_err:+.6} b={b_star:.6} beta={beta:.3})"
@@ -2369,7 +2690,7 @@ vf_pred={vf_pred:.6} b_bisect_ok={} beta_stepped={} skip_b={}",
                 sched_k,
                 u8::from(b_bisect_ok),
                 u8::from(beta_stepped),
-                u8::from(skip_b),
+                u8::from(skip_vol),
             );
             // D1/D2: fixed-p c1 + optimizer loss beside running-p c1.
             eprintln!(
@@ -2410,11 +2731,14 @@ comp_loss_scaled={comp_loss_scaled:.6} total_loss={loss_scalar:.6}",
             .density_net
             .forward_logits_batched(coords_norm.clone())
             .reshape([1, n, 1]);
-        let grey_absorbed = greyness_at_b_absorbed(
+        let grey_absorbed = greyness_at_vol_absorbed(
             &logits_absorbed.clone().detach().inner(),
             b_star,
             beta,
-            skip_b,
+            skip_vol,
+            vol_proj_mode,
+            &vol_eta,
+            target_vf,
             &partners.clone().inner(),
             xy_rib_pat.as_ref().map(|p| p.clone().inner()).as_ref(),
             xy_rib_prior_amp,
@@ -2457,8 +2781,11 @@ total_s={:.3} seed={RIB_SEED} backend_features={}",
     let mut vf_export = vf_loop;
     let mut rho_acceptance = last_rho.clone();
 
-    // Terminal logit-offset b-bisect finisher at β_max (export polish; full 200-outer). Smoke subsets gate on in-loop `ρ_mid`.
-    if vol_b_terminal && !smoke_subset {
+    // Terminal volume finisher at β_max. Full 200-outer always; smoke subsets too when hybrid
+    // (η/λ in-loop + logit-`b` export) so VF gates see `vf_export` not drifting in-loop VF.
+    let run_terminal_finisher =
+        vol_b_terminal && (!smoke_subset || hybrid_logit_b_terminal(vol_proj_mode));
+    if run_terminal_finisher {
         let logits_f = opt
             .density_net
             .forward_logits_batched(coords_norm.clone())
@@ -2470,53 +2797,99 @@ total_s={:.3} seed={RIB_SEED} backend_features={}",
         let partners_inner = partners.clone().inner();
         let edges_inner = edges_b1.clone().inner();
         let xy_rib_inner = xy_rib_pat.as_ref().map(|p| p.clone().inner());
-        let (vf_pred, b_star) = b_finisher_predicted_vf(
-            &logits_det_f,
-            finisher_beta,
-            target_vf,
-            vol_logit.max_bisection,
-            vol_logit.tol,
-            sym_apply_f,
-            &partners_inner,
-            xy_rib_inner.as_ref(),
-            xy_rib_prior_amp,
-            helm_on,
-            &helm,
-            &edges_inner,
-            dx_f,
-            Some(&policy_mask_inner),
-        );
-        let rho_raw_f = vol_logit.apply_shift(logits_f.clone(), b_star);
-        let rho_tilde_f = apply_rho_raw_pipeline_taped(
-            rho_raw_f,
-            sym_apply_f,
-            &partners,
-            xy_rib_pat.as_ref(),
-            xy_rib_prior_amp,
-            helm_on,
-            &helm,
-            &edges_b1,
-            dx_f,
-        );
-        let rho_tilde_f = apply_policy_editable_mask(rho_tilde_f, &policy_mask);
-        let grey_tilde = greyness_mean(
-            &HeavisideProjection::new(finisher_beta, STRIATUS_HEAVISIDE_ETA)
-                .project(rho_tilde_f.clone())
-                .into_data()
-                .value,
-        );
+        // Hybrid: η/λ in-loop; terminal export tries η@β_fin first (layout-preserving), then logit-`b`.
+        let (vf_pred, b_star, rho_bar_f, finisher_eta) = {
+            let rho_raw_eta =
+                if matches!(vol_proj_mode, VolProjMode::EtaOc) && eta_micro_b_acc.abs() > 1e-12 {
+                    sigmoid(logits_f.clone().add_scalar(eta_micro_b_acc))
+                } else {
+                    sigmoid(logits_f.clone())
+                };
+            let rho_tilde_eta = apply_rho_raw_pipeline_taped(
+                rho_raw_eta,
+                sym_apply_f,
+                &partners,
+                xy_rib_pat.as_ref(),
+                xy_rib_prior_amp,
+                helm_on,
+                &helm,
+                &edges_b1,
+                dx_f,
+            );
+            let rho_tilde_eta = apply_policy_editable_mask(rho_tilde_eta, &policy_mask);
+            let mut eta_fin_ok = false;
+            let mut vf_eta_try = f32::NAN;
+            let b_eta_try = eta_micro_b_acc;
+            let mut rho_eta_bar = rho_tilde_eta.clone().reshape([1, n, 1]);
+            if matches!(vol_proj_mode, VolProjMode::EtaOc) && hybrid_logit_b_terminal(vol_proj_mode)
+            {
+                let rho_eta_fin = vol_eta.project_with_mask(
+                    rho_tilde_eta.clone(),
+                    finisher_beta,
+                    target_vf,
+                    Some(policy_mask_vec.as_slice()),
+                );
+                let mut rho_eta_vec = rho_eta_fin.clone().into_data().value;
+                apply_non_design_skin(&mut rho_eta_vec, nx, ny, nz);
+                vf_eta_try = rho_eta_vec.iter().sum::<f32>() / rho_eta_vec.len() as f32;
+                if (vf_eta_try - target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND {
+                    rho_eta_bar = Tensor::<B, 3>::from_data(
+                        Data::new(rho_eta_vec, Shape::new([1, n, 1])),
+                        device,
+                    )
+                    .reshape([1, n, 1]);
+                    eta_fin_ok = true;
+                }
+            }
+            if eta_fin_ok {
+                (vf_eta_try, b_eta_try, rho_eta_bar, true)
+            } else {
+                let (vf_pred, b_star) = b_finisher_predicted_vf(
+                    &logits_det_f,
+                    finisher_beta,
+                    target_vf,
+                    vol_logit.max_bisection,
+                    vol_logit.tol,
+                    sym_apply_f,
+                    &partners_inner,
+                    xy_rib_inner.as_ref(),
+                    xy_rib_prior_amp,
+                    helm_on,
+                    &helm,
+                    &edges_inner,
+                    dx_f,
+                    Some(&policy_mask_inner),
+                );
+                let rho_raw_f = vol_logit.apply_shift(logits_f.clone(), b_star);
+                let rho_tilde_f = apply_rho_raw_pipeline_taped(
+                    rho_raw_f,
+                    sym_apply_f,
+                    &partners,
+                    xy_rib_pat.as_ref(),
+                    xy_rib_prior_amp,
+                    helm_on,
+                    &helm,
+                    &edges_b1,
+                    dx_f,
+                );
+                let rho_tilde_f = apply_policy_editable_mask(rho_tilde_f, &policy_mask);
+                let rho_bar_f = HeavisideProjection::new(finisher_beta, STRIATUS_HEAVISIDE_ETA)
+                    .project(rho_tilde_f.reshape([1, n, 1]))
+                    .reshape([1, n, 1]);
+                (vf_pred, b_star, rho_bar_f, false)
+            }
+        };
+        let grey_tilde = greyness_mean(&rho_bar_f.clone().into_data().value);
         let vf_pred_err = vf_pred - target_vf;
         if vf_pred_err.abs() > STRIATUS_B_FINISHER_VF_TOL {
             panic!(
-                "striatus_b_finisher_unreachable: b-bisect cannot reach target_vf on current \
-logits. beta_fin={finisher_beta:.3} b*={b_star:.6} vf_predicted={vf_pred:.6} \
+                "striatus_vol_finisher_unreachable: volume projection cannot reach target_vf on current \
+logits. vol_mode={} beta_fin={finisher_beta:.3} b*={b_star:.6} vf_predicted={vf_pred:.6} \
 vf_err={vf_pred_err:+.6} tol={STRIATUS_B_FINISHER_VF_TOL} greyness_tilde={grey_tilde:.6} \
-vf_loop={vf_loop:.6} — not exporting a bogus field"
+vf_loop={vf_loop:.6} — not exporting a bogus field",
+                vol_mode_label(vol_proj_mode),
             );
         }
-        let rho_bar_f = HeavisideProjection::new(finisher_beta, STRIATUS_HEAVISIDE_ETA)
-            .project(rho_tilde_f.reshape([1, n, 1]))
-            .reshape([1, n, 1]);
         let mut rho_export = rho_bar_f.clone().into_data().value;
         apply_non_design_skin(&mut rho_export, nx, ny, nz);
         rho_acceptance = rho_export.clone();
@@ -2531,9 +2904,12 @@ greyness_export={:.6})",
             );
         }
         eprintln!(
-            "shell_topology_rib_pattern_full_v04: terminal b-bisect finisher \
+            "shell_topology_rib_pattern_full_v04: terminal logit-b finisher vol_mode={} hybrid={} finisher_eta={} \
 beta_cont={:.3} beta_fin={finisher_beta:.3} b={b_star:.6} vf_loop={vf_loop:.6} vf_export={vf_export:.6} \
 vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
+            vol_mode_label(vol_proj_mode),
+            u8::from(hybrid_logit_b_terminal(vol_proj_mode)),
+            u8::from(finisher_eta),
             last_outer_beta,
             greyness_mean(&rho_export),
         );
@@ -2624,7 +3000,7 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
     } else {
         (f32::NAN, f32::NAN)
     };
-    let vf = if vol_b_terminal && !smoke_subset {
+    let vf = if run_terminal_finisher {
         vf_export
     } else {
         vf_loop
@@ -2662,6 +3038,8 @@ vf_export_err={vf_export_err:+.6} greyness_export={:.6}",
         vf_export,
         greyness_outer1,
         c1_peak,
+        c1_peak_fixed_p3,
+        c1_fixed_p3_loop_last,
         min_xy_var_from_outer_18: min_xy_18,
         min_xy_var_from_outer_50: if min_xy_var_from_outer_50.is_finite() {
             min_xy_var_from_outer_50
@@ -3016,11 +3394,13 @@ last_outer_wall_ms={:.1} total_wall_s={:.3} seed={} backend_features={}",
             STRIATUS_VF_ERR_ABORT_BAND
         );
         assert!(
-            (m.vf_loop - m.target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
-            "smoke vf_loop: vf={} target={} err={}",
+            (m.vf - m.target_vf).abs() <= STRIATUS_VF_ERR_ABORT_BAND,
+            "smoke vf (export when hybrid finisher ran): vf={} vf_loop={} vf_export={} target={} err={}",
+            m.vf,
             m.vf_loop,
+            m.vf_export,
             m.target_vf,
-            m.vf_loop - m.target_vf
+            m.vf - m.target_vf
         );
         assert_eq!(
             m.adam_skipped, 0,
@@ -3046,14 +3426,15 @@ last_outer_wall_ms={:.1} total_wall_s={:.3} seed={} backend_features={}",
                 m.min_xy_var_from_outer_18,
                 m.xy_var
             );
-            // Legacy Striatus: in-loop c1 should trend down before acceptance finisher reshapes ρ.
+            // Legacy Striatus: in-loop fixed-p3 c1 should trend down before acceptance finisher reshapes ρ.
             if !thesis_reconfig_enabled() {
                 assert!(
-                    m.c1_peak.is_finite() && m.c1 < m.c1_peak - 1e-3,
-                    "smoke A′ c1 trending down from peak: c1={} c1_peak={} c0={}",
-                    m.c1,
-                    m.c1_peak,
-                    m.c0
+                    m.c1_peak_fixed_p3.is_finite()
+                        && m.c1_fixed_p3_loop_last < m.c1_peak_fixed_p3 - 1e-3,
+                    "smoke A′ c1_fixed_p3 trending down from peak: loop_last={} peak={} acceptance_c1={}",
+                    m.c1_fixed_p3_loop_last,
+                    m.c1_peak_fixed_p3,
+                    m.c1
                 );
             }
         } else {
@@ -3078,7 +3459,7 @@ last_outer_wall_ms={:.1} total_wall_s={:.3} seed={} backend_features={}",
         eprintln!(
             "shell_topology_rib_pattern_full_v04: smoke logit-offset PASS ({adam_iters} outer) — \
 GREYNESS={:.6} (outer1={:.6}) max_grad_l2={:.6} vf_loop={:.6} vf_export={:.6} \
-min_xy_var@18+={:.6} xy_var={:.6} c0={:.6} c1={:.6} beta_last={:.3} beta_steps={} eq_rel={:.3e}",
+min_xy_var@18+={:.6} xy_var={:.6} c0={:.6} c1={:.6} c1_peak={:.6} c1_peak_fixed_p3={:.6} c1_loop_last={:.6} beta_last={:.3} beta_steps={} eq_rel={:.3e}",
             m.greyness,
             m.greyness_outer1,
             m.max_grad_l2,
@@ -3088,6 +3469,9 @@ min_xy_var@18+={:.6} xy_var={:.6} c0={:.6} c1={:.6} beta_last={:.3} beta_steps={
             m.xy_var,
             m.c0,
             m.c1,
+            m.c1_peak,
+            m.c1_peak_fixed_p3,
+            m.c1_fixed_p3_loop_last,
             m.last_outer_beta,
             m.beta_step_count,
             m.eq_rel_res
