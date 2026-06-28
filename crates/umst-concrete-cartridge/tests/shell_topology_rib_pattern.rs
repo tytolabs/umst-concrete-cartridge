@@ -42,7 +42,8 @@ use umst_manifold::ai::topology::{
     PlateauBetaContinuation, TopologyOptimizer, VolumeLogitOffsetProjection, VolumeProjection,
 };
 use umst_manifold::physics::adjoint::{
-    AdjointComplianceDiagnostics, AdjointFiniteStageAudit, SimpElasticMaterial,
+    AdjointComplianceDiagnostics, AdjointFiniteStageAudit, HexPreconditionerKind,
+    SimpElasticMaterial,
 };
 use umst_manifold::physics::adjoint_q1_hex::{
     AdjointComplianceQ1Hex, Q1HexSolveOptions, Q1HexTopVoidColumnFractions,
@@ -958,6 +959,95 @@ fn q1_compliance_forward(
     )
 }
 
+/// Env-selected solve options for the shell forward solve.
+///
+/// `UMST_SHELL_PRECOND` ∈ {`bj`, `cache`, unset/`jacobi`} selects the PCG
+/// preconditioner lever. **`mg` is rejected at Striatus scale** — thin-slab
+/// anisotropic grids (40×40×4) do not converge with the current geometric
+/// V-cycle (`rel_residual≈1`); use Jacobi until semicoarsening lands (D3).
+fn shell_solve_options() -> Q1HexSolveOptions {
+    let mut opts = Q1HexSolveOptions::default();
+    match env::var("UMST_SHELL_PRECOND").as_deref() {
+        Ok("mg") => {
+            eprintln!(
+                "WARN shell_solve_options: UMST_SHELL_PRECOND=mg ignored — \
+MG V-cycle fails on anisotropic Striatus slab; using Jacobi (D3)"
+            );
+        }
+        Ok("bj") => {
+            opts.precond_kind = Some(HexPreconditionerKind::BlockJacobiNodal3x3);
+            opts.use_operator_cache = true;
+        }
+        Ok("cache") => {
+            opts.use_operator_cache = true;
+        }
+        _ => {}
+    }
+    opts
+}
+
+fn d1_three_point_enabled() -> bool {
+    matches!(env::var("UMST_SHELL_D1").as_deref(), Ok("1"))
+}
+
+/// Hold Heaviside β fixed (D2 trial when continuation is the compliance culprit).
+fn parse_fixed_heaviside_beta() -> Option<f32> {
+    env::var("UMST_SHELL_FIXED_BETA")
+        .ok()
+        .and_then(|s| s.parse::<f32>().ok())
+        .filter(|b: &f32| b.is_finite() && *b > 0.0)
+}
+
+/// Fixed-p=3 compliance at a detached density (no AD tape) — D1 three-point diagnostic.
+#[allow(clippy::too_many_arguments)]
+fn rib_c1_fixed_p3_at_rho_inner(
+    rho_inner: Tensor<Inner, 3>,
+    plate: &ExtrudedPlateMechanics,
+    boundary_inner: &Tensor<Inner, 3>,
+    live_force: &Tensor<B, 3>,
+    material: &ElasticMaterial,
+    cg: &MechanicsInnerLoopConfig,
+    use_self_weight: bool,
+    sw_cfg: SelfWeightConfig,
+    comp_scale: f32,
+    device: &<B as BackendTrait>::Device,
+) -> f32 {
+    let rho_flat = rho_inner.into_data().value;
+    let bf = if use_self_weight {
+        let rho_b = Tensor::<B, 3>::from_data(
+            Data::new(rho_flat.clone(), Shape::new([1, rho_flat.len(), 1])),
+            device,
+        );
+        sw_cfg
+            .body_force(rho_b)
+            .add(live_force.clone())
+            .inner()
+    } else {
+        live_force.clone().inner()
+    };
+    let simp = SimpElasticMaterial {
+        e0: material.e0,
+        nu: material.nu,
+        p: material.simp_p,
+        e_min: material.e_min,
+    };
+    let c = AdjointComplianceQ1Hex::raw_compliance_at_rho(
+        &rho_flat,
+        plate.nx,
+        plate.ny,
+        plate.nz,
+        plate.dx,
+        plate.dy,
+        plate.dz,
+        &bf.into_data().value,
+        &boundary_inner.clone().into_data().value,
+        simp,
+        cg,
+        if use_self_weight { Some(sw_cfg) } else { None },
+    );
+    c / comp_scale
+}
+
 #[allow(clippy::too_many_arguments)]
 fn q1_compliance_with_diagnostics(
     rho_bar: Tensor<B, 3>,
@@ -981,7 +1071,7 @@ fn q1_compliance_with_diagnostics(
         mat,
         cg,
         self_weight,
-        &Q1HexSolveOptions::default(),
+        &shell_solve_options(),
     )
 }
 
@@ -1881,8 +1971,9 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
         let sched_k = outer_schedule_k(it, iterations);
         let base_beta =
             BetaContinuation::beta(sched_k, iter_total, heaviside_beta0, beta_max_sched);
-        let beta =
-            plateau_beta.effective_beta(base_beta, &greyness_hist, beta_max_sched, last_outer_beta);
+        let beta = parse_fixed_heaviside_beta().unwrap_or_else(|| {
+            plateau_beta.effective_beta(base_beta, &greyness_hist, beta_max_sched, last_outer_beta)
+        });
         assert!(
             it == 1 || beta + 1e-6 >= last_outer_beta,
             "striatus_beta_monotone: outer {it} beta={beta:.6} < prev={last_outer_beta:.6}"
@@ -1957,6 +2048,69 @@ gate_threshold_matched_p={:.6} (0.6·c0_p_final @ p_gate; §9 pairing) eq_rel ba
             .project(rho_tilde.clone())
             .reshape([1, n, 1]);
         let rho_mech = rho_mid.clone();
+
+        if d1_three_point_enabled() {
+            let rho_a_inner = sigmoid(logits.clone().detach()).inner();
+            let c_a = rib_c1_fixed_p3_at_rho_inner(
+                rho_a_inner,
+                &plate,
+                &boundary_inner,
+                &live_force,
+                &material,
+                &cg_cfg,
+                use_self_weight,
+                sw_cfg,
+                comp_scale,
+                device,
+            );
+            let c_b = rib_c1_fixed_p3_at_rho_inner(
+                rho_raw.clone().detach().inner(),
+                &plate,
+                &boundary_inner,
+                &live_force,
+                &material,
+                &cg_cfg,
+                use_self_weight,
+                sw_cfg,
+                comp_scale,
+                device,
+            );
+            let c_c = rib_c1_fixed_p3_at_rho_inner(
+                rho_mid.clone().detach().inner(),
+                &plate,
+                &boundary_inner,
+                &live_force,
+                &material,
+                &cg_cfg,
+                use_self_weight,
+                sw_cfg,
+                comp_scale,
+                device,
+            );
+            let culprit = if c_b > c_a * 1.001 {
+                if c_c > c_b * 1.001 {
+                    "heaviside/filter/sym"
+                } else if c_c < c_b * 0.999 {
+                    "heaviside/filter/sym(LOWERS)"
+                } else {
+                    "volume-projection"
+                }
+            } else if c_c > c_a * 1.001 {
+                "heaviside/filter/sym"
+            } else {
+                "none(Adam-descent-ok)"
+            };
+            eprintln!(
+                "shell_topology_rib_pattern_full_v04: D1 three-point outer {it}/{iter_total} \
+beta={beta:.3} sym={} | (a)post-Adam={c_a:.6} (b)post-vol={c_b:.6} (c)post-Heaviside={c_c:.6} \
+Δab={:+.6} Δbc={:+.6} Δac={:+.6} culprit={culprit}",
+                u8::from(sym_apply),
+                c_b - c_a,
+                c_c - c_b,
+                c_c - c_a,
+            );
+        }
+
         if metrics_on && (it % 20 == 0 || it == iterations) {
             let grey_mid = greyness_mean(&rho_mid.clone().into_data().value);
             let vf_mid_m = rho_mid.clone().into_data().value.iter().sum::<f32>() / n as f32;
