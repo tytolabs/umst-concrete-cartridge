@@ -1509,7 +1509,7 @@ fn greyness_at_vol_absorbed<Bk: BackendTrait<FloatElem = f32>>(
         VolProjMode::LogitB if !skip_vol => sigmoid(logits_det.clone().add_scalar(b)),
         _ => sigmoid(logits_det.clone()),
     };
-    let mut rho_tilde = apply_rho_raw_pipeline_detached(
+    let rho_tilde = apply_rho_raw_pipeline_detached(
         rho_raw,
         false,
         partners,
