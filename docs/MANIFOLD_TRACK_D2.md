@@ -21,6 +21,8 @@ Real-adjoint gradient is FD-correct. Compliance rises **downstream**:
 
 **Hybrid export (automatic for `eta` / `lambda`):** terminal finisher tries **η@β_fin** (layout-preserving), then logit-`b` fallback. Acceptance VF gates read `vf_export`; in-loop `c1_fixed_p3` logs track descent on η path.
 
+> **B0 update:** default export for `eta` is now **OC λ** (`UMST_SHELL_EXPORT_VOL=oc`) — see [MANIFOLD_TRACK_B0.md](MANIFOLD_TRACK_B0.md). Logit-b export remains behind `UMST_SHELL_EXPORT_VOL=logit`.
+
 ### Tier 4 refinements (acceptance c1 spike mitigation)
 
 | Lever | Env / API | Effect |
