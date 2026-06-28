@@ -4009,7 +4009,7 @@ dependencies = [
 [[package]]
 name = "umst-layout-codegen"
 version = "0.1.0"
-source = "git+https://github.com/tytolabs/umst-manifold.git?rev=1a07e26fcd193036694160b4eefe56bfe25de2e4#1a07e26fcd193036694160b4eefe56bfe25de2e4"
+source = "git+https://github.com/tytolabs/umst-manifold.git?rev=da3eed3d1c7f822d42a8972f6ed41fceebe26fc0#da3eed3d1c7f822d42a8972f6ed41fceebe26fc0"
 dependencies = [
  "serde",
  "serde_json",
@@ -4019,7 +4019,7 @@ dependencies = [
 [[package]]
 name = "umst-manifold"
 version = "0.1.0"
-source = "git+https://github.com/tytolabs/umst-manifold.git?rev=1a07e26fcd193036694160b4eefe56bfe25de2e4#1a07e26fcd193036694160b4eefe56bfe25de2e4"
+source = "git+https://github.com/tytolabs/umst-manifold.git?rev=da3eed3d1c7f822d42a8972f6ed41fceebe26fc0#da3eed3d1c7f822d42a8972f6ed41fceebe26fc0"
 dependencies = [
  "bincode",
  "burn",
@@ -4063,7 +4063,7 @@ dependencies = [
 [[package]]
 name = "umst-runtime-arena"
 version = "0.1.0"
-source = "git+https://github.com/tytolabs/umst-manifold.git?rev=1a07e26fcd193036694160b4eefe56bfe25de2e4#1a07e26fcd193036694160b4eefe56bfe25de2e4"
+source = "git+https://github.com/tytolabs/umst-manifold.git?rev=da3eed3d1c7f822d42a8972f6ed41fceebe26fc0#da3eed3d1c7f822d42a8972f6ed41fceebe26fc0"
 dependencies = [
  "thiserror 1.0.69",
 ]
