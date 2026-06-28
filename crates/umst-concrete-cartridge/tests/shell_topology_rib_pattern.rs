@@ -37,6 +37,9 @@ use burn::tensor::{
     Data, Int, Shape, Tensor,
 };
 use burn_ndarray::NdArray;
+use umst_concrete_cartridge::print_ready::symmetry::{
+    apply_reflection_xy_average, reflection_xy_partner_indices,
+};
 use umst_manifold::ai::topology::{
     logit_offset_vf_from_slice, BetaContinuation, ContinuationSchedule, HeavisideProjection,
     PlateauBetaContinuation, TopologyOptimizer, VolumeEtaProjection, VolumeLogitOffsetProjection,
@@ -56,15 +59,41 @@ use umst_manifold::physics::q1_hex_elasticity::{
 };
 use umst_manifold::physics::time_orchestration::MechanicsInnerLoopConfig;
 use umst_manifold::physics::topology_filter::HelmholtzFilter;
-use umst_research::checkpoint_policy::CompliancePeakCheckpoint;
-
-use umst_concrete_cartridge::print_ready::symmetry::{
-    apply_reflection_xy_average, reflection_xy_partner_indices,
-};
 
 type AD = Autodiff<NdArray<f32>>;
 type B = AD;
 type Inner = <AD as AutodiffBackend>::InnerBackend;
+
+/// B6 c1 peak tracker (inline — `umst-research` is local-only, not in CI).
+#[derive(Debug, Clone)]
+struct CompliancePeakCheckpoint {
+    best: f64,
+    peak: f64,
+}
+
+impl CompliancePeakCheckpoint {
+    fn new() -> Self {
+        Self {
+            best: f64::INFINITY,
+            peak: f64::NEG_INFINITY,
+        }
+    }
+
+    fn observe(&mut self, compliance: f64) {
+        if compliance.is_finite() {
+            if compliance < self.best {
+                self.best = compliance;
+            }
+            if compliance > self.peak {
+                self.peak = compliance;
+            }
+        }
+    }
+
+    fn peak_metric(&self) -> f64 {
+        self.peak
+    }
+}
 
 struct ScaleWeights(f32);
 impl<Bk: BackendTrait> ModuleMapper<Bk> for ScaleWeights {
