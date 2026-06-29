@@ -1000,8 +1000,8 @@ fn q1_compliance_forward(
 
 /// Env-selected solve options for the shell forward solve.
 ///
-/// `UMST_SHELL_PRECOND` ∈ {`bj`, `cache`, `mg`, unset/`jacobi`} selects the PCG
-/// preconditioner lever. Block-Jacobi and geometric MG omit op-cache (nodal-block /
+/// `UMST_SHELL_PRECOND` ∈ {`bj`, `cache`, `mg`, `mg-semi`, unset/`jacobi`} selects the PCG
+/// preconditioner lever. Block-Jacobi and MG variants omit op-cache (nodal-block /
 /// BPX paths need direct matvec parity on the f64 Striatus lane).
 fn shell_solve_options() -> Q1HexSolveOptions {
     let mut opts = Q1HexSolveOptions::default();
@@ -1013,6 +1013,16 @@ fn shell_solve_options() -> Q1HexSolveOptions {
                 eprintln!(
                     "WARN shell_solve_options: UMST_SHELL_PRECOND=mg ignored — \
 set UMST_SHELL_MG_AB=1 to enable geometric MG measurement (B1 A/B)"
+                );
+            }
+        }
+        Ok("mg-semi") | Ok("semi") => {
+            if matches!(env::var("UMST_SHELL_MG_AB").as_deref(), Ok("1")) {
+                opts.precond_kind = Some(HexPreconditionerKind::SemicoarseningMultigridVCycle);
+            } else {
+                eprintln!(
+                    "WARN shell_solve_options: UMST_SHELL_PRECOND=mg-semi ignored — \
+set UMST_SHELL_MG_AB=1 to enable semicoarsening MG measurement (D4 A/B)"
                 );
             }
         }
