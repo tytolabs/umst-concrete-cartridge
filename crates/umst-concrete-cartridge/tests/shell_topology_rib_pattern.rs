@@ -1000,34 +1000,74 @@ fn q1_compliance_forward(
 
 /// Env-selected solve options for the shell forward solve.
 ///
-/// `UMST_SHELL_PRECOND` ∈ {`bj`, `cache`, unset/`jacobi`} selects the PCG
-/// preconditioner lever. **`mg` is rejected at Striatus scale** — thin-slab
-/// anisotropic grids (40×40×4) do not converge with the current geometric
-/// V-cycle (`rel_residual≈1`); use Jacobi until semicoarsening lands (D3).
+/// `UMST_SHELL_PRECOND` ∈ {`bj`, `cache`, `mg`, unset/`jacobi`} selects the PCG
+/// preconditioner lever. Block-Jacobi and geometric MG omit op-cache (nodal-block /
+/// BPX paths need direct matvec parity on the f64 Striatus lane).
 fn shell_solve_options() -> Q1HexSolveOptions {
     let mut opts = Q1HexSolveOptions::default();
     match env::var("UMST_SHELL_PRECOND").as_deref() {
         Ok("mg") => {
-            eprintln!(
-                "WARN shell_solve_options: UMST_SHELL_PRECOND=mg ignored — \
-MG V-cycle fails on anisotropic Striatus slab; using Jacobi (D3)"
-            );
+            if matches!(env::var("UMST_SHELL_MG_AB").as_deref(), Ok("1")) {
+                opts.precond_kind = Some(HexPreconditionerKind::GeometricMultigridVCycle);
+            } else {
+                eprintln!(
+                    "WARN shell_solve_options: UMST_SHELL_PRECOND=mg ignored — \
+set UMST_SHELL_MG_AB=1 to enable geometric MG measurement (B1 A/B)"
+                );
+            }
         }
         Ok("bj") => {
             opts.precond_kind = Some(HexPreconditionerKind::BlockJacobiNodal3x3);
-            opts.use_operator_cache = true;
         }
         Ok("cache") => {
             opts.use_operator_cache = true;
         }
         _ => {}
     }
-    opts.pcg_warm_start = true;
+    opts.pcg_warm_start = !matches!(env::var("UMST_SHELL_PCG_WARM").as_deref(), Ok("0"));
+    if matches!(env::var("UMST_SHELL_OP_CACHE").as_deref(), Ok("0")) {
+        opts.use_operator_cache = false;
+    }
     opts
 }
 
 fn d1_three_point_enabled() -> bool {
     matches!(env::var("UMST_SHELL_D1").as_deref(), Ok("1"))
+}
+
+/// Write outer checkpoint when `UMST_SHELL_CKPT_DIR` is set (every 10 outers).
+fn maybe_write_b6_checkpoint(
+    outer: usize,
+    wall_ms: f64,
+    vf: f32,
+    greyness: f32,
+    c1: f32,
+    eq_rel: f32,
+    rho: &[f32],
+) {
+    let Ok(dir) = env::var("UMST_SHELL_CKPT_DIR") else {
+        return;
+    };
+    if outer == 0 || outer % 10 != 0 {
+        return;
+    }
+    let _ = std::fs::create_dir_all(&dir);
+    let rho_sum: f64 = rho.iter().map(|&r| r as f64).sum();
+    let doc = serde_json::json!({
+        "outer": outer,
+        "wall_ms": wall_ms,
+        "vf": vf,
+        "greyness": greyness,
+        "c1": c1,
+        "eq_rel": eq_rel,
+        "rho_len": rho.len(),
+        "rho_sum": rho_sum,
+    });
+    let path = format!("{dir}/outer_{outer:04}.json");
+    if let Ok(s) = serde_json::to_string_pretty(&doc) {
+        let _ = std::fs::write(&path, s);
+        eprintln!("shell_topology_rib_pattern_full_v04: checkpoint -> {path}");
+    }
 }
 
 /// Hold Heaviside β fixed (D2 trial when continuation is the compliance culprit).
@@ -1133,7 +1173,6 @@ fn q1_compliance_with_region(
         self_weight,
         &shell_solve_options(),
         region,
-        None,
     )
 }
 
@@ -2882,6 +2921,20 @@ comp_loss_scaled={comp_loss_scaled:.6} total_loss={loss_scalar:.6}",
             greyness_outer1 = grey_absorbed;
         }
         last_outer_wall_ms = t_outer_start.elapsed().as_secs_f64() * 1000.0;
+        let eq_rel_ckpt = h4_bundle
+            .as_ref()
+            .map(|d| d.equilibrium_rel_residual)
+            .unwrap_or(f32::NAN);
+        let grey_ckpt = greyness_mean(&last_rho);
+        maybe_write_b6_checkpoint(
+            it,
+            last_outer_wall_ms,
+            last_rho.iter().sum::<f32>() / last_rho.len().max(1) as f32,
+            grey_ckpt,
+            c1,
+            eq_rel_ckpt,
+            &last_rho,
+        );
         if metrics_on || smoke_subset {
             eprintln!(
                 "shell_topology_rib_pattern_full_v04: outer {it}/{iterations} wall_ms={last_outer_wall_ms:.1} \
