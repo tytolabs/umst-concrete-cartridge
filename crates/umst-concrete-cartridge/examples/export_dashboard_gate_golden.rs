@@ -1,8 +1,6 @@
 //! Export frozen `gate_check_mix` verdicts for the UMST dashboard parity bundle.
 //! Run: `cargo run -p umst-concrete-cartridge --features agent-layer --example export_dashboard_gate_golden`
 
-#![cfg(feature = "agent-layer")]
-
 use serde_json::{json, Value};
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::research::{gate_check_mix, GateVerdict};

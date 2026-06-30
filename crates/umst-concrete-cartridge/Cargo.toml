@@ -148,3 +148,8 @@ path = "tests/topology_mix_spec.rs"
 name = "dual_track_comparison"
 path = "examples/dual_track_comparison.rs"
 required-features = ["proxy-loop"]
+
+[[example]]
+name = "export_dashboard_gate_golden"
+path = "examples/export_dashboard_gate_golden.rs"
+required-features = ["agent-layer"]
