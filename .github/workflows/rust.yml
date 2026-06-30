@@ -20,7 +20,7 @@ env:
   # repos in CI; fall back to the system git CLI which handles it.
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
   # Widest Linux-safe union: `blas-accelerate` / `mac-fast` pull Apple Accelerate and fail on ubuntu-latest.
-  CI_WORKSPACE_FEATURES: solver-experimental,render
+  CI_WORKSPACE_FEATURES: solver-experimental
 
 jobs:
   readme-sanity:
