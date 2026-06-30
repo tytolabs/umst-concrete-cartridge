@@ -19,7 +19,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Mechanised** | 34 |
 | **Structural** | 93 |
 | **Empirical** | 34 |
-| **Literature** | 50 |
+| **Literature** | 48 |
 | **NONE** | 279 |
 
 ## Mechanised
@@ -212,7 +212,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `ultimate_doh` | `crates/umst-concrete-cartridge/src/homogeneous.rs:67` | `literature://Mills-1966-gel-stiffness-closure` | — | "Mills (1966); α_inf = 1.031 w/c / (0.194 + w/c)" \| "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)" |
 | `embodied_co2_kg_per_m3` | `crates/umst-concrete-cartridge/src/homogeneous.rs:243` | `literature://EN-15804+A2-indicative-EPD-intensities` | — | "EN 15804+A2 (2019) environmental product declarations — indicative cradle-to-gate CO₂e intensities per constituent class" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3); inline coefficients match bundled EPD intensity convention" |
 | `constituent_masses_kg_m3` | `crates/umst-concrete-cartridge/src/homogeneous.rs:271` | `literature://ACI-211.1-binder-dosage-convention` | — | "ACI 211.1 — Standard Practice for Selecting Proportions for Normal, Heavyweight, and Mass Concrete" \| "350 kg/m³ binder dosage convention for constituent mass reconstruction from scalar mix spec" |
-| `PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/lib.rs:97` | `literature://wire-schema-physics-pipeline-v1` | — | "physics_pipeline schema tag (`physics_pipeline.v1`)" \| "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape." |
+| `PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/lib.rs:92` | `literature://wire-schema-physics-pipeline-v1` | — | "physics_pipeline schema tag (`physics_pipeline.v1`)" \| "`schema_version` string on serde `PhysicsPipelineReport` — bump tag when breaking report shape." |
 | `CEMENT_REACTION_ENTHALPY_J_PER_KG` | `crates/umst-concrete-cartridge/src/material_transition.rs:12` | `literature://cement-hydration-enthalpy-order-of-magnitude` | — | "Representative cementitious hydration enthalpy scale (order 450 J/g binder mass basis)." \| "`CEMENT_REACTION_ENTHALPY_J_PER_KG` feeds Clausius–Duhem transition gate via [`MaterialTransitionParams`]." |
 | `CEMENT_DEFAULT_S_INTRINSIC_MPA` | `crates/umst-concrete-cartridge/src/material_transition.rs:19` | `literature://powers-intrinsic-strength-scale` | — | "Powers-style monotonic strength closure intrinsic scale (order 240 MPa)." \| "`CEMENT_DEFAULT_S_INTRINSIC_MPA` upper-bounds admissible strength jumps in transition gate." |
 | `ClinkerPhase` | `crates/umst-concrete-cartridge/src/physics/clinker_eos.rs:22` | `literature://stat-mech/vinet-clinker-phase-enum` | — | "Manzano et al. 2009 J. Am. Chem. Soc. 131:7416; Speziale et al. 2008 Phys. Chem. Miner. 35:573; Clark et al. 2008 Cem. Concr. Res. 38:19; Pellenq et al. 2009 PNAS 106:16102" \| "Discrete phase tags carrying (V0, K0, K0') for Vinet P(V) calibration" |
@@ -243,8 +243,6 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `PRINTABLE_TAU_LO` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:28` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ ∈ [180, 360] Pa extrusion window" |
 | `PRINTABLE_TAU_HI` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:33` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ ∈ [180, 360] Pa extrusion window" |
 | `printability_window_ok` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:59` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ band AND extrudability ≥ 0.35" |
-| `reflection_xy_partner_indices` | `crates/umst-concrete-cartridge/src/print_ready/symmetry.rs:12` | `literature://symmetry-density-topology-sheet` | — | "Sigmund & Maute 2013, Struct. Multidisc. Optim. 48:1031-1055" \| "Index tensor `[1, N, 4]` listing the four xy-reflection partners of each primal vertex" |
-| `apply_reflection_xy_average` | `crates/umst-concrete-cartridge/src/print_ready/symmetry.rs:45` | `literature://symmetry-density-topology-sheet` | — | "Sigmund & Maute 2013, Struct. Multidisc. Optim. 48:1031-1055" \| "Arithmetic mean of `rho` over the four xy-reflection partners (gather + mean)" |
 | `EXTRUDABLE_TAU_LO_PA` | `crates/umst-concrete-cartridge/src/proxies/virtual_extrusion.rs:4` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — lower τ₀ bound" \| "τ₀ ≥ 180 Pa" |
 | `EXTRUDABLE_TAU_HI_PA` | `crates/umst-concrete-cartridge/src/proxies/virtual_extrusion.rs:10` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — upper τ₀ bound" \| "τ₀ ≤ 360 Pa" |
 | `extrusion_band_score` | `crates/umst-concrete-cartridge/src/proxies/virtual_extrusion.rs:16` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "0.5 when τ₀ ∈ band else 0" |
@@ -321,19 +319,19 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `HttpMixDomainEvaluator` | `crates/umst-concrete-cartridge/src/gate_policy.rs:40` | `NONE` | — | Zero-sized HTTP shim overlay; supplies cartridge `gate_family` for mix prediction vs physics telemetry. |
 | `HomogeneousError` | `crates/umst-concrete-cartridge/src/homogeneous.rs:28` | `NONE` | — | Dispatch error: Jennings-not-yet, invalid mix; no formal claim. |
 | `mix_hydration_state` | `crates/umst-concrete-cartridge/src/homogeneous.rs:76` | `NONE` | — | Internal homogeneous helper composing calibrated α(t,T,scm) and effective w/c from profile parameters. |
-| `ConcreteTransitionCartridge, ConcreteTransitionWitness` | `crates/umst-concrete-cartridge/src/lib.rs:44` | `NONE` | — | Re-exports concrete transition gate cartridge when `manifold-gate` is enabled. |
-| `cement_reaction_extent_kinetics_spec, CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA, CEMENT_REACTION_ENTHALPY_J_PER_KG` | `crates/umst-concrete-cartridge/src/lib.rs:49` | `NONE` | — | Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled. |
-| `gate_cartridge_witness, with_gate_cartridge` | `crates/umst-concrete-cartridge/src/lib.rs:57` | `NONE` | — | Re-exports THMC injectable gate helpers when `solver-experimental` enabled. |
-| `apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, MaterialCompositionTensor, PhysicalResult` | `crates/umst-concrete-cartridge/src/lib.rs:65` | `NONE` | — | Re-exports manifold façade symbols for ergonomics only. |
-| `ConcretePolicyEvaluator` | `crates/umst-concrete-cartridge/src/lib.rs:72` | `NONE` | — | Re-exports cartridge HTTP gate policy evaluator. |
-| `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/lib.rs:76` | `NONE` | — | Stable import path for MCP/CLI integration tests. |
-| `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/lib.rs:80` | `NONE` | — | JSON envelope for staged tensor outputs. |
-| `PhysicsPipelineSummary` | `crates/umst-concrete-cartridge/src/lib.rs:85` | `NONE` | — | Scalar digest accompanying report JSON. |
-| `PipelineStageRecord` | `crates/umst-concrete-cartridge/src/lib.rs:89` | `NONE` | — | Stage record type embedded in [`PhysicsPipelineReport`]. |
-| `PipelineStageStatus` | `crates/umst-concrete-cartridge/src/lib.rs:93` | `NONE` | — | Serialized stage disposition enum for MCP/CLI audit trails. |
-| `GateEvaluator, ThermodynamicTransitionEvaluator, TransitionGateEvaluator` | `crates/umst-concrete-cartridge/src/lib.rs:103` | `NONE` | — | Re-exports host transition gate traits when `manifold-gate` is enabled. |
-| `UmstManifest` | `crates/umst-concrete-cartridge/src/lib.rs:110` | `NONE` | — | Re-exports manifold deployment manifest when `manifold-manifest` is enabled. |
-| `ros` | `crates/umst-concrete-cartridge/src/lib.rs:115` | `NONE` | — | Re-exports manifold ROS serde DTOs when `ros2-contract` is enabled. |
+| `ConcreteTransitionCartridge, ConcreteTransitionWitness` | `crates/umst-concrete-cartridge/src/lib.rs:39` | `NONE` | — | Re-exports concrete transition gate cartridge when `manifold-gate` is enabled. |
+| `cement_reaction_extent_kinetics_spec, CementMaterialParams, CEMENT_DEFAULT_S_INTRINSIC_MPA, CEMENT_REACTION_ENTHALPY_J_PER_KG` | `crates/umst-concrete-cartridge/src/lib.rs:44` | `NONE` | — | Re-exports W9 Tier-2c cement closure SSOT when `tier2c-handshake` is enabled. |
+| `gate_cartridge_witness, with_gate_cartridge` | `crates/umst-concrete-cartridge/src/lib.rs:52` | `NONE` | — | Re-exports THMC injectable gate helpers when `solver-experimental` enabled. |
+| `apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, MaterialCompositionTensor, PhysicalResult` | `crates/umst-concrete-cartridge/src/lib.rs:60` | `NONE` | — | Re-exports manifold façade symbols for ergonomics only. |
+| `ConcretePolicyEvaluator` | `crates/umst-concrete-cartridge/src/lib.rs:67` | `NONE` | — | Re-exports cartridge HTTP gate policy evaluator. |
+| `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/lib.rs:71` | `NONE` | — | Stable import path for MCP/CLI integration tests. |
+| `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/lib.rs:75` | `NONE` | — | JSON envelope for staged tensor outputs. |
+| `PhysicsPipelineSummary` | `crates/umst-concrete-cartridge/src/lib.rs:80` | `NONE` | — | Scalar digest accompanying report JSON. |
+| `PipelineStageRecord` | `crates/umst-concrete-cartridge/src/lib.rs:84` | `NONE` | — | Stage record type embedded in [`PhysicsPipelineReport`]. |
+| `PipelineStageStatus` | `crates/umst-concrete-cartridge/src/lib.rs:88` | `NONE` | — | Serialized stage disposition enum for MCP/CLI audit trails. |
+| `GateEvaluator, ThermodynamicTransitionEvaluator, TransitionGateEvaluator` | `crates/umst-concrete-cartridge/src/lib.rs:98` | `NONE` | — | Re-exports host transition gate traits when `manifold-gate` is enabled. |
+| `UmstManifest` | `crates/umst-concrete-cartridge/src/lib.rs:105` | `NONE` | — | Re-exports manifold deployment manifest when `manifold-manifest` is enabled. |
+| `ros` | `crates/umst-concrete-cartridge/src/lib.rs:110` | `NONE` | — | Re-exports manifold ROS serde DTOs when `ros2-contract` is enabled. |
 | `cement_reaction_extent_kinetics_spec` | `crates/umst-concrete-cartridge/src/material_transition.rs:26` | `NONE` | — | Bundled THMC kinetics witness for parity harnesses; values mirror cartridge calibration lane. |
 | `CementMaterialParams` | `crates/umst-concrete-cartridge/src/material_transition.rs:58` | `NONE` | — | Zero-sized cement closure witness for harnesses without a loaded [`Profile`]. |
 | `MIX_FEATURE_COUNT` | `crates/umst-concrete-cartridge/src/mix_layout.rs:13` | `NONE` | — | Structural convention for CLI ↔ tensor engines; documented here as SSOT for column indices. |
