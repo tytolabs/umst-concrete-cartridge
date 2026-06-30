@@ -32,7 +32,9 @@ except ImportError as e:
     sys.exit(1)
 
 REPO    = Path(__file__).resolve().parents[1]
-ART_DIR = REPO / "crates/umst-concrete-cartridge/examples/_artifacts/beam"
+WORKSPACE = REPO.parent
+TO_ARCHIVED = Path(os.environ.get("UMST_TO_ARCHIVED_CRATE", WORKSPACE / "crates" / "umst-topology-opt-archived"))
+ART_DIR = TO_ARCHIVED / "examples" / "_artifacts" / "beam"
 OUT_DIR = REPO / "notebooks/_artifacts"
 
 # ── Layout (SVG units = px at 1×; cairosvg renders at 2×) ────────────────────

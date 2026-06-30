@@ -18,11 +18,6 @@ pub mod pipeline;
 #[cfg(feature = "virtual-proxies")]
 pub mod proxies;
 
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Re-exports Striatus shell artefact helpers (symmetry gather) without new physics.
-pub mod print_ready;
-
 pub mod cartridge_registry;
 /// Wire DTOs and pure `predict` / schema bytes without `serde_json` in this crate.
 pub mod facade;

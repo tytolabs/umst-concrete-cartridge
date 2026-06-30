@@ -24,7 +24,7 @@
 #   # Roof load: default uniform (B6 full); UMST_SHELL_ROOF_RAMP=1 => x ramp at UMST_SHELL_ROOF_RAMP_F (default 0.2)
 #   bash notebooks/_run_shell_demo.sh 2>&1 | tee shell_track_l_40cube4_i200.log
 #
-# Rust writes under crates/umst-concrete-cartridge/examples/_artifacts/shell/ (manifest.json, final.npy, …).
+# Rust writes under MaOS-Workspace/crates/umst-topology-opt-archived/examples/_artifacts/shell/ (manifest.json, final.npy, …).
 # This script writes under notebooks/_artifacts/: striatus_emergence.gif, striatus_shell_v0.4.stl,
 # striatus_shell_v0.4.print_ready.json (via export_print_ready.py). Re-run exporter only from repo root:
 #   python3 notebooks/export_print_ready.py
@@ -54,7 +54,8 @@
 # Remove stale iter_*.npy before a run if grid changed (e.g. find …/shell -name 'iter_*.npy' -delete).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "${ROOT}"
+WORKSPACE="$(cd "${ROOT}/.." && pwd)"
+TO_CRATE="${UMST_TO_ARCHIVED_CRATE:-${WORKSPACE}/crates/umst-topology-opt-archived}"
 export UMST_SHELL_SELF_WEIGHT="${UMST_SHELL_SELF_WEIGHT:-0}"
 export UMST_SHELL_ITERS="${UMST_SHELL_ITERS:-200}"
 export UMST_SHELL_DUMP_ITER="${UMST_SHELL_DUMP_ITER:-0}"
@@ -67,7 +68,8 @@ if [[ -z "${PYTHON:-}" ]]; then
     PYTHON="python3"
   fi
 fi
-"${CARGO}" run --release -p umst-concrete-cartridge --example optimize_shell_3d --features 'solver-experimental render'
+"${CARGO}" run --release --manifest-path "${TO_CRATE}/Cargo.toml" -p umst-topology-opt-archived --example optimize_shell_3d --features 'solver-experimental render'
+cd "${ROOT}"
 "${PYTHON}" "${ROOT}/notebooks/render_shell_gif.py"
 "${PYTHON}" "${ROOT}/notebooks/overlay_final_isostatics.py"
 "${PYTHON}" "${ROOT}/notebooks/stitch_gif.py"

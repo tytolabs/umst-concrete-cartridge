@@ -4,13 +4,18 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import numpy as np
 import pyvista as pv
 
 REPO = Path(__file__).resolve().parents[1]
-SHELL = REPO / "crates" / "umst-concrete-cartridge" / "examples" / "_artifacts" / "shell"
+WORKSPACE = REPO.parent
+_TO_DEFAULT = WORKSPACE / "crates" / "umst-topology-opt-archived"
+
+TO_ARCHIVED = Path(os.environ.get("UMST_TO_ARCHIVED_CRATE", _TO_DEFAULT))
+SHELL = TO_ARCHIVED / "examples" / "_artifacts" / "shell"
 FRAMES = REPO / "notebooks" / "_artifacts" / "frames"
 
 

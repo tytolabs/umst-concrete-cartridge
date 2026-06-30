@@ -7,8 +7,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NB="$ROOT/notebooks"
-CRATE_ROOT="$ROOT/crates/umst-concrete-cartridge"
-ART_DIR="$CRATE_ROOT/examples/_artifacts/beam"
+WORKSPACE="$(cd "${ROOT}/.." && pwd)"
+TO_CRATE="${UMST_TO_ARCHIVED_CRATE:-${WORKSPACE}/crates/umst-topology-opt-archived}"
+ART_DIR="$TO_CRATE/examples/_artifacts/beam"
 
 log() { printf '%s\n' "[beam-demo] $*"; }
 warn() { printf '%s\n' "[beam-demo] WARN: $*" >&2; }
@@ -60,9 +61,9 @@ log "UMST_BEAM_DUMP=$UMST_BEAM_DUMP UMST_BEAM_ITERS=$UMST_BEAM_ITERS UMST_BEAM_D
 log "cleaning previous beam iter dumps + manifest under $ART_DIR"
 rm -f "$ART_DIR"/iter_*.npy "$ART_DIR/manifest.json"
 
-cd "$CRATE_ROOT"
+cd "$TO_CRATE"
 
-if ! cargo run --release -p umst-concrete-cartridge \
+if ! cargo run --release --manifest-path "${TO_CRATE}/Cargo.toml" -p umst-topology-opt-archived \
   --example optimize_rc_beam \
   --features solver-experimental; then
   warn "optimize_rc_beam failed — writing synthetic NPY artefacts for GIF smoke test"

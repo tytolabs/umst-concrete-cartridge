@@ -63,6 +63,8 @@ def write_npy_f32(path: Path, data: list[float], shape: tuple[int, ...]) -> None
 
 def main() -> None:
     repo = Path(__file__).resolve().parents[1]
+    workspace = repo.parent
+    to_archived = Path(os.environ.get("UMST_TO_ARCHIVED_CRATE", workspace / "crates" / "umst-topology-opt-archived"))
     # Same discrete grid as `optimize_rc_beam.rs`.
     nx, ny = 32, 8
     n_nodes = nx * ny
@@ -72,7 +74,7 @@ def main() -> None:
     epochs = _parse_positive_int("UMST_BEAM_ITERS", os.environ.get("UMST_BEAM_ITERS"), 90)
     stride = _parse_positive_int("UMST_BEAM_DUMP_STRIDE", os.environ.get("UMST_BEAM_DUMP_STRIDE"), 3)
 
-    art = repo / "crates/umst-concrete-cartridge/examples/_artifacts/beam"
+    art = to_archived / "examples" / "_artifacts" / "beam"
     art.mkdir(parents=True, exist_ok=True)
     for p in art.glob("iter_*.npy"):
         p.unlink(missing_ok=True)

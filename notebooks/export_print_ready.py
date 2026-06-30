@@ -26,6 +26,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import sys
 import time
 from pathlib import Path
@@ -35,7 +36,9 @@ import pyvista as pv
 import trimesh
 
 REPO = Path(__file__).resolve().parents[1]
-SHELL = REPO / "crates" / "umst-concrete-cartridge" / "examples" / "_artifacts" / "shell"
+WORKSPACE = REPO.parent
+TO_ARCHIVED = Path(os.environ.get("UMST_TO_ARCHIVED_CRATE", WORKSPACE / "crates" / "umst-topology-opt-archived"))
+SHELL = TO_ARCHIVED / "examples" / "_artifacts" / "shell"
 OUT_DIR = REPO / "notebooks" / "_artifacts"
 
 # v0.4 artefact names (B8); keep v0.3 filenames as aliases for older scripts until removed.
