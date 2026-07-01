@@ -17,7 +17,7 @@ provenance_sha256 = "6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a
 primary_reference = "Prototype SELFHEAL specialty dataset (Boundary)"
 
 [provenance.formal]
-anchor = "lean://umst-formal/Lean/Powers.lean#powers_monotone"
+anchor = "lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone"
 status = "Boundary"
 axioms = ["physicalSecondLaw"]
 rationale = "Self-healing kinetics augmentation is empirical; gated as Boundary."

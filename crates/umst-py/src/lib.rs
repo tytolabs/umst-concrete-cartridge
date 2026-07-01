@@ -241,7 +241,7 @@ pub fn canonical_json<'py>(
 }
 
 #[cfg(feature = "agent-layer")]
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
@@ -333,7 +333,7 @@ pub fn memory_query(
 }
 
 #[cfg(feature = "agent-layer")]
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition

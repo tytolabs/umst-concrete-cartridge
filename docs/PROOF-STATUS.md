@@ -26,40 +26,40 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 
 | Symbol | File | formal_anchor | catalog_id | Citation / envelope / rationale |
 |--------|------|---------------|------------|-----------------------------------|
-| `PowersGelParameters` | `crates/umst-concrete-cartridge/src/calibration.rs:42` | `lean://umst-formal/Lean/Powers.lean#PowersState` | thermodynamic_mix | physicalSecondLaw |
-| `FormalBlock` | `crates/umst-concrete-cartridge/src/calibration.rs:56` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `CalibrationMeta` | `crates/umst-concrete-cartridge/src/calibration.rs:83` | `lean://umst-formal/Lean/Powers.lean#S_intrinsic` | thermodynamic_mix | physicalSecondLaw |
+| `PowersGelParameters` | `crates/umst-concrete-cartridge/src/calibration.rs:42` | `lean://umst-formal/Lean/Concrete/Powers.lean#PowersState` | thermodynamic_mix | physicalSecondLaw |
+| `FormalBlock` | `crates/umst-concrete-cartridge/src/calibration.rs:56` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `CalibrationMeta` | `crates/umst-concrete-cartridge/src/calibration.rs:83` | `lean://umst-formal/Lean/Concrete/Powers.lean#S_intrinsic` | thermodynamic_mix | physicalSecondLaw |
 | `RegimeBounds` | `crates/umst-concrete-cartridge/src/calibration.rs:129` | `lean://umst-formal/Lean/OrderStatisticsBand.lean#order_statistic_concentration` | umst.cartridge.concrete.acceptance_band | NONE |
 | `AcceptanceBlock` | `crates/umst-concrete-cartridge/src/calibration.rs:164` | `lean://umst-formal/Lean/OrderStatisticsBand.lean#p25_p75_admissibility` | umst.cartridge.concrete.acceptance_band | NONE |
 | `regime_check_scalars` | `crates/umst-concrete-cartridge/src/calibration.rs:315` | `lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime` | umst.cartridge.concrete.regime | NONE |
 | `any_bundled_profile_covers_scalars` | `crates/umst-concrete-cartridge/src/calibration.rs:401` | `lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime` | umst.cartridge.concrete.regime | NONE |
 | `WaterCementRatio` | `crates/umst-concrete-cartridge/src/facade/mod.rs:90` | `lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime` | umst.cartridge.concrete.regime | NONE |
 | `TemperatureK` | `crates/umst-concrete-cartridge/src/facade/mod.rs:119` | `lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime` | umst.cartridge.concrete.regime | NONE |
-| `powers_compressive_strength_mpa` | `crates/umst-concrete-cartridge/src/homogeneous.rs:139` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | thermodynamic_mix | physicalSecondLaw |
-| `compressive_strength_mpa` | `crates/umst-concrete-cartridge/src/homogeneous.rs:191` | `lean://umst-formal/Lean/Powers.lean#PowersState` | thermodynamic_mix | physicalSecondLaw |
-| `degree_of_hydration_alpha` | `crates/umst-concrete-cartridge/src/homogeneous.rs:200` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | thermodynamic_mix | physicalSecondLaw |
-| `capillary_porosity` | `crates/umst-concrete-cartridge/src/homogeneous.rs:208` | `lean://umst-formal/Lean/Powers.lean#PowersState` | thermodynamic_mix | NONE |
+| `powers_compressive_strength_mpa` | `crates/umst-concrete-cartridge/src/homogeneous.rs:139` | `lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone` | thermodynamic_mix | physicalSecondLaw |
+| `compressive_strength_mpa` | `crates/umst-concrete-cartridge/src/homogeneous.rs:191` | `lean://umst-formal/Lean/Concrete/Powers.lean#PowersState` | thermodynamic_mix | physicalSecondLaw |
+| `degree_of_hydration_alpha` | `crates/umst-concrete-cartridge/src/homogeneous.rs:200` | `lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone` | thermodynamic_mix | physicalSecondLaw |
+| `capillary_porosity` | `crates/umst-concrete-cartridge/src/homogeneous.rs:208` | `lean://umst-formal/Lean/Concrete/Powers.lean#PowersState` | thermodynamic_mix | NONE |
 | `safety_margin` | `crates/umst-concrete-cartridge/src/homogeneous.rs:258` | `lean://umst-formal/Lean/RegimeSoundness.lean#warnings_empty_iff_in_regime` | umst.cartridge.concrete.regime | NONE |
-| `ChemoWaterEngine` | `crates/umst-concrete-cartridge/src/physics/chemo_water.rs:6` | `lean://umst-formal/Lean/Powers.lean#PowersState` | thermodynamic_mix | physicalSecondLaw |
-| `compute_moisture_transport` | `crates/umst-concrete-cartridge/src/physics/chemo_water.rs:17` | `lean://umst-formal/Lean/Powers.lean#PowersState` | thermodynamic_mix | physicalSecondLaw |
+| `ChemoWaterEngine` | `crates/umst-concrete-cartridge/src/physics/chemo_water.rs:6` | `lean://umst-formal/Lean/Concrete/Powers.lean#PowersState` | thermodynamic_mix | physicalSecondLaw |
+| `compute_moisture_transport` | `crates/umst-concrete-cartridge/src/physics/chemo_water.rs:17` | `lean://umst-formal/Lean/Concrete/Powers.lean#PowersState` | thermodynamic_mix | physicalSecondLaw |
 | `compute_hydration_degree` | `crates/umst-concrete-cartridge/src/physics/hydration.rs:7` | `lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone` | umst.cartridge.concrete.jennings_gel | NONE |
-| `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/porosity.rs:6` | `lean://umst-formal/Lean/Powers.lean#PowersState` | thermodynamic_mix | NONE |
-| `SetTimeEngine` | `crates/umst-concrete-cartridge/src/physics/set_time.rs:6` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
-| `compute_setting_time` | `crates/umst-concrete-cartridge/src/physics/set_time.rs:18` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
-| `StrengthEngine` | `crates/umst-concrete-cartridge/src/physics/strength.rs:41` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | thermodynamic_mix | physicalSecondLaw |
-| `compute_strength_jennings` | `crates/umst-concrete-cartridge/src/physics/strength.rs:53` | `lean://umst-formal/Lean/Powers.lean#powers_monotone` | thermodynamic_mix | physicalSecondLaw |
-| `ThermoEngine` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:6` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
-| `compute_heat_rate` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:17` | `lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
-| `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/transport.rs:17` | `lean://umst-formal/Lean/Powers.lean#PowersState` | thermodynamic_mix | NONE |
+| `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/porosity.rs:6` | `lean://umst-formal/Lean/Concrete/Powers.lean#PowersState` | thermodynamic_mix | NONE |
+| `SetTimeEngine` | `crates/umst-concrete-cartridge/src/physics/set_time.rs:6` | `lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
+| `compute_setting_time` | `crates/umst-concrete-cartridge/src/physics/set_time.rs:18` | `lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
+| `StrengthEngine` | `crates/umst-concrete-cartridge/src/physics/strength.rs:41` | `lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone` | thermodynamic_mix | physicalSecondLaw |
+| `compute_strength_jennings` | `crates/umst-concrete-cartridge/src/physics/strength.rs:53` | `lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone` | thermodynamic_mix | physicalSecondLaw |
+| `ThermoEngine` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:6` | `lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
+| `compute_heat_rate` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:17` | `lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
+| `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/transport.rs:17` | `lean://umst-formal/Lean/Concrete/Powers.lean#PowersState` | thermodynamic_mix | NONE |
 | `compute_chloride_diffusivity` | `crates/umst-concrete-cartridge/src/physics/transport.rs:46` | `lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy` | umst.gate.landauer_cbf | NONE |
-| `CD_TRANSITION_CATALOG_ID` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:21` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `thermodynamic_ok` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:97` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `gate_check_mix` | `crates/umst-concrete-cartridge/src/research/contribution.rs:102` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `gate_check_mix_result` | `crates/umst-concrete-cartridge/src/research/contribution.rs:169` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `gate_recheck` | `crates/umst-concrete-cartridge/src/research/contribution.rs:441` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `accept` | `crates/umst-concrete-cartridge/src/research/contribution.rs:511` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `gate_check` | `crates/umst-py/src/lib.rs:244` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `contribute` | `crates/umst-py/src/lib.rs:336` | `lean://umst-formal/Lean/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `CD_TRANSITION_CATALOG_ID` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:21` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `thermodynamic_ok` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:97` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `gate_check_mix` | `crates/umst-concrete-cartridge/src/research/contribution.rs:102` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `gate_check_mix_result` | `crates/umst-concrete-cartridge/src/research/contribution.rs:169` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `gate_recheck` | `crates/umst-concrete-cartridge/src/research/contribution.rs:441` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `accept` | `crates/umst-concrete-cartridge/src/research/contribution.rs:511` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `gate_check` | `crates/umst-py/src/lib.rs:244` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `contribute` | `crates/umst-py/src/lib.rs:336` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 
 ## Structural
 

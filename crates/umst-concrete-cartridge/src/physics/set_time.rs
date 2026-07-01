@@ -6,7 +6,7 @@ use burn::tensor::{backend::Backend, Tensor};
 /// Pure tensor implementation of the Set Time Engine.
 /// Computes initial and final setting kinetics (Vicant penetration mapping)
 /// dynamically across the spatial manifold based on local temperature and chemistry.
-/// formal_anchor: lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz
 /// catalog_id: umst.gate.cd_transition
 /// formal_status: Mechanised
 /// formal_axioms: NONE
@@ -28,7 +28,7 @@ impl<B: Backend> SetTimeEngine<B> {
     /// * `cement_blaine` - Fineness of cement (typically ~350 m2/kg)
     /// * `cement_c3s` - C3S content fraction (typically ~0.55)
     #[allow(clippy::too_many_arguments)]
-    /// formal_anchor: lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz
+    /// formal_anchor: lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz
     /// catalog_id: umst.gate.cd_transition
     /// formal_status: Mechanised
     /// formal_axioms: NONE

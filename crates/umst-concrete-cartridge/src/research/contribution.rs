@@ -100,7 +100,7 @@ pub struct GateContext<'a> {
 }
 
 /// MCP `umst_gate_check` core — thermodynamic admissibility for a mix_spec.
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
@@ -167,7 +167,7 @@ pub struct GateCheckResult {
 }
 
 /// MCP `umst_gate_check` response builder — optional explain + embedded `gate_reject.v1`.
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
@@ -439,7 +439,7 @@ pub fn mix_wire_from_spec_value(v: &Value) -> Option<MixSpecWire> {
 }
 
 /// Re-check thermodynamic admissibility before memory append.
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
@@ -509,7 +509,7 @@ pub fn memory_record_from_contribution(
 }
 
 /// Functional accept: validate → gate → stamp → append; returns new store + clock.
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition

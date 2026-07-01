@@ -112,7 +112,7 @@ fn base_tools() -> Vec<Value> {
     vec![
         json!({
             "name": "umst_predict",
-            "description": "Constitutive prediction envelope result.v2 (read-only). Optional step after umst_gate_check in safe exploration; does not write memory. Example input: {\"mix\":{\"w_c\":\"9/20\",\"temperature_k\":\"29315/100\",\"aggregate_volume_fraction\":\"7/10\"},\"profile\":\"default\"}. Example output: {\"schema_version\":\"result.v2\",\"compressive_strength_mpa\":53.8,\"degree_of_hydration\":0.91,\"calibration_profile\":\"default\",\"formal_anchor\":\"lean://umst-formal/Lean/Powers.lean#powers_monotone\",\"physics_pipeline\":{...}}. Prefer rational strings for mix fields; schema_version v2 default.",
+            "description": "Constitutive prediction envelope result.v2 (read-only). Optional step after umst_gate_check in safe exploration; does not write memory. Example input: {\"mix\":{\"w_c\":\"9/20\",\"temperature_k\":\"29315/100\",\"aggregate_volume_fraction\":\"7/10\"},\"profile\":\"default\"}. Example output: {\"schema_version\":\"result.v2\",\"compressive_strength_mpa\":53.8,\"degree_of_hydration\":0.91,\"calibration_profile\":\"default\",\"formal_anchor\":\"lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone\",\"physics_pipeline\":{...}}. Prefer rational strings for mix fields; schema_version v2 default.",
             "inputSchema": {
                 "type": "object",
                 "properties": {

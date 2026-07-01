@@ -19,7 +19,7 @@ use crate::pipeline::PhysicsPipelineSummary;
 use crate::proxies::{virtual_extrusion, virtual_stack};
 
 /// Manifold gate registry slug for Clausius–Duhem transition (GateUnificationSpec SSOT).
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
@@ -95,7 +95,7 @@ pub fn printability_with_virtual_proxies(summary: &PhysicsPipelineSummary) -> bo
 }
 
 /// Thermodynamic leg: predict path must succeed (manifest CD when `manifest-bridge` on).
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
