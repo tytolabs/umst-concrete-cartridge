@@ -64,7 +64,7 @@
         "grid_x": { "type": "integer", "minimum": 0 },
         "grid_y": { "type": "integer", "minimum": 0 }
       },
-      "description": "Mix-space Morton locality index (egoff Hilbert discipline on w_c × T grid)"
+      "description": "Mix-space Morton locality index (UMST Hilbert discipline on w_c × T grid)"
     }
   }
 }
