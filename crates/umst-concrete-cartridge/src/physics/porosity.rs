@@ -7,7 +7,7 @@ use burn::tensor::{backend::Backend, Tensor};
 ///
 /// Because it is composed purely of `burn` tensor operations, the gradient of the porosity
 /// with respect to the input mix fractions allows the agent to naturally step towards denser mixes.
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: NONE

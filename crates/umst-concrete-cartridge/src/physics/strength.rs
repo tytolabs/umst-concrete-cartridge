@@ -41,7 +41,7 @@ pub fn paste_csh_youngs_moduli_gpa() -> (f32, f32) {
 /// Pure tensor implementation of the Strength & Micromechanics Engine.
 /// Upgraded to the absolute SOTA: Jennings CM-II (Colloidal Model of C-S-H)
 /// coupled with Ulm & Constantinides (2004) nano-indentation continuum micromechanics.
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
@@ -58,7 +58,7 @@ impl<B: Backend> StrengthEngine<B> {
     /// * `degree_hydration` - Hydration degree tensor α (0.0 to 1.0)
     /// * `air_content` - Entrapped/entrained air volume fraction
     /// * `intrinsic_strength` - Intrinsic scaling factor for the specific cement chemistry (MPa)
-    /// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+    /// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone
     /// catalog_id: thermodynamic_mix
     /// formal_status: Mechanised
     /// formal_axioms: physicalSecondLaw

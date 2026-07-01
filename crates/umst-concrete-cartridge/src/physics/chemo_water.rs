@@ -5,7 +5,7 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Chemo-Mechanical Water Transport Engine.
 /// Computes moisture diffusion and capillary tension gradients inside the pore network.
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
@@ -16,7 +16,7 @@ pub struct ChemoWaterEngine<B: Backend> {
 impl<B: Backend> ChemoWaterEngine<B> {
     /// Computes the internal Relative Humidity profile and resulting capillary tension.
     /// This causes drying shrinkage and limits late-stage hydration.
-    /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+    /// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
     /// catalog_id: thermodynamic_mix
     /// formal_status: Mechanised
     /// formal_axioms: physicalSecondLaw

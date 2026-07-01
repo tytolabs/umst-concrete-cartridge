@@ -6,7 +6,7 @@
   "calibration_profile": "default",
   "compressive_strength_mpa": 53.82371139526367,
   "degree_of_hydration": 0.9137817621231079,
-  "formal_anchor": "lean://umst-formal/Lean/Powers.lean#powers_monotone",
+  "formal_anchor": "lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone",
   "gwp_kg_co2_eq_per_m3": 333.34722900390625,
   "optical": {
     "lwir_emissivity": 0.8815737366676331,

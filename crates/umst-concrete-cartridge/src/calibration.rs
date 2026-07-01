@@ -39,7 +39,7 @@ pub enum ModelKind {
     JenningsGelSpace,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
@@ -53,7 +53,7 @@ pub struct PowersGelParameters {
     pub early_boost: f64,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Gate.lean#Admissible
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// catalog_id: umst.gate.cd_transition
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
@@ -80,7 +80,7 @@ pub struct ProvenanceFormal {
     pub rationale: Option<String>,
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#S_intrinsic
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#S_intrinsic
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw

@@ -136,7 +136,7 @@ pub fn mix_hydration_state(
     Ok((w_c_effective, alpha, temp_c))
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
@@ -188,7 +188,7 @@ pub fn powers_compressive_strength_mpa(
     Ok(fc.clamp(0.0, 250.0))
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
@@ -197,7 +197,7 @@ pub fn compressive_strength_mpa(profile: &Profile, row: &MixRow) -> Result<f32, 
         .and_then(|(wc, alpha, _tc)| powers_compressive_strength_mpa(profile, row, alpha, wc))
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#powers_monotone
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
@@ -205,7 +205,7 @@ pub fn degree_of_hydration_alpha(profile: &Profile, row: &MixRow) -> Result<f32,
     mix_hydration_state(profile, row).map(|(_, a, _)| a)
 }
 
-/// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: NONE

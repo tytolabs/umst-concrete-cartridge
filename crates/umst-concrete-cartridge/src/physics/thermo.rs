@@ -5,7 +5,7 @@ use burn::tensor::{backend::Backend, Tensor};
 
 /// Pure tensor implementation of the Thermodynamic Engine
 /// Computes hydration heat evolution using the Arrhenius law across a differentiable manifold.
-/// formal_anchor: lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz
+/// formal_anchor: lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz
 /// catalog_id: umst.gate.cd_transition
 /// formal_status: Mechanised
 /// formal_axioms: NONE
@@ -23,7 +23,7 @@ impl<B: Backend> ThermoEngine<B> {
     ///
     /// # Returns
     /// A tuple of tensors: `(heat_rate, adiabatic_temp_rise)`
-    /// formal_anchor: lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz
+    /// formal_anchor: lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz
     /// catalog_id: umst.gate.cd_transition
     /// formal_status: Mechanised
     /// formal_axioms: NONE

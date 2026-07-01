@@ -21,7 +21,7 @@ impl<B: Backend> TransportEngine<B> {
     /// # Arguments
     /// * `wc_ratio` - Water/Cement ratio tensor [Batch, Depth, Height, Width]
     /// * `degree_hydration` (alpha) - Degree of hydration [Batch, Depth, Height, Width]
-    /// formal_anchor: lean://umst-formal/Lean/Powers.lean#PowersState
+    /// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
     /// catalog_id: thermodynamic_mix
     /// formal_status: Mechanised
     /// formal_axioms: NONE

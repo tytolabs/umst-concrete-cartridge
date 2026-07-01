@@ -111,19 +111,19 @@ fn parse_tagged_doc_lines(lines: &[String]) -> BTreeMap<String, String> {
 /// `lean://umst-formal/…` URI → manifold `catalog_id` (see `docs/FORMAL_GROUNDING_AUDIT.md`).
 const MECHANISED_ANCHOR_CATALOG_IDS: &[(&str, &str)] = &[
     (
-        "lean://umst-formal/Lean/Gate.lean#Admissible",
+        "lean://umst-formal/Lean/Compat/Gate.lean#Admissible",
         "umst.gate.cd_transition",
     ),
     (
-        "lean://umst-formal/Lean/Powers.lean#PowersState",
+        "lean://umst-formal/Lean/Concrete/Powers.lean#PowersState",
         "thermodynamic_mix",
     ),
     (
-        "lean://umst-formal/Lean/Powers.lean#S_intrinsic",
+        "lean://umst-formal/Lean/Concrete/Powers.lean#S_intrinsic",
         "thermodynamic_mix",
     ),
     (
-        "lean://umst-formal/Lean/Powers.lean#powers_monotone",
+        "lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone",
         "thermodynamic_mix",
     ),
     (
@@ -143,7 +143,7 @@ const MECHANISED_ANCHOR_CATALOG_IDS: &[(&str, &str)] = &[
         "umst.cartridge.concrete.jennings_gel",
     ),
     (
-        "lean://umst-formal/Lean/Helmholtz.lean#ψAntitoneHelmholtz",
+        "lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz",
         "umst.gate.cd_transition",
     ),
     (

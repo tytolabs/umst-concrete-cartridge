@@ -19,7 +19,7 @@ license = "CC-BY 4.0"
 subset = "SonReb"
 
 [provenance.formal]
-anchor = "lean://umst-formal/Lean/Powers.lean#powers_monotone"
+anchor = "lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone"
 status = "Mechanised"
 axioms = ["physicalSecondLaw"]
 
