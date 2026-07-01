@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-//! Mix-space geometry index — egoff Hilbert **discipline** on constitutive coordinates (not SDF voxels).
+//! Mix-space geometry index — UMST Hilbert **discipline** on constitutive coordinates (not SDF voxels).
 //!
 //! Maps `(w_c, temperature_k, aggregate_volume_fraction)` to a 2D quantized grid, then a Morton
 //! (Z-order) curve index for locality-preserving retrieval. Pure morphisms only.
@@ -45,7 +45,7 @@ pub fn quantize_temperature_k(temp_k: f64) -> u32 {
     (t * (GRID_SIDE - 1) as f64).round() as u32
 }
 
-/// Morton (Z-order) interleave — locality heuristic matching egoff `hilbert_index` role.
+/// Morton (Z-order) interleave — locality heuristic matching cockpit `hilbert_index` role.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Z-order curve index for memory locality queries.
