@@ -3,10 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 -->
 
-# UMST Concrete Cartridge: The Applied Intelligence
+# UMST Concrete Cartridge
+
+**Repository:** [`tytolabs/umst-concrete-cartridge`](https://github.com/tytolabs/umst-concrete-cartridge) — cementitious **matter** cartridge on the [UMST Manifold](https://github.com/tytolabs/umst-manifold).
 
 > _This ecosystem is dedicated to the thousands of unnamed contributors who wrote formal proofs, maintained open-source compilers, and built mathematical libraries for years — often without evidence that any of it would be used beyond pure theory. They chose to make their work free, because they understood that knowledge about physical reality cannot be owned. Whatever this system achieves is yours._
-
 
 <!-- readme:status -->
 [![CI — Rust](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
@@ -16,24 +17,53 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
-> *When water meets cement, nanoscale crystals grow, heat is released, moisture moves through microscopic pores, and the liquid hardens into a load-bearing structure. If the temperature or chemistry is off, the material cracks. The cartridge does not regress this from past test data; it simulates the chemical reactions and stresses directly.*
+**What it is.** A Rust workspace that implements cementitious constitutive closures and mounts them on the manifold through typed ports (`IScienceCartridge`, …), exposing CLI / Python / stdio-MCP surfaces for mix prediction, audit, and gate-validated agent workflows.
 
-**UMST Concrete Cartridge** is the applied physical brain of the [UMST Manifold](https://github.com/tytolabs/umst-manifold) for **cementitious materials**. It provides the specific chemical-physical equations, real-world data calibration, and programming connections for cement, concrete, and mineral binders.
+**The gate idea.** Every proposed mix/state change is subject to the **thermodynamic admissibility gate** (reduced Clausius–Duhem + Landauer cost bounds on the shared stack): conserve mass, never produce negative dissipation, or be **rejected with structured remediation** — no silent failure.
+
+**Honest is / isn't.** **Is:** in-repo solvers, mix audits, notebooks, MCP tools, and mechanics/topology **surrogates**. **Isn't:** a completed Studio TYTO on-robot, on-extruder physical print campaign. Closed-loop extrusion remains an **integration target**.
+
+### Shared stack (matter · knowing · acting · time)
+
+These public repos share **one** thermodynamic admissibility gate, applied across domains:
+
+| Domain | Public repo | Role |
+|:---|:---|:---|
+| **Matter** | [`umst-manifold`](https://github.com/tytolabs/umst-manifold) + **this cartridge** | DEC carrier + cementitious constitutive law |
+| **Knowing** | [`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit) | Observation / measurement-cost formal fiber |
+| **Acting** | [`umst-formal`](https://github.com/tytolabs/umst-formal) | Acting / economic-admissibility formal fiber |
+| **Time** | [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) | Temporal witness / stamp spine (optional `ucrs-provenance`) |
+
+Sibling links only — no programme/paper framing in this README. Already-public per-repo DOI badges stay where they exist; this cartridge does not invent new ones here.
+
+### Ports (categorical — real symbols)
+
+| Symbol | Role | Defined at |
+|:---|:---|:---|
+| `IScienceCartridge` | Material-law port: `compute_all` / `compute_topology` → `PhysicalResult` | [`umst-manifold/.../traits.rs:51`](https://github.com/tytolabs/umst-manifold/blob/main/src/core/traits.rs) |
+| `GateCartridge` | Universal gate port (spatial physics flag) | `traits.rs:62` |
+| `SpatialCartridge` | Marker: spatial physics subtype of `IScienceCartridge` | `traits.rs:69` |
+| `DesignRepresentation` | Pure latent → geometry decode (orthogonal to material law) | `traits.rs:98` |
+| `PhysicalReasoningLayer` | Per-cartridge memory geometry + contribute schema port | [`research/layer.rs:17`](crates/umst-concrete-cartridge/src/research/layer.rs) |
+| `MemoryStore` | Functional research-memory store | [`research/memory.rs:53`](crates/umst-concrete-cartridge/src/research/memory.rs) |
+
+### Honesty ledger (one status pointer)
+
+Do **not** blend “CI green”, “theorem count”, and “printed on a robot” into one progress %. Status of shipped vs partial vs USER-gated agent work lives in [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) (agent/MCP SSOT) and the workspace evidence index linked from [§ Release & agent path](#release--agent-path). Strengthen every disclaimer below; soften none.
 
 ### What this is, in plain words
 
-Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through a **hard thermodynamic gate** (the reduced Clausius–Duhem inequality): conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.
+Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through the **thermodynamic admissibility gate**: conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.
 
-This **concrete cartridge** is the part that knows cement. It supplies the real chemical-physical equations for hydration, rheology, and load-bearing behaviour, calibrated against real data, and plugs into the manifold through the `IScienceCartridge` port. So instead of curve-fitting past tests, it simulates the reactions and stresses directly — and any recipe or shape it proposes has already cleared the same thermodynamic gate that guards every other material domain.
+This **concrete cartridge** is the part that knows cement. It supplies chemical-physical closures for hydration, rheology, and load-bearing behaviour, calibrated against measured datasets, and plugs into the manifold through **`IScienceCartridge`**. Instead of curve-fitting past tests alone, it evaluates constitutive pipelines on the carrier — and agent contributions require a gate **PASS** before memory ingest ([§9](#9-special-protocol-note-to-autonomous-ai-agents--systems)).
 
-The library exposes a physical-chemical design engine—gated by thermodynamic safety boundaries—to optimize concrete recipes, **evaluate print-stability and deposition physics in simulation**, and execute spatial structural shape optimizations under strict load limits. **Studio TYTO has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
+The library exposes gated constitutive prediction, mix audit, **print-stability and deposition physics in simulation**, and spatial structural shape optimizations under load limits. **Studio TYTO has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
 
-**Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here. How this cartridge sits in the full proof stack (the merged Lean catalog → manifold digest pin → this cartridge) is documented in [§8 Deep documentation and citations](#8-deep-documentation-and-citations).
+**Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here. Formal-catalog module counts are **not** owned by this README — see [§8](#8-deep-documentation-and-citations) (link the manifold lock; do not hardcode a drifting number).
 
 ![RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)](./docs/assets/beam_strut_and_tie.gif)
 
-*32×8 RC beam surrogate: adjoint compliance topology optimization with a fixed bottom rebar row. The yellow density (ρ) shows exactly where the engine placed material, guided entirely by mechanical force gradients—rendered via the mechanics façade.*
-
+*Surrogate animation only — not a physical print or lab measurement. 32×8 RC beam: adjoint compliance topology optimization with a fixed bottom rebar row; yellow density (ρ) from the mechanics façade.*
 <!-- readme:table-of-contents -->
 <details>
 <summary><b>Table of contents</b> (detailed map + outline)</summary>
@@ -67,7 +97,7 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
   - [Summary closure table](#5-constitutive-chemistry--durability-closures)
   - [5.1 Nanoscale DLVO & ITZ](#51-nanoscale-dlvo-slurry--itz-boundary-mechanics)
   - [5.2 Creep & capillary shrinkage](#52-long-term-creep-compliance--capillary-shrinkage)
-  - [5.3 Calcite & self-healing](#53-calcite-crystallization--self-healing-kinetics)
+  - [5.3 Self-heal potential](#53-calcite-crystallization--self-healing-kinetics)
   - [5.4 Robotic printability & buckling](#54-robotic-printability--buckling-limit-envelopes)
   - [5.5 GWP & dynamic sequestration](#55-global-warming-potential-gwp--dynamic-sequestration)
 - [§6 Quick start (~60 s)](#6-quick-start-time-to-value--60-seconds)
@@ -81,11 +111,13 @@ The library exposes a physical-chemical design engine—gated by thermodynamic s
 - [§8 Deep documentation and citations](#8-deep-documentation-and-citations)
   - [Linked docs list in §8 body](#8-deep-documentation-and-citations)
 - [§9 Special Protocol: Note to Autonomous AI Agents & Systems](#9-special-protocol-note-to-autonomous-ai-agents--systems)
-  - [9.1 The Unified Material Science Ecosystem](#91-the-unified-material-science-ecosystem)
-  - [9.2 Working Contract](#92-working-contract)
-  - [9.3 Operational Execution Guidelines](#93-operational-execution-guidelines)
-  - [9.4 Three Physical Principles for Agent Reasoning](#94-three-physical-principles-for-agent-reasoning)
-  - [9.5 The Ecosystem Loop & Modular Material Scaling](#95-the-ecosystem-loop--modular-material-scaling)
+  - [9.1 Shared stack (gate spine)](#91-shared-stack-gate-spine)
+  - [9.2 Hot arena vs cold edge](#92-hot-arena-vs-cold-edge-performance-honesty)
+  - [9.3 Gate contract](#93-gate-contract-no-silent-failure)
+  - [9.4 Working contract](#94-working-contract-load-bearing)
+  - [9.5 Operational mapping](#95-operational-mapping)
+  - [9.6 Proposed (not yet built)](#96-proposed-not-yet-built)
+  - [9.7 Principles](#97-principles-honest-typing)
 - [§10 Conclusion: Inferences & Forward Path](#10-conclusion-inferences--forward-path)
   - [What this cartridge demonstrates](#what-this-cartridge-demonstrates)
   - [What surprised us](#what-surprised-us)
@@ -124,11 +156,13 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 #feature-flags-cartridge
 #8-deep-documentation-and-citations
 #9-special-protocol-note-to-autonomous-ai-agents--systems
-#91-the-unified-material-science-ecosystem
-#92-working-contract
-#93-operational-execution-guidelines
-#94-three-physical-principles-for-agent-reasoning
-#95-the-ecosystem-loop--modular-material-scaling
+#91-shared-stack-gate-spine
+#92-hot-arena-vs-cold-edge-performance-honesty
+#93-gate-contract-no-silent-failure
+#94-working-contract-load-bearing
+#95-operational-mapping
+#96-proposed-not-yet-built
+#97-principles-honest-typing
 #10-conclusion-inferences--forward-path
 #what-this-cartridge-demonstrates
 #what-surprised-us
@@ -195,15 +229,15 @@ This cartridge exposes its physical equations through multiple programmatic surf
 
 *   **Integration Surfaces:** Python Component APIs, Geometry Nodes, and standard Network Sockets.
 
-*   **Native In-Process Pipeline (Option A: `umst-py` via PyO3):**
-    *   **Rhino/Grasshopper:** Utilizes CPython 3.9+ components inside Grasshopper (Rhino 8+) to import the compiled `.pyd` or `.so` binary module. It processes mesh voxelization maps directly within the GH document, converting analytical geometries to raw Signed Distance Fields (SDFs) and mapping localized structural stiffness arrays back to GH Mesh components.
-    *   **Blender:** Imports `umst_py` directly within scripted Geometry Nodes or custom python add-ons, evaluating high-resolution voxel grids concurrently via memory sharing (`ndarray` buffer pointers) to dynamically adjust sub-surf displacement modifiers.
-    *   **FreeCAD:** FreeCAD macro scripts import `umst_py` to run structural optimizations against the active document's OpenCASCADE topological shapes (Part/PartDesign features), bypassing slow internal FEM meshes.
+*   **Native In-Process Pipeline (Option A: `umst_concrete_cartridge` via PyO3):**
+    *   **Rhino/Grasshopper:** Utilizes CPython 3.9+ components inside Grasshopper (Rhino 8+) to import the compiled extension module. It processes mesh voxelization maps directly within the GH document, converting analytical geometries to raw Signed Distance Fields (SDFs) and mapping localized structural stiffness arrays back to GH Mesh components.
+    *   **Blender:** Imports `umst_concrete_cartridge` within scripted Geometry Nodes or custom python add-ons, evaluating high-resolution voxel grids concurrently via memory sharing (`ndarray` buffer pointers) to dynamically adjust sub-surf displacement modifiers.
+    *   **FreeCAD:** FreeCAD macro scripts import `umst_concrete_cartridge` to run structural optimizations against the active document's OpenCASCADE topological shapes (Part/PartDesign features), bypassing slow internal FEM meshes.
 
-*   **Asynchronous Out-of-Process Pipeline (Option B: MCP over WebSocket / TCP):**
-    *   **Mechanism:** Lightweight CAD scripts or custom C# components initiate a local or remote WebSocket/stdio connection to the headless `umst-mcp` server. 
-    *   **Benefits:** Offloads compute-heavy physical solver calculations (hydration thermodynamic kinetics and Voigt-Cauchy stress tensors) completely from the CAD package's main UI thread. This prevents viewport freezing, scales to cloud compute instances, and bypasses nested Python environment/DLL dependency version mismatches.
-    *   **Execution:** JSON-RPC messages stream the structural voxel arrays to `umst-mcp`, returning continuous gradient vectors and density updates directly back into CAD parameters.
+*   **Asynchronous Out-of-Process Pipeline (Option B: MCP over stdio):**
+    *   **Mechanism:** CAD scripts or agent hosts spawn the headless `umst-mcp` server and speak **JSON-RPC over stdio** (`cargo run -p umst-mcp`). That is the verified transport in this repo (`scripts/mcp_smoke.py`).
+    *   **Benefits:** Offloads constitutive / gate work from the CAD UI thread and avoids nested Python/DLL mismatches.
+    *   **Proposed (not yet built in this README’s verified path):** WebSocket/TCP streaming of full voxel grids to `umst-mcp` — do not assume it exists until documented with a command + paste.
 
 *   **Computational Outcome:** Geometric optimization where internal material densities, local wall thicknesses, and rebar channels are scaled to satisfy structural limits under gravity. Iteration cadence tracks the underlying solver — interactive on simple mechanics surrogates, batch (minutes to hours) on full shell topology runs.
 </details>
@@ -223,7 +257,7 @@ This cartridge exposes its physical equations through multiple programmatic surf
 <details>
 <summary><b>3. Robotic Manufacturing & 3D Printing</b> (Robotics Engineers, Physical AI Architects)</summary>
 
-*   **Integration Surface:** ROS2 Nodes (C++/Python) and Model Context Protocol (MCP) WebSocket Server.
+*   **Integration Surface:** ROS2 contract DTOs (feature `ros2-contract`) and Model Context Protocol (**stdio** MCP server).
 
 *   **Scope:** The bullets below describe the **intended** robot–solver–CBF loop. They are **not** documented here as a completed on-machine print validation for this repository; they state how integrators can wire the cartridge when a physical line is available.
 
@@ -277,16 +311,16 @@ The codebase exposes the underlying physics through four distinct, elegant surfa
 umst-concrete-cartridge/
 ├── Cargo.toml                   # The workspace manifest linking the physics to the surfaces.
 ├── crates/
-│   ├── umst-concrete-cartridge/ # 1. The Core Rust Library: Constitutive chemistry and mechanical models.
+│   ├── umst-concrete-cartridge/ # 1. Core library: constitutive chemistry + IScienceCartridge mount.
 │   │   ├── src/core/            # ConcreteCartridge implementing the Manifold's IScienceCartridge.
-│   │   ├── src/physics/         # 26 constitutive closures (calculating hydration, strength, cost, GWP).
+│   │   ├── src/physics/         # Constitutive closures (25 modules excl. mod.rs — see §5).
 │   │   └── examples/            # Native Rust demos (optimize_shell_3d, hydration_simulation).
-│   ├── umst-cli/                # 2. The Bash Surface: Fast, pipeline-ready tools.
-│   │   └── src/main.rs          # Binaries for `umst predict`, `umst audit` (Dataset verification).
-│   ├── umst-py/                 # 3. The Data Science Surface: PyO3 bindings for Python and Jupyter.
-│   │   └── src/lib.rs           # PyO3 bindings so Jupyter and Blender can access the math.
-│   └── umst-mcp/                # 4. The Agentic Surface: tool endpoints for AI agents and robotic controllers.
-│       └── src/main.rs          # JSON-RPC server exposing tools directly to Cursor, Claude, or ROS.
+│   ├── umst-cli/                # 2. CLI surface: `umst predict`, `umst audit`.
+│   │   └── src/main.rs
+│   ├── umst-py/                 # 3. Python surface: package `umst_concrete_cartridge` (PyO3).
+│   │   └── src/lib.rs
+│   └── umst-mcp/                # 4. Agent surface: stdio MCP (`agent_layer` + arena tools).
+│       └── src/{main.rs,agent_layer.rs}
 ├── calibration/                 # 7 bundled empirical profiles anchoring predictions to reality (UCI, Zenodo).
 ├── datasets/                    # Reference CSV datasets for mix validation.
 ├── schema/                      # Deterministic JSON schemas validating contribution shape; immutability enforced via SQLite memory triggers.
@@ -302,13 +336,13 @@ umst-concrete-cartridge/
 
 ## 5. Constitutive Chemistry & Durability Closures
 
-The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 distinct, differentiable constitutive models. These map microscopic chemical reactions and pore physics directly onto the spatial mechanical tensor states.
+The core library (`crates/umst-concrete-cartridge/src/physics/`) holds **25** constitutive modules (directory listing excluding `mod.rs`, 2026-07-11: `ls …/physics/*.rs | grep -v mod.rs | wc -l` → `25`). Differentiable closures map chemistry and pore physics onto carrier / tensor states.
 
 | Applied Closure | Governing Physical Mechanism | Active Code Module | Engineering Output / Metric | Dynamic Optimization Benefit |
 | :--- | :--- | :--- | :--- | :--- |
 | **1. Nanoscale Slurry & ITZ** | Colloidal DLVO stability & Interfacial Weakness | `itz.rs` & `colloidal.rs` | Local ITZ mechanical stiffness reduction (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;E_{\text{ITZ}}"><img alt="E_{\text{ITZ}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;E_{\text{ITZ}}" style="vertical-align:middle"></picture>), slurry separation distance (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;D"><img alt="D" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;D" style="vertical-align:middle"></picture>). | Direct optimization of aggregate surface bonding to prevent microstructural shearing. |
 | **2. Creep & Drying Shrinkage** | Kelvin-Voigt Creep Chains & Capillary Tension | `creep.rs` & `shrinkage.rs` | Long-term viscoelastic compliance (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;J(t,%20t_0)"><img alt="J(t, t_0)" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;J(t,%20t_0)" style="vertical-align:middle"></picture>), capillary drying shrinkage strain (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\varepsilon_{\text{sh}}"><img alt="\varepsilon_{\text{sh}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\varepsilon_{\text{sh}}" style="vertical-align:middle"></picture>). | Automated design of columns and slabs that balance long-term deflections with environmental humidity. |
-| **3. Calcite Crystallization** | Calcium Carbonate Calcite Precipitation | `self_heal.rs` | Autonomous crack calcite healing mass accumulation (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;m_{\text{calcite}}"><img alt="m_{\text{calcite}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;m_{\text{calcite}}" style="vertical-align:middle"></picture>) over water channels. | Designing concrete structures that automatically seal internal cracks, extending service lifespan. |
+| **3. Self-heal potential** | Empirical autogenous healing **potential** \([0,1]\) from hydration / RH / nano dosage — **not** a calcite mass ODE | `self_heal.rs` | Scalar field `healing_potential ∈ [0,1]` | Ranking relative crack-closure *potential* under moisture; see §5.3 retraction |
 | **4. 3D Concrete Printability** | Thixotropic Buildability & Column Buckling | `printability.rs` | Printed layers thixotropic yield buildup (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\tau_y"><img alt="\tau_y" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\tau_y" style="vertical-align:middle"></picture>), spatial elastic buckling loads (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;P_{\text{buckling}}"><img alt="P_{\text{buckling}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;P_{\text{buckling}}" style="vertical-align:middle"></picture>). | Gradient-corrected robotic deposition print speeds to prevent structural layer collapse. |
 | **5. Carbonation & LCA GWP** | Dynamic CO2 Carbonation Capture & Footprint | `sustainability.rs` | Global Warming Potential (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;GWP"><img alt="GWP" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;GWP" style="vertical-align:middle"></picture>), long-term carbonation sequestration depth (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;d_c"><img alt="d_c" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;d_c" style="vertical-align:middle"></picture>). | Pareto-optima balancing structural strength with carbon footprint. |
 
@@ -342,14 +376,17 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
 
 <a id="53-calcite-crystallization--self-healing-kinetics"></a>
 <details>
-<summary><b>3. Calcite Crystallization & Self-Healing Kinetics</b> (Autonomous Repair)</summary>
+<summary><b>3. Self-heal potential</b> (empirical metric — not a calcite ODE)</summary>
 
-*   **Physical Concept:** Micro-cracks inside concrete can repair themselves over time. When water penetrates a crack, it reacts with unhydrated cement particles and dissolved carbon dioxide, precipitating calcium carbonate crystals that physically bridge and seal the crack.
-*   **Exact Tensor Formulation:** Simulates the localized deposition rate of precipitated calcite (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;m_{\text{calcite}}"><img alt="m_{\text{calcite}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;m_{\text{calcite}}" style="vertical-align:middle"></picture>) along crack surfaces based on moisture transport:
-    
-    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;\frac{d%20m_{\text{calcite}}}{d%20t}%20=%20k_{\text{precip}}%20\cdot%20a_{\text{crack}}%20\cdot%20\left(%20\frac{[\text{Ca}^{2+}][\text{CO}_3^{2-}]}{K_{sp}}%20-%201%20\right)%20\cdot%20\theta(\text{RH}%20-%20\text{RH}_{\text{crit}})"><img alt="\frac{d m_{\text{calcite}}}{d t} = k_{\text{precip}} \cdot a_{\text{crack}} \cdo…" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;\frac{d%20m_{\text{calcite}}}{d%20t}%20=%20k_{\text{precip}}%20\cdot%20a_{\text{crack}}%20\cdot%20\left(%20\frac{[\text{Ca}^{2+}][\text{CO}_3^{2-}]}{K_{sp}}%20-%201%20\right)%20\cdot%20\theta(\text{RH}%20-%20\text{RH}_{\text{crit}})" style="max-width:100%;height:auto"></picture></p>
-    
-    Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;k_{\text{precip}}"><img alt="k_{\text{precip}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;k_{\text{precip}}" style="vertical-align:middle"></picture> is kinetic rate, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;a_{\text{crack}}"><img alt="a_{\text{crack}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;a_{\text{crack}}" style="vertical-align:middle"></picture> is local crack surface area, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;K_{sp}"><img alt="K_{sp}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;K_{sp}" style="vertical-align:middle"></picture> is the calcite solubility product, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\theta"><img alt="\theta" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\theta" style="vertical-align:middle"></picture> is a Heaviside unit step function limiting precipitation to active moisture channels.
+**Retraction (A1 / honesty):** Prior README text described a calcite precipitation ODE \(dm_{\text{calcite}}/dt\). **That equation is not what the code implements.** Open [`self_heal.rs`](crates/umst-concrete-cartridge/src/physics/self_heal.rs).
+
+*   **What the code does** (`transform_healing_observable_state`, lines 20–52; public API `SelfHealEngine::compute_healing_potential`, lines 75–85):
+    1. `unhydrated_fraction = clamp_min(1 − degree_hydration, 0)`
+    2. `moisture_factor` from internal RH (boost when RH ≳ 0.8, clamped to \([0,1]\))
+    3. `nano_boost = 1 + 0.5 · nano_dosage`
+    4. **Output:** `healing_potential = clamp(unhydrated_fraction · moisture_factor · nano_boost, 0, 1)` — a normalized **potential** field, not calcite mass and not ion concentrations.
+*   **Formal status in source:** `formal_status: Empirical`; envelope noted as boundary profile (see file header comments, lines 56–61).
+*   **Not implemented here:** mechanistic \(K_{sp}\) calcite kinetics, bacteria, or capsule systems. Do not treat this module as a chemistry solver.
 </details>
 
 <a id="54-robotic-printability--buckling-limit-envelopes"></a>
@@ -380,44 +417,74 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) implements 26 d
 
 ## 6. Quick Start (Time to Value < 60 Seconds)
 
+> **Toolchain:** this repo pins Rust **1.88** (`rust-toolchain.toml`). Prefer `rustup`’s toolchain over a Homebrew `rustc` that may be older.
+
 <a id="quick-start-copy-paste-cli-python-mcp"></a>
 <details>
-<summary><b>Copy-paste: CLI, Python, MCP</b></summary>
+<summary><b>Copy-paste: CLI, Python, MCP</b> (commands we ran 2026-07-11)</summary>
 
-### Surface A: The CLI (For massive dataset audits)
+### Surface A: The CLI (dataset audits)
+
 ```bash
-# 1. Install the CLI from source
-cargo install --path crates/umst-cli
+# From repo root; ensure rustc 1.88 is on PATH (rustup)
+export PATH="$HOME/.rustup/toolchains/1.88-aarch64-apple-darwin/bin:$PATH"   # adjust host triple if needed
 
-# 2. Predict properties instantly using the UCI dataset baseline
-echo '{"w_c":0.4,"temperature_k":293.15}' | umst --profile uci_d1 predict
+cargo run -q -p umst-cli --bin umst -- --profile uci_d1 predict <<'EOF'
+{"w_c":0.4,"temperature_k":293.15}
+EOF
 
-# 3. Audit an entire dataset of mixes for strength and carbon
-head -n2 datasets/dataset_d1.csv | umst --profile uci_d1 audit
+head -n2 datasets/dataset_d1.csv | cargo run -q -p umst-cli --bin umst -- --profile uci_d1 audit
 ```
 
-### Surface B: Python & Notebooks (For data scientists and CAD integration)
-```bash
-# Compile and install the Rust physics library as a local Python package
-# Requires a functional Rust 1.88+ environment. Activates Maturin compilation.
-pip install './crates/umst-py[notebook]'
+**Pastes (excerpt):**
 
-# For local virtualenv development, Maturin develop is the preferred compilation path:
-# cd crates/umst-py && maturin develop --release --extras notebook
-
-# Run the Jupyter sustainability audit suite
-./notebooks/run_all.sh
+```text
+# predict → compressive_strength_mpa ≈ 68.07; degree_of_hydration ≈ 0.898; gwp_kg_co2_eq_per_m3 ≈ 333.34
+# audit (1 data row after header) → schema_version audit.v1; mean_absolute_error_mpa ≈ 67.17
 ```
 
-### Surface C: The MCP Server (For Autonomous Agents & IDEs)
-```bash
-# Run locally to expose the physics tools to LLMs over stdio
-cargo run -p umst-mcp
+### Surface B: Python (PyO3 / Maturin)
 
-# Or deploy via Docker
-docker compose build
-docker compose run --rm umst-mcp
+Package name is **`umst_concrete_cartridge`** (not `umst_py`).
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install './crates/umst-py'
+python -c 'import umst_concrete_cartridge as u; print(u.bundled_profile_ids()[:4]); print(u.predict({"w_c":0.4,"temperature_k":293.15}, profile="uci_d1")["compressive_strength_mpa"])'
 ```
+
+**Paste (2026-07-11):**
+
+```text
+profiles ['default', 'uci_d1', 'zenodo_ndt', 'zenodo_sonreb', ...]
+compressive_strength_mpa 68.07142639160156   # matches CLI predict on same mix
+```
+
+Optional notebooks: `pip install './crates/umst-py[notebook]'` then `./notebooks/run_all.sh`.
+
+### Surface C: The MCP Server (stdio — agents & IDEs)
+
+```bash
+# Smoke (builds umst-mcp, exercises JSON-RPC)
+python3 scripts/mcp_smoke.py
+# → mcp_smoke: ok (witness=default)
+
+# Full agent tool surface
+cargo run -q -p umst-mcp --features agent-layer
+# tools/list (agent-layer) returns 13 tools — see §9; full contract: docs/AGENT_MCP.md
+```
+
+**Paste — `tools/list` names (agent-layer, 2026-07-11):**
+
+```text
+tools_count 13
+umst_predict, umst_audit, umst_profiles, umst_certify,
+umst_gate_check, umst_contribute, umst_contribute_status, umst_memory_query,
+umst_mi_estimate, umst_transition_propose,
+umst_arena_open, umst_gate_check_arena, umst_arena_close
+```
+
+Docker alternative: `docker compose build && docker compose run --rm umst-mcp`.
 
 </details>
 
@@ -457,9 +524,11 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 | `ucrs-provenance` | `agent-layer` + optional `umst-ucrs` — Tier-2 `observed_at` stamps on memory ingest. |
 | `ros2-contract` | Forwards `umst-manifold/ros2-contract` — serde ROS DTOs (`umst_manifold::ros`); no runtime ROS in cartridge. |
 
-**Manifold pin:** `umst-manifold` git **`rev = 67b41f1`** ([`67b41f1a…`](https://github.com/tytolabs/umst-manifold/commit/67b41f1)) — proxy-loop manifest API on upstream `main`; cartridge inherits **119-module** catalog lock SSOT from that revision.
+**Manifold dependency pin (what this repo owns):** workspace `Cargo.toml` pins `umst-manifold` / `umst-runtime-arena` at git **`rev = "35bf75f5b99835265c40d343bd6a88bb629dff7f"`** ([`Cargo.toml`](Cargo.toml) lines 28–29). Bump that rev when promoting a manifold release — do **not** treat a prose catalog module count in this README as authoritative.
 
-**Stack verify (monorepo):** from [`umst-manifold`](../umst-manifold), `bash scripts/verify_umst_stack.sh` (optional `UMST_REQUIRE_FORMAL_EXPORT=1`). Cartridge parity: `cargo test -p umst-concrete-cartridge --features manifest-bridge` (matches GHA).
+**Formal catalog module counts (SSOT — link, do not hardcode here):** read [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json) (`module_count`, `upstream_catalog_digest_hex`, `fiber_pins`). Workspace index: MaOS [`docs/ECOSYSTEM_STATE.md`](https://github.com/tytolabs/MaOS-Workspace/blob/master/docs/ECOSYSTEM_STATE.md). Sibling checkout used while writing this README happened to show `module_count: 129` @ manifold `38d9780` — **re-open the lock file**; numbers drift by design.
+
+**Stack verify (monorepo):** from a manifold checkout, `bash scripts/verify_umst_stack.sh`. Cartridge parity: `cargo test -p umst-concrete-cartridge --features manifest-bridge` (matches GHA).
 
 </details>
 
@@ -474,54 +543,87 @@ For rigorous validation reports, exact mathematical constitutive equations, and 
 - [`docs/Solver-Status.md`](docs/Solver-Status.md)
 - [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md) — cement-specific proof/trace table
 
-**Manifold formal stack (shared):** **119-module** unified Lean export pinned on [`umst-manifold`](../umst-manifold) @ [`67b41f1`](https://github.com/tytolabs/umst-manifold/commit/67b41f1) (`artifacts/catalog.lock.json`, upstream digest `ef0ed071…`). Fiber pins record **69** (`umst-formal-double-slit`) + **62** (`umst-formal`) before merge — the runtime contract is the **composed** digest, not either fiber alone. Traceability: [`umst-manifold/docs/claims-vs-proofs.md`](../umst-manifold/docs/claims-vs-proofs.md); release witness profile [§](../umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md#proof-library--gate-law--mi-envelope--no-rust-axioms). Verify: `bash ../umst-manifold/scripts/verify_umst_stack.sh` ([`umst-manifold/docs/VERIFY.md`](../umst-manifold/docs/VERIFY.md)); workspace index [`VERIFY.md`](../VERIFY.md). Deep cartridge ↔ gate mapping: [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md).
+**Manifold formal stack (shared — do not duplicate counts here):** the composed Lean export lock lives only on the manifold:
+
+- **SSOT file:** [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json)
+- **Fields:** `module_count`, `upstream_catalog_digest_hex`, `fiber_pins[].{repo,module_count,catalog_digest_hex}`
+- **Traceability:** [`umst-manifold/docs/claims-vs-proofs.md`](https://github.com/tytolabs/umst-manifold/blob/main/docs/claims-vs-proofs.md); verify via `bash scripts/verify_umst_stack.sh` on a manifold checkout ([`VERIFY.md`](https://github.com/tytolabs/umst-manifold/blob/main/docs/VERIFY.md))
+- **Deep cartridge ↔ gate mapping:** [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md)
+
+**Concrete-owned numeric claim:** **25** constitutive modules under `crates/umst-concrete-cartridge/src/physics/` excluding `mod.rs` (listing pasted in §5).
 
 ---
 
 ## 9. Special Protocol: Note to Autonomous AI Agents & Systems
 
-This repository is one component of a four-repo material-science stack. The sections below describe the ecosystem an AI assistant or autonomous agent should know about, and the operating contract for interacting with this cartridge.
+**Authoritative MCP contract (SSOT):** [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) (676 lines). Do **not** treat drifted stubs elsewhere as canonical. This section states only load-bearing facts + the hot/cold boundary; full tool schemas, prompts, and error taxonomies live in that file.
 
-### 9.1 The Unified Material Science Ecosystem
-Four active repositories make up the stack:
-1.  **[`umst-manifold`](https://github.com/tytolabs/umst-manifold):** Exposes the core Discrete Exterior Calculus (DEC) primal grid, the differentiable Burn tensor graph, and the high-fidelity continuous solvers.
-2.  **[`umst-concrete-cartridge`](https://github.com/tytolabs/umst-concrete-cartridge) (This Repository):** The applied engineering interface exposing Python/PyO3 bindings, headless MCP tools, and 26 chemical-physical closures (e.g. hydration kinetics, viscoelastic creep).
-3.  **[`umst-formal`](https://github.com/tytolabs/umst-formal):** The formal mathematical verification database holding the **Lean 4 & Coq proof anchors** for the cement gate fiber. This repository mathematically proves that the DEC cochain complexes satisfy exact conservation laws (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;d%20\circ%20d%20=%200"><img alt="d \circ d = 0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;d%20\circ%20d%20=%200" style="vertical-align:middle"></picture>).
-4.  **[`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit):** The quantum-information proof suite (Lean 4 + Mathlib). Machine-checked proofs of the Landauer cost of measurement, the Englert visibility / which-path bound, Lindblad dephasing limits, and Klein relative-entropy nonnegativity — anchoring the manifold's Thermodynamic CBF in formally verified quantum-mechanical foundations.
+### 9.1 Shared stack (gate spine)
 
-### 9.2 Working Contract
-*   **No statistical interpolation of physics.** Material stress, deformation, and hydration states come from the solvers — not from heuristics or regression.
-*   **Ground every constant; respect second-law composition.** Follow [§1.2](#12-grounding-contract-derived-measured-and-grounded-constants): trace coefficients to a **derivation, measurement record, or named calibration/literature/DFT anchor**; never weaken the manifold’s thermodynamic admissibility when composing closures.
-*   **Call the MCP tools.** The headless **Model Context Protocol** server in the `umst-mcp` crate exposes `umst_predict`, `umst_audit`, `umst_profiles`, `umst_certify`, and (with `--features agent-layer`) `umst_gate_check`, `umst_contribute`, `umst_memory_query`. Use them to compute answers rather than guessing physics.
-*   **Follow the gradients.** The PyO3 interface (`umst_py`) exposes raw mechanical gradient vectors inside notebooks. Let spatial gradients shape the geometry instead of running grid-searches.
+Same block as the front door: **matter** (manifold + this cartridge) · **knowing** (formal-double-slit) · **acting** (formal) · **time** (ucrs) — one thermodynamic admissibility gate. Sibling links in [Related repositories](#related-repositories).
 
-### 9.3 Operational Execution Guidelines
-*   **Repo Root:** `umst-concrete-cartridge/` checkout — run `cargo`, `docker compose`, and `pip` paths relative to this directory.
-*   **Safe, No-GPU Defaults:** `cargo test --workspace` · `python3 scripts/mcp_smoke.py` · `cargo run -p umst-concrete-cartridge --example hydration_simulation`.
-*   **Action Mapping:**
-    *   JSON strength scratch <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\rightarrow"><img alt="\rightarrow" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\rightarrow" style="vertical-align:middle"></picture> `umst … predict`
-    *   CSV dataset audit <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\rightarrow"><img alt="\rightarrow" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\rightarrow" style="vertical-align:middle"></picture> `umst … audit`
-    *   Python notebook imports <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\rightarrow"><img alt="\rightarrow" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\rightarrow" style="vertical-align:middle"></picture> `pip install './crates/umst-py[notebook]'`
-    *   Out-of-process cloud scaling <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\rightarrow"><img alt="\rightarrow" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\rightarrow" style="vertical-align:middle"></picture> Spawn `umst-mcp` daemon to stream voxel grids via WebSockets.
+### 9.2 Hot arena vs cold edge (performance honesty)
 
-### 9.4 Three Physical Principles for Agent Reasoning
-Cartridge edits and design proposals read cleaner when held to three principles:
-*   **Continuity of flow (category & graph theory).** Spatial optimizations operate on a topologically linked grid. Structural designs move as a unified flow; geometric edits respect the boundary equations (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;d%20\circ%20d%20=%200"><img alt="d \circ d = 0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;d%20\circ%20d%20=%200" style="vertical-align:middle"></picture>) so load paths stay continuous across the structure.
-*   **Physics-as-types (type theory).** Powers–Mills hydration kinetics, colloidal slurry forces, and ITZ weaknesses act as structural types. A mix or print path that fails printability yield or column-buckling limits is a compile-time type error, auto-rejected.
-*   **Information cost (information theory & MI).** Each design change is an informational change carrying a Landauer cost (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;k_B%20T%20\ln%202%20\cdot%20\Delta%20I"><img alt="k_B T \ln 2 \cdot \Delta I" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;k_B%20T%20\ln%202%20\cdot%20\Delta%20I" style="vertical-align:middle"></picture>). The on-device mutual information metric <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\Delta%20I"><img alt="\Delta I" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\Delta%20I" style="vertical-align:middle"></picture> tracks the cost; the CBF gates anything that doesn't pay it.
+| Path | Tools | Character | Source |
+|:---|:---|:---|:---|
+| **Hot arena** | `umst_arena_open`, `umst_gate_check_arena`, `umst_arena_close` | Pure-tensor / native in-process gate loops once arena bytes are warm; parse-once session | Dispatch [`main.rs:880–882`](crates/umst-mcp/src/main.rs); descriptors [`agent_layer.rs:716+`](crates/umst-mcp/src/agent_layer.rs) |
+| **Cold edge (MCP coordination)** | `umst_gate_check`, `umst_contribute`, `umst_contribute_status`, `umst_memory_query`, `umst_mi_estimate`, `umst_transition_propose`, plus predict/audit/profiles/certify | Effectful JSON-RPC over **stdio**; memory / contribute / explain | `main.rs:870–879`; `agent_layer.rs` |
 
-### 9.5 The Ecosystem Loop & Modular Material Scaling
-The four repos form a closed loop: the manifold supplies conservation laws and gating, applied cartridges supply domain chemistry and operational tools, the formal repos anchor the invariants. 
+Batch gate loops → prefer arena examples [`06_arena_batch.py`](examples/agent/06_arena_batch.py), [`07_arena_mmap_load.py`](examples/agent/07_arena_mmap_load.py), [`08_arena_mcp_session.py`](examples/agent/08_arena_mcp_session.py). Discovery / contribute → cold MCP (`01`–`05`).
 
-New physical domains plug in by implementing **`IScienceCartridge`** — no manifold changes required. A cartridge (aerospace metals, smart polymers, acoustic metamaterials) inherits the DEC grid, thermodynamic CBF checkpoints, and the on-device mutual-information observer for free:
+**Full tool inventory:** confirm from `main.rs` dispatch (`tools/list` with `--features agent-layer` returned **13** names in §6 paste). Do not re-enumerate schemas here — open [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md).
 
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://mermaid.ink/svg/eyJjb2RlIjoiZ3JhcGggVERcbiAgICBzdWJncmFwaCBcIkNvcmUgTWF0aGVtYXRpY2FsIE1hbmlmb2xkICh1bXN0LW1hbmlmb2xkKVwiXG4gICAgICAgIEFbXCJQdXJpdHkgb2YgRmxvdyAoQ29udGludW91cyBHcmFkaWVudHMpXCJdIC0tPiBCW1wiUGh5c2ljYWwgVHJ1dGggYXMgQ29kZSBUeXBlcyAoVG9wb2xvZ2ljYWwgQ29uc2VydmF0aW9uKVwiXVxuICAgICAgICBCIC0tPiBDW1wiVGhlcm1vZHluYW1pYyBDaGVja3BvaW50cyAoTGFuZGF1ZXIgQ29zdCBHYXRpbmcpXCJdXG4gICAgZW5kXG4gICAgc3ViZ3JhcGggXCJBcHBsaWVkIE1hdGVyaWFsIENhcnRyaWRnZXNcIlxuICAgICAgICBEW1wiQWN0aXZlIE1DUCBUb29sczxici8-KHByZWRpY3Rfc3RyZW5ndGgsIGF1ZGl0X21peClcIl0gLS0-IEVbXCJSb2JvdGljIEtpbmVtYXRpYyBNYXBwaW5nPGJyLz4oSUsgLyBGSyBDb3JyZWN0aW9ucylcIl1cbiAgICAgICAgRSAtLT4gRltcIlBoeXNpY3MtR2F0ZWQgVm94ZWw8YnIvPkdyYWRpZW50IE9wdGltaXphdGlvblwiXVxuICAgIGVuZFxuICAgIHN1YmdyYXBoIFwiTW9kdWxhciBNYXRlcmlhbCBTY2FsaW5nXCJcbiAgICAgICAgR1tcIkFlcm9zcGFjZSBNZXRhbDxici8-Q2FydHJpZGdlXCJdIC0uLT58SVNjaWVuY2VDYXJ0cmlkZ2V8IENcbiAgICAgICAgSVtcIlNtYXJ0IFBvbHltZXI8YnIvPkNhcnRyaWRnZVwiXSAtLi0-fElTY2llbmNlQ2FydHJpZGdlfCBDXG4gICAgICAgIEpbXCJBY291c3RpYyBNZXRhbWF0ZXJpYWw8YnIvPkNhcnRyaWRnZVwiXSAtLi0-fElTY2llbmNlQ2FydHJpZGdlfCBDXG4gICAgZW5kXG4gICAgQyA8LS0-fEluc3RydWN0cyAmIFZlcmlmaWVzfCBEIiwibWVybWFpZCI6IntcInRoZW1lXCI6IFwiZGFya1wifSJ9"><img alt="Core Mathematical Manifold (umst-manifold)" src="https://mermaid.ink/svg/eyJjb2RlIjoiZ3JhcGggVERcbiAgICBzdWJncmFwaCBcIkNvcmUgTWF0aGVtYXRpY2FsIE1hbmlmb2xkICh1bXN0LW1hbmlmb2xkKVwiXG4gICAgICAgIEFbXCJQdXJpdHkgb2YgRmxvdyAoQ29udGludW91cyBHcmFkaWVudHMpXCJdIC0tPiBCW1wiUGh5c2ljYWwgVHJ1dGggYXMgQ29kZSBUeXBlcyAoVG9wb2xvZ2ljYWwgQ29uc2VydmF0aW9uKVwiXVxuICAgICAgICBCIC0tPiBDW1wiVGhlcm1vZHluYW1pYyBDaGVja3BvaW50cyAoTGFuZGF1ZXIgQ29zdCBHYXRpbmcpXCJdXG4gICAgZW5kXG4gICAgc3ViZ3JhcGggXCJBcHBsaWVkIE1hdGVyaWFsIENhcnRyaWRnZXNcIlxuICAgICAgICBEW1wiQWN0aXZlIE1DUCBUb29sczxici8-KHByZWRpY3Rfc3RyZW5ndGgsIGF1ZGl0X21peClcIl0gLS0-IEVbXCJSb2JvdGljIEtpbmVtYXRpYyBNYXBwaW5nPGJyLz4oSUsgLyBGSyBDb3JyZWN0aW9ucylcIl1cbiAgICAgICAgRSAtLT4gRltcIlBoeXNpY3MtR2F0ZWQgVm94ZWw8YnIvPkdyYWRpZW50IE9wdGltaXphdGlvblwiXVxuICAgIGVuZFxuICAgIHN1YmdyYXBoIFwiTW9kdWxhciBNYXRlcmlhbCBTY2FsaW5nXCJcbiAgICAgICAgR1tcIkFlcm9zcGFjZSBNZXRhbDxici8-Q2FydHJpZGdlXCJdIC0uLT58SVNjaWVuY2VDYXJ0cmlkZ2V8IENcbiAgICAgICAgSVtcIlNtYXJ0IFBvbHltZXI8YnIvPkNhcnRyaWRnZVwiXSAtLi0-fElTY2llbmNlQ2FydHJpZGdlfCBDXG4gICAgICAgIEpbXCJBY291c3RpYyBNZXRhbWF0ZXJpYWw8YnIvPkNhcnRyaWRnZVwiXSAtLi0-fElTY2llbmNlQ2FydHJpZGdlfCBDXG4gICAgZW5kXG4gICAgQyA8LS0-fEluc3RydWN0cyAmIFZlcmlmaWVzfCBEIiwibWVybWFpZCI6IntcInRoZW1lXCI6IFwiZGVmYXVsdFwifSJ9" style="max-width:100%;height:auto"></picture></p>
+### 9.3 Gate contract (no silent failure)
 
----
+Enforced at:
 
-### 9.6 Physical Reasoning Layer
+| Layer | File:line | Behavior |
+|:---|:---|:---|
+| Result shape | [`contribution.rs:161–167`](crates/umst-concrete-cartridge/src/research/contribution.rs) | `GateCheckResult { gate_summary, gate_reject?, explain? }` |
+| Explain / remediation | `contribution.rs:147–154`, `200–210` | `GateCheckExplain.remediation` from violation codes |
+| MCP `isError` | [`main.rs:502–508`](crates/umst-mcp/src/main.rs) | `is_error = !result.gate_summary.admissible` on `umst_gate_check` |
+| Agent prompts | [`agent_layer.rs:495–515`](crates/umst-mcp/src/agent_layer.rs) | Gate-before-contribute; read `explain.remediation` on REJECT |
+| Contribute hard reject | `main.rs:71–72`, `agent_layer.rs:310–311` | `contribute_gate_reject` / transition reject if not admissible |
 
-Gate-validated research memory, contribution schemas, and the expanded MCP contract are documented in [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md). Build with `cargo build -p umst-mcp --features agent-layer`. Contributions require `gate_summary.admissible: true`; calibration changes require human `promotion_approval.v1` via `umst promote-contribution` — never silent auto-tune from MCP.
+**Semantics agents must implement:**
+
+1. **Success (PASS):** `gate_summary.admissible == true`, `verdict: "PASS"` — may proceed to `umst_contribute` with matching `gate_summary` on the wire.
+2. **Rejection (REJECT):** MCP returns `isError: true` with `gate_reject.v1` + `explain` (default `explain: true`) — **never** treat as soft warning; **never** contribute.
+3. **Remediation:** read `explain.regime_violations`, `explain.remediation`, `explain.fields`; adjust mix; **re-run** `umst_gate_check` before contribute. Rejects append to gate-reject JSONL and do not enter `admissible_only` memory (`agent_layer.rs:510`).
+
+Build: `cargo build -p umst-mcp --features agent-layer`. Calibration promotion requires human `promotion_approval.v1` via `umst promote-contribution` — never silent auto-tune from MCP ([`docs/AGENT_MCP.md`](docs/AGENT_MCP.md)).
+
+### 9.4 Working contract (load-bearing)
+
+* **No statistical interpolation of physics.** Constitutive answers come from solvers / predict — not guessed.
+* **Ground every constant; respect second-law composition.** See [§1.2](#12-grounding-contract-derived-measured-and-grounded-constants).
+* **Call tools; don’t invent physics.** Use MCP / CLI / Python surfaces; on REJECT follow remediation.
+* **Follow gradients** where `umst_concrete_cartridge` / façade APIs expose them — prefer physics gradients over blind grid search.
+
+### 9.5 Operational mapping
+
+| Goal | Action |
+|:---|:---|
+| JSON strength scratch | `umst … predict` / `umst_predict` / Python `predict` |
+| CSV dataset audit | `umst … audit` / `umst_audit` |
+| Python import | `pip install './crates/umst-py'` → `import umst_concrete_cartridge` |
+| Agent MCP | `cargo run -p umst-mcp --features agent-layer` (**stdio**) |
+| Batch gate | Arena tools + `examples/agent/06`–`08` |
+
+### 9.6 Proposed (not yet built)
+
+Do **not** call these as if they exist on the MCP surface today:
+
+* `umst_dry_run` / contribute `preview: true` on MCP (inbox uses `ingest_contributions.py --dry-run` instead — see AGENT_MCP)
+* `umst_promote_contribution` as an MCP tool (CLI promotion path is separate)
+* `umst_arena_session` as a single fused tool (use open / gate_check_arena / close)
+* WebSocket voxel streaming to `umst-mcp` (stdio is what we verified)
+
+### 9.7 Principles (honest typing)
+
+* **Continuity of flow.** Spatial work respects DEC boundary structure (`d ∘ d = 0`) on the manifold grid.
+* **Admissibility is runtime, not Rust compile-time.** Printability / buckling / CD failures surface as **gate REJECT** / solver errors — not as rustc type errors. Soften any “compile-time type error” metaphor accordingly.
+* **Information cost.** Landauer / MI observers on the stack bound informational updates; see `umst_mi_estimate` and AGENT_MCP.
 
 ## 10. Conclusion: Inferences & Forward Path
 
@@ -529,17 +631,18 @@ Gate-validated research memory, contribution schemas, and the expanded MCP contr
 
 *What is actually shown in this repository today is **software**: solvers, audits, notebooks, MCP tools, and structural surrogates. A **physical** print with extruder feedback closed through this cartridge is **not** a completed TYTO deliverable here — the bullets below are what the stack **is designed to demonstrate** once integrated with hardware and plant workflows.*
 
-- **A physics-bound concrete brain on commodity hardware.** Hydration kinetics, Vinet bulk modulus, viscoplastic yield, and carbon accounting all resolve through the same **UMST carrier** / state tensor, gated by a thermodynamic CBF. Predictions are anchored in atomic-scale physics rather than dataset-fit regressions, which removes the dominant failure mode of ML-based mix designers: confident extrapolation into unphysical regions.
-- **Differentiable carbon is a real design lever.** Because <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;GWP(\mathbf{w})%20=%20\mathbf{w}%20\cdot%20\mathbf{g}"><img alt="GWP(\mathbf{w}) = \mathbf{w} \cdot \mathbf{g}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;GWP(\mathbf{w})%20=%20\mathbf{w}%20\cdot%20\mathbf{g}" style="vertical-align:middle"></picture> is wired into the same gradient graph as mechanical compliance, the optimizer descends a true mix–shape Pareto front rather than enumerating point alternatives.
-- **Print-time gating we aim to validate on hardware.** The CBF can reject trajectories that violate localized yield or buckling limits each gating cycle and return Cartesian corrections toward an IK stack — that is the **intended** closed loop. In simulation and small-grid timings it looks viable; **we do not claim here that slump failures have already been turned from catastrophic to graceful on a production extruder** using only this repo’s integration path.
-- **Surfaces match audience.** CLI for material scientists, PyO3 for designers, MCP for agentic workflows, FFI for systems integrators — one engine, four idiomatic entry points.
+- **A physics-bound concrete cartridge on commodity hardware.** Hydration kinetics, Vinet bulk modulus, viscoplastic yield, and carbon accounting resolve through the **UMST carrier**, gated by the thermodynamic admissibility gate. Predictions are anchored in calibrated constitutive structure rather than unconstrained ML extrapolation.
+- **Differentiable carbon is a real design lever** where wired into the gradient graph — GWP descends with mechanical objectives when that path is enabled; the gate still does not replace FEM collapse analysis.
+- **Print-time gating we aim to validate on hardware.** The CBF can reject trajectories that violate localized yield or buckling limits in simulation — **we do not claim** slump failures have already been turned from catastrophic to graceful on a production extruder using only this repo.
+- **Surfaces match audience.** CLI, Python (`umst_concrete_cartridge`), stdio MCP, FFI — one cartridge, four entry points (not four invented “engines”).
 
 ### What surprised us
-- **Most published concrete recipes already break physics.** Of 18,146 audited mixes from public datasets, 82.4% violate at least one physical or chemical envelope. The industry treats published mixes as ground truth; we treated them as inputs to gate, and the optimizer's discovered Pareto front shifted substantially once admissibility was hard-required, not optimized-toward.
-- **The cement literature is full of regressions wearing physics' clothes.** Many "constitutive" models in published papers fit a curve through experimental data and call it a law. Anchoring back to Pellenq / Vinet / DFT was the only way to keep new mixes — biochar, recycled coarse aggregate, blast-furnace slag — from collapsing the predictor.
-- **Print-time gating should beat upstream simulation — in principle.** Slump and buckling physics evolves faster than any pre-print planner can replan. Returning Cartesian gradients (Δx, Δy, Δz) from the runtime to an IK engine *during* extrusion is **why we expect** slump risk to move from “catastrophic surprise” to “graceful abort” **once** that loop is proven on hardware; today that story is carried by **models and timing arguments**, not by a TYTO-led physical print log in this repo.
-- **Industrial resistance is supplier-shaped, not math-shaped.** Plants don't refuse better mixes because they doubt the physics; they refuse because their aggregate supplier doesn't ship a 50% RCA blend. In the field, cost and logistics gate adoption first; carbon and admissibility follow once those constraints clear — and the economics often carry the decarbonisation story anyway.
-- **Admissibility-first generalizes; accuracy-first overfits.** Models optimized for MAE on UCI / Zenodo slices broke on out-of-distribution mixes. Models gated by admissibility extrapolated cleanly, because the gate is the same physics in every regime — there is no out-of-distribution in the gate's frame.
+
+- **Published mixes are not automatically admissible.** Treating public dataset rows as inputs to the gate (rather than as ground truth) shifts design priorities once `admissible` is hard-required. *(Prior README claimed “18,146 mixes / 82.4% violate” — **retracted**: not re-derived from a cited script + paste in this pass. Reintroduce only with a command and output.)*
+- **The cement literature often fits curves that wear physics’ clothes.** Anchoring to Vinet / DFT / measured profiles is how OOD binders stay inside an envelope.
+- **Print-time gating should beat upstream simulation — in principle.** That story is carried by **models and timing arguments**, not by a TYTO-led physical print log in this repo.
+- **Industrial resistance is supplier-shaped, not math-shaped.** Cost and logistics often gate adoption before carbon and admissibility.
+- **Admissibility-first generalizes better than accuracy-first.** MAE-optimized slices break on OOD mixes; the gate’s physics frame does not invent a second physics for “out of distribution.”
 
 In practice, the cartridge is a **software** runtime: mixes and **simulated** print paths that violate the physical envelope are blocked at gate time in integrated tooling; **field deployment and physical print validation remain the integrator’s and plant’s responsibility** until we publish an explicit hardware campaign tied to this stack.
 
@@ -547,10 +650,12 @@ In practice, the cartridge is a **software** runtime: mixes and **simulated** pr
 
 ### Related repositories
 
-- [**UMST Manifold**](https://github.com/tytolabs/umst-manifold) — core DEC substrate and thermodynamic gate this cartridge mounts on
-- [**UMST-UCRS**](https://github.com/tytolabs/umst-ucrs) — Universal Calendar Resolution Spine; optional `ucrs-provenance` Tier-2 `observed_at` stamps on agent memory
-- [**UMST Formal**](https://github.com/tytolabs/umst-formal) — Lean 4 / Coq proof anchors for the conservation laws
-- [**UMST Formal Double-Slit**](https://github.com/tytolabs/umst-formal-double-slit) — quantum-information proofs anchoring the Thermodynamic CBF
+Shared gate spine (matter / knowing / acting / time) — sibling links only:
+
+- [**UMST Manifold**](https://github.com/tytolabs/umst-manifold) — DEC carrier + thermodynamic admissibility gate (**matter** substrate)
+- [**UMST Formal Double-Slit**](https://github.com/tytolabs/umst-formal-double-slit) — observation / measurement-cost fiber (**knowing**)
+- [**UMST Formal**](https://github.com/tytolabs/umst-formal) — acting / economic-admissibility fiber (**acting**)
+- [**UMST-UCRS**](https://github.com/tytolabs/umst-ucrs) — temporal witness / stamp spine (**time**); optional `ucrs-provenance`
 
 ---
 
