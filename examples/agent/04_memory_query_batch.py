@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Seed memory then run a batch of umst_memory_query filters (pagination pattern)."""
+"""Seed memory then run a batch of umst_memory_query filters (pagination pattern).
+
+Categorical:
+  Objects: MemoryStore rows
+  Morphisms: umst_contribute (seed) + umst_memory_query (COLD, ReadOnly)
+  Errors: empty result → widen filters (AGENT_MCP troubleshooting)
+"""
 
 from __future__ import annotations
 

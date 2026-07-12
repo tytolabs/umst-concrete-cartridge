@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Arena mmap load hot loop — parse once, read `UmstArenaView` in a tight loop.
 
+Categorical:
+  Path: HOT (load_arena / UmstArenaView)
+  Morphisms: parse-once → state_bytes() hot reads
+  Docs: docs/FAST_ARENA.md
+
 Performance path: `load_arena(bytes)` validates ABI v1 header + commit_stamp witness,
 returns a zero-copy `UmstArenaView`; hot loops call `state_bytes()` without re-parsing.
 Typical gain vs stdio MCP: **5–10×+** (CI enforces ≥5× via `bench_arena_vs_mcp.py`).

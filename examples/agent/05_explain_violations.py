@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Walk gate REJECT payloads with explain:true (rational parse + thermodynamic fail)."""
+"""Walk gate REJECT payloads with explain:true (rational parse + thermodynamic fail).
+
+Categorical:
+  Objects: gate_reject.v1, GateCheckExplain
+  Morphisms: umst_gate_check (COLD) with explain default true
+  Errors: regime_violations + remediation — no silent REJECT
+"""
 
 from __future__ import annotations
 

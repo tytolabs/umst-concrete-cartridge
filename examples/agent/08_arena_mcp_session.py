@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """MCP arena session workflow — open → gate_check_arena → close.
 
+Categorical:
+  Path: HOT (MCP arena trio)
+  Morphisms: umst_arena_open → umst_gate_check_arena → umst_arena_close
+  Docs: docs/FAST_ARENA.md · docs/TOOL_CONTRACTS.md
+
 Use when an external agent owns the MCP process but needs repeated gate checks:
 `umst_arena_open` parses arena bytes once (Warm boundary); subsequent
 `umst_gate_check_arena` calls skip per-proposal JSON parse overhead.

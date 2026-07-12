@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """In-process batch gate checks — prefer library path over MCP round-trips.
 
+Categorical:
+  Path: HOT (library gate_check_mix; no JSON-RPC)
+  Objects: MixSpec / GateSummary
+  Morphisms: gate_check_mix loop — see docs/FAST_ARENA.md
+  Perf: CI enforces arena/library ≥5× stdio MCP
+
 Runs `gate_check_mix` in a tight loop (same physics as `umst_gate_check`, no JSON-RPC).
 Typical gain vs stdio MCP: **5–10×+** (CI enforces ≥5×). For parse-once arena bytes
 and `UmstArenaView` hot reads, see `07_arena_mmap_load.py` and

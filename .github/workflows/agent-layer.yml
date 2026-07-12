@@ -65,6 +65,12 @@ jobs:
         run: |
           python3 examples/agent/01_gate_explore.py
           python3 examples/agent/02_contribute_admissible.py
+          # 03 needs a seeded DB; skip cleanly when absent (still CI-gated path)
+          if [[ -f "${UMST_MEMORY_DB:-.umst-memory/memory.db}" ]]; then
+            bash examples/agent/03_export_inbox.sh
+          else
+            echo "skip 03_export_inbox.sh (no UMST_MEMORY_DB)"
+          fi
           python3 examples/agent/04_memory_query_batch.py
           python3 examples/agent/05_explain_violations.py
           python3 examples/agent/06_arena_batch.py

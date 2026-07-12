@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Federated git inbox dry-run (no git push).
-# Requires UMST_MEMORY_DB with at least one admissible row.
+# Categorical:
+#   Path: COLD (scripts / filesystem — not MCP promote)
+#   Morphisms: export_contributions_jsonl → validate (Proposed: umst_promote_contribution)
+#   Requires UMST_MEMORY_DB with at least one admissible row.
+#   Docs: docs/EPISTEMIC_PRIMITIVES.md (human-gated promotion)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
