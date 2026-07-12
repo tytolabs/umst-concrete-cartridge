@@ -684,3 +684,5 @@ Shared gate spine (matter / knowing / acting / time) — sibling links only:
 
 Bibliographic metadata is maintained in [CITATION.cff](CITATION.cff).  
 Released under the [MIT License](LICENSE). © 2026 Studio TYTO.
+
+**Governance:** corrections welcome via PR. Run `cargo test` / agent examples when touching MCP or gate paths. Security-sensitive reports: open a private GitHub security advisory or contact maintainers via [CITATION.cff](CITATION.cff) author emails. Catalog digest SSOT: [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json) — re-open the lock file; do not hardcode rival SHAs in this README.
