@@ -407,7 +407,7 @@ fn enforce_manifold_transition_gate(
     let (w_c_eff, alpha, temp_c) = homog::mix_hydration_state(profile, row)?;
     let temp_k = f64::from(temp_c) + 273.15;
     let w_c = f64::from(w_c_eff);
-    let s_intrinsic = f64::from(profile.powers.s_intrinsic);
+    let s_intrinsic = profile.powers.s_intrinsic;
     let old = ThermodynamicState::from_mix_calibrated(w_c, 0.0, temp_k, s_intrinsic);
     let new = ThermodynamicState::from_mix_calibrated(w_c, f64::from(alpha), temp_k, s_intrinsic);
     let dt_s = f64::from((row.age_days * 24.0 * 3600.0).max(1.0));

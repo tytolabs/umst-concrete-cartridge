@@ -26,6 +26,3 @@ default = []
 [[test]]
 name = "integration"
 path = "tests/integration.rs"
-
-# Standalone package (excluded from concrete workspace matrix).
-[workspace]

@@ -129,7 +129,7 @@ mod tests {
         });
         let key = mix_geometry_key(&mix, Some("standard_20C_water")).unwrap();
         assert!(!key.regime_bucket.is_empty());
-        assert!(key.hilbert_index <= (1 << (2 * GRID_BITS)) - 1);
+        assert!(key.hilbert_index < (1 << (2 * GRID_BITS)));
     }
 
     #[test]

@@ -25,7 +25,7 @@ pub fn estimate_mi_bits_rational(mix_json: &Value, profile: &Profile) -> Option<
     let ref_wc = (profile.regime.w_c_min + profile.regime.w_c_max) / 2.0;
     let ref_t = 293.15_f64;
     let l1 = (w_c - ref_wc).abs() + ((t_k - ref_t) / 100.0).abs();
-    let bits = (l1 * 2.0).min(LN2).max(0.0);
+    let bits = (l1 * 2.0).clamp(0.0, LN2);
     if bits <= f64::EPSILON {
         return None;
     }

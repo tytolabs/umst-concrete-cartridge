@@ -34,7 +34,6 @@ pub type MemoryError = StoreError;
 /// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Linear scan morphism; no interior mutation.
-#[must_use]
 pub fn find_by_memory_id(
     store: &ResearchStore,
     memory_id: &str,
@@ -393,7 +392,7 @@ mod sqlite_store {
     use rusqlite::{params, Connection};
     use serde_json;
     use std::path::{Path, PathBuf};
-    use std::sync::Arc;
+    use std::rc::Rc;
 
     const SCHEMA_SQL: &str = "
         PRAGMA journal_mode=WAL;
@@ -426,7 +425,7 @@ mod sqlite_store {
     /// formal_anchor_rationale: Durable store IO; query uses pure `filter_records` on load.
     #[derive(Debug, Clone)]
     pub struct SqliteStore {
-        conn: Arc<Connection>,
+        conn: Rc<Connection>,
         path: PathBuf,
     }
 
@@ -443,7 +442,7 @@ mod sqlite_store {
             conn.execute_batch(SCHEMA_SQL)
                 .map_err(|e| StoreError::Sqlite(e.to_string()))?;
             Ok(Self {
-                conn: Arc::new(conn),
+                conn: Rc::new(conn),
                 path: path.to_path_buf(),
             })
         }

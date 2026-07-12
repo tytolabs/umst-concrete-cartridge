@@ -115,16 +115,16 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `matches_query` | `crates/umst-concrete-cartridge/src/research/layer.rs:63` | `STRUCTURAL` | — | Optional cartridge-specific query predicate hook. |
 | `ConcretePhysicalReasoningLayer` | `crates/umst-concrete-cartridge/src/research/layer.rs:72` | `STRUCTURAL` | — | Zero-sized port impl for umst-concrete-cartridge agent layer. |
 | `find_by_memory_id` | `crates/umst-concrete-cartridge/src/research/memory.rs:33` | `STRUCTURAL` | — | Linear scan morphism; no interior mutation. |
-| `MemoryStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:49` | `STRUCTURAL` | — | Type-class for functional append; no global mutable store. |
-| `append` | `crates/umst-concrete-cartridge/src/research/memory.rs:56` | `STRUCTURAL` | — | Functional append morphism; duplicate content_id rejected. |
-| `rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:64` | `STRUCTURAL` | — | Immutable row snapshot for pure `filter_records`. |
-| `filter_records` | `crates/umst-concrete-cartridge/src/research/memory.rs:135` | `STRUCTURAL` | — | Query filter over row slice; L1/Morton sort when requested. |
-| `query_page` | `crates/umst-concrete-cartridge/src/research/memory.rs:144` | `STRUCTURAL` | — | Page envelope for MCP `umst_memory_query`; cursor is prior `content_id`. |
-| `InMemoryStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:197` | `STRUCTURAL` | — | Functional in-memory store; rows + idempotency keys owned by value. |
-| `new` | `crates/umst-concrete-cartridge/src/research/memory.rs:208` | `STRUCTURAL` | — | Zero-row initializer for tests and default session. |
-| `from_rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:220` | `STRUCTURAL` | — | Test/fixture constructor; no duplicate checks on load. |
-| `query` | `crates/umst-concrete-cartridge/src/research/memory.rs:232` | `STRUCTURAL` | — | Delegates to `filter_records` on owned row slice. |
-| `in_memory` | `crates/umst-concrete-cartridge/src/research/memory.rs:275` | `STRUCTURAL` | — | Constructs functional in-memory arm only. |
+| `MemoryStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:48` | `STRUCTURAL` | — | Type-class for functional append; no global mutable store. |
+| `append` | `crates/umst-concrete-cartridge/src/research/memory.rs:55` | `STRUCTURAL` | — | Functional append morphism; duplicate content_id rejected. |
+| `rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:63` | `STRUCTURAL` | — | Immutable row snapshot for pure `filter_records`. |
+| `filter_records` | `crates/umst-concrete-cartridge/src/research/memory.rs:134` | `STRUCTURAL` | — | Query filter over row slice; L1/Morton sort when requested. |
+| `query_page` | `crates/umst-concrete-cartridge/src/research/memory.rs:143` | `STRUCTURAL` | — | Page envelope for MCP `umst_memory_query`; cursor is prior `content_id`. |
+| `InMemoryStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:196` | `STRUCTURAL` | — | Functional in-memory store; rows + idempotency keys owned by value. |
+| `new` | `crates/umst-concrete-cartridge/src/research/memory.rs:207` | `STRUCTURAL` | — | Zero-row initializer for tests and default session. |
+| `from_rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:219` | `STRUCTURAL` | — | Test/fixture constructor; no duplicate checks on load. |
+| `query` | `crates/umst-concrete-cartridge/src/research/memory.rs:231` | `STRUCTURAL` | — | Delegates to `filter_records` on owned row slice. |
+| `in_memory` | `crates/umst-concrete-cartridge/src/research/memory.rs:274` | `STRUCTURAL` | — | Constructs functional in-memory arm only. |
 | `UcrsStampMode` | `crates/umst-concrete-cartridge/src/research/provenance.rs:41` | `STRUCTURAL` | — | Live vs synthetic stamp functor selection on accept. |
 | `ProvenanceClock` | `crates/umst-concrete-cartridge/src/research/provenance.rs:68` | `STRUCTURAL` | — | Immutable clock state; `advance` is pure given injected wall. |
 | `from_env` | `crates/umst-concrete-cartridge/src/research/provenance.rs:102` | `STRUCTURAL` | — | Session boundary initializer; IO on env read only. |
@@ -424,24 +424,24 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `validate_scope_token` | `crates/umst-concrete-cartridge/src/research/governance.rs:20` | `NONE` | — | YAML/env governance allowlist; physics on `gate_recheck` only. |
 | `StoreError` | `crates/umst-concrete-cartridge/src/research/memory.rs:11` | `NONE` | — | Store boundary error sum type; admissibility on accept path. |
 | `MemoryError` | `crates/umst-concrete-cartridge/src/research/memory.rs:27` | `NONE` | — | Type alias for ergonomic imports; same variants as `StoreError`. |
-| `ResearchStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:258` | `NONE` | — | Store enum dispatch; SQLite arm is IO boundary. |
-| `open_sqlite` | `crates/umst-concrete-cartridge/src/research/memory.rs:284` | `NONE` | — | Filesystem + SQLite connection open; not pure morphism. |
-| `from_env` | `crates/umst-concrete-cartridge/src/research/memory.rs:292` | `NONE` | — | Environment-driven store selection at session start. |
-| `query` | `crates/umst-concrete-cartridge/src/research/memory.rs:303` | `NONE` | — | Dispatches to in-memory or SQLite IO arm. |
-| `append` | `crates/umst-concrete-cartridge/src/research/memory.rs:315` | `NONE` | — | Store dispatch + idempotency check at IO boundary. |
-| `rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:344` | `NONE` | — | May load from SQLite; pure filter on result in `filter_records`. |
-| `load_contribute_jobs_sqlite` | `crates/umst-concrete-cartridge/src/research/memory.rs:363` | `NONE` | — | IO boundary for MCP job poll; JSON sidecar dual-write. |
-| `persist_contribute_jobs_sqlite` | `crates/umst-concrete-cartridge/src/research/memory.rs:374` | `NONE` | — | IO boundary; jobs are ephemeral operator state. |
-| `SqliteStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:423` | `NONE` | — | Durable store IO; query uses pure `filter_records` on load. |
-| `open` | `crates/umst-concrete-cartridge/src/research/memory.rs:434` | `NONE` | — | Connection + schema migration IO boundary. |
-| `path` | `crates/umst-concrete-cartridge/src/research/memory.rs:451` | `NONE` | — | Path accessor for operator diagnostics only. |
-| `has_idempotency_key` | `crates/umst-concrete-cartridge/src/research/memory.rs:477` | `NONE` | — | SQLite read for duplicate suppression at append. |
-| `append` | `crates/umst-concrete-cartridge/src/research/memory.rs:492` | `NONE` | — | SQLite INSERT; rows must pass accept gate before call. |
-| `query` | `crates/umst-concrete-cartridge/src/research/memory.rs:516` | `NONE` | — | SQLite SELECT + pure filter morphism. |
-| `rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:525` | `NONE` | — | Full table scan IO; filter in caller if needed. |
-| `load_contribute_jobs` | `crates/umst-concrete-cartridge/src/research/memory.rs:533` | `NONE` | — | SQLite read for MCP job poll; JSON sidecar remains dual-written. |
-| `replace_contribute_jobs` | `crates/umst-concrete-cartridge/src/research/memory.rs:558` | `NONE` | — | SQLite transaction boundary for ephemeral job map. |
-| `SqliteStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:598` | `NONE` | — | Re-export of IO-backed store; see `sqlite_store::SqliteStore`. |
+| `ResearchStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:257` | `NONE` | — | Store enum dispatch; SQLite arm is IO boundary. |
+| `open_sqlite` | `crates/umst-concrete-cartridge/src/research/memory.rs:283` | `NONE` | — | Filesystem + SQLite connection open; not pure morphism. |
+| `from_env` | `crates/umst-concrete-cartridge/src/research/memory.rs:291` | `NONE` | — | Environment-driven store selection at session start. |
+| `query` | `crates/umst-concrete-cartridge/src/research/memory.rs:302` | `NONE` | — | Dispatches to in-memory or SQLite IO arm. |
+| `append` | `crates/umst-concrete-cartridge/src/research/memory.rs:314` | `NONE` | — | Store dispatch + idempotency check at IO boundary. |
+| `rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:343` | `NONE` | — | May load from SQLite; pure filter on result in `filter_records`. |
+| `load_contribute_jobs_sqlite` | `crates/umst-concrete-cartridge/src/research/memory.rs:362` | `NONE` | — | IO boundary for MCP job poll; JSON sidecar dual-write. |
+| `persist_contribute_jobs_sqlite` | `crates/umst-concrete-cartridge/src/research/memory.rs:373` | `NONE` | — | IO boundary; jobs are ephemeral operator state. |
+| `SqliteStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:422` | `NONE` | — | Durable store IO; query uses pure `filter_records` on load. |
+| `open` | `crates/umst-concrete-cartridge/src/research/memory.rs:433` | `NONE` | — | Connection + schema migration IO boundary. |
+| `path` | `crates/umst-concrete-cartridge/src/research/memory.rs:450` | `NONE` | — | Path accessor for operator diagnostics only. |
+| `has_idempotency_key` | `crates/umst-concrete-cartridge/src/research/memory.rs:476` | `NONE` | — | SQLite read for duplicate suppression at append. |
+| `append` | `crates/umst-concrete-cartridge/src/research/memory.rs:491` | `NONE` | — | SQLite INSERT; rows must pass accept gate before call. |
+| `query` | `crates/umst-concrete-cartridge/src/research/memory.rs:515` | `NONE` | — | SQLite SELECT + pure filter morphism. |
+| `rows` | `crates/umst-concrete-cartridge/src/research/memory.rs:524` | `NONE` | — | Full table scan IO; filter in caller if needed. |
+| `load_contribute_jobs` | `crates/umst-concrete-cartridge/src/research/memory.rs:532` | `NONE` | — | SQLite read for MCP job poll; JSON sidecar remains dual-written. |
+| `replace_contribute_jobs` | `crates/umst-concrete-cartridge/src/research/memory.rs:557` | `NONE` | — | SQLite transaction boundary for ephemeral job map. |
+| `SqliteStore` | `crates/umst-concrete-cartridge/src/research/memory.rs:597` | `NONE` | — | Re-export of IO-backed store; see `sqlite_store::SqliteStore`. |
 | `estimate_mi_bits_rational` | `crates/umst-concrete-cartridge/src/research/mi.rs:17` | `NONE` | — | Epistemic surrogate for MCP enrichment; not admissibility. |
 | `estimate_mi_bits_from_mix` | `crates/umst-concrete-cartridge/src/research/mi.rs:35` | `NONE` | — | `umst_mi_estimate` advisory wire; histogram MI on manifold PPO path. |
 | `fields_for_code as gate_fields_for_code_ssot, remediation_for_code as gate_remediation_for_code, MANIFEST_BRIDGE_DISABLED, MIX_SPEC_RATIONAL_PARSE_FAIL, MIX_SPEC_WIRE_INVALID, THERMODYNAMIC_CD_FAIL, THERMODYNAMIC_FAIL, TOP_GATE_EXPLAIN_CODES` | `crates/umst-concrete-cartridge/src/research/mod.rs:16` | `NONE` | — | SSOT re-exports of manifold gate explain vocabulary. |
