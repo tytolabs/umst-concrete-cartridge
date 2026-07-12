@@ -526,7 +526,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 
 **Manifold dependency pin (what this repo owns):** workspace `Cargo.toml` pins `umst-manifold` / `umst-runtime-arena` at git **`rev = "35bf75f5b99835265c40d343bd6a88bb629dff7f"`** ([`Cargo.toml`](Cargo.toml) lines 28–29). Bump that rev when promoting a manifold release — do **not** treat a prose catalog module count in this README as authoritative.
 
-**Formal catalog module counts (SSOT — link, do not hardcode here):** read [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json) (`module_count`, `upstream_catalog_digest_hex`, `fiber_pins`). Workspace index: MaOS [`docs/ECOSYSTEM_STATE.md`](https://github.com/tytolabs/MaOS-Workspace/blob/master/docs/ECOSYSTEM_STATE.md). Sibling checkout used while writing this README happened to show `module_count: 129` @ manifold `38d9780` — **re-open the lock file**; numbers drift by design.
+**Formal catalog module counts (SSOT — link, do not hardcode here):** read [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json) (`module_count`, `upstream_catalog_digest_hex`, `fiber_pins`). Cartridge-local formal notes: [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md). Sibling checkout used while writing this README happened to show `module_count: 129` @ manifold `38d9780` — **re-open the lock file**; numbers drift by design.
 
 **Stack verify (monorepo):** from a manifold checkout, `bash scripts/verify_umst_stack.sh`. Cartridge parity: `cargo test -p umst-concrete-cartridge --features manifest-bridge` (matches GHA).
 
@@ -661,7 +661,7 @@ Shared gate spine (matter / knowing / acting / time) — sibling links only:
 
 ## Release & agent path
 
-> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`. For **batch gate loops**, prefer the arena fast path — [`06_arena_batch.py`](examples/agent/06_arena_batch.py), [`07_arena_mmap_load.py`](examples/agent/07_arena_mmap_load.py) (≥5× MCP, CI-pinned). **Roadmap:** [Stack roadmap (shipped vs in flight)](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/.plans/umst-master-reengineering.md#stack-roadmap-shipped-vs-in-flight) in the UMST master plan.
+> **For AI agents:** Gate-validated research memory via stdio MCP — start with [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md), then `cargo run -p umst-mcp --features agent-layer` or `python3 examples/agent/01_gate_explore.py`. For **batch gate loops**, prefer the arena fast path — [`06_arena_batch.py`](examples/agent/06_arena_batch.py), [`07_arena_mmap_load.py`](examples/agent/07_arena_mmap_load.py) (≥5× MCP, CI-pinned).
 
 ### Fast Path for Agents
 
@@ -676,7 +676,7 @@ Shared gate spine (matter / knowing / acting / time) — sibling links only:
 - **MCP contract:** [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) — Quick Start, tool reference, `agent_error.v1` / `gate_reject.v1` remediation.
 - **Examples (CI-gated):** [`examples/agent/`](examples/agent/) — `01` gate explore, `02` contribute, `04` memory batch, `05` explain violations, `06` arena batch, `07` arena mmap, `08` MCP arena session.
 - **Golden fixtures:** [`fixtures/golden-adversarial/`](fixtures/golden-adversarial/) — agent wire SSOT (2 mixes); manifold owns 75-case physics gate.
-- **Evidence SSOT:** [IMPLEMENTATION_EVIDENCE.md](https://github.com/tytolabs/MaOS-Workspace/blob/master/outputs/IMPLEMENTATION_EVIDENCE.md) — shipped vs partial vs USER-gated (**Current State** lives there, not in this README).
+- **Solver / formal status (in-repo):** [`docs/Solver-Status.md`](docs/Solver-Status.md), [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md) — do not treat this README as a completion %.
 
 > Release notes in [CHANGELOG.md](CHANGELOG.md).
 
