@@ -1,0 +1,54 @@
+{
+  "description": "S0 golden MCP tools/call result frames; ids/timestamps redacted; nested tool text canonicalized.",
+  "frames": [
+    {
+      "result": {
+        "content": [
+          {
+            "text": "[{\"description\":\"generic OPC fallback (Contract, synthetic anchor)\",\"id\":\"default\"},{\"description\":\"High SCM blends (Contract on paired CSV)\",\"id\":\"highscm\"},{\"description\":\"Self-healing specialty mix (Boundary)\",\"id\":\"selfheal\"},{\"description\":\"Tyto S1 proxy-rheology mortar (θ calibration, printable window)\",\"id\":\"tyto_mortar\"},{\"description\":\"Yeh 1998 UCI concrete strength (D1, 1030 rows)\",\"id\":\"uci_d1\"},{\"description\":\"Ultra-high performance concrete (Boundary)\",\"id\":\"uhpc\"},{\"description\":\"Zenodo 14921019 NDT subset (dataset_d2.csv, TU/e + TNO)\",\"id\":\"zenodo_ndt\"},{\"description\":\"Zenodo 14921019 RH subset (dataset_d4.csv, TU/e + TNO)\",\"id\":\"zenodo_rh\"},{\"description\":\"Zenodo 14921019 SonReb subset (dataset_d3.csv, TU/e + TNO)\",\"id\":\"zenodo_sonreb\"}]",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      },
+      "tool": "umst_profiles"
+    },
+    {
+      "result": {
+        "content": [
+          {
+            "text": "{\"explain\":{\"catalog_witnesses\":[\"umst.gate.cd_transition\"],\"regime_violations\":[]},\"gate_summary\":{\"admissible\":true,\"catalog_ids\":[\"umst.gate.cd_transition\"],\"mi_bits_est\":\"500/10000\",\"verdict\":\"PASS\"}}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      },
+      "tool": "umst_gate_check"
+    },
+    {
+      "result": {
+        "content": [
+          {
+            "text": "{\"advisory\":true,\"mi_bits_est\":null}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      },
+      "tool": "umst_mi_estimate"
+    },
+    {
+      "result": {
+        "content": [
+          {
+            "text": "{\"agent_error\":{\"code\":\"mix_parse_fail\",\"message\":\"mix parse error: JSON error: invalid type: string \\\"7/10\\\", expected f64\",\"remediation\":\"Use rational strings like \\\"9/20\\\" for w_c and temperature_k; see contribution.v1 schema.\",\"schema_version\":\"agent_error.v1\"}}",
+            "type": "text"
+          }
+        ],
+        "isError": true
+      },
+      "tool": "umst_predict"
+    }
+  ],
+  "schema_version": "tools_call_result_frames_v0"
+}
