@@ -17,10 +17,10 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | formal_status | Symbols |
 |---------------|---------|
 | **Mechanised** | 34 |
-| **Structural** | 93 |
+| **Structural** | 95 |
 | **Empirical** | 34 |
 | **Literature** | 48 |
-| **NONE** | 279 |
+| **NONE** | 285 |
 
 ## Mechanised
 
@@ -155,6 +155,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `ucrs_observed_at_to_v2` | `crates/umst-concrete-cartridge/src/research/wire_v2.rs:56` | `STRUCTURAL` | — | UCRS crate → v2 wire functor; monotonicity on `is_monotonic_after`. |
 | `with_gate_cartridge` | `crates/umst-concrete-cartridge/src/thmc_gate.rs:12` | `STRUCTURAL` | — | Configures [`ThmcSolver`] intrinsic strength from cement SSOT before coupled step. |
 | `gate_cartridge_witness` | `crates/umst-concrete-cartridge/src/thmc_gate.rs:25` | `STRUCTURAL` | — | Routes post-step evidence through cartridge [`GateCartridge`] witness. |
+| `SideEffectClass` | `crates/umst-mcp/src/manifest/descriptor.rs:10` | `STRUCTURAL` | — | Algebraic partition of tool effects; invalid mixes unrepresentable. |
+| `ToolDescriptor` | `crates/umst-mcp/src/manifest/descriptor.rs:24` | `STRUCTURAL` | — | Typed MCP tool row; wire emission via `to_mcp_tool`. |
 | `predict` | `crates/umst-py/src/lib.rs:115` | `STRUCTURAL` | — | Python transport wrapper over **[`predict_with_options`]**; anchored on facade predict path. |
 | `certify` | `crates/umst-py/src/lib.rs:186` | `STRUCTURAL` | — | Dict view of **[`certify_profile_json`]**; structural mirror of CLI `umst certify`. |
 | `schema` | `crates/umst-py/src/lib.rs:198` | `STRUCTURAL` | — | SSOT schema text from facade `include_str!` for notebooks and packaging checks. |
@@ -515,6 +517,12 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:571` | `NONE` | — | MCP prompts list; names only. |
 | `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:587` | `NONE` | — | MCP prompt body fetch; operational text. |
 | `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:606` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
+| `to_mcp_tool` | `crates/umst-mcp/src/manifest/descriptor.rs:39` | `NONE` | — | JSON-RPC list_tools wire shape; not a physics morphism. |
+| `required_keys` | `crates/umst-mcp/src/manifest/descriptor.rs:56` | `NONE` | — | Schema introspection helper for S1 parity tests. |
+| `side_effect_for` | `crates/umst-mcp/src/manifest/descriptor.rs:77` | `NONE` | — | Name→effect table for descriptors; policy metadata only. |
+| `manifest_env_enabled` | `crates/umst-mcp/src/manifest/mod.rs:12` | `NONE` | — | Env IO boundary for optional dual-emit; default remains hand tables. |
+| `tools_v1` | `crates/umst-mcp/src/manifest/tools_v1.rs:40` | `NONE` | — | Loads frozen tools_v1 schema snapshot; not a physics morphism. |
+| `mcp_tools_schema` | `crates/umst-mcp/src/manifest/tools_v1.rs:66` | `NONE` | — | Dual-emit list_tools from descriptors; hand tables remain default. |
 | `saturate01` | `crates/umst-mcp/src/soft_gate.rs:25` | `NONE` | — | Scalar clamp utility; no thermodynamic gate claim. |
 | `smoothstep01` | `crates/umst-mcp/src/soft_gate.rs:34` | `NONE` | — | Hermite smoothstep kernel; training slack only. |
 | `smoothstep` | `crates/umst-mcp/src/soft_gate.rs:44` | `NONE` | — | Bounded Hermite ramp; not a hard admissibility witness. |
