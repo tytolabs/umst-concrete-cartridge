@@ -39,7 +39,9 @@ path = "tests/s7_proposed_tools.rs"
 required-features = ["agent-layer", "tool-dry-run", "tool-promote"]
 
 [features]
-default = []
+default = ["agent-layer"]
+# GO-LIVE Step 3: agent-native-by-default → 13 core tools.
+# S7 proposed tools + rmcp-wire remain DEFAULT-OFF (never in `default`).
 blas-accelerate = ["umst-cli/blas-accelerate"]
 agent-layer = ["umst-cli/agent-layer", "umst-concrete-cartridge/agent-layer", "arena-session"]
 ucrs-provenance = ["umst-concrete-cartridge/ucrs-provenance"]

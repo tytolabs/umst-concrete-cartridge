@@ -379,7 +379,6 @@ impl AgentSession {
     /// formal_anchor: NONE
     /// formal_status: NONE
     /// formal_anchor_rationale: Warm parse + in-process gate; no per-iter MCP round-trip.
-    #[must_use]
     pub fn gate_check_arena(
         &self,
         profile: &Profile,
