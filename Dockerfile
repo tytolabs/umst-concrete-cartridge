@@ -12,6 +12,7 @@ WORKDIR /app
 COPY Cargo.toml ./
 COPY crates ./crates
 COPY schema ./schema
+COPY schemas ./schemas
 COPY calibration ./calibration
 COPY datasets ./datasets
 COPY governance ./governance
