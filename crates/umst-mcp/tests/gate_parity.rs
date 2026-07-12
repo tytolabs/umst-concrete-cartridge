@@ -12,9 +12,9 @@
 //!   `cargo test -p umst-mcp --features agent-layer --test gate_parity`
 //! - rewrite call-frame goldens: `UMST_GATE_PARITY_UPDATE=1 cargo test -p umst-mcp --features agent-layer --test gate_parity tools_call_result_frames_parity -- --ignored`
 
-use serde_json::{json, Value};
 #[cfg(feature = "agent-layer")]
 use serde_json::Map;
+use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
@@ -26,8 +26,8 @@ fn fixtures_dir() -> PathBuf {
 
 fn load_fixture_root() -> Value {
     let path = fixtures_dir().join("gate_parity_v0.json");
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
+    let text =
+        std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()))
 }
 
@@ -96,7 +96,11 @@ fn redact_nondeterministic(v: Value) -> Value {
             for (k, child) in map {
                 if matches!(
                     k.as_str(),
-                    "wall_ms" | "memory_id" | "job_id" | "arena_session_id" | "content_id"
+                    "wall_ms"
+                        | "memory_id"
+                        | "job_id"
+                        | "arena_session_id"
+                        | "content_id"
                         | "idempotency_key"
                 ) {
                     out.insert(k, json!("<redacted>"));
@@ -169,10 +173,7 @@ fn spawn_mcp() -> (
 
 #[cfg(feature = "agent-layer")]
 fn temp_mcp_cwd() -> PathBuf {
-    let dir = std::env::temp_dir().join(format!(
-        "umst-mcp-gate-parity-{}",
-        std::process::id()
-    ));
+    let dir = std::env::temp_dir().join(format!("umst-mcp-gate-parity-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("temp cwd");
     dir
@@ -325,13 +326,10 @@ mod agent_layer_parity {
             assert_eq!(resp["id"], next_id);
             next_id += 1;
 
-            let text = resp["result"]["content"][0]["text"]
-                .as_str()
-                .expect("text");
+            let text = resp["result"]["content"][0]["text"].as_str().expect("text");
             let wire: Value = serde_json::from_str(text).expect("gate json");
             assert_eq!(
-                wire["gate_summary"]["admissible"],
-                cold.gate_summary.admissible,
+                wire["gate_summary"]["admissible"], cold.gate_summary.admissible,
                 "admissible mismatch mix_id={id}"
             );
             assert_eq!(
@@ -453,6 +451,7 @@ mod agent_layer_parity {
 
     fn write_pretty_json(path: &Path, v: &Value) {
         let s = serde_json::to_string_pretty(v).expect("pretty");
-        std::fs::write(path, format!("{s}\n")).unwrap_or_else(|e| panic!("write {}: {e}", path.display()));
+        std::fs::write(path, format!("{s}\n"))
+            .unwrap_or_else(|e| panic!("write {}: {e}", path.display()));
     }
 }
