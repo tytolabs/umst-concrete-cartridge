@@ -538,13 +538,13 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `canonical_bytes` | `crates/umst-mcp/src/parity.rs:32` | `NONE` | — | Test fixture byte compare helper. |
 | `redact_nondeterministic` | `crates/umst-mcp/src/parity.rs:41` | `NONE` | — | Parity harness redaction; not physics. |
 | `canonicalize_tools_call_result` | `crates/umst-mcp/src/parity.rs:73` | `NONE` | — | S0 golden `tools/call` result canonicalizer. |
-| `patch_gate_check_schema` | `crates/umst-mcp/src/proposed_tools.rs:36` | `NONE` | — | Optional wire extension; old clients ignore unknown fields. |
-| `build_explain_v2_enrichment` | `crates/umst-mcp/src/proposed_tools.rs:70` | `NONE` | — | Operator enrichment; admissibility unchanged on gate_summary. |
-| `gate_check_wire_json` | `crates/umst-mcp/src/proposed_tools.rs:117` | `NONE` | — | Wire composition; physics on gate_summary only. |
-| `proposed_tool_schemas` | `crates/umst-mcp/src/proposed_tools.rs:133` | `NONE` | — | Proposed tool discovery; not in S0 13-tool golden set. |
-| `exec_dry_run` | `crates/umst-mcp/src/proposed_tools.rs:217` | `NONE` | — | Read-only proposal eval; not admissibility gate mutation. |
-| `exec_promote_contribution_stub` | `crates/umst-mcp/src/proposed_tools.rs:260` | `NONE` | — | Human gate placeholder; federated inbox remains SSOT. |
-| `exec_arena_session` | `crates/umst-mcp/src/proposed_tools.rs:288` | `NONE` | — | Session lifecycle composition; gate physics unchanged. |
+| `patch_gate_check_schema` | `crates/umst-mcp/src/proposed_tools.rs:38` | `NONE` | — | Optional wire extension; old clients ignore unknown fields. |
+| `build_explain_v2_enrichment` | `crates/umst-mcp/src/proposed_tools.rs:72` | `NONE` | — | Operator enrichment; admissibility unchanged on gate_summary. |
+| `gate_check_wire_json` | `crates/umst-mcp/src/proposed_tools.rs:119` | `NONE` | — | Wire composition; physics on gate_summary only. |
+| `proposed_tool_schemas` | `crates/umst-mcp/src/proposed_tools.rs:135` | `NONE` | — | Proposed tool discovery; not in S0 13-tool golden set. |
+| `exec_dry_run` | `crates/umst-mcp/src/proposed_tools.rs:219` | `NONE` | — | Read-only proposal eval; not admissibility gate mutation. |
+| `exec_promote_contribution_stub` | `crates/umst-mcp/src/proposed_tools.rs:262` | `NONE` | — | Human gate placeholder; federated inbox remains SSOT. |
+| `exec_arena_session` | `crates/umst-mcp/src/proposed_tools.rs:290` | `NONE` | — | Session lifecycle composition; gate physics unchanged. |
 | `new` | `crates/umst-mcp/src/rmcp_server.rs:36` | `NONE` | — | Composition root for `umst-mcp-rmcp` binary. |
 | `parity_rmcp_tools` | `crates/umst-mcp/src/rmcp_server.rs:111` | `NONE` | — | MCP list_tools wire; schemas match hand-rolled subset. |
 | `audit_rows` | `crates/umst-py/src/lib.rs:147` | `NONE` | — | Encodes iterable of row dicts into dataset-style CSV then reuses **`audit_csv_buf`** (aligned with **`audit`** string path). |
