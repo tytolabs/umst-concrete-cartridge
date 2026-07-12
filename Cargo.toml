@@ -9,15 +9,9 @@ members = [
     "crates/umst-concrete-cartridge",
     "crates/umst-concrete-ffi",
     "crates/umst-cli",
+    "crates/umst-gate-ffi",
     "crates/umst-mcp",
     "crates/umst-py",
-]
-
-# S4 Layer-0 FFI held OUT of default workspace clippy matrix (depends on
-# cartridge `agent-layer`, which trips workspace `-D warnings`). Run parity with:
-#   cargo test --manifest-path crates/umst-gate-ffi/Cargo.toml
-exclude = [
-    "crates/umst-gate-ffi",
 ]
 
 [workspace.package]

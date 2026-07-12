@@ -74,6 +74,7 @@ pub fn ucrs_observed_at_to_v2(u: &umst_ucrs::observation::UcrsObservedAt) -> Obs
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "ucrs-provenance")]
     use super::*;
 
     #[cfg(feature = "ucrs-provenance")]

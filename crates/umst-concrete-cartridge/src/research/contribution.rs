@@ -42,7 +42,7 @@ pub enum AcceptError {
     #[error(transparent)]
     Validation(#[from] ValidationError),
     #[error("gate re-check failed: mix not thermodynamically admissible")]
-    GateReject(GateRejectRow),
+    GateReject(Box<GateRejectRow>),
     #[error(transparent)]
     Scope(#[from] super::governance::ScopeError),
     #[error("observed_at stamp is not monotonic after session clock")]
@@ -454,7 +454,7 @@ pub fn gate_recheck(ctx: &GateContext<'_>, contribution: &Contribution) -> bool 
             return false;
         };
         spec.profile_name = ctx.profile.bundle_id.clone();
-        return thermodynamic_ok(ctx.profile, &spec);
+        thermodynamic_ok(ctx.profile, &spec)
     }
 
     #[cfg(not(feature = "manifest-bridge"))]
@@ -543,7 +543,7 @@ pub fn accept(
             &contribution,
             Some(vec!["thermodynamic_fail".into()]),
         );
-        return Err(AcceptError::GateReject(row));
+        return Err(AcceptError::GateReject(Box::new(row)));
     }
 
     let (clock, observed_at) =
