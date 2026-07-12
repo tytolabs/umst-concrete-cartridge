@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Gate pass → contribute admissible fixture → memory query."""
+"""Gate pass → contribute admissible fixture → memory query.
+
+Categorical:
+  Objects: Contribution, MemoryStore row
+  Morphisms: umst_gate_check → umst_contribute → umst_memory_query (COLD)
+  Guarantees: G1 contribute-after-PASS only
+  Provenance: observed_at / UCRS stamp fields on contribute response
+"""
 
 from __future__ import annotations
 

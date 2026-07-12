@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Safe exploration: gate check (reject + pass) and memory query."""
+"""Safe exploration: gate check (reject + pass) and memory query.
+
+Categorical:
+  Objects: MixSpec wire, GateCheckResult
+  Morphisms: umst_gate_check, umst_memory_query (COLD)
+  Guarantees: AGENT_PROTOCOL G1–G3; see docs/AGENT_PROTOCOL.md
+  Errors: gate_reject.v1 + explain on REJECT (no silent fail)
+"""
 
 from __future__ import annotations
 
