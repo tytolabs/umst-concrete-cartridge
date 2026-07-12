@@ -512,14 +512,14 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `arena_open` | `crates/umst-mcp/src/agent_layer.rs:343` | `NONE` | — | stdio transport; parse-once arena session for hot gate loops. |
 | `arena_open_bytes` | `crates/umst-mcp/src/agent_layer.rs:352` | `NONE` | — | Warm-boundary parse-once; gate physics on `gate_check_arena` delegate. |
 | `gate_check_arena` | `crates/umst-mcp/src/agent_layer.rs:378` | `NONE` | — | Warm parse + in-process gate; no per-iter MCP round-trip. |
-| `arena_close` | `crates/umst-mcp/src/agent_layer.rs:417` | `NONE` | — | Session lifecycle; releases mmap-owned buffer handle. |
-| `SCHEMA_RESOURCES` | `crates/umst-mcp/src/agent_layer.rs:453` | `NONE` | — | Schema fixture bytes for MCP discovery; versioned wire only. |
-| `AGENT_PROMPTS` | `crates/umst-mcp/src/agent_layer.rs:488` | `NONE` | — | MCP prompt templates; operational guidance only. |
-| `resources_list_result` | `crates/umst-mcp/src/agent_layer.rs:534` | `NONE` | — | MCP resource enumeration; schema bytes are versioned fixtures. |
-| `resources_read_result` | `crates/umst-mcp/src/agent_layer.rs:551` | `NONE` | — | MCP resource read; returns pinned JSON schema text. |
-| `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:571` | `NONE` | — | MCP prompts list; names only. |
-| `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:587` | `NONE` | — | MCP prompt body fetch; operational text. |
-| `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:606` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
+| `arena_close` | `crates/umst-mcp/src/agent_layer.rs:416` | `NONE` | — | Session lifecycle; releases mmap-owned buffer handle. |
+| `SCHEMA_RESOURCES` | `crates/umst-mcp/src/agent_layer.rs:452` | `NONE` | — | Schema fixture bytes for MCP discovery; versioned wire only. |
+| `AGENT_PROMPTS` | `crates/umst-mcp/src/agent_layer.rs:487` | `NONE` | — | MCP prompt templates; operational guidance only. |
+| `resources_list_result` | `crates/umst-mcp/src/agent_layer.rs:533` | `NONE` | — | MCP resource enumeration; schema bytes are versioned fixtures. |
+| `resources_read_result` | `crates/umst-mcp/src/agent_layer.rs:550` | `NONE` | — | MCP resource read; returns pinned JSON schema text. |
+| `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:570` | `NONE` | — | MCP prompts list; names only. |
+| `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:586` | `NONE` | — | MCP prompt body fetch; operational text. |
+| `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:605` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
 | `agent_error_payload` | `crates/umst-mcp/src/handlers.rs:32` | `NONE` | — | Recoverable tool failure wire; not physics gate. |
 | `exec_umst_profiles` | `crates/umst-mcp/src/handlers.rs:56` | `NONE` | — | Read-only catalog listing; physics on predict/gate tools. |
 | `exec_umst_predict` | `crates/umst-mcp/src/handlers.rs:82` | `NONE` | — | Delegates to cartridge `predict_with_options` / `serialize_prediction`. |
