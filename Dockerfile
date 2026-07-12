@@ -14,6 +14,7 @@ COPY crates ./crates
 COPY schema ./schema
 COPY calibration ./calibration
 COPY datasets ./datasets
+COPY governance ./governance
 
 RUN for attempt in 1 2 3; do \
       cargo fetch && break; \
