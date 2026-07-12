@@ -33,6 +33,11 @@ name = "rmcp_parity"
 path = "tests/rmcp_parity.rs"
 required-features = ["rmcp-wire"]
 
+[[test]]
+name = "s7_proposed_tools"
+path = "tests/s7_proposed_tools.rs"
+required-features = ["agent-layer", "tool-dry-run", "tool-promote"]
+
 [features]
 default = []
 blas-accelerate = ["umst-cli/blas-accelerate"]
@@ -43,6 +48,14 @@ arena-session = ["dep:umst-runtime-arena"]
 tool-manifest = []
 # S3: official rmcp wire binary (default off); pulls agent-layer for gate/mi tools.
 rmcp-wire = ["dep:rmcp", "dep:tokio", "agent-layer"]
+# S7a: rich-violation enrichment on umst_gate_check (default off).
+gate-explain-v2 = []
+# S7b: read-only umst_dry_run tool (default off).
+tool-dry-run = ["agent-layer"]
+# S7c: umst_promote_contribution stub (default off).
+tool-promote = ["agent-layer"]
+# S7d: umst_arena_session unified wrapper (default off).
+tool-arena-session-unified = ["agent-layer", "arena-session"]
 
 [dependencies]
 umst-agent-mcp-core = { path = "../umst-agent-mcp-core" }

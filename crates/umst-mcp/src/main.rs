@@ -369,8 +369,52 @@ fn parse_memory_query(args: &Value) -> MemoryQuery {
 
 #[cfg(feature = "agent-layer")]
 fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Value {
-    let p = umst_mcp::handlers::exec_umst_gate_check(args, session);
-    text_result(id, p.text, p.is_error)
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let mix = match args.get("mix") {
+        Some(m) => m.clone(),
+        None => {
+            return agent_tool_error(
+                id,
+                "missing_argument",
+                "missing mix",
+                "Supply mix with rational fields (w_c, temperature_k, …) per contribution.v1.",
+            )
+        }
+    };
+    let explain = args
+        .get("explain")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(true);
+    #[cfg(feature = "gate-explain-v2")]
+    let explain_v2 = args
+        .get("explain_v2")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false);
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "profile_load_fail",
+                format!("profile load error: {e}"),
+                "Call umst_profiles for bundled ids or use profile: \"default\".",
+            )
+        }
+    };
+    let result = session.gate_check(&profile, &mix, explain);
+    let is_error = !result.gate_summary.admissible;
+    #[cfg(feature = "gate-explain-v2")]
+    let body = umst_mcp::proposed_tools::gate_check_wire_json(&result, explain_v2);
+    #[cfg(not(feature = "gate-explain-v2"))]
+    let body = serde_json::to_value(&result).unwrap_or_else(|_| json!({}));
+    text_result(
+        id,
+        serde_json::to_string_pretty(&body).unwrap_or_default(),
+        is_error,
+    )
 }
 
 #[cfg(feature = "agent-layer")]
@@ -700,6 +744,129 @@ fn tool_umst_arena_close(id: Value, args: &Value, session: AgentSession) -> (Val
     }
 }
 
+#[cfg(all(feature = "agent-layer", feature = "tool-dry-run"))]
+fn tool_umst_dry_run(id: Value, args: &Value, session: &AgentSession) -> Value {
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let mix = match args.get("mix") {
+        Some(m) => m.clone(),
+        None => {
+            return agent_tool_error(
+                id,
+                "missing_argument",
+                "missing mix",
+                "Supply mix with rational fields for dry-run predict+gate.",
+            )
+        }
+    };
+    let explain = args
+        .get("explain")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(true);
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => {
+            return agent_tool_error(
+                id,
+                "profile_load_fail",
+                format!("profile load error: {e}"),
+                "Call umst_profiles for bundled ids or use profile: \"default\".",
+            )
+        }
+    };
+    let out = umst_mcp::proposed_tools::exec_dry_run(session, &profile, &mix, explain);
+    let is_error = out
+        .get("gate_summary")
+        .and_then(|g| g.get("admissible"))
+        .and_then(|a| a.as_bool())
+        == Some(false);
+    text_result(
+        id,
+        serde_json::to_string_pretty(&out).unwrap_or_default(),
+        is_error,
+    )
+}
+
+#[cfg(feature = "tool-promote")]
+fn tool_umst_promote_contribution(id: Value, args: &Value) -> Value {
+    let out = umst_mcp::proposed_tools::exec_promote_contribution_stub(args);
+    text_result(
+        id,
+        serde_json::to_string_pretty(&out).unwrap_or_default(),
+        true,
+    )
+}
+
+#[cfg(all(feature = "agent-layer", feature = "tool-arena-session-unified"))]
+fn tool_umst_arena_session(
+    id: Value,
+    args: &Value,
+    session: AgentSession,
+) -> (Value, AgentSession) {
+    let action = match args.get("action").and_then(|v| v.as_str()) {
+        Some(a) => a,
+        None => {
+            return (
+                agent_tool_error(
+                    id,
+                    "missing_argument",
+                    "missing action",
+                    "Supply action: open | gate_check | close.",
+                ),
+                session,
+            );
+        }
+    };
+    let profile_id = args
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default");
+    let profile = match Profile::load_bundled(profile_id) {
+        Ok(p) => p,
+        Err(e) => {
+            return (
+                agent_tool_error(
+                    id,
+                    "profile_load_fail",
+                    format!("profile load error: {e}"),
+                    "Call umst_profiles for bundled ids or use profile: \"default\".",
+                ),
+                session,
+            );
+        }
+    };
+    match umst_mcp::proposed_tools::exec_arena_session(session, action, args, &profile) {
+        Ok((next, body)) => {
+            let is_error = action == "gate_check"
+                && body
+                    .get("gate_result")
+                    .and_then(|g| g.get("gate_summary"))
+                    .and_then(|s| s.get("admissible"))
+                    .and_then(|a| a.as_bool())
+                    == Some(false);
+            (
+                text_result(
+                    id,
+                    serde_json::to_string_pretty(&body).unwrap_or_default(),
+                    is_error,
+                ),
+                next,
+            )
+        }
+        Err(e) => (
+            agent_tool_error(
+                id,
+                "arena_session_fail",
+                e,
+                "Verify action and required fields; canonical trio tools remain umst_arena_open / umst_gate_check_arena / umst_arena_close.",
+            ),
+            session,
+        ),
+    }
+}
+
 #[cfg(feature = "agent-layer")]
 fn handle_tools_call(
     id: Value,
@@ -730,6 +897,12 @@ fn handle_tools_call(
         "umst_arena_open" => tool_umst_arena_open(id, &args, session),
         "umst_gate_check_arena" => (tool_umst_gate_check_arena(id, &args, &session), session),
         "umst_arena_close" => tool_umst_arena_close(id, &args, session),
+        #[cfg(feature = "tool-dry-run")]
+        "umst_dry_run" => (tool_umst_dry_run(id, &args, &session), session),
+        #[cfg(feature = "tool-promote")]
+        "umst_promote_contribution" => (tool_umst_promote_contribution(id, &args), session),
+        #[cfg(feature = "tool-arena-session-unified")]
+        "umst_arena_session" => tool_umst_arena_session(id, &args, session),
         other => (
             json!({
                 "jsonrpc": "2.0",

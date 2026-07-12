@@ -607,7 +607,8 @@ pub fn prompts_get_result(name: &str) -> Result<Value, String> {
 /// formal_status: NONE
 /// formal_anchor_rationale: MCP tool schema export; delegates to gate/memory/contribute impls.
 pub fn agent_tools_schema() -> Vec<Value> {
-    vec![
+    #[allow(unused_mut)] // mutated only when S7 feature cfgs append schemas
+    let mut tools = vec![
         with_schema_2020(
             json!({
                 "name": "umst_gate_check",
@@ -756,5 +757,14 @@ pub fn agent_tools_schema() -> Vec<Value> {
             }),
             false,
         ),
-    ]
+    ];
+    #[cfg(feature = "gate-explain-v2")]
+    crate::proposed_tools::patch_gate_check_schema(&mut tools);
+    #[cfg(any(
+        feature = "tool-dry-run",
+        feature = "tool-promote",
+        feature = "tool-arena-session-unified"
+    ))]
+    tools.extend(crate::proposed_tools::proposed_tool_schemas());
+    tools
 }
