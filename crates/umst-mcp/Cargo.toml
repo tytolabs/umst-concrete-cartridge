@@ -13,6 +13,7 @@ license.workspace = true
 repository.workspace = true
 description = "Model Context Protocol (MCP) server exposing the UMST concrete engine to AI agents."
 publish = false
+default-run = "umst-mcp"
 
 [lib]
 name = "umst_mcp"
