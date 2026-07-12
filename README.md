@@ -29,12 +29,12 @@ These public repos share **one** thermodynamic admissibility gate, applied acros
 
 | Domain | Public repo | Role |
 |:---|:---|:---|
-| **Matter** | [`umst-manifold`](https://github.com/tytolabs/umst-manifold) + **this cartridge** | DEC carrier + cementitious constitutive law |
+| **Matter** | [`umst-manifold`](https://github.com/tytolabs/umst-manifold) + **this cartridge** **← you are here** | DEC carrier + cementitious constitutive law |
 | **Knowing** | [`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit) | Observation / measurement-cost formal fiber |
-| **Acting** | [`umst-formal`](https://github.com/tytolabs/umst-formal) | Acting / economic-admissibility formal fiber |
-| **Time** | [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) | Temporal witness / stamp spine (optional `ucrs-provenance`) |
+| **Acting** | [`umst-formal`](https://github.com/tytolabs/umst-formal) | Economic-admissibility formal fiber |
+| **Time** | [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) | Temporal witness / stamp spine |
 
-Sibling links only — no programme/paper framing in this README. Already-public per-repo DOI badges stay where they exist; this cartridge does not invent new ones here.
+Sibling links only — no paper-series arc naming in this README. Already-public per-repo DOI badges stay where they exist; this cartridge does not invent new ones here.
 
 ### Ports (categorical — real symbols)
 
