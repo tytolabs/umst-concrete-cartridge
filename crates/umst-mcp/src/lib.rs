@@ -21,3 +21,11 @@ pub mod rmcp_server;
 
 #[cfg(feature = "tool-manifest")]
 pub mod manifest;
+
+#[cfg(any(
+    feature = "gate-explain-v2",
+    feature = "tool-dry-run",
+    feature = "tool-promote",
+    feature = "tool-arena-session-unified"
+))]
+pub mod proposed_tools;
