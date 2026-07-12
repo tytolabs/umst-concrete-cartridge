@@ -169,7 +169,7 @@ fn dispatch_tools_list(id: Value) -> Value {
     #[cfg(feature = "tool-manifest")]
     let tools = {
         if umst_mcp::manifest::manifest_env_enabled() {
-            umst_mcp::manifest::mcp_tools_schema()
+            umst_mcp::manifest::tools_v1::mcp_tools_schema()
         } else {
             hand_tools_list()
         }

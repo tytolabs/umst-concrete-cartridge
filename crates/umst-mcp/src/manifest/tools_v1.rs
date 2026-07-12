@@ -38,6 +38,9 @@ fn parse_snapshot() -> Vec<ToolDescriptor> {
 }
 
 /// All descriptors encoded for this build (4 base, or 13 with `agent-layer`).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Loads frozen tools_v1 schema snapshot; not a physics morphism.
 #[must_use]
 pub fn tools_v1() -> Vec<ToolDescriptor> {
     let all = parse_snapshot();
@@ -61,10 +64,12 @@ pub fn tools_v1() -> Vec<ToolDescriptor> {
 }
 
 /// MCP `tools/list` payload emitted from the manifest (dual-emit path).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Dual-emit list_tools from descriptors; hand tables remain default.
 #[must_use]
 pub fn mcp_tools_schema() -> Vec<Value> {
-    // Preserve hand-table order: base tools first, then agent tools (by snapshot order
-    // filtered to this build). Hand default order is predict, audit, profiles, certify.
+    // Preserve hand-table order: base tools first, then agent tools.
     let descriptors = tools_v1();
     let mut by_name: std::collections::BTreeMap<_, _> = descriptors
         .into_iter()

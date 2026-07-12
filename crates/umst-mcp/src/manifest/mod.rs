@@ -9,10 +9,10 @@
 pub mod descriptor;
 pub mod tools_v1;
 
-pub use descriptor::{side_effect_for, SideEffectClass, ToolDescriptor};
-pub use tools_v1::{mcp_tools_schema, tools_v1};
-
 /// Runtime gate: manifest path only when env is explicitly `1`.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Env IO boundary for optional dual-emit; default remains hand tables.
 #[must_use]
 pub fn manifest_env_enabled() -> bool {
     std::env::var("UMST_MCP_MANIFEST")

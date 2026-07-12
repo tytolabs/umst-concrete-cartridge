@@ -8,6 +8,9 @@
 use serde_json::Value;
 
 /// Side-effect class for agent / orchestrator policy.
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Algebraic partition of tool effects; invalid mixes unrepresentable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SideEffectClass {
     /// No durable writes (gate, predict, profiles, …).
@@ -19,6 +22,9 @@ pub enum SideEffectClass {
 }
 
 /// Public tool descriptor — schema SSOT candidate (cutover still USER-gated).
+/// formal_anchor: STRUCTURAL
+/// formal_status: Structural
+/// formal_anchor_rationale: Typed MCP tool row; wire emission via `to_mcp_tool`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ToolDescriptor {
     pub name: String,
@@ -31,6 +37,9 @@ pub struct ToolDescriptor {
 
 impl ToolDescriptor {
     /// Emit one MCP `tools/list` tool object.
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: JSON-RPC list_tools wire shape; not a physics morphism.
     #[must_use]
     pub fn to_mcp_tool(&self) -> Value {
         let mut tool = serde_json::json!({
@@ -45,6 +54,9 @@ impl ToolDescriptor {
     }
 
     /// Required inputSchema property names (sorted).
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: Schema introspection helper for S1 parity tests.
     #[must_use]
     pub fn required_keys(&self) -> Vec<String> {
         self.input_schema
@@ -63,6 +75,9 @@ impl ToolDescriptor {
 }
 
 /// Map tool name → side-effect class (hand annotations + known mutators).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Name→effect table for descriptors; policy metadata only.
 #[must_use]
 pub fn side_effect_for(name: &str) -> SideEffectClass {
     match name {

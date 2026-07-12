@@ -83,10 +83,10 @@ fn tool_manifest_list_names_and_required_keys_parity() {
         "tools/list names + required inputSchema keys must deep-equal (hand vs manifest)"
     );
     // Library path agrees with env=1 emission.
-    let lib = umst_mcp::manifest::mcp_tools_schema();
+    let lib = umst_mcp::manifest::tools_v1::mcp_tools_schema();
     assert_eq!(
         name_and_required(&manifest),
         name_and_required(&lib),
-        "UMST_MCP_MANIFEST=1 must match umst_mcp::manifest::mcp_tools_schema()"
+        "UMST_MCP_MANIFEST=1 must match umst_mcp::manifest::tools_v1::mcp_tools_schema()"
     );
 }
