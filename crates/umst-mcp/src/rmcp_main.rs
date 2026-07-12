@@ -3,7 +3,8 @@
 
 //! `umst-mcp-rmcp` — official `rmcp` stdio MCP binary (Stage S3, default off).
 //!
-//! Hand-rolled `umst-mcp` remains the default binary (`default = []`).
+//! GO-LIVE Step 2 (HELD): package `default-run = "umst-mcp-rmcp"` with `default = ["rmcp-wire"]`.
+//! Hand-rolled `umst-mcp` binary remains available; soak decision is USER-gated.
 
 use rmcp::{transport::stdio, ServiceExt};
 use umst_mcp::rmcp_server::UmstRmcpServer;
