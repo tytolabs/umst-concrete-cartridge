@@ -1,0 +1,182 @@
+{
+  "schema_version": "tools_v1_contracts",
+  "description": "Full 7-field MCP tool contracts (manifest SSOT candidate). Source of truth for scripts/gen_tool_contracts.py.",
+  "side_effect_classes": ["ReadOnly", "EpistemicMutating", "NetworkIo", "Pure"],
+  "shared_error_shapes": [
+    {
+      "shape": "`gate_reject.v1` + `explain`",
+      "when": "Gate REJECT",
+      "remediation": "Adjust mix; re-gate"
+    },
+    {
+      "shape": "`agent_error.v1`",
+      "when": "Tool/transport failure",
+      "remediation": "See `code` / AGENT_MCP error table"
+    },
+    {
+      "shape": "`-32601`",
+      "when": "Unknown tool / missing feature",
+      "remediation": "Enable `agent-layer`"
+    }
+  ],
+  "tool_order": [
+    "umst_gate_check",
+    "umst_gate_check_arena",
+    "umst_arena_open",
+    "umst_arena_close",
+    "umst_contribute",
+    "umst_contribute_status",
+    "umst_memory_query",
+    "umst_mi_estimate",
+    "umst_transition_propose",
+    "umst_predict",
+    "umst_audit",
+    "umst_profiles",
+    "umst_certify"
+  ],
+  "contracts": {
+    "umst_gate_check": {
+      "title": "COLD · ReadOnly",
+      "Pre": "Valid rational `mix` (+ optional `profile`)",
+      "Post": "`gate_summary.admissible` bool; on fail `isError` + reject + explain (default)",
+      "Errors": "parse fail, CD fail, profile_load_fail",
+      "Idempotent": "Yes (read-only)",
+      "SideEffectClass": "ReadOnly",
+      "Cost": "Landauer/MI advisory fields may appear; not a billable sync",
+      "Provenance": "`catalog_ids` witnesses",
+      "source": "Source: `agent_layer.rs:613`, `main.rs:502–508`."
+    },
+    "umst_gate_check_arena": {
+      "title": "HOT · ReadOnly",
+      "Pre": "Live `arena_session_id` from `umst_arena_open`; valid mix",
+      "Post": "Same physics as gate_check + arena catalog witnesses",
+      "Errors": "unknown session; arena-session feature missing",
+      "Idempotent": "Yes",
+      "SideEffectClass": "ReadOnly",
+      "Cost": "Avoids re-parse; still Landauer-advisory optional",
+      "Provenance": "Arena + gate catalog ids",
+      "source": "Source: `agent_layer.rs:730`."
+    },
+    "umst_arena_open": {
+      "title": "HOT · EpistemicMutating (session map)",
+      "Pre": "Path/bytes to trusted arena file",
+      "Post": "`arena_session_id`",
+      "Errors": "parse/header fail",
+      "Idempotent": "No (new session each call)",
+      "SideEffectClass": "EpistemicMutating (session state)",
+      "Cost": "One-time parse",
+      "Provenance": "Arena digest/header",
+      "source": "Source: `agent_layer.rs:716`."
+    },
+    "umst_arena_close": {
+      "title": "HOT · EpistemicMutating",
+      "Pre": "`arena_session_id`",
+      "Post": "Session dropped",
+      "Errors": "unknown id",
+      "Idempotent": "Closing twice → error or no-op (treat as non-idempotent)",
+      "SideEffectClass": "EpistemicMutating",
+      "Cost": "Negligible",
+      "Provenance": "N/A",
+      "source": "Source: `agent_layer.rs:747`."
+    },
+    "umst_contribute": {
+      "title": "COLD · EpistemicMutating",
+      "Pre": "`contribution.v1` with `gate_summary.admissible=true`; prior PASS",
+      "Post": "`memory_id`, `content_id`, `observed_at` (UCRS stamp fields)",
+      "Errors": "`contribute_gate_reject`, schema fail, scope_token",
+      "Idempotent": "Yes with `idempotency_key`",
+      "SideEffectClass": "EpistemicMutating",
+      "Cost": "Memory write; Landauer not charged as sync",
+      "Provenance": "`observed_at` / UCRS stamp tiers",
+      "source": "Source: `agent_layer.rs:629`. **No dry-run** — Proposed P2."
+    },
+    "umst_contribute_status": {
+      "title": "COLD · ReadOnly",
+      "Pre": "`job_id` from async contribute / transition",
+      "Post": "Job status `Running` / `Succeeded` / `Failed` (`ContributeJobStatus` @ `agent_layer.rs:91`)",
+      "Errors": "`missing_argument`, `unknown_job_id` (`main.rs:575–594`)",
+      "Idempotent": "Yes",
+      "SideEffectClass": "ReadOnly",
+      "Cost": "Negligible poll",
+      "Provenance": "Job record only (no new stamp)",
+      "source": "Source: `agent_layer.rs:646`."
+    },
+    "umst_memory_query": {
+      "title": "COLD · ReadOnly",
+      "Pre": "Optional filters (`near_mix_spec`, `max_mix_l1`, cursor)",
+      "Post": "`rows`, `next_cursor`",
+      "Errors": "`agent_error.v1` on DB/filter parse fail (no silent empty-as-success for hard errors)",
+      "Idempotent": "Yes",
+      "SideEffectClass": "ReadOnly",
+      "Cost": "Local SQLite read",
+      "Provenance": "Returned rows carry stamps if stored",
+      "source": "Source: `agent_layer.rs:660`."
+    },
+    "umst_mi_estimate": {
+      "title": "COLD · ReadOnly",
+      "Pre": "Mix",
+      "Post": "`mi_bits_est`, `advisory: true` — **not** admissibility",
+      "Errors": "`missing_argument` (`main.rs:603–608`); mix parse via `agent_error.v1`",
+      "Idempotent": "Yes",
+      "SideEffectClass": "ReadOnly",
+      "Cost": "Advisory Landauer surrogate only",
+      "Provenance": "Advisory estimate — no catalog witness claim",
+      "source": "Source: `agent_layer.rs:685`."
+    },
+    "umst_transition_propose": {
+      "title": "COLD · EpistemicMutating",
+      "Pre": "Mix (+ profile); will gate before contribute",
+      "Post": "`job_id` for status poll",
+      "Errors": "gate reject (`isError`); `profile_load_fail`; transition enqueue fail",
+      "Idempotent": "No (new job)",
+      "SideEffectClass": "EpistemicMutating",
+      "Cost": "Predict + gate + async contribute enqueue",
+      "Provenance": "Job → contribute path carries `observed_at` on success",
+      "source": "Source: `agent_layer.rs:699`."
+    },
+    "umst_predict": {
+      "title": "COLD · ReadOnly",
+      "Pre": "Mix + profile",
+      "Post": "`result.v2` constitutive envelope",
+      "Errors": "`profile_load_fail`, `mix_parse_fail`, `predict_fail`, `serialize_fail`, `canonical_json_fail` (`main.rs:204–267`)",
+      "Idempotent": "Yes",
+      "SideEffectClass": "ReadOnly",
+      "Cost": "Constitutive eval (cold stdio)",
+      "Provenance": "`formal_anchor` / profile id in envelope when present",
+      "source": "Source: `main.rs:114`."
+    },
+    "umst_audit": {
+      "title": "COLD · ReadOnly",
+      "Pre": "CSV text + profile",
+      "Post": "`audit.v1` rows / warnings",
+      "Errors": "`profile_load_fail`; CSV/parse `agent_error.v1` (`main.rs:305+`)",
+      "Idempotent": "Yes",
+      "SideEffectClass": "ReadOnly",
+      "Cost": "Batch over CSV rows",
+      "Provenance": "Profile id; per-row warnings — not gate PASS",
+      "source": "Source: `main.rs:132`."
+    },
+    "umst_profiles": {
+      "title": "COLD · Pure/ReadOnly",
+      "Pre": "None",
+      "Post": "Bundled profile ids",
+      "Errors": "None expected (empty args); transport-level only",
+      "Idempotent": "Yes",
+      "SideEffectClass": "Pure",
+      "Cost": "Negligible list",
+      "Provenance": "Bundled profile set (crate bake)",
+      "source": "Source: `main.rs:149`."
+    },
+    "umst_certify": {
+      "title": "COLD · ReadOnly",
+      "Pre": "Profile id",
+      "Post": "Formal-anchor certify chain JSON",
+      "Errors": "`certify_missing_profile`, `profile_load_fail` (`main.rs:378+`)",
+      "Idempotent": "Yes",
+      "SideEffectClass": "ReadOnly",
+      "Cost": "Negligible chain emit",
+      "Provenance": "Formal-anchor URIs in chain",
+      "source": "Source: `main.rs:154`."
+    }
+  }
+}
