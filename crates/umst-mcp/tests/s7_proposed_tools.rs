@@ -111,7 +111,10 @@ fn s7_proposed_tools_extend_list() {
     let _ = read_json_line(&mut reader);
     let list = read_json_line(&mut reader);
     let names = tool_names(&list);
-    assert!(names.len() > 13, "expected proposed tools in list: {names:?}");
+    assert!(
+        names.len() > 13,
+        "expected proposed tools in list: {names:?}"
+    );
 
     #[cfg(feature = "tool-dry-run")]
     assert!(names.contains("umst_dry_run"));

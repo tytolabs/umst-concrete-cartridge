@@ -800,7 +800,11 @@ fn tool_umst_promote_contribution(id: Value, args: &Value) -> Value {
 }
 
 #[cfg(all(feature = "agent-layer", feature = "tool-arena-session-unified"))]
-fn tool_umst_arena_session(id: Value, args: &Value, session: AgentSession) -> (Value, AgentSession) {
+fn tool_umst_arena_session(
+    id: Value,
+    args: &Value,
+    session: AgentSession,
+) -> (Value, AgentSession) {
     let action = match args.get("action").and_then(|v| v.as_str()) {
         Some(a) => a,
         None => {

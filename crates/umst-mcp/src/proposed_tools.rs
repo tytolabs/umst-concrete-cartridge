@@ -124,10 +124,7 @@ pub fn gate_check_wire_json(result: &GateCheckResult, explain_v2: bool) -> Value
     let mut wire = serde_json::to_value(result).unwrap_or_else(|_| json!({}));
     if explain_v2 {
         if let Value::Object(ref mut map) = wire {
-            map.insert(
-                "explain_v2".into(),
-                build_explain_v2_enrichment(result),
-            );
+            map.insert("explain_v2".into(), build_explain_v2_enrichment(result));
         }
     }
     wire
@@ -223,7 +220,12 @@ pub fn proposed_tool_schemas() -> Vec<Value> {
 /// formal_anchor_rationale: Read-only proposal eval; not admissibility gate mutation.
 #[cfg(all(feature = "agent-layer", feature = "tool-dry-run"))]
 #[must_use]
-pub fn exec_dry_run(session: &AgentSession, profile: &Profile, mix: &Value, explain: bool) -> Value {
+pub fn exec_dry_run(
+    session: &AgentSession,
+    profile: &Profile,
+    mix: &Value,
+    explain: bool,
+) -> Value {
     let observed = synthetic_observed_at(session.clock.sequence());
     let gate = gate_check_mix_result(profile, mix, explain, observed);
 
