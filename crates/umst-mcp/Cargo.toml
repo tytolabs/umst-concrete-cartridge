@@ -28,6 +28,8 @@ blas-accelerate = ["umst-cli/blas-accelerate"]
 agent-layer = ["umst-cli/agent-layer", "umst-concrete-cartridge/agent-layer", "arena-session"]
 ucrs-provenance = ["umst-concrete-cartridge/ucrs-provenance"]
 arena-session = ["dep:umst-runtime-arena"]
+# S1: declarative ToolDescriptor manifest beside hand-rolled schemas (default off).
+tool-manifest = []
 
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }

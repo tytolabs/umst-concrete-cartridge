@@ -1,0 +1,383 @@
+{
+  "schema_version": "tools_v1_schema",
+  "tools": [
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Release warm arena session bytes. Idempotent drop of arena_session_id from MCP session map.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "arena_session_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "arena_session_id"
+        ],
+        "type": "object"
+      },
+      "name": "umst_arena_close"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Load arena bytes at the Warm boundary and return arena_session_id for hot gate loops. Validates header via load_arena once. Example: {\"arena_path\":\"fixtures/arena/minimal.v1.bin\"}.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "arena_path": {
+            "description": "Path to versioned arena file (ABI v1)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arena_path"
+        ],
+        "type": "object"
+      },
+      "name": "umst_arena_open"
+    },
+    {
+      "description": "Batch CSV audit envelope `audit.v1` (dataset_d1-compatible headers).",
+      "inputSchema": {
+        "properties": {
+          "canonical": {
+            "default": false,
+            "type": "boolean"
+          },
+          "csv_text": {
+            "description": "Full CSV text including header row",
+            "type": "string"
+          },
+          "limit": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "profile": {
+            "default": "uci_d1",
+            "type": "string"
+          }
+        },
+        "required": [
+          "csv_text"
+        ],
+        "type": "object"
+      },
+      "name": "umst_audit"
+    },
+    {
+      "description": "Emit certify chain JSON (`CertifyChain`) for a bundled profile.",
+      "inputSchema": {
+        "properties": {
+          "canonical": {
+            "default": false,
+            "type": "boolean"
+          },
+          "profile": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile"
+        ],
+        "type": "object"
+      },
+      "name": "umst_certify"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Gate-validated contribution ingest \u2192 local research memory (admissible rows only; destructive). Requires prior umst_gate_check PASS and contribution.v1 with matching gate_summary.admissible:true. Validate wire via umst://schemas/contribution.v1.json. Example input: {\"contribution\":{\"schema_version\":\"contribution.v1\",\"mix_spec\":{\"w_c\":\"9/20\",...},\"gate_summary\":{\"admissible\":true,\"verdict\":\"PASS\"},...}}. Example output: {\"memory_id\":\"<uuid>\",\"content_id\":\"sha256:...\",\"observed_at\":{\"stamp_tier\":\"Synthetic\",...}}. Supports idempotency_key; set async:true for job_id + umst_contribute_status poll. scope_token required when UMST_AGENT_SCOPE_TOKENS is set.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "async": {
+            "description": "When true, return job_id immediately; poll umst_contribute_status until SUCCEEDED or FAILED",
+            "type": "boolean"
+          },
+          "contribution": {
+            "description": "contribution.v1 JSON \u2014 see umst://schemas/contribution.v1.json; gate_summary.admissible must be true",
+            "type": "object"
+          },
+          "profile": {
+            "default": "default",
+            "description": "Bundled calibration profile id used for gate re-check on ingest",
+            "type": "string"
+          },
+          "scope_token": {
+            "description": "Required when UMST_AGENT_SCOPE_TOKENS is set; must match an allowed token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contribution"
+        ],
+        "type": "object"
+      },
+      "name": "umst_contribute"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Poll async contribute job state. Jobs persist in contribute_jobs.json beside UMST_MEMORY_DB when set.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "job_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "type": "object"
+      },
+      "name": "umst_contribute_status"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Hard thermodynamic admissibility check (read-only). Always run before umst_contribute; never ingest when gate_summary.admissible is false. Example input: {\"mix\":{\"w_c\":\"9/20\",\"temperature_k\":\"29315/100\",\"aggregate_volume_fraction\":\"7/10\"},\"explain\":true}. Example output (PASS): {\"gate_summary\":{\"admissible\":true,\"verdict\":\"PASS\",\"catalog_ids\":[\"gate.clausius_duhem.v1\"]}}. On REJECT: isError:true with gate_reject.v1 + explain.regime_violations, explain.remediation, explain.fields (explain defaults true). Resource: umst://schemas/gate_reject.v1.json.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "explain": {
+            "default": true,
+            "description": "When true (default), include regime_violations, remediation, fields, and catalog_witnesses on REJECT",
+            "type": "boolean"
+          },
+          "mix": {
+            "description": "mix_spec.v1 rational fields \u2014 e.g. {\"w_c\":\"9/20\",\"temperature_k\":\"29315/100\",\"aggregate_volume_fraction\":\"7/10\"}; use \"n/d\" strings, never JSON floats",
+            "type": "object"
+          },
+          "profile": {
+            "default": "default",
+            "description": "Bundled calibration profile id (call umst_profiles when unsure)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mix"
+        ],
+        "type": "object"
+      },
+      "name": "umst_gate_check"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Gate check using a warm arena session (parse-once) plus mix wire. Same physics as umst_gate_check; adds arena catalog witnesses.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "arena_session_id": {
+            "description": "UUID from umst_arena_open",
+            "type": "string"
+          },
+          "explain": {
+            "default": true,
+            "type": "boolean"
+          },
+          "mix": {
+            "description": "mix_spec.v1 rational fields",
+            "type": "object"
+          },
+          "profile": {
+            "default": "default",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arena_session_id",
+          "mix"
+        ],
+        "type": "object"
+      },
+      "name": "umst_gate_check_arena"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Paginated filter on gate-passed memory: regime, catalog_id, stamp_tier, outcome.source, wall_ms window, mix L1 (near_mix_spec + max_mix_l1), or Morton hilbert_index + max_hilbert_distance.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "admissible_only": {
+            "default": true,
+            "type": "boolean"
+          },
+          "catalog_id": {
+            "description": "Filter rows whose catalog_ids contains this witness",
+            "type": "string"
+          },
+          "curing_regime": {
+            "type": "string"
+          },
+          "cursor": {
+            "description": "content_id from prior page next_cursor",
+            "type": "string"
+          },
+          "hilbert_index": {
+            "description": "Morton bucket for locality query",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 500,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "max_hilbert_distance": {
+            "description": "Max Morton distance from hilbert_index (default 0 = exact)",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "max_mix_l1": {
+            "description": "Max L1 distance from near_mix_spec anchor",
+            "type": "number"
+          },
+          "near_mix_spec": {
+            "description": "Anchor mix_spec for L1 distance sort/filter",
+            "type": "object"
+          },
+          "outcome_source": {
+            "description": "payload.outcome.source field",
+            "type": "string"
+          },
+          "stamp_tier": {
+            "description": "observed_at.stamp_tier (e.g. Synthetic, UcrsTier2)",
+            "type": "string"
+          },
+          "wall_ms_max": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "wall_ms_min": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "name": "umst_memory_query"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": true
+      },
+      "description": "Advisory MI bits estimate (Landauer envelope surrogate; not an admissibility gate).",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "mix": {
+            "description": "mix_spec.v1 rational fields",
+            "type": "object"
+          }
+        },
+        "required": [
+          "mix"
+        ],
+        "type": "object"
+      },
+      "name": "umst_mi_estimate"
+    },
+    {
+      "description": "Constitutive prediction envelope result.v2 (read-only). Optional step after umst_gate_check in safe exploration; does not write memory. Example input: {\"mix\":{\"w_c\":\"9/20\",\"temperature_k\":\"29315/100\",\"aggregate_volume_fraction\":\"7/10\"},\"profile\":\"default\"}. Example output: {\"schema_version\":\"result.v2\",\"compressive_strength_mpa\":53.8,\"degree_of_hydration\":0.91,\"calibration_profile\":\"default\",\"formal_anchor\":\"lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone\",\"physics_pipeline\":{...}}. Prefer rational strings for mix fields; schema_version v2 default.",
+      "inputSchema": {
+        "properties": {
+          "canonical": {
+            "default": false,
+            "description": "When true, emit sorted-key canonical JSON bytes as an escaped UTF-8 string",
+            "type": "boolean"
+          },
+          "compare_homogeneous": {
+            "default": false,
+            "description": "When true, include homogeneous baseline comparison in the bundle",
+            "type": "boolean"
+          },
+          "mix": {
+            "description": "mix_spec wire \u2014 e.g. {\"w_c\":\"9/20\",\"temperature_k\":\"29315/100\",\"aggregate_volume_fraction\":\"7/10\"}; rational strings preferred",
+            "type": "object"
+          },
+          "profile": {
+            "default": "default",
+            "description": "Bundled calibration profile id (call umst_profiles when unsure)",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": "v2",
+            "description": "Wire format tag \u2014 prefer v2 (result.v2); v1 is deprecated",
+            "enum": [
+              "v1",
+              "v2"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "mix"
+        ],
+        "type": "object"
+      },
+      "name": "umst_predict"
+    },
+    {
+      "description": "List bundled calibration profile ids sorted lexicographically with descriptions.",
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "umst_profiles"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Predict constitutive scalars, hard-gate the mix, then enqueue async contribute. Returns job_id for umst_contribute_status.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "mix": {
+            "description": "mix_spec.v1 rational fields",
+            "type": "object"
+          },
+          "outcome": {
+            "description": "Optional outcome.v1 fields; prediction merged when absent",
+            "type": "object"
+          },
+          "process": {
+            "description": "Optional process metadata (curing_regime, etc.)",
+            "type": "object"
+          },
+          "profile": {
+            "default": "default",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mix"
+        ],
+        "type": "object"
+      },
+      "name": "umst_transition_propose"
+    }
+  ]
+}

@@ -166,19 +166,34 @@ fn base_tools() -> Vec<Value> {
 }
 
 fn dispatch_tools_list(id: Value) -> Value {
-    #[cfg(feature = "agent-layer")]
+    #[cfg(feature = "tool-manifest")]
     let tools = {
-        let mut tools = base_tools();
-        tools.extend(agent_layer::agent_tools_schema());
-        tools
+        if umst_mcp::manifest::manifest_env_enabled() {
+            umst_mcp::manifest::mcp_tools_schema()
+        } else {
+            hand_tools_list()
+        }
     };
-    #[cfg(not(feature = "agent-layer"))]
-    let tools = base_tools();
+    #[cfg(not(feature = "tool-manifest"))]
+    let tools = hand_tools_list();
     json!({
         "jsonrpc": "2.0",
         "id": id,
         "result": { "tools": tools }
     })
+}
+
+fn hand_tools_list() -> Vec<Value> {
+    #[cfg(feature = "agent-layer")]
+    {
+        let mut tools = base_tools();
+        tools.extend(agent_layer::agent_tools_schema());
+        tools
+    }
+    #[cfg(not(feature = "agent-layer"))]
+    {
+        base_tools()
+    }
 }
 
 fn tool_umst_predict(id: Value, args: &Value) -> Value {

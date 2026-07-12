@@ -5,3 +5,6 @@
 //! `umst-mcp` library surface — pure helpers referenced by agent docs and tests.
 
 pub mod soft_gate;
+
+#[cfg(feature = "tool-manifest")]
+pub mod manifest;
