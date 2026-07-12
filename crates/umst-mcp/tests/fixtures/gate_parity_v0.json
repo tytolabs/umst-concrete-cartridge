@@ -1,6 +1,6 @@
 {
   "schema_version": "gate_parity_v0",
-  "description": "S0 golden lock — gate_check_mix_result (sorted keys) for fixed mix table; ObservedAt frozen Synthetic/ucrs_seq=0/wall_ms=1000; explain=true; profile=default.",
+  "description": "S0 golden lock \u2014 gate_check_mix_result (sorted keys) for fixed mix table; ObservedAt frozen Synthetic/ucrs_seq=0/wall_ms=1000; explain=true; profile=default. GO-LIVE Step 3: tools_list_names.default is the 13-tool agent-native surface (was 4); base_four preserves the prior no-agent-layer list. Gate verdict bytes unchanged.",
   "observed_at": {
     "stamp_tier": "Synthetic",
     "ucrs_seq": 0,
@@ -58,7 +58,7 @@
           "thermodynamic_cd_fail"
         ],
         "remediation": [
-          "Mix violates Clausius–Duhem margin; reduce w_c, adjust temperature_k, or change the thermal schedule before re-checking."
+          "Mix violates Clausius\u2013Duhem margin; reduce w_c, adjust temperature_k, or change the thermal schedule before re-checking."
         ]
       },
       "gate_reject": {
@@ -91,10 +91,19 @@
   },
   "tools_list_names": {
     "default": [
+      "umst_arena_close",
+      "umst_arena_open",
       "umst_audit",
       "umst_certify",
+      "umst_contribute",
+      "umst_contribute_status",
+      "umst_gate_check",
+      "umst_gate_check_arena",
+      "umst_memory_query",
+      "umst_mi_estimate",
       "umst_predict",
-      "umst_profiles"
+      "umst_profiles",
+      "umst_transition_propose"
     ],
     "agent_layer": [
       "umst_arena_close",
@@ -110,6 +119,12 @@
       "umst_predict",
       "umst_profiles",
       "umst_transition_propose"
+    ],
+    "base_four": [
+      "umst_audit",
+      "umst_certify",
+      "umst_predict",
+      "umst_profiles"
     ]
   }
 }
