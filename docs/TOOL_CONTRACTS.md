@@ -4,7 +4,17 @@
 **Not** generated from a shipped manifest yet — **Proposed target:** one manifest → `list_tools` + this file.  
 Index: [`AGENT_MCP.md`](AGENT_MCP.md). Inventory: [`AGENT_SURFACE_AUDIT.md`](AGENT_SURFACE_AUDIT.md).
 
-Each contract has: preconditions · postconditions · error taxonomy · idempotency · SideEffectClass · cost · provenance.
+Each contract has **seven fields** (table aliases → ToolDescriptor):
+
+| Alias | Field |
+|:---|:---|
+| Pre | preconditions |
+| Post | postconditions |
+| Errors | error taxonomy |
+| Idempotent | idempotency |
+| SideEffectClass | SideEffectClass |
+| Cost | cost |
+| Provenance | provenance |
 
 **SideEffectClass (current mapping / target enum):** `ReadOnly` | `EpistemicMutating` | `NetworkIo` | `Pure` (Proposed names from §5.1).
 
@@ -105,9 +115,12 @@ Source: `agent_layer.rs:629`. **No dry-run** — Proposed P2.
 | Field | Contract |
 |:---|:---|
 | Pre | `job_id` from async contribute / transition |
-| Post | Job status SUCCEEDED/FAILED/… |
+| Post | Job status `Running` / `Succeeded` / `Failed` (`ContributeJobStatus` @ `agent_layer.rs:91`) |
+| Errors | `missing_argument`, `unknown_job_id` (`main.rs:575–594`) |
 | Idempotent | Yes |
 | SideEffectClass | ReadOnly |
+| Cost | Negligible poll |
+| Provenance | Job record only (no new stamp) |
 
 Source: `agent_layer.rs:646`.
 
@@ -119,8 +132,10 @@ Source: `agent_layer.rs:646`.
 |:---|:---|
 | Pre | Optional filters (`near_mix_spec`, `max_mix_l1`, cursor) |
 | Post | `rows`, `next_cursor` |
+| Errors | `agent_error.v1` on DB/filter parse fail (no silent empty-as-success for hard errors) |
 | Idempotent | Yes |
 | SideEffectClass | ReadOnly |
+| Cost | Local SQLite read |
 | Provenance | Returned rows carry stamps if stored |
 
 Source: `agent_layer.rs:660`.
@@ -133,9 +148,11 @@ Source: `agent_layer.rs:660`.
 |:---|:---|
 | Pre | Mix |
 | Post | `mi_bits_est`, `advisory: true` — **not** admissibility |
+| Errors | `missing_argument` (`main.rs:603–608`); mix parse via `agent_error.v1` |
 | Idempotent | Yes |
 | SideEffectClass | ReadOnly |
 | Cost | Advisory Landauer surrogate only |
+| Provenance | Advisory estimate — no catalog witness claim |
 
 Source: `agent_layer.rs:685`.
 
@@ -147,9 +164,11 @@ Source: `agent_layer.rs:685`.
 |:---|:---|
 | Pre | Mix (+ profile); will gate before contribute |
 | Post | `job_id` for status poll |
-| Errors | gate reject; profile fail |
+| Errors | gate reject (`isError`); `profile_load_fail`; transition enqueue fail |
 | Idempotent | No (new job) |
 | SideEffectClass | EpistemicMutating |
+| Cost | Predict + gate + async contribute enqueue |
+| Provenance | Job → contribute path carries `observed_at` on success |
 
 Source: `agent_layer.rs:699`.
 
@@ -161,8 +180,11 @@ Source: `agent_layer.rs:699`.
 |:---|:---|
 | Pre | Mix + profile |
 | Post | `result.v2` constitutive envelope |
+| Errors | `profile_load_fail`, `mix_parse_fail`, `predict_fail`, `serialize_fail`, `canonical_json_fail` (`main.rs:204–267`) |
 | Idempotent | Yes |
 | SideEffectClass | ReadOnly |
+| Cost | Constitutive eval (cold stdio) |
+| Provenance | `formal_anchor` / profile id in envelope when present |
 
 Source: `main.rs:114`.
 
@@ -172,10 +194,13 @@ Source: `main.rs:114`.
 
 | Field | Contract |
 |:---|:---|
-| Pre | CSV path/content + profile |
+| Pre | CSV text + profile |
 | Post | `audit.v1` rows / warnings |
+| Errors | `profile_load_fail`; CSV/parse `agent_error.v1` (`main.rs:305+`) |
 | Idempotent | Yes |
 | SideEffectClass | ReadOnly |
+| Cost | Batch over CSV rows |
+| Provenance | Profile id; per-row warnings — not gate PASS |
 
 Source: `main.rs:132`.
 
@@ -187,8 +212,11 @@ Source: `main.rs:132`.
 |:---|:---|
 | Pre | None |
 | Post | Bundled profile ids |
+| Errors | None expected (empty args); transport-level only |
 | Idempotent | Yes |
 | SideEffectClass | Pure |
+| Cost | Negligible list |
+| Provenance | Bundled profile set (crate bake) |
 
 Source: `main.rs:149`.
 
@@ -200,9 +228,11 @@ Source: `main.rs:149`.
 |:---|:---|
 | Pre | Profile id |
 | Post | Formal-anchor certify chain JSON |
-| Errors | `certify_missing_profile` |
+| Errors | `certify_missing_profile`, `profile_load_fail` (`main.rs:378+`) |
 | Idempotent | Yes |
 | SideEffectClass | ReadOnly |
+| Cost | Negligible chain emit |
+| Provenance | Formal-anchor URIs in chain |
 
 Source: `main.rs:154`.
 
