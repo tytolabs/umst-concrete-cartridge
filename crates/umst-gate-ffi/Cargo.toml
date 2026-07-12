@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+#
+# Layer-0 gate FFI — C-ABI over gate_check_mix_result (NOT chemistry; see umst-concrete-ffi).
+
+[package]
+name = "umst-gate-ffi"
+version = "0.1.0"
+edition = "2021"
+authors = ["Santhosh Shyamsundar", "Santosh Prabhu Shenbagamoorthy"]
+description = "C-ABI thermodynamic gate (umst_gate_check*) over gate_check_mix_result."
+license = "MIT"
+publish = false
+
+[dependencies]
+umst-concrete-cartridge = { path = "../umst-concrete-cartridge", default-features = false, features = ["agent-layer"] }
+serde_json = "1.0"
+
+[lib]
+name = "umst_gate_ffi"
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[features]
+default = []
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
