@@ -668,12 +668,14 @@ In practice, the cartridge is a **software** runtime: mixes and **simulated** pr
 
 ### Related repositories
 
-Shared gate spine (matter / knowing / acting / time) — sibling links only:
+Shared gate spine — **matter** (manifold + this cartridge) · **knowing** · **acting** · **time**. Each sibling below is listed for how it composes **with this cartridge**, not as a generic link dump.
 
-- [**UMST Manifold**](https://github.com/tytolabs/umst-manifold) — DEC carrier + thermodynamic admissibility gate (**matter** substrate)
-- [**UMST Formal Double-Slit**](https://github.com/tytolabs/umst-formal-double-slit) — observation / measurement-cost fiber (**knowing**)
-- [**UMST Formal**](https://github.com/tytolabs/umst-formal) — acting / economic-admissibility fiber (**acting**)
-- [**UMST-UCRS**](https://github.com/tytolabs/umst-ucrs) — temporal witness / stamp spine (**time**); optional `ucrs-provenance`
+| Repository | Spine role | Relation to this cartridge |
+|:---|:---|:---|
+| [`umst-manifold`](https://github.com/tytolabs/umst-manifold) | **Matter** substrate | DEC carrier, UMST lanes, thermodynamic gate, and catalog lock SSOT. This cartridge implements `IScienceCartridge` on that substrate; batch arena paths and solver status live there. |
+| [`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit) | **Knowing** | Observation-cost / PMIC / Englert proof tree. Agents may cite theorem names as **cold witnesses**; this repo does not host those proofs and does not run `lake build` on the MCP path. |
+| [`umst-formal`](https://github.com/tytolabs/umst-formal) | **Acting** | Economic / Kleisli admissibility vocabulary. Compatible with `ConcreteAdmissible`-style gate stories; surrogate “detector” modules are predicates ([`SAFETY-LIMITS.md`](https://github.com/tytolabs/umst-formal/blob/main/SAFETY-LIMITS.md)) — not MCP tools. |
+| [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) | **Time** | Stamp / witness library. Optional `ucrs-provenance` on memory accept; `UMST_UCRS_WITNESS` for Tier-2 vs synthetic. UCRS is **not** the MCP host — stdio tools stay in `umst-mcp` here. |
 
 ---
 
