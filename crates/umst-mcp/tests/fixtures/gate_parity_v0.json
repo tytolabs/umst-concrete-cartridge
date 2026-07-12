@@ -1,0 +1,115 @@
+{
+  "schema_version": "gate_parity_v0",
+  "description": "S0 golden lock — gate_check_mix_result (sorted keys) for fixed mix table; ObservedAt frozen Synthetic/ucrs_seq=0/wall_ms=1000; explain=true; profile=default.",
+  "observed_at": {
+    "stamp_tier": "Synthetic",
+    "ucrs_seq": 0,
+    "wall_ms": 1000
+  },
+  "mix_table": {
+    "pass_rational_default": {
+      "w_c": "9/20",
+      "temperature_k": "29315/100",
+      "aggregate_volume_fraction": "7/10"
+    },
+    "reject_high_wc": {
+      "w_c": "3/4",
+      "temperature_k": "29315/100",
+      "aggregate_volume_fraction": "7/10",
+      "superplasticiser_pct": "0/1",
+      "silica_fume_pct": "0/1",
+      "fly_ash_pct": "0/1",
+      "target_age_hours": "672/1"
+    }
+  },
+  "gate_check_mix_result": {
+    "pass_rational_default": {
+      "explain": {
+        "catalog_witnesses": [
+          "umst.gate.cd_transition"
+        ],
+        "regime_violations": []
+      },
+      "gate_summary": {
+        "admissible": true,
+        "catalog_ids": [
+          "umst.gate.cd_transition"
+        ],
+        "mi_bits_est": "500/10000",
+        "verdict": "PASS"
+      }
+    },
+    "reject_high_wc": {
+      "explain": {
+        "catalog_witnesses": [
+          "umst.gate.cd_transition"
+        ],
+        "fields": [
+          {
+            "issue": "cd_margin_negative",
+            "path": "mix.w_c"
+          },
+          {
+            "issue": "regime_out_of_envelope",
+            "path": "mix.temperature_k"
+          }
+        ],
+        "regime_violations": [
+          "thermodynamic_cd_fail"
+        ],
+        "remediation": [
+          "Mix violates Clausius–Duhem margin; reduce w_c, adjust temperature_k, or change the thermal schedule before re-checking."
+        ]
+      },
+      "gate_reject": {
+        "canon_version": "jcs-rfc8785-v1",
+        "catalog_ids": [
+          "umst.gate.cd_transition"
+        ],
+        "mix_content_hash": "sha256:0b4786dce1f8c7c36551a7ce0a06f4cbe771bc2fd763d2f473bc62ea958194ed",
+        "reason_codes": [
+          "thermodynamic_fail"
+        ],
+        "rejected_at": {
+          "stamp_tier": "Synthetic",
+          "ucrs_seq": 0,
+          "wall_ms": 1000
+        },
+        "schema_version": "gate_reject.v1",
+        "stamp_tier": "Synthetic",
+        "verdict": "REJECT"
+      },
+      "gate_summary": {
+        "admissible": false,
+        "catalog_ids": [
+          "umst.gate.cd_transition"
+        ],
+        "mi_bits_est": "5500/10000",
+        "verdict": "REJECT"
+      }
+    }
+  },
+  "tools_list_names": {
+    "default": [
+      "umst_audit",
+      "umst_certify",
+      "umst_predict",
+      "umst_profiles"
+    ],
+    "agent_layer": [
+      "umst_arena_close",
+      "umst_arena_open",
+      "umst_audit",
+      "umst_certify",
+      "umst_contribute",
+      "umst_contribute_status",
+      "umst_gate_check",
+      "umst_gate_check_arena",
+      "umst_memory_query",
+      "umst_mi_estimate",
+      "umst_predict",
+      "umst_profiles",
+      "umst_transition_propose"
+    ]
+  }
+}
