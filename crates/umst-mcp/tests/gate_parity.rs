@@ -12,13 +12,13 @@
 //!   `cargo test -p umst-mcp --features agent-layer --test gate_parity`
 //! - rewrite call-frame goldens: `UMST_GATE_PARITY_UPDATE=1 cargo test -p umst-mcp --features agent-layer --test gate_parity tools_call_result_frames_parity -- --ignored`
 
-#[cfg(feature = "agent-layer")]
-use serde_json::Map;
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command as StdCmd, Stdio};
+#[cfg(feature = "agent-layer")]
+use umst_mcp::parity::{canonical_bytes, canonicalize_tools_call_result, sort_keys};
 
 fn fixtures_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")
@@ -29,30 +29,6 @@ fn load_fixture_root() -> Value {
     let text =
         std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()))
-}
-
-/// Recursively sort object keys for byte-stable JSON compare.
-#[cfg(feature = "agent-layer")]
-fn sort_keys(v: Value) -> Value {
-    match v {
-        Value::Object(map) => {
-            let mut keys: Vec<_> = map.keys().cloned().collect();
-            keys.sort();
-            let mut out = Map::new();
-            for k in keys {
-                let child = map.get(&k).expect("key present").clone();
-                out.insert(k, sort_keys(child));
-            }
-            Value::Object(out)
-        }
-        Value::Array(arr) => Value::Array(arr.into_iter().map(sort_keys).collect()),
-        other => other,
-    }
-}
-
-#[cfg(feature = "agent-layer")]
-fn canonical_bytes(v: &Value) -> String {
-    serde_json::to_string(&sort_keys(v.clone())).expect("serialize canonical")
 }
 
 fn mcp_binary_path() -> PathBuf {
@@ -85,56 +61,6 @@ fn expected_names(root: &Value, key: &str) -> BTreeSet<String> {
         .iter()
         .filter_map(|v| v.as_str().map(String::from))
         .collect()
-}
-
-/// Redact non-deterministic MCP envelope fields (ids / timestamps) for golden compare.
-#[cfg(feature = "agent-layer")]
-fn redact_nondeterministic(v: Value) -> Value {
-    match v {
-        Value::Object(map) => {
-            let mut out = Map::new();
-            for (k, child) in map {
-                if matches!(
-                    k.as_str(),
-                    "wall_ms"
-                        | "memory_id"
-                        | "job_id"
-                        | "arena_session_id"
-                        | "content_id"
-                        | "idempotency_key"
-                ) {
-                    out.insert(k, json!("<redacted>"));
-                } else {
-                    out.insert(k, redact_nondeterministic(child));
-                }
-            }
-            Value::Object(out)
-        }
-        Value::Array(arr) => Value::Array(arr.into_iter().map(redact_nondeterministic).collect()),
-        other => other,
-    }
-}
-
-/// Extract MCP `result` frame and redact; also parse nested text JSON if present.
-#[cfg(feature = "agent-layer")]
-fn canonicalize_tools_call_result(resp: &Value) -> Value {
-    let result = resp.get("result").cloned().unwrap_or(Value::Null);
-    let mut redacted = redact_nondeterministic(result);
-    // Normalize pretty-printed tool text payloads to canonical sorted JSON strings.
-    if let Some(content) = redacted.get_mut("content").and_then(|c| c.as_array_mut()) {
-        for item in content.iter_mut() {
-            if let Some(text) = item.get("text").and_then(|t| t.as_str()) {
-                if let Ok(parsed) = serde_json::from_str::<Value>(text) {
-                    let redacted_payload = redact_nondeterministic(parsed);
-                    let canon = canonical_bytes(&redacted_payload);
-                    item.as_object_mut()
-                        .expect("content item object")
-                        .insert("text".into(), Value::String(canon));
-                }
-            }
-        }
-    }
-    sort_keys(redacted)
 }
 
 fn spawn_mcp_in(

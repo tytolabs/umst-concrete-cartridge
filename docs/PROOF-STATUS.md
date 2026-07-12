@@ -17,10 +17,10 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | formal_status | Symbols |
 |---------------|---------|
 | **Mechanised** | 34 |
-| **Structural** | 95 |
+| **Structural** | 97 |
 | **Empirical** | 34 |
 | **Literature** | 48 |
-| **NONE** | 285 |
+| **NONE** | 299 |
 
 ## Mechanised
 
@@ -155,8 +155,10 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `ucrs_observed_at_to_v2` | `crates/umst-concrete-cartridge/src/research/wire_v2.rs:56` | `STRUCTURAL` | — | UCRS crate → v2 wire functor; monotonicity on `is_monotonic_after`. |
 | `with_gate_cartridge` | `crates/umst-concrete-cartridge/src/thmc_gate.rs:12` | `STRUCTURAL` | — | Configures [`ThmcSolver`] intrinsic strength from cement SSOT before coupled step. |
 | `gate_cartridge_witness` | `crates/umst-concrete-cartridge/src/thmc_gate.rs:25` | `STRUCTURAL` | — | Routes post-step evidence through cartridge [`GateCartridge`] witness. |
+| `ToolPayload` | `crates/umst-mcp/src/handlers.rs:22` | `STRUCTURAL` | — | Algebraic sum type for MCP tool body + isError bit. |
 | `SideEffectClass` | `crates/umst-mcp/src/manifest/descriptor.rs:10` | `STRUCTURAL` | — | Algebraic partition of tool effects; invalid mixes unrepresentable. |
 | `ToolDescriptor` | `crates/umst-mcp/src/manifest/descriptor.rs:24` | `STRUCTURAL` | — | Typed MCP tool row; wire emission via `to_mcp_tool`. |
+| `UmstRmcpServer` | `crates/umst-mcp/src/rmcp_server.rs:26` | `STRUCTURAL` | — | Wire adapter; physics on shared `handlers` / cartridge. |
 | `predict` | `crates/umst-py/src/lib.rs:115` | `STRUCTURAL` | — | Python transport wrapper over **[`predict_with_options`]**; anchored on facade predict path. |
 | `certify` | `crates/umst-py/src/lib.rs:186` | `STRUCTURAL` | — | Dict view of **[`certify_profile_json`]**; structural mirror of CLI `umst certify`. |
 | `schema` | `crates/umst-py/src/lib.rs:198` | `STRUCTURAL` | — | SSOT schema text from facade `include_str!` for notebooks and packaging checks. |
@@ -517,12 +519,26 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `prompts_list_result` | `crates/umst-mcp/src/agent_layer.rs:571` | `NONE` | — | MCP prompts list; names only. |
 | `prompts_get_result` | `crates/umst-mcp/src/agent_layer.rs:587` | `NONE` | — | MCP prompt body fetch; operational text. |
 | `agent_tools_schema` | `crates/umst-mcp/src/agent_layer.rs:606` | `NONE` | — | MCP tool schema export; delegates to gate/memory/contribute impls. |
+| `agent_error_payload` | `crates/umst-mcp/src/handlers.rs:32` | `NONE` | — | Recoverable tool failure wire; not physics gate. |
+| `exec_umst_profiles` | `crates/umst-mcp/src/handlers.rs:56` | `NONE` | — | Read-only catalog listing; physics on predict/gate tools. |
+| `exec_umst_predict` | `crates/umst-mcp/src/handlers.rs:82` | `NONE` | — | Delegates to cartridge `predict_with_options` / `serialize_prediction`. |
+| `exec_umst_gate_check_pure` | `crates/umst-mcp/src/handlers.rs:181` | `NONE` | — | Same physics as `AgentSession::gate_check` without session carrier. |
+| `exec_umst_gate_check` | `crates/umst-mcp/src/handlers.rs:229` | `NONE` | — | Session-threaded gate on `gate_check_mix_result`. |
+| `exec_umst_mi_estimate_pure` | `crates/umst-mcp/src/handlers.rs:275` | `NONE` | — | Advisory enrichment; not admissibility gate. |
+| `exec_umst_mi_estimate` | `crates/umst-mcp/src/handlers.rs:302` | `NONE` | — | Delegates to pure MI path (session carries no MI state). |
+| `PARITY_TOOL_NAMES` | `crates/umst-mcp/src/handlers.rs:316` | `NONE` | — | Test fixture index; not physics. |
 | `to_mcp_tool` | `crates/umst-mcp/src/manifest/descriptor.rs:39` | `NONE` | — | JSON-RPC list_tools wire shape; not a physics morphism. |
 | `required_keys` | `crates/umst-mcp/src/manifest/descriptor.rs:56` | `NONE` | — | Schema introspection helper for S1 parity tests. |
 | `side_effect_for` | `crates/umst-mcp/src/manifest/descriptor.rs:77` | `NONE` | — | Name→effect table for descriptors; policy metadata only. |
 | `manifest_env_enabled` | `crates/umst-mcp/src/manifest/mod.rs:12` | `NONE` | — | Env IO boundary for optional dual-emit; default remains hand tables. |
 | `tools_v1` | `crates/umst-mcp/src/manifest/tools_v1.rs:40` | `NONE` | — | Loads frozen tools_v1 schema snapshot; not a physics morphism. |
 | `mcp_tools_schema` | `crates/umst-mcp/src/manifest/tools_v1.rs:66` | `NONE` | — | Dual-emit list_tools from descriptors; hand tables remain default. |
+| `sort_keys` | `crates/umst-mcp/src/parity.rs:10` | `NONE` | — | Test harness canonicalization; not production wire. |
+| `canonical_bytes` | `crates/umst-mcp/src/parity.rs:32` | `NONE` | — | Test fixture byte compare helper. |
+| `redact_nondeterministic` | `crates/umst-mcp/src/parity.rs:41` | `NONE` | — | Parity harness redaction; not physics. |
+| `canonicalize_tools_call_result` | `crates/umst-mcp/src/parity.rs:73` | `NONE` | — | S0 golden `tools/call` result canonicalizer. |
+| `new` | `crates/umst-mcp/src/rmcp_server.rs:36` | `NONE` | — | Composition root for `umst-mcp-rmcp` binary. |
+| `parity_rmcp_tools` | `crates/umst-mcp/src/rmcp_server.rs:111` | `NONE` | — | MCP list_tools wire; schemas match hand-rolled subset. |
 | `saturate01` | `crates/umst-mcp/src/soft_gate.rs:25` | `NONE` | — | Scalar clamp utility; no thermodynamic gate claim. |
 | `smoothstep01` | `crates/umst-mcp/src/soft_gate.rs:34` | `NONE` | — | Hermite smoothstep kernel; training slack only. |
 | `smoothstep` | `crates/umst-mcp/src/soft_gate.rs:44` | `NONE` | — | Bounded Hermite ramp; not a hard admissibility witness. |
