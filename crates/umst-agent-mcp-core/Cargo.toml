@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+#
+# Domain-agnostic agent-MCP primitives (soft gates, shared handlers) — S5 extract.
+
+[package]
+name = "umst-agent-mcp-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Domain-agnostic agent MCP core: soft gates and shared tool helpers."
+publish = false
+
+[lib]
+name = "umst_agent_mcp_core"
+path = "src/lib.rs"
+
+[features]
+default = []

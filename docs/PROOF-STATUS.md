@@ -20,7 +20,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | **Structural** | 97 |
 | **Empirical** | 34 |
 | **Literature** | 48 |
-| **NONE** | 299 |
+| **NONE** | 286 |
 
 ## Mechanised
 
@@ -527,6 +527,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `exec_umst_mi_estimate_pure` | `crates/umst-mcp/src/handlers.rs:275` | `NONE` | — | Advisory enrichment; not admissibility gate. |
 | `exec_umst_mi_estimate` | `crates/umst-mcp/src/handlers.rs:302` | `NONE` | — | Delegates to pure MI path (session carries no MI state). |
 | `PARITY_TOOL_NAMES` | `crates/umst-mcp/src/handlers.rs:316` | `NONE` | — | Test fixture index; not physics. |
+| `soft_gate` | `crates/umst-mcp/src/lib.rs:10` | `NONE` | — | Re-export facade; soft_gate morphisms documented in umst-agent-mcp-core. |
 | `to_mcp_tool` | `crates/umst-mcp/src/manifest/descriptor.rs:39` | `NONE` | — | JSON-RPC list_tools wire shape; not a physics morphism. |
 | `required_keys` | `crates/umst-mcp/src/manifest/descriptor.rs:56` | `NONE` | — | Schema introspection helper for S1 parity tests. |
 | `side_effect_for` | `crates/umst-mcp/src/manifest/descriptor.rs:77` | `NONE` | — | Name→effect table for descriptors; policy metadata only. |
@@ -539,20 +540,6 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `canonicalize_tools_call_result` | `crates/umst-mcp/src/parity.rs:73` | `NONE` | — | S0 golden `tools/call` result canonicalizer. |
 | `new` | `crates/umst-mcp/src/rmcp_server.rs:36` | `NONE` | — | Composition root for `umst-mcp-rmcp` binary. |
 | `parity_rmcp_tools` | `crates/umst-mcp/src/rmcp_server.rs:111` | `NONE` | — | MCP list_tools wire; schemas match hand-rolled subset. |
-| `saturate01` | `crates/umst-mcp/src/soft_gate.rs:25` | `NONE` | — | Scalar clamp utility; no thermodynamic gate claim. |
-| `smoothstep01` | `crates/umst-mcp/src/soft_gate.rs:34` | `NONE` | — | Hermite smoothstep kernel; training slack only. |
-| `smoothstep` | `crates/umst-mcp/src/soft_gate.rs:44` | `NONE` | — | Bounded Hermite ramp; not a hard admissibility witness. |
-| `soft_lower_gate` | `crates/umst-mcp/src/soft_gate.rs:59` | `NONE` | — | Soft lower-bound multiplier for policy loss; hard gate is separate. |
-| `soft_upper_gate` | `crates/umst-mcp/src/soft_gate.rs:71` | `NONE` | — | Soft upper-bound multiplier for policy loss; hard gate is separate. |
-| `soft_band_gate` | `crates/umst-mcp/src/soft_gate.rs:83` | `NONE` | — | Product of soft lower/upper ramps; exploration slack only. |
-| `connected_fraction_gate` | `crates/umst-mcp/src/soft_gate.rs:92` | `NONE` | — | Supercap percolation soft ramp; not connected-fraction witness. |
-| `network_conductivity_factor` | `crates/umst-mcp/src/soft_gate.rs:101` | `NONE` | — | Alias for supercap conductivity nomenclature; soft ramp only. |
-| `soft_violation_penalty` | `crates/umst-mcp/src/soft_gate.rs:110` | `NONE` | — | Upper slack penalty for policy loss; not CD reject. |
-| `soft_deficit_penalty` | `crates/umst-mcp/src/soft_gate.rs:119` | `NONE` | — | Lower slack penalty for policy loss; not CD reject. |
-| `band_margin_penalty` | `crates/umst-mcp/src/soft_gate.rs:128` | `NONE` | — | Combined band margin penalty; hard band gate remains on cartridge. |
-| `printability_tau_gate` | `crates/umst-mcp/src/soft_gate.rs:137` | `NONE` | — | Roussel τ₀ window soft multiplier; printability gate is hard path. |
-| `extrudability_gate` | `crates/umst-mcp/src/soft_gate.rs:146` | `NONE` | — | Extrudability floor soft ramp; hard extrudability gate is separate. |
-| `printability_dual_gate` | `crates/umst-mcp/src/soft_gate.rs:155` | `NONE` | — | Product of printability soft gates; dual hard gate on cartridge path. |
 | `audit_rows` | `crates/umst-py/src/lib.rs:147` | `NONE` | — | Encodes iterable of row dicts into dataset-style CSV then reuses **`audit_csv_buf`** (aligned with **`audit`** string path). |
 | `audit` | `crates/umst-py/src/lib.rs:167` | `NONE` | — | Python transport over CLI audit glue; no extra physical claim beyond CSV→facade audit. |
 | `bundled_profile_ids` | `crates/umst-py/src/lib.rs:217` | `NONE` | — | Bundled id manifest for packaging smoke tests. |
