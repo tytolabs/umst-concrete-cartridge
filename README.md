@@ -117,7 +117,7 @@ The library exposes gated constitutive prediction, mix audit, **print-stability 
   - [9.4 Working contract](#94-working-contract-load-bearing)
   - [9.5 Operational mapping](#95-operational-mapping)
   - [9.6 Proposed (not yet built)](#96-proposed-not-yet-built)
-  - [9.7 Principles](#97-principles-honest-typing)
+  - [9.7 Principles](#97-principles)
 - [§10 Conclusion: Inferences & Forward Path](#10-conclusion-inferences--forward-path)
   - [What this cartridge demonstrates](#what-this-cartridge-demonstrates)
   - [What surprised us](#what-surprised-us)
@@ -167,7 +167,7 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 #94-working-contract-load-bearing
 #95-operational-mapping
 #96-proposed-not-yet-built
-#97-principles-honest-typing
+#97-principles
 #10-conclusion-inferences--forward-path
 #what-this-cartridge-demonstrates
 #what-surprised-us
@@ -637,7 +637,7 @@ Do **not** call these as if they exist on the MCP surface today:
 * `umst_arena_session` as a single fused tool (use open / gate_check_arena / close)
 * WebSocket voxel streaming to `umst-mcp` (stdio is what we verified)
 
-### 9.7 Principles (honest typing)
+### 9.7 Principles
 
 * **Continuity of flow.** Spatial work respects DEC boundary structure (`d ∘ d = 0`) on the manifold grid.
 * **Admissibility is runtime, not Rust compile-time.** Printability / buckling / CD failures surface as **gate REJECT** / solver errors — not as rustc type errors. Soften any “compile-time type error” metaphor accordingly.
