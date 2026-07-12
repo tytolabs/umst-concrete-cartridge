@@ -3,14 +3,14 @@
 
 //! S0 parity harness (`docs/MCP_BUILD_PLAN.md` Stage S0).
 //!
-//! Locks gate + `tools/list` / `tools/call` responses as golden fixtures.
-//! GO-LIVE Step 3: package `default = ["agent-layer"]` → default `tools/list` is **13** tools.
-//! Gate `gate_check_mix_result` bytes are unchanged (surface expansion only).
+//! Locks today's gate + `tools/list` / `tools/call` responses as golden fixtures.
+//! ADDITIVE — test-only; does not change the `umst-mcp` binary or default features.
 //!
 //! Run:
-//! - default (13-tool list + gate + call frames): `cargo test -p umst-mcp --test gate_parity`
-//! - base-four surface (`--no-default-features`): still asserts the historical 4-tool list
-//! - rewrite call-frame goldens: `UMST_GATE_PARITY_UPDATE=1 cargo test -p umst-mcp --test gate_parity tools_call_result_frames_parity -- --ignored`
+//! - default (4-tool list): `cargo test -p umst-mcp --test gate_parity`
+//! - agent-layer (gate + 13-tool + call frames):
+//!   `cargo test -p umst-mcp --features agent-layer --test gate_parity`
+//! - rewrite call-frame goldens: `UMST_GATE_PARITY_UPDATE=1 cargo test -p umst-mcp --features agent-layer --test gate_parity tools_call_result_frames_parity -- --ignored`
 
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
@@ -119,41 +119,14 @@ fn initialize(stdin: &mut impl Write, reader: &mut impl BufRead) {
     assert!(r.get("result").is_some(), "{r}");
 }
 
-/// `--no-default-features` binary: tools/list name set must be exactly the historical 4 base tools.
-/// Compiled only when `agent-layer` is off (go-live default enables agent-layer).
+/// Default binary (no agent-layer): tools/list name set must be exactly the 4 base tools.
+/// Only compiled when `agent-layer` is off — the same binary cannot be both 4- and 13-tool.
 #[cfg(not(feature = "agent-layer"))]
 #[test]
-fn tools_list_base_four_names_without_agent_layer() {
-    let root = load_fixture_root();
-    let expected = expected_names(&root, "base_four");
-    assert_eq!(expected.len(), 4, "fixture base_four names");
-
-    let (mut child, mut stdin, mut reader) = spawn_mcp();
-    initialize(&mut stdin, &mut reader);
-
-    write_frame(
-        &mut stdin,
-        &json!({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}),
-    );
-    let r2 = read_json_line(&mut reader);
-    assert_eq!(r2["id"], 2);
-    let names = tool_names_from_list_result(&r2);
-    assert_eq!(
-        names, expected,
-        "base-four tools/list name set drifted from S0 golden"
-    );
-
-    let _ = child.kill();
-    let _ = child.wait();
-}
-
-/// Default package features (`default = ["agent-layer"]`): tools/list must be the 13-tool set.
-#[cfg(feature = "agent-layer")]
-#[test]
-fn tools_list_default_thirteen_names() {
+fn tools_list_default_four_names() {
     let root = load_fixture_root();
     let expected = expected_names(&root, "default");
-    assert_eq!(expected.len(), 13, "fixture default names (agent-native)");
+    assert_eq!(expected.len(), 4, "fixture default names");
 
     let (mut child, mut stdin, mut reader) = spawn_mcp();
     initialize(&mut stdin, &mut reader);
@@ -167,7 +140,7 @@ fn tools_list_default_thirteen_names() {
     let names = tool_names_from_list_result(&r2);
     assert_eq!(
         names, expected,
-        "default tools/list name set drifted from S0 golden (expected 13)"
+        "default tools/list name set drifted from S0 golden"
     );
 
     let _ = child.kill();
