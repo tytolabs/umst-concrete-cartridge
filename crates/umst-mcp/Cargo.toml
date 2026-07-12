@@ -33,6 +33,11 @@ name = "rmcp_parity"
 path = "tests/rmcp_parity.rs"
 required-features = ["rmcp-wire"]
 
+[[test]]
+name = "s7_proposed_tools"
+path = "tests/s7_proposed_tools.rs"
+required-features = ["agent-layer", "tool-dry-run", "tool-promote"]
+
 [features]
 default = []
 blas-accelerate = ["umst-cli/blas-accelerate"]
