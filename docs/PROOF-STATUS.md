@@ -17,7 +17,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | formal_status | Symbols |
 |---------------|---------|
 | **Mechanised** | 34 |
-| **Structural** | 98 |
+| **Structural** | 97 |
 | **Empirical** | 34 |
 | **Literature** | 48 |
 | **NONE** | 293 |
@@ -158,7 +158,6 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `ToolPayload` | `crates/umst-mcp/src/handlers.rs:22` | `STRUCTURAL` | — | Algebraic sum type for MCP tool body + isError bit. |
 | `SideEffectClass` | `crates/umst-mcp/src/manifest/descriptor.rs:10` | `STRUCTURAL` | — | Algebraic partition of tool effects; invalid mixes unrepresentable. |
 | `ToolDescriptor` | `crates/umst-mcp/src/manifest/descriptor.rs:24` | `STRUCTURAL` | — | Typed MCP tool row; wire emission via `to_mcp_tool`. |
-| `ToolContract` | `crates/umst-mcp/src/manifest/descriptor.rs:40` | `STRUCTURAL` | — | B3 contract row; docs generator SSOT companion to wire schema. |
 | `UmstRmcpServer` | `crates/umst-mcp/src/rmcp_server.rs:26` | `STRUCTURAL` | — | Wire adapter; physics on shared `handlers` / cartridge. |
 | `predict` | `crates/umst-py/src/lib.rs:115` | `STRUCTURAL` | — | Python transport wrapper over **[`predict_with_options`]**; anchored on facade predict path. |
 | `certify` | `crates/umst-py/src/lib.rs:186` | `STRUCTURAL` | — | Dict view of **[`certify_profile_json`]**; structural mirror of CLI `umst certify`. |
@@ -529,12 +528,12 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `exec_umst_mi_estimate` | `crates/umst-mcp/src/handlers.rs:302` | `NONE` | — | Delegates to pure MI path (session carries no MI state). |
 | `PARITY_TOOL_NAMES` | `crates/umst-mcp/src/handlers.rs:316` | `NONE` | — | Test fixture index; not physics. |
 | `soft_gate` | `crates/umst-mcp/src/lib.rs:10` | `NONE` | — | Re-export facade; soft_gate morphisms documented in umst-agent-mcp-core. |
-| `to_mcp_tool` | `crates/umst-mcp/src/manifest/descriptor.rs:57` | `NONE` | — | JSON-RPC list_tools wire shape; not a physics morphism. |
-| `required_keys` | `crates/umst-mcp/src/manifest/descriptor.rs:74` | `NONE` | — | Schema introspection helper for S1 parity tests. |
-| `side_effect_for` | `crates/umst-mcp/src/manifest/descriptor.rs:95` | `NONE` | — | Name→effect table for descriptors; policy metadata only. |
+| `to_mcp_tool` | `crates/umst-mcp/src/manifest/descriptor.rs:39` | `NONE` | — | JSON-RPC list_tools wire shape; not a physics morphism. |
+| `required_keys` | `crates/umst-mcp/src/manifest/descriptor.rs:56` | `NONE` | — | Schema introspection helper for S1 parity tests. |
+| `side_effect_for` | `crates/umst-mcp/src/manifest/descriptor.rs:77` | `NONE` | — | Name→effect table for descriptors; policy metadata only. |
 | `manifest_env_enabled` | `crates/umst-mcp/src/manifest/mod.rs:12` | `NONE` | — | Env IO boundary for optional dual-emit; default remains hand tables. |
-| `tools_v1` | `crates/umst-mcp/src/manifest/tools_v1.rs:66` | `NONE` | — | Loads frozen tools_v1 schema snapshot; not a physics morphism. |
-| `mcp_tools_schema` | `crates/umst-mcp/src/manifest/tools_v1.rs:92` | `NONE` | — | Dual-emit list_tools from descriptors; hand tables remain default. |
+| `tools_v1` | `crates/umst-mcp/src/manifest/tools_v1.rs:40` | `NONE` | — | Loads frozen tools_v1 schema snapshot; not a physics morphism. |
+| `mcp_tools_schema` | `crates/umst-mcp/src/manifest/tools_v1.rs:66` | `NONE` | — | Dual-emit list_tools from descriptors; hand tables remain default. |
 | `sort_keys` | `crates/umst-mcp/src/parity.rs:10` | `NONE` | — | Test harness canonicalization; not production wire. |
 | `canonical_bytes` | `crates/umst-mcp/src/parity.rs:32` | `NONE` | — | Test fixture byte compare helper. |
 | `redact_nondeterministic` | `crates/umst-mcp/src/parity.rs:41` | `NONE` | — | Parity harness redaction; not physics. |

@@ -33,24 +33,6 @@ pub struct ToolDescriptor {
     pub side_effect: SideEffectClass,
     /// Optional MCP annotations (`readOnlyHint`, …).
     pub annotations: Option<Value>,
-    /// Optional 7-field B3 contract (from `tools_v1_contracts.json` when loaded).
-    pub contract: Option<ToolContract>,
-}
-
-/// Seven-field tool contract (Pre/Post/Errors/Idempotent/SideEffectClass/Cost/Provenance).
-/// formal_anchor: STRUCTURAL
-/// formal_status: Structural
-/// formal_anchor_rationale: B3 contract row; docs generator SSOT companion to wire schema.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ToolContract {
-    pub pre: String,
-    pub post: String,
-    pub errors: String,
-    pub idempotent: String,
-    /// Doc / policy spelling (may be `EpistemicMutating` while `side_effect` is `Mutating`).
-    pub side_effect_class: String,
-    pub cost: String,
-    pub provenance: String,
 }
 
 impl ToolDescriptor {
