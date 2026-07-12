@@ -221,7 +221,7 @@ To optimize a structural mix, we must follow the physical processes that govern 
 
 ## 2. Cross-Domain Integration Specifications
 
-This cartridge exposes its physical equations through multiple programmatic surfaces to seamlessly integrate into your specific development environment:
+This cartridge exposes its physical equations through multiple programmatic surfaces so you can plug the same constitutive law into the environment you already work in. Open a persona below for surface, pipeline, outcome, and an honest limit:
 
 <a id="21-spatial-topologies--structural-design"></a>
 <details>
@@ -240,6 +240,8 @@ This cartridge exposes its physical equations through multiple programmatic surf
     *   **Proposed (not yet built in this README’s verified path):** WebSocket/TCP streaming of full voxel grids to `umst-mcp` — do not assume it exists until documented with a command + paste.
 
 *   **Computational Outcome:** Geometric optimization where internal material densities, local wall thicknesses, and rebar channels are scaled to satisfy structural limits under gravity. Iteration cadence tracks the underlying solver — interactive on simple mechanics surrogates, batch (minutes to hours) on full shell topology runs.
+
+*   **Honest limit:** Hero GIF and adjoint surrogates are **software** demonstrations — not physical prints or collapse-certified FEM for arbitrary boundary conditions.
 </details>
 
 <a id="22-material-auditing--mix-optimization"></a>
@@ -251,6 +253,8 @@ This cartridge exposes its physical equations through multiple programmatic surf
 *   **Mathematical Pipeline:** Leverages the `umst audit` pipeline on large-scale dataset inputs, matching empirical properties against DFT-anchored calibration profiles.
 
 *   **Computational Outcome:** Automated, high-throughput verification of compressive strength (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;f_c"><img alt="f_c" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;f_c" style="vertical-align:middle"></picture>) development curves, hydration heat profiles, and GWP footprints across batch CSV entries.
+
+*   **Honest limit:** `umst audit` matches calibration profiles and gate rules — not legal certification of supplier compliance or plant acceptance.
 </details>
 
 <a id="23-robotic-manufacturing--3d-printing"></a>
@@ -268,6 +272,8 @@ This cartridge exposes its physical equations through multiple programmatic surf
 
 *   **Target outcome (software + integration):** A closed-loop manufacturing stack *would* correct the nozzle trajectory each CBF gating cycle, matching joint torque and print speed to the localized mechanical stiffness development of the extrudate. The cycle is the CBF cycle — *not* wall-clock real-time — and stays useful only while the printability-solver step stays below the layer-deposition interval. **Demonstrating that on real hardware is still ahead of us**; today the same physics runs in simulation and in batch/surrogate workflows.
 
+*   **Honest limit:** Closed-loop print on real hardware is an **integration target** — not a completed TYTO field campaign in this repository; WebSocket MCP streaming remains Proposed.
+
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://mermaid.ink/svg/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgYXV0b251bWJlclxuICAgIHBhcnRpY2lwYW50IE5venpsZSBhcyBOb3p6bGUgKFRDUClcbiAgICBwYXJ0aWNpcGFudCBTZW5zb3JzIGFzIFNlbnNvcnMgKFAsIFQpXG4gICAgcGFydGljaXBhbnQgQ2FydHJpZGdlIGFzIENhcnRyaWRnZVxuICAgIHBhcnRpY2lwYW50IFNvbHZlciBhcyBQcmludGFiaWxpdHkgU29sdmVyXG4gICAgcGFydGljaXBhbnQgQ0JGIGFzIFRoZXJtbyBDQkZcbiAgICBwYXJ0aWNpcGFudCBJSyBhcyBNb3ZlSXQyIElLXG4gICAgcGFydGljaXBhbnQgSm9pbnQgYXMgUm9ib3QgSm9pbnRzXG5cbiAgICBOb3p6bGUtPj5TZW5zb3JzOiBTdHJlYW0gZXh0cnVzaW9uIHByZXNzdXJlICYgdGVtcGVyYXR1cmVcbiAgICBTZW5zb3JzLT4-Q2FydHJpZGdlOiBGZWVkIHNlbnNvcnMgdG8gM0QgVm94ZWwgR3JpZFxuICAgIENhcnRyaWRnZS0-PlNvbHZlcjogVXBkYXRlIGxvY2FsaXplZCBzdGlmZm5lc3MgJiBhZ2UgcGFyYW1ldGVyc1xuICAgIFNvbHZlci0-PkNCRjogQ2FsY3VsYXRlIHRoaXhvdHJvcGljIHlpZWxkICYgc2x1bXAgcmlzayBsaW1pdHNcbiAgICBhbHQgTGltaXQgRXhjZWVkZWQgKFNsdW1wL0J1Y2tsaW5nIFJpc2spXG4gICAgICAgIENCRi0-PkNhcnRyaWRnZTogQ29tcHV0ZSBzcGF0aWFsIGdyYWRpZW50IGNvcnJlY3Rpb25zIChcdTAzOTR4LCBcdTAzOTR5LCBcdTAzOTR6KVxuICAgICAgICBDYXJ0cmlkZ2UtPj5JSzogU2VuZCBDYXJ0ZXNpYW4gY29ycmVjdGlvbiB2ZWN0b3JcbiAgICAgICAgSUstPj5Kb2ludDogQ29tcHV0ZSAmIGFwcGx5IHJlYWwtdGltZSBqb2ludCBhbmdsZXMgKFx1MDM5NFx1MDNiOClcbiAgICAgICAgSm9pbnQtPj5Ob3p6bGU6IEFkanVzdCBub3p6bGUgc3BlZWQgJiBwb3NpdGlvbiBkeW5hbWljYWxseVxuICAgIGVsc2UgU3RhYmxlIFByaW50IFN0YXRlXG4gICAgICAgIENCRi0-Pk5venpsZTogTWFpbnRhaW4gcGxhbm5lZCBwcmludCB0cmFqZWN0b3J5XG4gICAgZW5kIiwibWVybWFpZCI6IntcInRoZW1lXCI6IFwiZGFya1wifSJ9"><img alt="sequenceDiagram" src="https://mermaid.ink/svg/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgYXV0b251bWJlclxuICAgIHBhcnRpY2lwYW50IE5venpsZSBhcyBOb3p6bGUgKFRDUClcbiAgICBwYXJ0aWNpcGFudCBTZW5zb3JzIGFzIFNlbnNvcnMgKFAsIFQpXG4gICAgcGFydGljaXBhbnQgQ2FydHJpZGdlIGFzIENhcnRyaWRnZVxuICAgIHBhcnRpY2lwYW50IFNvbHZlciBhcyBQcmludGFiaWxpdHkgU29sdmVyXG4gICAgcGFydGljaXBhbnQgQ0JGIGFzIFRoZXJtbyBDQkZcbiAgICBwYXJ0aWNpcGFudCBJSyBhcyBNb3ZlSXQyIElLXG4gICAgcGFydGljaXBhbnQgSm9pbnQgYXMgUm9ib3QgSm9pbnRzXG5cbiAgICBOb3p6bGUtPj5TZW5zb3JzOiBTdHJlYW0gZXh0cnVzaW9uIHByZXNzdXJlICYgdGVtcGVyYXR1cmVcbiAgICBTZW5zb3JzLT4-Q2FydHJpZGdlOiBGZWVkIHNlbnNvcnMgdG8gM0QgVm94ZWwgR3JpZFxuICAgIENhcnRyaWRnZS0-PlNvbHZlcjogVXBkYXRlIGxvY2FsaXplZCBzdGlmZm5lc3MgJiBhZ2UgcGFyYW1ldGVyc1xuICAgIFNvbHZlci0-PkNCRjogQ2FsY3VsYXRlIHRoaXhvdHJvcGljIHlpZWxkICYgc2x1bXAgcmlzayBsaW1pdHNcbiAgICBhbHQgTGltaXQgRXhjZWVkZWQgKFNsdW1wL0J1Y2tsaW5nIFJpc2spXG4gICAgICAgIENCRi0-PkNhcnRyaWRnZTogQ29tcHV0ZSBzcGF0aWFsIGdyYWRpZW50IGNvcnJlY3Rpb25zIChcdTAzOTR4LCBcdTAzOTR5LCBcdTAzOTR6KVxuICAgICAgICBDYXJ0cmlkZ2UtPj5JSzogU2VuZCBDYXJ0ZXNpYW4gY29ycmVjdGlvbiB2ZWN0b3JcbiAgICAgICAgSUstPj5Kb2ludDogQ29tcHV0ZSAmIGFwcGx5IHJlYWwtdGltZSBqb2ludCBhbmdsZXMgKFx1MDM5NFx1MDNiOClcbiAgICAgICAgSm9pbnQtPj5Ob3p6bGU6IEFkanVzdCBub3p6bGUgc3BlZWQgJiBwb3NpdGlvbiBkeW5hbWljYWxseVxuICAgIGVsc2UgU3RhYmxlIFByaW50IFN0YXRlXG4gICAgICAgIENCRi0-Pk5venpsZTogTWFpbnRhaW4gcGxhbm5lZCBwcmludCB0cmFqZWN0b3J5XG4gICAgZW5kIiwibWVybWFpZCI6IntcInRoZW1lXCI6IFwiZGVmYXVsdFwifSJ9" style="max-width:100%;height:auto"></picture></p>
 </details>
 
@@ -282,6 +288,8 @@ This cartridge exposes its physical equations through multiple programmatic surf
 *   **Cross-Domain Synergy:** Integrates micro-scale cementitious chemistry (Powers-Mills hydration envelopes and C-S-H nanoscale crystallization kinetics) directly into macro-scale structural mechanical solvers. As the chemical reaction proceeds, the localized degree of hydration (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;DoH"><img alt="DoH" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;DoH" style="vertical-align:middle"></picture>) directly scales the Young's Modulus and Voigt-Cauchy stiffness tensor, forming a tight physical-chemical coupling loop.
 
 *   **Computational Outcome & Improvement Potential:** Deterministic execution via the C ABI — stress-tensor lookups and multi-species transport run at native binding speeds, while spatial shell optimizations (full DEC) are batch runs measured in minutes-to-hours per [`docs/Solver-Status.md`](docs/Solver-Status.md). Future work may add an **optional GPU-backed** path for inner-loop spatial solvers where the deployment toolchain supports it; **default validation and CI remain CPU-oriented** today.
+
+*   **Honest limit:** Optional GPU paths are **not** CI-default; DEC conservation and gate behavior are validated on CPU-oriented workflows in this repo.
 </details>
 
 ---
@@ -679,6 +687,28 @@ Shared gate spine (matter / knowing / acting / time) — sibling links only:
 - **Solver / formal status (in-repo):** [`docs/Solver-Status.md`](docs/Solver-Status.md), [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md) — do not treat this README as a completion %.
 
 > Release notes in [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## Authors
+
+**Santhosh Shyamsundar** — Studio TYTO · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)
+
+**Santosh Prabhu Shenbagamoorthy** — Studio TYTO · [santosh@tyto.studio](mailto:santosh@tyto.studio)
+
+---
+
+## Acknowledgments
+
+Portions of this work were developed in collaboration with advanced large-language-model tools, across multiple model iterations.
+Claude Opus and Sonnet (Anthropic) provided surgical precision during drafting and refinement.
+Gemini (Google) offered exceptional large-context planning and file management.
+Grok (xAI) and its collaborative reasoning team contributed core mathematical and scientific reasoning.
+The Cursor code editor, Composer, Claude Code, and Antigravity supported seamless implementation and agentic file management.
+
+The large-language models assisted with exploration, drafting, and code scaffolding — never with the validity of constitutive closures or gate regression tests. `cargo test`, calibration datasets, and [`docs/Validation.md`](docs/Validation.md) are authoritative for cartridge behavior.
+
+We gratefully acknowledge the open-source ecosystems that make this work possible: **Rust**; **Python** / **PyO3**; **Jupyter** notebooks; and the **MCP** agent surface. DEC conservation and shared proof anchors live on [`umst-manifold`](https://github.com/tytolabs/umst-manifold).
 
 ---
 
