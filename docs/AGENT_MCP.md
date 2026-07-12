@@ -2,8 +2,22 @@
 
 **Audience:** Cursor agents, SDK integrations, `umst-mcp` stdio consumers  
 **Schemas:** [`schemas/`](../schemas/) (CI-validated)  
-**Examples:** [`examples/agent/`](../examples/agent/)  
-**ADR:** [`outputs/.plans/archive/prl-shipped/ai-physical-reasoning-layer.md`](../../outputs/.plans/archive/prl-shipped/ai-physical-reasoning-layer.md)
+**Examples:** [`examples/agent/`](../examples/agent/)
+
+### Doc index (no duplication — link out)
+
+| Concern | Authoritative doc |
+|:---|:---|
+| Surface inventory (B0) | [`AGENT_SURFACE_AUDIT.md`](AGENT_SURFACE_AUDIT.md) |
+| Objects / morphisms (B1) | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| Guarantees / workflows (B2) | [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md) |
+| Per-tool contracts (B3) | [`TOOL_CONTRACTS.md`](TOOL_CONTRACTS.md) |
+| Hot vs cold (B4) | [`FAST_ARENA.md`](FAST_ARENA.md) |
+| Signatures (B5) | [`REFERENCE.md`](REFERENCE.md) |
+| Intuition (B6) | [`MENTAL_MODEL.md`](MENTAL_MODEL.md) |
+| Epistemic primitives (B7) | [`EPISTEMIC_PRIMITIVES.md`](EPISTEMIC_PRIMITIVES.md) |
+
+This file remains the **operational MCP handbook** (quick start, env, errors, resources). Formal categorical / contract detail lives in the table above — do not fork those lists here.
 
 > **Performance:** Use **stdio MCP** for prototyping, IDE agents, and single-shot gate/predict. For **heavy batch work, optimization loops, or many proposals**, prefer the **in-process library or arena path** (parse once, loop hot). Cross-language integrations can use MCP or cartridge FFI.
 
