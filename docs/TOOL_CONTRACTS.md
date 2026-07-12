@@ -1,7 +1,8 @@
 # MCP tool contracts (B3)
 
 **Hand-derived from `umst-mcp` source in ToolDescriptor shape** (manifest-ready; §5.1).  
-**Not** generated from a shipped manifest yet — **Proposed target:** one manifest → `list_tools` + this file.  
+**Not** the shipped schema SSOT yet — generator: `python3 scripts/gen_tool_contracts.py` (fragment + `--check`; CI `tool-contracts-gen` is `continue-on-error` until cutover).  
+**Proposed target:** one manifest → `list_tools` + this file (USER-gated).  
 Index: [`AGENT_MCP.md`](AGENT_MCP.md). Inventory: [`AGENT_SURFACE_AUDIT.md`](AGENT_SURFACE_AUDIT.md).
 
 Each contract has **seven fields** (table aliases → ToolDescriptor):
