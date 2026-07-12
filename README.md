@@ -76,7 +76,7 @@ The library exposes gated constitutive prediction, mix audit, **print-stability 
 | Foundations | [§1](#1-physical-and-chemical-formulations) · [§2](#2-cross-domain-integration-specifications) |
 | Integration & layout | [§3](#3-industrial-cadcamcae-pipeline-integration) · [§4](#4-exhaustive-architecture-topology) · [§5](#5-constitutive-chemistry--durability-closures) |
 | Operations | [§6](#6-quick-start-time-to-value--60-seconds) · [§7](#7-build-test-and-ci-parity-for-integrators) · [§8](#8-deep-documentation-and-citations) |
-| Agents & wrap-up | [§9](#9-special-protocol-note-to-autonomous-ai-agents--systems) · [§10](#10-conclusion-inferences--forward-path) · [Related](#related-repositories) |
+| Agents & wrap-up | [§9](#9-special-protocol-note-to-autonomous-ai-agents--systems) · [§10](#10-conclusion-inferences--forward-path) · [Related](#related-repositories) · [Authors](#authors) · [Acknowledgments](#acknowledgments) · [Contributing](#contributing) · [Citation](#citation) · [License](#license) |
 
 **Detailed outline** — every entry links to a stable anchor (`README.md#…`); collapsible sections use `<details>` but share the same deep-link fragments.
 
@@ -122,6 +122,11 @@ The library exposes gated constitutive prediction, mix audit, **print-stability 
   - [What this cartridge demonstrates](#what-this-cartridge-demonstrates)
   - [What surprised us](#what-surprised-us)
 - [Related repositories](#related-repositories)
+- [Authors](#authors)
+- [Acknowledgments](#acknowledgments)
+- [Contributing](#contributing)
+- [Citation](#citation)
+- [License](#license)
 
 <details>
 <summary><b>Heading anchor list</b> (URL fragments for deep links)</summary>
@@ -167,6 +172,11 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 #what-this-cartridge-demonstrates
 #what-surprised-us
 #related-repositories
+#authors
+#acknowledgments
+#contributing
+#citation
+#license
 ```
 
 </details>
@@ -712,7 +722,20 @@ We gratefully acknowledge the open-source ecosystems that make this work possibl
 
 ---
 
-Bibliographic metadata is maintained in [CITATION.cff](CITATION.cff).  
-Released under the [MIT License](LICENSE). © 2026 Studio TYTO.
+## Contributing
 
-**Governance:** corrections welcome via PR. Run `cargo test` / agent examples when touching MCP or gate paths. Security-sensitive reports: open a private GitHub security advisory or contact maintainers via [CITATION.cff](CITATION.cff) author emails. Catalog digest SSOT: [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json) — re-open the lock file; do not hardcode rival SHAs in this README.
+Corrections welcome via PR. Run `cargo test` / agent examples when touching MCP or gate paths. Security-sensitive reports: open a private GitHub security advisory or contact maintainers via [`CITATION.cff`](CITATION.cff) author emails. See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+Catalog digest SSOT: [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json) — re-open the lock file; do not hardcode rival SHAs in this README.
+
+---
+
+## Citation
+
+Bibliographic metadata is maintained in [`CITATION.cff`](CITATION.cff).
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE). © 2026 Studio TYTO.
