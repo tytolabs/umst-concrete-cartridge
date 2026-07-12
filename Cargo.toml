@@ -5,6 +5,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/umst-agent-mcp-core",
     "crates/umst-concrete-cartridge",
     "crates/umst-concrete-ffi",
     "crates/umst-cli",

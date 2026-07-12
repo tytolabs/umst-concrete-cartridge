@@ -6,7 +6,12 @@
 
 pub mod handlers;
 pub mod parity;
-pub mod soft_gate;
+
+/// Thin facade — implementation lives in `umst-agent-mcp-core` (S5).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-export facade; soft_gate morphisms documented in umst-agent-mcp-core.
+pub use umst_agent_mcp_core::soft_gate;
 
 #[cfg(feature = "agent-layer")]
 pub mod agent_layer;

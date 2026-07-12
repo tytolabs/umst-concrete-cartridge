@@ -8,7 +8,7 @@
 //! Training and exploration optimizers **multiply** these `f32` ramps into policy loss
 //! so rejected proposals receive analytical slack gradients before the hard witness.
 //!
-//! See [`docs/AGENT_MCP.md`](../../../../docs/AGENT_MCP.md#soft-gates).
+//! See [`docs/AGENT_MCP.md`](../../../docs/AGENT_MCP.md#soft-gates).
 //!
 //! ## Cold vs hot boundary (post-Wave 10)
 //!
