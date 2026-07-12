@@ -22,6 +22,16 @@ path = "src/lib.rs"
 name = "umst-mcp"
 path = "src/main.rs"
 
+[[bin]]
+name = "umst-mcp-rmcp"
+path = "src/rmcp_main.rs"
+required-features = ["rmcp-wire"]
+
+[[test]]
+name = "rmcp_parity"
+path = "tests/rmcp_parity.rs"
+required-features = ["rmcp-wire"]
+
 [features]
 default = []
 blas-accelerate = ["umst-cli/blas-accelerate"]
@@ -30,6 +40,8 @@ ucrs-provenance = ["umst-concrete-cartridge/ucrs-provenance"]
 arena-session = ["dep:umst-runtime-arena"]
 # S1: declarative ToolDescriptor manifest beside hand-rolled schemas (default off).
 tool-manifest = []
+# S3: official rmcp wire binary (default off); pulls agent-layer for gate/mi tools.
+rmcp-wire = ["dep:rmcp", "dep:tokio", "agent-layer"]
 
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
@@ -40,4 +52,6 @@ serde_json = "1.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 uuid = { version = "1.11", features = ["v4"] }
+rmcp = { version = "2.2", optional = true, default-features = false, features = ["server", "transport-io", "schemars"] }
+tokio = { version = "1", optional = true, features = ["rt-multi-thread", "macros", "io-std"] }
 

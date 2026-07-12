@@ -13,24 +13,15 @@ use std::io::{self, BufRead, Write};
 
 use serde_json::{json, Value};
 use umst_cli::canonical::canonical_json_bytes;
-use umst_cli::{
-    audit::audit_csv_buf,
-    cli::{
-        certify_profile_json, mix_spec_from_json_value, predict_with_options, serialize_prediction,
-        MixSpec, PredictOptions, PredictionWireVersion,
-    },
-};
-use umst_concrete_cartridge::calibration::{Profile, BUNDLED_PROFILE_IDS};
+use umst_cli::{audit::audit_csv_buf, cli::certify_profile_json};
+use umst_concrete_cartridge::calibration::Profile;
 
-#[cfg(feature = "agent-layer")]
-mod agent_layer;
-
-#[cfg(feature = "agent-layer")]
-use agent_layer::AgentSession;
 #[cfg(feature = "agent-layer")]
 use umst_concrete_cartridge::research::ContributeError;
 #[cfg(feature = "agent-layer")]
 use umst_concrete_cartridge::research::MemoryQuery;
+#[cfg(feature = "agent-layer")]
+use umst_mcp::agent_layer::{self, AgentSession};
 
 fn text_result(id: Value, text: String, is_error: bool) -> Value {
     json!({
@@ -197,97 +188,8 @@ fn hand_tools_list() -> Vec<Value> {
 }
 
 fn tool_umst_predict(id: Value, args: &Value) -> Value {
-    let profile_id = args
-        .get("profile")
-        .and_then(|v| v.as_str())
-        .unwrap_or("default");
-    let compare = args
-        .get("compare_homogeneous")
-        .and_then(|x| x.as_bool())
-        .unwrap_or(false);
-    let canon = args
-        .get("canonical")
-        .and_then(|x| x.as_bool())
-        .unwrap_or(false);
-    let schema_version = args.get("schema_version").and_then(|x| x.as_str());
-    let wire = match schema_version.unwrap_or("v2") {
-        "v1" | "V1" => PredictionWireVersion::V1,
-        _ => PredictionWireVersion::V2,
-    };
-
-    let mix_v = args.get("mix").cloned().unwrap_or(json!({}));
-    let profile = match Profile::load_bundled(profile_id) {
-        Ok(p) => p,
-        Err(e) => {
-            return agent_tool_error(
-                id,
-                "profile_load_fail",
-                format!("profile load error: {e}"),
-                "Call umst_profiles for bundled ids (e.g. default, uci_d1) or fix the profile argument.",
-            )
-        }
-    };
-    let mut spec: MixSpec = match mix_spec_from_json_value(mix_v.clone()) {
-        Ok(s) => s,
-        Err(e) => {
-            return agent_tool_error(
-                id,
-                "mix_parse_fail",
-                format!("mix parse error: {e}"),
-                "Use rational strings like \"9/20\" for w_c and temperature_k; see contribution.v1 schema.",
-            )
-        }
-    };
-    spec.profile_name = profile_id.to_string();
-
-    let bundle = match predict_with_options(
-        &profile,
-        &spec,
-        PredictOptions {
-            compare_homogeneous: compare,
-        },
-    ) {
-        Ok(b) => b,
-        Err(e) => {
-            return agent_tool_error(
-                id,
-                "predict_fail",
-                format!("predict error: {e}"),
-                "Verify mix fields and profile calibration; see umst_predict schema.",
-            )
-        }
-    };
-    let out = match serialize_prediction(&bundle, wire) {
-        Ok(v) => v,
-        Err(e) => {
-            return agent_tool_error(
-                id,
-                "serialize_fail",
-                format!("serialize_prediction: {e}"),
-                "Verify mix fields and profile calibration; see umst_predict schema.",
-            )
-        }
-    };
-
-    if canon {
-        let bytes = match canonical_json_bytes(&out) {
-            Ok(b) => b,
-            Err(e) => {
-                return agent_tool_error(
-                    id,
-                    "canonical_json_fail",
-                    format!("canonical JSON: {e}"),
-                    "Retry without canonical=true or fix prediction output shape.",
-                )
-            }
-        };
-        let escaped =
-            serde_json::to_string(&String::from_utf8_lossy(&bytes).to_string()).unwrap_or_default();
-        return text_result(id, escaped, false);
-    }
-
-    let pretty = serde_json::to_string_pretty(&out).unwrap_or_else(|_| "{}".to_string());
-    text_result(id, pretty, false)
+    let p = umst_mcp::handlers::exec_umst_predict(args);
+    text_result(id, p.text, p.is_error)
 }
 
 fn tool_umst_audit(id: Value, args: &Value) -> Value {
@@ -363,25 +265,8 @@ fn tool_umst_audit(id: Value, args: &Value) -> Value {
 }
 
 fn tool_umst_profiles(id: Value) -> Value {
-    let mut ids = BUNDLED_PROFILE_IDS.to_vec();
-    ids.sort_unstable();
-
-    let profs: Vec<Value> = ids
-        .iter()
-        .map(|pid| {
-            let desc = umst_concrete_cartridge::calibration::profile_descriptions()
-                .get(pid)
-                .copied()
-                .unwrap_or("no description");
-            json!({ "id": pid, "description": desc })
-        })
-        .collect();
-
-    text_result(
-        id,
-        serde_json::to_string_pretty(&profs).unwrap_or_default(),
-        false,
-    )
+    let p = umst_mcp::handlers::exec_umst_profiles();
+    text_result(id, p.text, p.is_error)
 }
 
 fn tool_umst_certify(id: Value, args: &Value) -> Value {
@@ -484,43 +369,8 @@ fn parse_memory_query(args: &Value) -> MemoryQuery {
 
 #[cfg(feature = "agent-layer")]
 fn tool_umst_gate_check(id: Value, args: &Value, session: &AgentSession) -> Value {
-    let profile_id = args
-        .get("profile")
-        .and_then(|v| v.as_str())
-        .unwrap_or("default");
-    let mix = match args.get("mix") {
-        Some(m) => m.clone(),
-        None => {
-            return agent_tool_error(
-                id,
-                "missing_argument",
-                "missing mix",
-                "Supply mix with rational fields (w_c, temperature_k, …) per contribution.v1.",
-            )
-        }
-    };
-    let explain = args
-        .get("explain")
-        .and_then(|x| x.as_bool())
-        .unwrap_or(true);
-    let profile = match Profile::load_bundled(profile_id) {
-        Ok(p) => p,
-        Err(e) => {
-            return agent_tool_error(
-                id,
-                "profile_load_fail",
-                format!("profile load error: {e}"),
-                "Call umst_profiles for bundled ids or use profile: \"default\".",
-            )
-        }
-    };
-    let result = session.gate_check(&profile, &mix, explain);
-    let is_error = !result.gate_summary.admissible;
-    text_result(
-        id,
-        serde_json::to_string_pretty(&result).unwrap_or_default(),
-        is_error,
-    )
+    let p = umst_mcp::handlers::exec_umst_gate_check(args, session);
+    text_result(id, p.text, p.is_error)
 }
 
 #[cfg(feature = "agent-layer")]
@@ -612,23 +462,8 @@ fn tool_umst_contribute_status(id: Value, args: &Value, session: &AgentSession) 
 
 #[cfg(feature = "agent-layer")]
 fn tool_umst_mi_estimate(id: Value, args: &Value, session: &AgentSession) -> Value {
-    let mix = match args.get("mix") {
-        Some(m) => m.clone(),
-        None => {
-            return agent_tool_error(
-                id,
-                "missing_argument",
-                "missing mix",
-                "Supply mix with rational fields for MI advisory estimate.",
-            )
-        }
-    };
-    let out = session.mi_estimate(&mix);
-    text_result(
-        id,
-        serde_json::to_string_pretty(&out).unwrap_or_default(),
-        false,
-    )
+    let p = umst_mcp::handlers::exec_umst_mi_estimate(args, session);
+    text_result(id, p.text, p.is_error)
 }
 
 #[cfg(feature = "agent-layer")]
