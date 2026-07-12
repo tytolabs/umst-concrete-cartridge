@@ -6,10 +6,11 @@
 //! Snapshot captured from today's hand-rolled `tools/list` (S0 lock era). Hand tables in
 //! `main.rs` / `agent_layer.rs` remain the live default until cutover.
 
-use super::descriptor::{side_effect_for, ToolDescriptor};
+use super::descriptor::{side_effect_for, ToolContract, ToolDescriptor};
 use serde_json::Value;
 
 const SCHEMA_JSON: &str = include_str!("tools_v1_schema.json");
+const CONTRACTS_JSON: &str = include_str!("tools_v1_contracts.json");
 
 #[cfg(not(feature = "agent-layer"))]
 const BASE_TOOL_NAMES: &[&str] = &[
@@ -19,9 +20,33 @@ const BASE_TOOL_NAMES: &[&str] = &[
     "umst_profiles",
 ];
 
+fn load_contracts_map() -> std::collections::BTreeMap<String, ToolContract> {
+    let root: Value = serde_json::from_str(CONTRACTS_JSON).expect("tools_v1_contracts.json");
+    let Some(obj) = root["contracts"].as_object() else {
+        return std::collections::BTreeMap::new();
+    };
+    obj.iter()
+        .filter_map(|(name, c)| {
+            Some((
+                name.clone(),
+                ToolContract {
+                    pre: c.get("Pre")?.as_str()?.to_string(),
+                    post: c.get("Post")?.as_str()?.to_string(),
+                    errors: c.get("Errors")?.as_str()?.to_string(),
+                    idempotent: c.get("Idempotent")?.as_str()?.to_string(),
+                    side_effect_class: c.get("SideEffectClass")?.as_str()?.to_string(),
+                    cost: c.get("Cost")?.as_str()?.to_string(),
+                    provenance: c.get("Provenance")?.as_str()?.to_string(),
+                },
+            ))
+        })
+        .collect()
+}
+
 fn parse_snapshot() -> Vec<ToolDescriptor> {
     let root: Value = serde_json::from_str(SCHEMA_JSON).expect("tools_v1_schema.json");
     let tools = root["tools"].as_array().expect("tools array");
+    let contracts = load_contracts_map();
     tools
         .iter()
         .map(|t| {
@@ -32,6 +57,7 @@ fn parse_snapshot() -> Vec<ToolDescriptor> {
                 input_schema: t["inputSchema"].clone(),
                 side_effect: side_effect_for(&name),
                 annotations: t.get("annotations").cloned(),
+                contract: contracts.get(&name).cloned(),
             }
         })
         .collect()
