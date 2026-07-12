@@ -13,8 +13,10 @@ use std::path::Path;
 use umst_cli::cli::{predict_with_options, serialize_prediction, PredictOptions};
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::facade::{MixSpec, PredictionWireVersion};
+#[cfg(feature = "gate-explain-v2")]
+use umst_concrete_cartridge::research::GateCheckResult;
 use umst_concrete_cartridge::research::{
-    gate_check_mix_result, mix_wire_from_spec_value, synthetic_observed_at, GateCheckResult,
+    gate_check_mix_result, mix_wire_from_spec_value, synthetic_observed_at,
 };
 
 #[cfg(feature = "agent-layer")]

@@ -607,6 +607,7 @@ pub fn prompts_get_result(name: &str) -> Result<Value, String> {
 /// formal_status: NONE
 /// formal_anchor_rationale: MCP tool schema export; delegates to gate/memory/contribute impls.
 pub fn agent_tools_schema() -> Vec<Value> {
+    #[allow(unused_mut)] // mutated only when S7 feature cfgs append schemas
     let mut tools = vec![
         with_schema_2020(
             json!({
