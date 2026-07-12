@@ -221,7 +221,7 @@ To optimize a structural mix, we must follow the physical processes that govern 
 
 ## 2. Cross-Domain Integration Specifications
 
-This cartridge exposes its physical equations through multiple programmatic surfaces to seamlessly integrate into your specific development environment:
+This cartridge exposes its physical equations through multiple programmatic surfaces so you can plug the same constitutive law into the environment you already work in. Open a persona below for surface, pipeline, outcome, and an honest limit:
 
 <a id="21-spatial-topologies--structural-design"></a>
 <details>
