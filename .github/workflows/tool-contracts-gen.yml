@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 #
-# S2: optional contracts generator check (continue-on-error until cutover).
-# Hand docs/TOOL_CONTRACTS.md remains SSOT.
+# Go-live Step 1: contracts generator --check is MANDATORY (generated == hand).
 
 name: tool-contracts-gen
 
@@ -11,26 +10,29 @@ on:
     paths:
       - 'crates/umst-mcp/src/manifest/**'
       - 'docs/TOOL_CONTRACTS.md'
+      - 'docs/TOOL_CONTRACTS.generated.md'
       - 'scripts/gen_tool_contracts.py'
       - '.github/workflows/tool-contracts-gen.yml'
   pull_request:
     paths:
       - 'crates/umst-mcp/src/manifest/**'
       - 'docs/TOOL_CONTRACTS.md'
+      - 'docs/TOOL_CONTRACTS.generated.md'
       - 'scripts/gen_tool_contracts.py'
       - '.github/workflows/tool-contracts-gen.yml'
 
 jobs:
   tool-contracts-gen:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - name: Generate + --check vs hand SSOT
+      - name: Generate + mandatory --check (generated == hand)
         run: |
           python3 scripts/gen_tool_contracts.py --out docs/TOOL_CONTRACTS.generated.md
           python3 scripts/gen_tool_contracts.py --check
-      - name: Upload generated fragment
+          # Fail if working tree would drift (committed generated/hand must match generator)
+          git diff --exit-code -- docs/TOOL_CONTRACTS.generated.md docs/TOOL_CONTRACTS.md
+      - name: Upload generated contracts
         if: always()
         uses: actions/upload-artifact@v4
         with:
