@@ -17,11 +17,22 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
+### What this is, in plain words
+
+Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through the **thermodynamic admissibility gate**: conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.
+
+This **concrete cartridge** is the part that knows cement. It supplies chemical-physical closures for hydration, rheology, and load-bearing behaviour, calibrated against measured datasets, and plugs into the manifold through **`IScienceCartridge`**. Instead of curve-fitting past tests alone, it evaluates constitutive pipelines on the carrier — and agent contributions require a gate **PASS** before memory ingest ([§9](#9-special-protocol-note-to-autonomous-ai-agents--systems)).
+
+The library exposes gated constitutive prediction, mix audit, **print-stability and deposition physics in simulation**, and spatial structural shape optimizations under load limits. **Studio TYTO has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
+
+**Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here. Formal-catalog module counts are **not** owned by this README — see [§8](#8-deep-documentation-and-citations) (link the manifold lock; do not hardcode a drifting number).
+
+![RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)](./docs/assets/beam_strut_and_tie.gif)
+
+*Surrogate animation only — not a physical print or lab measurement. 32×8 RC beam: adjoint compliance topology optimization with a fixed bottom rebar row; yellow density (ρ) from the mechanics façade.*
 **What it is.** A Rust workspace that implements cementitious constitutive closures and mounts them on the manifold through typed ports (`IScienceCartridge`, …), exposing CLI / Python / stdio-MCP surfaces for mix prediction, audit, and gate-validated agent workflows.
 
 **The gate idea.** Every proposed mix/state change is subject to the **thermodynamic admissibility gate** (reduced Clausius–Duhem + Landauer cost bounds on the shared stack): conserve mass, never produce negative dissipation, or be **rejected with structured remediation** — no silent failure.
-
-**Honest is / isn't.** **Is:** in-repo solvers, mix audits, notebooks, MCP tools, and mechanics/topology **surrogates**. **Isn't:** a completed Studio TYTO on-robot, on-extruder physical print campaign. Closed-loop extrusion remains an **integration target**.
 
 ### Shared stack (matter · knowing · acting · time)
 
@@ -47,23 +58,6 @@ Sibling links only — no paper-series arc naming in this README. Already-public
 | `PhysicalReasoningLayer` | Per-cartridge memory geometry + contribute schema port | [`research/layer.rs:17`](crates/umst-concrete-cartridge/src/research/layer.rs) |
 | `MemoryStore` | Functional research-memory store | [`research/memory.rs:53`](crates/umst-concrete-cartridge/src/research/memory.rs) |
 
-### Honesty ledger (one status pointer)
-
-Do **not** blend “CI green”, “theorem count”, and “printed on a robot” into one progress %. Status of shipped vs partial vs USER-gated agent work lives in [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) (agent/MCP SSOT) and the workspace evidence index linked from [§ Release & agent path](#release--agent-path). Strengthen every disclaimer below; soften none.
-
-### What this is, in plain words
-
-Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through the **thermodynamic admissibility gate**: conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.
-
-This **concrete cartridge** is the part that knows cement. It supplies chemical-physical closures for hydration, rheology, and load-bearing behaviour, calibrated against measured datasets, and plugs into the manifold through **`IScienceCartridge`**. Instead of curve-fitting past tests alone, it evaluates constitutive pipelines on the carrier — and agent contributions require a gate **PASS** before memory ingest ([§9](#9-special-protocol-note-to-autonomous-ai-agents--systems)).
-
-The library exposes gated constitutive prediction, mix audit, **print-stability and deposition physics in simulation**, and spatial structural shape optimizations under load limits. **Studio TYTO has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
-
-**Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here. Formal-catalog module counts are **not** owned by this README — see [§8](#8-deep-documentation-and-citations) (link the manifold lock; do not hardcode a drifting number).
-
-![RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)](./docs/assets/beam_strut_and_tie.gif)
-
-*Surrogate animation only — not a physical print or lab measurement. 32×8 RC beam: adjoint compliance topology optimization with a fixed bottom rebar row; yellow density (ρ) from the mechanics façade.*
 <!-- readme:table-of-contents -->
 <details>
 <summary><b>Table of contents</b> (detailed map + outline)</summary>
@@ -76,7 +70,7 @@ The library exposes gated constitutive prediction, mix audit, **print-stability 
 | Foundations | [§1](#1-physical-and-chemical-formulations) · [§2](#2-cross-domain-integration-specifications) |
 | Integration & layout | [§3](#3-industrial-cadcamcae-pipeline-integration) · [§4](#4-exhaustive-architecture-topology) · [§5](#5-constitutive-chemistry--durability-closures) |
 | Operations | [§6](#6-quick-start-time-to-value--60-seconds) · [§7](#7-build-test-and-ci-parity-for-integrators) · [§8](#8-deep-documentation-and-citations) |
-| Agents & wrap-up | [§9](#9-special-protocol-note-to-autonomous-ai-agents--systems) · [§10](#10-conclusion-inferences--forward-path) · [Related](#related-repositories) · [Authors](#authors) · [Acknowledgments](#acknowledgments) · [Contributing](#contributing) · [Citation](#citation) · [License](#license) |
+| Agents & wrap-up | [§9](#9-special-protocol-note-to-autonomous-ai-agents--systems) · [§11](#11-conclusion-inferences--forward-path) · [Related](#related-repositories) · [Authors](#authors) · [Acknowledgments](#acknowledgments) · [Contributing](#contributing) · [Citation](#citation) · [License](#license) |
 
 **Detailed outline** — every entry links to a stable anchor (`README.md#…`); collapsible sections use `<details>` but share the same deep-link fragments.
 
@@ -118,7 +112,7 @@ The library exposes gated constitutive prediction, mix audit, **print-stability 
   - [9.5 Operational mapping](#95-operational-mapping)
   - [9.6 Proposed (not yet built)](#96-proposed-not-yet-built)
   - [9.7 Principles](#97-principles)
-- [§10 Conclusion: Inferences & Forward Path](#10-conclusion-inferences--forward-path)
+- [§11 Conclusion: Inferences & Forward Path](#11-conclusion-inferences--forward-path)
   - [What this cartridge demonstrates](#what-this-cartridge-demonstrates)
   - [What surprised us](#what-surprised-us)
 - [Related repositories](#related-repositories)
@@ -168,7 +162,7 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 #95-operational-mapping
 #96-proposed-not-yet-built
 #97-principles
-#10-conclusion-inferences--forward-path
+#11-conclusion-inferences--forward-path
 #what-this-cartridge-demonstrates
 #what-surprised-us
 #related-repositories
@@ -643,7 +637,14 @@ Do **not** call these as if they exist on the MCP surface today:
 * **Admissibility is runtime, not Rust compile-time.** Printability / buckling / CD failures surface as **gate REJECT** / solver errors — not as rustc type errors. Soften any “compile-time type error” metaphor accordingly.
 * **Information cost.** Landauer / MI observers on the stack bound informational updates; see `umst_mi_estimate` and AGENT_MCP.
 
-## 10. Conclusion: Inferences & Forward Path
+## 10. Honesty and limits
+
+**Honest is / isn't.** **Is:** in-repo solvers, mix audits, notebooks, MCP tools, and mechanics/topology **surrogates**. **Isn't:** a completed Studio TYTO on-robot, on-extruder physical print campaign. Closed-loop extrusion remains an **integration target**.
+
+### Honesty ledger (one status pointer)
+
+Do **not** blend “CI green”, “theorem count”, and “printed on a robot” into one progress %. Status of shipped vs partial vs USER-gated agent work lives in [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) (agent/MCP SSOT) and the workspace evidence index linked from [§ Release & agent path](#release--agent-path). Strengthen every disclaimer below; soften none.
+## 11. Conclusion: Inferences & Forward Path
 
 ### What this cartridge demonstrates
 
