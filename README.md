@@ -58,8 +58,6 @@ Sibling links only — no paper-series arc naming in this README. Already-public
 | `PhysicalReasoningLayer` | Per-cartridge memory geometry + contribute schema port | [`research/layer.rs:17`](crates/umst-concrete-cartridge/src/research/layer.rs) |
 | `MemoryStore` | Functional research-memory store | [`research/memory.rs:53`](crates/umst-concrete-cartridge/src/research/memory.rs) |
 
-
-
 <!-- readme:table-of-contents -->
 <details>
 <summary><b>Table of contents</b> (detailed map + outline)</summary>
@@ -72,7 +70,7 @@ Sibling links only — no paper-series arc naming in this README. Already-public
 | Foundations | [§1](#1-physical-and-chemical-formulations) · [§2](#2-cross-domain-integration-specifications) |
 | Integration & layout | [§3](#3-industrial-cadcamcae-pipeline-integration) · [§4](#4-exhaustive-architecture-topology) · [§5](#5-constitutive-chemistry--durability-closures) |
 | Operations | [§6](#6-quick-start-time-to-value--60-seconds) · [§7](#7-build-test-and-ci-parity-for-integrators) · [§8](#8-deep-documentation-and-citations) |
-| Agents & wrap-up | [§9](#9-special-protocol-note-to-autonomous-ai-agents--systems) · [§10](#10-conclusion-inferences--forward-path) · [Related](#related-repositories) · [Authors](#authors) · [Acknowledgments](#acknowledgments) · [Contributing](#contributing) · [Citation](#citation) · [License](#license) |
+| Agents & wrap-up | [§9](#9-special-protocol-note-to-autonomous-ai-agents--systems) · [§11](#11-conclusion-inferences--forward-path) · [Related](#related-repositories) · [Authors](#authors) · [Acknowledgments](#acknowledgments) · [Contributing](#contributing) · [Citation](#citation) · [License](#license) |
 
 **Detailed outline** — every entry links to a stable anchor (`README.md#…`); collapsible sections use `<details>` but share the same deep-link fragments.
 
@@ -114,7 +112,7 @@ Sibling links only — no paper-series arc naming in this README. Already-public
   - [9.5 Operational mapping](#95-operational-mapping)
   - [9.6 Proposed (not yet built)](#96-proposed-not-yet-built)
   - [9.7 Principles](#97-principles)
-- [§10 Conclusion: Inferences & Forward Path](#10-conclusion-inferences--forward-path)
+- [§11 Conclusion: Inferences & Forward Path](#11-conclusion-inferences--forward-path)
   - [What this cartridge demonstrates](#what-this-cartridge-demonstrates)
   - [What surprised us](#what-surprised-us)
 - [Related repositories](#related-repositories)
@@ -164,7 +162,7 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 #95-operational-mapping
 #96-proposed-not-yet-built
 #97-principles
-#10-conclusion-inferences--forward-path
+#11-conclusion-inferences--forward-path
 #what-this-cartridge-demonstrates
 #what-surprised-us
 #related-repositories
@@ -638,7 +636,6 @@ Do **not** call these as if they exist on the MCP surface today:
 * **Continuity of flow.** Spatial work respects DEC boundary structure (`d ∘ d = 0`) on the manifold grid.
 * **Admissibility is runtime, not Rust compile-time.** Printability / buckling / CD failures surface as **gate REJECT** / solver errors — not as rustc type errors. Soften any “compile-time type error” metaphor accordingly.
 * **Information cost.** Landauer / MI observers on the stack bound informational updates; see `umst_mi_estimate` and AGENT_MCP.
-
 
 ## 10. Honesty and limits
 
