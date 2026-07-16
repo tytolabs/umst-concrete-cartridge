@@ -9,7 +9,7 @@
 //!
 //! Schedule: `outputs/.tmp/fp_concrete_dual_gate_adt_plan.md` MP3.1.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use umst_manifold::core::MaterialPhaseKind;
 
 /// Macroscopic cast phase for the collapsed tensor pipeline (singleton spatial axes).
@@ -17,7 +17,8 @@ use umst_manifold::core::MaterialPhaseKind;
 /// formal_anchor: NONE
 /// formal_status: Structural
 /// formal_anchor_rationale: 0-D mirror of manifold `MaterialPhase` variants; thresholds from `Profile::cast_lifecycle`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum CastPhase {
     /// α < α_set — rheology + printability only.
     Fluid,
@@ -102,6 +103,41 @@ impl CastPhase {
             Self::Setting => MaterialPhaseKind::Setting,
             Self::Solid => MaterialPhaseKind::Solid,
         }
+    }
+}
+
+/// Stage eligibility matrix for MP3.2 orchestrator phase router.
+///
+/// `optional` cells in the plan table are treated as **run** to preserve scalar parity pins.
+///
+/// formal_anchor: NONE
+/// formal_status: Structural
+/// formal_anchor_rationale: Pure total function; locked table in `fp_concrete_dual_gate_adt_plan.md`.
+#[must_use]
+pub fn stage_eligible(stage_id: &'static str, phase: CastPhase) -> bool {
+    use CastPhase::Fluid;
+    match stage_id {
+        "hydration_degree"
+        | "packing_density"
+        | "porosity_capillary_bulk"
+        | "sustainability"
+        | "cost_linear_dot" => true,
+        "strength_jennings" => !matches!(phase, Fluid),
+        "colloidal_dlvo" => true,
+        "rheology_yodel" | "rheology_chateau_ovarlez" => !matches!(phase, CastPhase::Solid),
+        "thermo_heat_rate_proxy" => matches!(phase, CastPhase::Setting | CastPhase::Solid),
+        "transport_chloride" => !matches!(phase, Fluid),
+        "printability" => matches!(phase, Fluid),
+        "itz" => !matches!(phase, Fluid),
+        "chemo_water" => !matches!(phase, Fluid),
+        "fracture" => matches!(phase, CastPhase::Solid),
+        "nano_enhancement_baseline" => !matches!(phase, Fluid),
+        "creep" => matches!(phase, CastPhase::Solid),
+        "set_time" => !matches!(phase, CastPhase::Solid),
+        "shrinkage" => !matches!(phase, Fluid),
+        "freeze_thaw" => matches!(phase, CastPhase::Solid),
+        "self_heal" => matches!(phase, CastPhase::Solid),
+        _ => true,
     }
 }
 
