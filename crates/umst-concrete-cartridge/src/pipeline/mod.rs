@@ -6,6 +6,7 @@
 //! printability ⊗ thermodynamic witnesses (see [`dual_gate`] module docs and witness ladder R1).
 
 pub mod canonical_gate;
+pub mod cast_phase;
 pub mod dual_gate;
 pub mod orchestrator;
 pub mod physical_summary;
@@ -17,6 +18,12 @@ pub mod track_a;
 /// formal_status: NONE
 /// formal_anchor_rationale: Phase 0d canonical admissibility surface (manifold composed gate).
 pub use canonical_gate::thermodynamic_admissible;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: MP3.1 cast lifecycle classifier (α thresholds; orchestrator wiring deferred).
+pub use cast_phase::{
+    classify_cast_phase, CastLifecycleThresholds, CastPhase, CastPhaseInputs,
+};
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-export dual-gate verdict for MCP/CLI Track A.

@@ -32,6 +32,10 @@ age_hours_min = 1.0
 age_hours_max = 87600.0
 silica_fume_pct_max_special = 30.0
 
+[cast_lifecycle]
+alpha_set = 0.15
+alpha_hard = 0.85
+
 [model]
 kind = "powers_gel_space"
 

@@ -27,6 +27,10 @@ age_hours_min = 1.0
 age_hours_max = 87600.0
 scm_sum_min_pct = 25.0
 
+[cast_lifecycle]
+alpha_set = 0.15
+alpha_hard = 0.85
+
 [model]
 kind = "powers_gel_space"
 

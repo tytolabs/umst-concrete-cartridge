@@ -6,6 +6,7 @@
 //! and verification contract metadata lifted from prototype-2a (Zenodo 18940933) SSOT JSON (see [`calibration/SCHEMA.md`](../../../calibration/SCHEMA.md)).
 
 use crate::calibration_fit::RheologyCalibrationBlock;
+use crate::pipeline::cast_phase::CastLifecycleThresholds;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
@@ -203,6 +204,8 @@ pub struct Profile {
     pub contract: ContractBlock,
     /// Optional single-mix τ₀ bias (`[rheology_calibration]` in TOML).
     pub rheology_calibration: Option<RheologyCalibrationBlock>,
+    /// Hydration α thresholds for [`crate::pipeline::cast_phase::classify_cast_phase`] (MP3.1).
+    pub cast_lifecycle: CastLifecycleThresholds,
 }
 
 /// formal_anchor: STRUCTURAL
@@ -308,6 +311,7 @@ impl Profile {
             acceptance: raw.acceptance,
             contract: raw.contract,
             rheology_calibration: raw.rheology_calibration,
+            cast_lifecycle: raw.cast_lifecycle,
             bundle_id,
         }
     }
@@ -460,6 +464,8 @@ pub(crate) struct TomlCalibration {
     contract: ContractBlock,
     #[serde(default)]
     rheology_calibration: Option<RheologyCalibrationBlock>,
+    #[serde(default)]
+    cast_lifecycle: CastLifecycleThresholds,
 }
 
 #[derive(Debug, Deserialize)]
