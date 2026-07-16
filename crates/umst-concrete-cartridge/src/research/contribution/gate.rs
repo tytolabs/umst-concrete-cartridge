@@ -76,6 +76,10 @@ pub fn gate_recheck(ctx: &GateContext<'_>, contribution: &Contribution) -> bool 
 }
 
 /// Pure gate on an already-adapted [`MixSpec`] (adapter/gate seam for Phase 0c).
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+/// catalog_id: umst.gate.cd_transition
 #[must_use]
 pub fn gate_recheck_with_spec(
     ctx: &GateContext<'_>,

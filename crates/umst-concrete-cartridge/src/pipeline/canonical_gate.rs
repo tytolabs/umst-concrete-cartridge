@@ -62,6 +62,10 @@ fn thermodynamic_admissible_manifest_bridge(profile: &Profile, spec: &MixSpec) -
 }
 
 /// Manifold composed gate for an already-built [`homog::MixRow`].
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+/// catalog_id: umst.gate.cd_transition
 #[cfg(feature = "manifest-bridge")]
 #[must_use]
 pub fn transition_admissible_for_row(profile: &Profile, row: &homog::MixRow) -> bool {
