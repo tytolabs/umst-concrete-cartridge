@@ -250,6 +250,7 @@ fn bisect_axis(
         let cand = mix_with_axis(&best.mix, axis, mid);
         let (summary, verdict) = evaluate_mix_dual_gate(profile, &cand);
         let score = objective_score(objective, &summary, &verdict);
+        #[allow(deprecated)]
         let printable_pass = verdict.passes();
 
         bounds = update_bisection_bounds(objective, &summary, bounds, mid);
@@ -282,11 +283,14 @@ fn candidate_preferred(
     best_verdict: &DualGateVerdict,
 ) -> bool {
     let score_improves = score < best_score;
+    #[allow(deprecated)]
     let gate_improves = match objective {
         TrackAObjective::PrintableWindow => verdict.passes() && !best_verdict.passes(),
         _ => score_improves,
     };
-    gate_improves || (score_improves && verdict.passes())
+    #[allow(deprecated)]
+    let passes = verdict.passes();
+    gate_improves || (score_improves && passes)
 }
 
 /// formal_anchor: NONE
@@ -360,6 +364,7 @@ fn objective_score(
         TrackAObjective::YieldStressPa(t) => (summary.rheology_yield_stress_pa - t).abs(),
         TrackAObjective::Extrudability(t) => (summary.printability_extrudability - t).abs(),
         TrackAObjective::PrintableWindow => {
+            #[allow(deprecated)]
             if verdict.passes() {
                 0.0
             } else {
@@ -403,8 +408,11 @@ pub fn proposed_next_mix_json(
         base_mix: MixSpecWireOut::from(base),
         proposed_mix: MixSpecWireOut::from(proposed),
         dual_gate: DualGateWire {
-            printability_ok: verdict.printability_ok,
-            thermodynamic_ok: verdict.thermodynamic_ok,
+            #[allow(deprecated)]
+            printability_ok: verdict.printability_ok(),
+            #[allow(deprecated)]
+            thermodynamic_ok: verdict.thermodynamic_ok(),
+            #[allow(deprecated)]
             passes: verdict.passes(),
             yield_stress_pa: f64::from(summary.rheology_yield_stress_pa),
             printability_extrudability: f64::from(summary.printability_extrudability),

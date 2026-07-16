@@ -14,7 +14,7 @@ use umst_manifold::core::MaterialPhaseKind;
 
 /// Macroscopic cast phase for the collapsed tensor pipeline (singleton spatial axes).
 ///
-/// formal_anchor: NONE
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: 0-D mirror of manifold `MaterialPhase` variants; thresholds from `Profile::cast_lifecycle`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -30,7 +30,7 @@ pub enum CastPhase {
 
 /// Classifier inputs — pure scalars from the pipeline head.
 ///
-/// formal_anchor: NONE
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: `yield_stress_pa` and `age_days` reserved for MP3.2 audit; classifier uses `α` only.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,7 +42,7 @@ pub struct CastPhaseInputs {
 
 /// Profile-owned hydration thresholds (`[cast_lifecycle]` in bundled TOML).
 ///
-/// formal_anchor: NONE
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Defaults α_set=0.15, α_hard=0.85 per `fp_material_phase_adt_plan.md`.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
@@ -74,7 +74,7 @@ impl Default for CastLifecycleThresholds {
 ///
 /// τ₀ and age are **not** used here — printability is evaluated on `Fluid` via the dual gate.
 ///
-/// formal_anchor: NONE
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Pure total function; no orchestrator or gate side effects (MP3.1).
 #[must_use]
@@ -92,7 +92,7 @@ pub fn classify_cast_phase(
 impl CastPhase {
     /// Project to manifold [`MaterialPhaseKind`] for cross-crate routing vocabulary.
     ///
-    /// formal_anchor: NONE
+    /// formal_anchor: STRUCTURAL
     /// formal_status: Structural
     /// formal_anchor_rationale: Keeps cartridge phase tags aligned with manifold MP1 SSOT.
     #[inline]
@@ -110,7 +110,7 @@ impl CastPhase {
 ///
 /// `optional` cells in the plan table are treated as **run** to preserve scalar parity pins.
 ///
-/// formal_anchor: NONE
+/// formal_anchor: STRUCTURAL
 /// formal_status: Structural
 /// formal_anchor_rationale: Pure total function; locked table in `fp_concrete_dual_gate_adt_plan.md`.
 #[must_use]

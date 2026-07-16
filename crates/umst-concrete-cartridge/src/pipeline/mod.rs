@@ -27,7 +27,14 @@ pub use cast_phase::{
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-export dual-gate verdict for MCP/CLI Track A.
-pub use dual_gate::{evaluate_dual_gate, DualGateVerdict, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO};
+pub use dual_gate::{
+    evaluate_dual_gate, CastGateVerdict, DualGateVerdict, PrintabilityReject,
+    PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
+};
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Thermodynamic leg reject newtype (P2 `GateRejectReason` bridge).
+pub use canonical_gate::ThermoReject;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Stable import path for staged tensor physics.
