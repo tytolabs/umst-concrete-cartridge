@@ -1,0 +1,21 @@
+# Self-description manifest (blueprint §18 / NEW_REPOS_BUILD_SPEC C8).
+# Consumed by umst-meta when implemented; not checked yet.
+
+name = "tytolabs/umst-concrete-cartridge"
+path = "umst-concrete-cartridge"
+
+kind = "cartridge"
+spdx = "MIT"
+layer = "cartridge"
+formal_anchors = ["physicalSecondLaw", "gateMaterialAgnostic"]
+status = "wip"
+
+[registry]
+id = "tytolabs/umst-cartridge-concrete"
+manifest = "umst-cartridge-registry/examples/umst-cartridge-concrete.manifest.json"
+validation_status = "unvalidated"
+
+[registry.gate_parity]
+fixture_set = "gate_parity_v0"
+fixture_path = "crates/umst-mcp/tests/fixtures/gate_parity_v0.json"
+sha256_prefix = "149081fa81a6525f"
