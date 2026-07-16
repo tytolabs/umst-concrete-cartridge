@@ -152,6 +152,10 @@ name = "calibration_tyto_mortar"
 path = "tests/calibration_tyto_mortar.rs"
 
 [[test]]
+name = "cast_phase_gate_integration"
+path = "tests/cast_phase_gate_integration.rs"
+
+[[test]]
 name = "topology_mix_spec"
 path = "tests/topology_mix_spec.rs"
 
