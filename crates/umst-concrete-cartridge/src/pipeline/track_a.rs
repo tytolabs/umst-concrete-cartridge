@@ -18,7 +18,7 @@ use crate::facade::{
 };
 use crate::mix_layout;
 use crate::physics::printability::PrintabilityEngine;
-use crate::pipeline::dual_gate::{evaluate_dual_gate, DualGateVerdict};
+use crate::pipeline::dual_gate::{evaluate_dual_gate, CastGateVerdict};
 use crate::pipeline::physical_summary::nominal_mix_tensor_for_mix_spec;
 use crate::pipeline::{
     run_full_physics_pipeline, PhysicsPipelineSummary, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
@@ -161,7 +161,7 @@ fn buildability_from_tau_pa(tau_pa: f32) -> f32 {
 pub fn evaluate_mix_dual_gate(
     profile: &Profile,
     spec: &MixSpec,
-) -> (PhysicsPipelineSummary, DualGateVerdict) {
+) -> (PhysicsPipelineSummary, CastGateVerdict) {
     let device = NdArrayDevice::default();
     let mix = nominal_mix_tensor_for_mix_spec::<FacadeBackend>(profile, spec, &device);
     let report = run_full_physics_pipeline::<FacadeBackend>(profile, &mix);
@@ -196,7 +196,7 @@ struct SearchBounds {
 struct SearchState {
     mix: MixSpec,
     summary: PhysicsPipelineSummary,
-    verdict: DualGateVerdict,
+    verdict: CastGateVerdict,
     score: f32,
 }
 
@@ -212,7 +212,7 @@ pub fn coordinate_descent_optimize(
     base: &MixSpec,
     objective: TrackAObjective,
     steps: usize,
-) -> (MixSpec, PhysicsPipelineSummary, DualGateVerdict) {
+) -> (MixSpec, PhysicsPipelineSummary, CastGateVerdict) {
     let steps = steps.max(4);
     let (summary, verdict) = evaluate_mix_dual_gate(profile, base);
     let score = objective_score(objective, &summary, &verdict);
@@ -250,8 +250,6 @@ fn bisect_axis(
         let cand = mix_with_axis(&best.mix, axis, mid);
         let (summary, verdict) = evaluate_mix_dual_gate(profile, &cand);
         let score = objective_score(objective, &summary, &verdict);
-        #[allow(deprecated)]
-        let printable_pass = verdict.passes();
 
         bounds = update_bisection_bounds(objective, &summary, bounds, mid);
 
@@ -264,7 +262,9 @@ fn bisect_axis(
             };
         }
 
-        if objective == TrackAObjective::PrintableWindow && printable_pass {
+        if objective == TrackAObjective::PrintableWindow
+            && matches!(verdict, CastGateVerdict::Admissible)
+        {
             break;
         }
     }
@@ -278,19 +278,20 @@ fn bisect_axis(
 fn candidate_preferred(
     objective: TrackAObjective,
     score: f32,
-    verdict: &DualGateVerdict,
+    verdict: &CastGateVerdict,
     best_score: f32,
-    best_verdict: &DualGateVerdict,
+    best_verdict: &CastGateVerdict,
 ) -> bool {
     let score_improves = score < best_score;
-    #[allow(deprecated)]
     let gate_improves = match objective {
-        TrackAObjective::PrintableWindow => verdict.passes() && !best_verdict.passes(),
+        TrackAObjective::PrintableWindow => {
+            matches!(verdict, CastGateVerdict::Admissible)
+                && !matches!(best_verdict, CastGateVerdict::Admissible)
+        }
         _ => score_improves,
     };
-    #[allow(deprecated)]
-    let passes = verdict.passes();
-    gate_improves || (score_improves && passes)
+    let admissible = matches!(verdict, CastGateVerdict::Admissible);
+    gate_improves || (score_improves && admissible)
 }
 
 /// formal_anchor: NONE
@@ -358,19 +359,15 @@ fn axis_bounds(axis: SearchAxis, w_lo: f32, w_hi: f32) -> SearchBounds {
 fn objective_score(
     objective: TrackAObjective,
     summary: &PhysicsPipelineSummary,
-    verdict: &DualGateVerdict,
+    verdict: &CastGateVerdict,
 ) -> f32 {
     match objective {
         TrackAObjective::YieldStressPa(t) => (summary.rheology_yield_stress_pa - t).abs(),
         TrackAObjective::Extrudability(t) => (summary.printability_extrudability - t).abs(),
-        TrackAObjective::PrintableWindow => {
-            #[allow(deprecated)]
-            if verdict.passes() {
-                0.0
-            } else {
-                1.0 + (summary.rheology_yield_stress_pa - PRINTABLE_TAU_LO).abs()
-            }
-        }
+        TrackAObjective::PrintableWindow => match verdict {
+            CastGateVerdict::Admissible => 0.0,
+            _ => 1.0 + (summary.rheology_yield_stress_pa - PRINTABLE_TAU_LO).abs(),
+        },
     }
 }
 
@@ -398,7 +395,7 @@ pub fn proposed_next_mix_json(
     base: &MixSpec,
     proposed: &MixSpec,
     summary: &PhysicsPipelineSummary,
-    verdict: &DualGateVerdict,
+    verdict: &CastGateVerdict,
     objective: &str,
     steps: usize,
 ) -> ProposedNextMix {

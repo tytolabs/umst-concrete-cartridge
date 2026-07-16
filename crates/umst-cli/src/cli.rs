@@ -293,11 +293,14 @@ pub fn optimize_mix_with_gate(
     target: f64,
     steps: usize,
 ) -> Result<(MixSpec, bool), CliError> {
-    use umst_concrete_cartridge::pipeline::evaluate_mix_dual_gate;
+    use umst_concrete_cartridge::pipeline::{evaluate_mix_dual_gate, CastGateVerdict};
 
     let mix = optimize_mix(profile, base, field, target, steps)?;
     let (_, verdict) = evaluate_mix_dual_gate(profile, &mix);
-    Ok((mix, verdict.passes()))
+    Ok((
+        mix,
+        matches!(verdict, CastGateVerdict::Admissible),
+    ))
 }
 
 fn optimize_w_c_for_strength(
