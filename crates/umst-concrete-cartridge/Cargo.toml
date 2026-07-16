@@ -58,7 +58,7 @@ ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
 
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
-burn-ndarray = "0.13.0"
+burn-ndarray = "=0.13.2"
 umst-cartridge-api = { workspace = true }
 umst-manifold = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
