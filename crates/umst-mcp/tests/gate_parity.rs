@@ -11,6 +11,12 @@
 //! - default (13-tool list + gate + call frames): `cargo test -p umst-mcp --test gate_parity`
 //! - base-four surface (`--no-default-features`): still asserts the historical 4-tool list
 //! - rewrite call-frame goldens: `UMST_GATE_PARITY_UPDATE=1 cargo test -p umst-mcp --test gate_parity tools_call_result_frames_parity -- --ignored`
+//!
+//! **Phase 0f lock:** fixture bytes SHA256 pinned below; must match census + manifold phase0f suite.
+
+/// Live `gate_parity_v0.json` digest (Phase 0f / M0 acceptance receipt).
+const GATE_PARITY_V0_SHA256: &str =
+    "149081fa81a6525fb66ff01924c6656f30e2b67846d9945a25427c7be38d20f3";
 
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
@@ -29,6 +35,28 @@ fn load_fixture_root() -> Value {
     let text =
         std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()))
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+#[test]
+fn gate_parity_v0_fixture_sha256_locked() {
+    let path = fixtures_dir().join("gate_parity_v0.json");
+    let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
+    assert_eq!(
+        sha256_hex(&bytes),
+        GATE_PARITY_V0_SHA256,
+        "gate_parity_v0.json digest drift — update pin only after intentional fixture change"
+    );
+    let root = load_fixture_root();
+    assert_eq!(
+        root["schema_version"].as_str(),
+        Some("gate_parity_v0"),
+        "fixture schema_version must remain gate_parity_v0"
+    );
 }
 
 fn mcp_binary_path() -> PathBuf {
