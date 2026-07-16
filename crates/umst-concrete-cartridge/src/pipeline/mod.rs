@@ -5,6 +5,7 @@
 //! [`run_full_physics_pipeline`] is the cartridge functor root; [`evaluate_dual_gate`] composes
 //! printability ⊗ thermodynamic witnesses (see [`dual_gate`] module docs and witness ladder R1).
 
+pub mod canonical_gate;
 pub mod dual_gate;
 pub mod orchestrator;
 pub mod physical_summary;
@@ -12,6 +13,10 @@ pub mod report;
 #[cfg(feature = "proxy-loop")]
 pub mod track_a;
 
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Phase 0d canonical admissibility surface (manifold composed gate).
+pub use canonical_gate::thermodynamic_admissible;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-export dual-gate verdict for MCP/CLI Track A.

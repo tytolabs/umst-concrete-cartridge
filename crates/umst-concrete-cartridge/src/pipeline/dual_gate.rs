@@ -9,11 +9,12 @@
 //! [`CD_TRANSITION_CATALOG_ID`] — no duplicate CD math in cartridge.
 //!
 //! Witness ladder (proxy-loop scope): printability is a literature surrogate below R1; thermodynamic
-//! leg is R1 (`umst.gate.cd_transition`) via `predict_with_options` when `manifest-bridge` is on.
+//! leg is R1 (`umst.gate.cd_transition`) via [`super::canonical_gate`] when `manifest-bridge` is on.
 //! See `umst-manifold/docs/GOD_GRADE_WITNESS_LADDER.md` (release witness profile; legacy filename).
 
 use crate::calibration::Profile;
-use crate::facade::{predict_with_options, MixSpec, PredictOptions};
+use crate::facade::MixSpec;
+use crate::pipeline::canonical_gate::thermodynamic_admissible;
 use crate::pipeline::PhysicsPipelineSummary;
 #[cfg(feature = "virtual-proxies")]
 use crate::proxies::{virtual_extrusion, virtual_stack};
@@ -94,17 +95,14 @@ pub fn printability_with_virtual_proxies(summary: &PhysicsPipelineSummary) -> bo
     printability_from_summary(summary) && stack > 0.2 && extr > 0.35
 }
 
-/// Thermodynamic leg: predict path must succeed (manifest CD when `manifest-bridge` on).
+/// Thermodynamic leg: canonical composed gate (regime envelope + manifold CD); Phase 0d routing.
 /// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
 #[must_use]
 pub fn thermodynamic_ok(profile: &Profile, spec: &MixSpec) -> bool {
-    let opts = PredictOptions {
-        compare_homogeneous: true,
-    };
-    predict_with_options(profile, spec, opts).is_ok()
+    thermodynamic_admissible(profile, spec)
 }
 
 /// Evaluate printability (± virtual proxies) AND thermodynamic gate with equal weight.

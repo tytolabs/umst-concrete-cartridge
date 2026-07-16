@@ -132,6 +132,11 @@ path = "tests/golden_gate_check.rs"
 required-features = ["agent-layer"]
 
 [[test]]
+name = "phase0c_contribution_split"
+path = "tests/phase0c_contribution_split.rs"
+required-features = ["agent-layer"]
+
+[[test]]
 name = "virtual_proxies"
 path = "tests/virtual_proxies.rs"
 required-features = ["virtual-proxies"]

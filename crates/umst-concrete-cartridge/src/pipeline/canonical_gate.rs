@@ -1,0 +1,105 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
+//! Phase 0d — canonical gate routing for concrete admissibility (blueprint §7 0d).
+//!
+//! Routes regime envelope + manifold `core_gate` ∧ `material_gate` composed path via
+//! [`umst_manifold::gate::canonical_thermo_transition_admissible`] — **not** the
+//! `predict_with_options` physics composite.
+
+use crate::calibration::{self as calib, Profile};
+use crate::facade::MixSpec;
+use crate::homogeneous::{self as homog, mix_row_from_scalar_spec};
+
+#[cfg(feature = "manifest-bridge")]
+use umst_manifold::gate::{canonical_thermo_transition_admissible, ThermodynamicState};
+
+/// Canonical thermodynamic admissibility for a calibrated [`MixSpec`].
+///
+/// Checks bundled-profile regime coverage, then delegates to manifold composed gate.
+/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
+/// formal_status: Mechanised
+/// formal_axioms: physicalSecondLaw
+/// catalog_id: umst.gate.cd_transition
+#[must_use]
+pub fn thermodynamic_admissible(profile: &Profile, spec: &MixSpec) -> bool {
+    #[cfg(feature = "manifest-bridge")]
+    {
+        thermodynamic_admissible_manifest_bridge(profile, spec)
+    }
+    #[cfg(not(feature = "manifest-bridge"))]
+    {
+        let _ = profile;
+        let _ = spec;
+        false
+    }
+}
+
+#[cfg(feature = "manifest-bridge")]
+fn thermodynamic_admissible_manifest_bridge(profile: &Profile, spec: &MixSpec) -> bool {
+    if !calib::any_bundled_profile_covers_scalars(
+        spec.w_c.value(),
+        spec.temperature_k.value(),
+        spec.target_age_hours,
+        spec.fly_ash_pct,
+        spec.silica_fume_pct,
+    ) {
+        return false;
+    }
+
+    let row = mix_row_from_scalar_spec(
+        profile,
+        spec.w_c.value(),
+        spec.superplasticiser_pct,
+        spec.fly_ash_pct,
+        spec.silica_fume_pct,
+        spec.aggregate_volume_fraction,
+        spec.target_age_hours,
+        spec.temperature_k.value(),
+    );
+
+    transition_admissible_for_row(profile, &row)
+}
+
+/// Manifold composed gate for an already-built [`homog::MixRow`].
+#[cfg(feature = "manifest-bridge")]
+#[must_use]
+pub fn transition_admissible_for_row(profile: &Profile, row: &homog::MixRow) -> bool {
+    let Ok((w_c_eff, alpha, temp_c)) = homog::mix_hydration_state(profile, row) else {
+        return false;
+    };
+    let temp_k = f64::from(temp_c) + 273.15;
+    let w_c = f64::from(w_c_eff);
+    let s_intrinsic = f64::from(profile.powers.s_intrinsic);
+    let old = ThermodynamicState::from_mix_calibrated(w_c, 0.0, temp_k, s_intrinsic);
+    let new = ThermodynamicState::from_mix_calibrated(w_c, f64::from(alpha), temp_k, s_intrinsic);
+    let dt_s = f64::from((row.age_days * 24.0 * 3600.0).max(1.0));
+    canonical_thermo_transition_admissible(&old, &new, dt_s)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::facade::MixSpec;
+
+    fn default_profile() -> Profile {
+        Profile::load_bundled("default").expect("default profile")
+    }
+
+    #[test]
+    #[cfg(feature = "manifest-bridge")]
+    fn canonical_gate_accepts_default_rational_mix() {
+        let profile = default_profile();
+        let spec = MixSpec::try_from(crate::facade::MixSpecWire {
+            w_c: 0.45,
+            temperature_k: 293.15,
+            superplasticiser_pct: None,
+            silica_fume_pct: None,
+            fly_ash_pct: None,
+            aggregate_volume_fraction: Some(0.7),
+            target_age_hours: None,
+        })
+        .expect("wire");
+        assert!(thermodynamic_admissible(&profile, &spec));
+    }
+}
