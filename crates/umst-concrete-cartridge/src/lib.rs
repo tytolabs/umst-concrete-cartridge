@@ -5,6 +5,7 @@
 
 #![allow(clippy::doc_lazy_continuation)]
 
+pub mod api_consumer;
 pub mod calibration;
 pub mod calibration_fit;
 pub mod calibration_metrics;
@@ -57,6 +58,22 @@ pub use thmc_gate::{gate_cartridge_witness, with_gate_cartridge};
 
 mod burn_compat;
 
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: M1 consumer — semver-locked [`UMSTCartridge`] surface at scalar parity.
+pub use api_consumer::{
+    ConcreteApiCartridge, CONCRETE_CARTRIDGE_ID, IDX_DENSITY_KG_M3, IDX_DISSIPATION_MODULUS,
+    IDX_PSI_J_PER_M3,
+};
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-export contract types for downstream cartridge authors.
+pub use umst_cartridge_api::{
+    constitutive_response, CartridgeId, ClausiusDuhemWitness, ConstitutiveResponse,
+    InvariantWitness, MassConservationWitness, PhysicalAxiom, Rates, ScalarAlgebra, State,
+    StateSchema, StateSnapshot, StateVar, StateVarKind, TensorAlgebra, UMSTCartridge,
+    WitnessScores,
+};
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports manifold façade symbols for ergonomics only.

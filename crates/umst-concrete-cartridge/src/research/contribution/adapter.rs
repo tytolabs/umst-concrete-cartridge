@@ -6,7 +6,8 @@
 //! Parsing rationals and building facade wires lives here — **not** in the gate predicate
 //! or explain/remediation infra (blueprint §7 0c · `NEW_REPOS_BUILD_SPEC` §E.4).
 //!
-//! Future A1: this module lifts toward `umst-cartridge-api` `ConstitutiveResponse`.
+//! Future A1/M1: this module lifts toward `umst-cartridge-api` `ConstitutiveResponse`
+//! via [`crate::api_consumer::ConcreteApiCartridge`].
 
 use crate::calibration::Profile;
 use crate::facade::{MixSpec, MixSpecWire};

@@ -59,6 +59,7 @@ ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
 burn-ndarray = "0.13.0"
+umst-cartridge-api = { workspace = true }
 umst-manifold = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
@@ -85,6 +86,11 @@ walkdir = "2.5"
 [lib]
 name = "umst_concrete_cartridge"
 path = "src/lib.rs"
+
+[[test]]
+name = "api_consumer_parity"
+path = "tests/api_consumer_parity.rs"
+required-features = ["agent-layer"]
 
 [[test]]
 name = "tier2c_closure_parity"

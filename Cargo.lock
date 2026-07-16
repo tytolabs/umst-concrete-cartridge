@@ -4143,6 +4143,10 @@ name = "umst-agent-mcp-core"
 version = "0.2.1"
 
 [[package]]
+name = "umst-cartridge-api"
+version = "0.1.0"
+
+[[package]]
 name = "umst-cli"
 version = "0.2.1"
 dependencies = [
@@ -4186,6 +4190,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "umst-cartridge-api",
  "umst-manifold",
  "umst-ucrs",
  "uuid",
