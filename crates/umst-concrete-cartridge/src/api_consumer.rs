@@ -107,14 +107,6 @@ impl ConcreteApiCartridge {
     }
 }
 
-impl Default for ConcreteApiCartridge {
-    fn default() -> Self {
-        Self::with_profile(
-            Profile::load_bundled("uci_d1").expect("bundled calibration `uci_d1`"),
-        )
-    }
-}
-
 impl UMSTCartridge for ConcreteApiCartridge {
     fn id(&self) -> CartridgeId {
         CartridgeId::new(CONCRETE_CARTRIDGE_ID)

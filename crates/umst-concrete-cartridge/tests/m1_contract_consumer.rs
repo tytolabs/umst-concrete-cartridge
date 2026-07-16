@@ -12,16 +12,20 @@ use umst_concrete_cartridge::calibration::Profile;
 /// Parity anchor prefix (M0 lock — must not drift under M1 wiring).
 const PARITY_PREFIX: &str = "149081fa81a6525f";
 
+fn bundled_cartridge() -> ConcreteApiCartridge {
+    ConcreteApiCartridge::new().expect("bundled calibration `uci_d1`")
+}
+
 #[test]
 fn concrete_cartridge_id_matches_registry() {
-    let cartridge = ConcreteApiCartridge::default();
+    let cartridge = bundled_cartridge();
     assert_eq!(cartridge.id().as_str(), CONCRETE_CARTRIDGE_ID);
     assert_eq!(CONCRETE_CARTRIDGE_ID, "umst-cartridge-concrete");
 }
 
 #[test]
 fn concrete_exposes_core_physical_axioms() {
-    let cartridge = ConcreteApiCartridge::default();
+    let cartridge = bundled_cartridge();
     let axioms = cartridge.physical_axioms();
     assert_eq!(axioms.len(), 2);
     assert_eq!(axioms[0].name(), "MassConservationAxiom");
