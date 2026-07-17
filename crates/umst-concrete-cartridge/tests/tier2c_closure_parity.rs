@@ -55,10 +55,10 @@ fn gate_byte_equiv_cement_vs_ssot_injected_substrate() {
     let out_b = transition_outcome(&old_b, &new_b, dt, TRANSITION_TOLERANCE);
     // Telemetry path must agree with pure evaluator.
     let out_a_filter = filter.check_transition(&old_a, &new_a, dt);
-    assert_eq!(out_a.accepted, out_a_filter.accepted);
+    assert_eq!(out_a.is_accepted(), out_a_filter.is_accepted());
     assert!((out_a.dissipation - out_a_filter.dissipation).abs() < 1e-12);
 
-    assert_eq!(out_a.accepted, out_b.accepted);
+    assert_eq!(out_a.is_accepted(), out_b.is_accepted());
     assert!((out_a.dissipation - out_b.dissipation).abs() < 1e-12);
 }
 
@@ -97,7 +97,7 @@ fn forward_hydration_admissible_thermodynamic_gate() {
     let new =
         umst_manifold::gate::ThermodynamicState::from_mix_with_params(0.5, 0.5, 293.0, &params);
     let r = gate.check_transition(&old, &new, 3600.0);
-    assert!(r.accepted);
+    assert!(r.is_accepted());
     assert!(r.dissipation > 0.0);
 }
 
@@ -109,7 +109,7 @@ fn admissible_forward_reaction_extent() {
     let new = ThermodynamicStateSnapshot::from_mix_with_params(0.5, 0.5, 293.0, &params);
     assert!(new.free_energy < old.free_energy);
     let r = filter.check_transition(&old, &new, 3600.0);
-    assert!(r.accepted);
+    assert!(r.is_accepted());
     assert!(r.dissipation > 0.0);
     assert_eq!(r.verdict(), AdmissibilityVerdict::Accepted);
 }
@@ -121,7 +121,7 @@ fn reject_reverse_reaction_extent() {
     let old = ThermodynamicStateSnapshot::from_mix_with_params(0.5, 0.7, 293.0, &params);
     let new = ThermodynamicStateSnapshot::from_mix_with_params(0.5, 0.3, 293.0, &params);
     let r = filter.check_transition(&old, &new, 3600.0);
-    assert!(!r.accepted);
+    assert!(!r.is_accepted());
     assert!(r.dissipation < 0.0);
 }
 
@@ -135,7 +135,7 @@ fn strength_monotonicity_rejects_strength_drop() {
     new.strength = 25.0;
     new.reaction_extent = 0.5;
     let r = filter.check_transition(&old, &new, 1.0);
-    assert!(!r.accepted);
+    assert!(!r.is_accepted());
 }
 
 #[test]
