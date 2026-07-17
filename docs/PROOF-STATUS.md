@@ -384,7 +384,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/pipeline/report.rs:105` | `NONE` | — | Cartridge-local rich JSON envelope parallel to manifold tensors. |
 | `ProposedNextMix` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:27` | `NONE` | — | Wire envelope for Track A CLI; physics claims live on nested gate fields. |
 | `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:42` | `NONE` | — | Mix JSON mirror without newtype wrappers for serde output. |
-| `DualGateWire` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:57` | `NONE` | — | Dual-gate audit block for proposed mix JSON sidecar. |
+| `DualGateWire` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:61` | `NONE` | — | v1 JSON wire block; bool keys are wire-compat (not MP3.6 shim debt). |
+| `DualGateWire::from_verdict` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:78` | `NONE` | — | SSOT serde bools from [`CastGateVerdict`] leg-pass helpers. |
 | `summary_with_calibrated_tau` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:98` | `NONE` | — | Applies θ bias before dual-gate printability leg. |
 | `evaluate_mix_dual_gate` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:156` | `NONE` | — | Track A scoring helper; gate semantics from `dual_gate`. |
 | `TrackAObjective` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:173` | `NONE` | — | Track A optimise targets mirrored from CLI `OptimizeField`. |
