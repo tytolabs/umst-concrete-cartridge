@@ -2,4 +2,5 @@
 
 [patch."https://github.com/tytolabs/umst-manifold.git"]
 umst-manifold = { path = "../umst-manifold" }
+umst-runtime = { path = "../umst-manifold/crates/umst-runtime" }
 umst-runtime-arena = { path = "../umst-manifold/umst-runtime-arena" }
