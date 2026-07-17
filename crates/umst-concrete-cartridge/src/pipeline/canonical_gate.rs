@@ -138,7 +138,7 @@ pub fn transition_admissible_for_row(profile: &Profile, row: &homog::MixRow) -> 
 fn transition_verdict_from_outcome(
     outcome: umst_manifold::gate::ThermodynamicTransitionOutcome,
 ) -> Result<(), ThermoReject> {
-    if outcome.accepted {
+    if outcome.is_accepted() {
         Ok(())
     } else {
         Err(match outcome.verdict {
