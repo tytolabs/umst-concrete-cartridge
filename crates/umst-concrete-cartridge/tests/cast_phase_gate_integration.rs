@@ -238,12 +238,8 @@ fn cast_gate_verdict_bool_shim_matches_algebraic_admissibility() {
 
     assert_eq!(verdict.is_admissible(), matches!(verdict, CastGateVerdict::Admissible));
 
-    #[allow(deprecated)]
-    {
-        assert_eq!(verdict.passes(), verdict.is_admissible());
-        let shim_pass = verdict.printability_ok() && verdict.thermodynamic_ok();
-        assert_eq!(shim_pass, verdict.is_admissible());
-    }
+    let leg_pass = verdict.printability_leg_pass() && verdict.thermodynamic_leg_pass();
+    assert_eq!(leg_pass, verdict.is_admissible());
 
     // Printability leg pins — τ₀ band from pipeline summary.
     let tau = report.summary.rheology_yield_stress_pa;
@@ -251,10 +247,7 @@ fn cast_gate_verdict_bool_shim_matches_algebraic_admissibility() {
     let print_ok = (PRINTABLE_TAU_LO..=PRINTABLE_TAU_HI).contains(&tau)
         && extr.is_finite()
         && extr >= 0.35;
-    #[allow(deprecated)]
-  {
-        assert_eq!(verdict.printability_ok(), print_ok);
-    }
+    assert_eq!(verdict.printability_leg_pass(), print_ok);
 }
 
 #[cfg(feature = "manifest-bridge")]
@@ -267,10 +260,7 @@ fn cast_gate_verdict_tyto_s1_thermodynamic_leg_integration_pin() {
 
     use umst_concrete_cartridge::pipeline::thermodynamic_admissible;
     let thermo_bool = thermodynamic_admissible(&profile, &spec);
-    #[allow(deprecated)]
-    {
-        assert_eq!(verdict.thermodynamic_ok(), thermo_bool);
-    }
+    assert_eq!(verdict.thermodynamic_leg_pass(), thermo_bool);
     if thermo_bool {
         assert!(!matches!(
             verdict,

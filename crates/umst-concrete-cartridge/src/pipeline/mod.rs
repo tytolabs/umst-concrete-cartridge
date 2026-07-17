@@ -28,8 +28,7 @@ pub use cast_phase::{
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-export dual-gate verdict for MCP/CLI Track A.
 pub use dual_gate::{
-    evaluate_dual_gate, CastGateVerdict, DualGateVerdict, PrintabilityReject,
-    PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
+    evaluate_dual_gate, CastGateVerdict, PrintabilityReject, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
 };
 /// formal_anchor: NONE
 /// formal_status: NONE

@@ -405,12 +405,9 @@ pub fn proposed_next_mix_json(
         base_mix: MixSpecWireOut::from(base),
         proposed_mix: MixSpecWireOut::from(proposed),
         dual_gate: DualGateWire {
-            #[allow(deprecated)]
-            printability_ok: verdict.printability_ok(),
-            #[allow(deprecated)]
-            thermodynamic_ok: verdict.thermodynamic_ok(),
-            #[allow(deprecated)]
-            passes: verdict.passes(),
+            printability_ok: verdict.printability_leg_pass(),
+            thermodynamic_ok: verdict.thermodynamic_leg_pass(),
+            passes: verdict.is_admissible(),
             yield_stress_pa: f64::from(summary.rheology_yield_stress_pa),
             printability_extrudability: f64::from(summary.printability_extrudability),
         },

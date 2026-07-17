@@ -40,7 +40,7 @@ pub const PRINTABLE_TAU_HI: f32 = 360.0;
 /// Track A composite gate — equal-weight AND of printability ⊗ thermodynamic legs.
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Algebraic verdict carrier (MP3.3); bool wire via deprecated accessors.
+/// formal_anchor_rationale: Algebraic verdict carrier (MP3.3); wire bools via leg-pass helpers.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CastGateVerdict {
     Admissible,
@@ -82,28 +82,20 @@ pub enum PrintabilityReject {
     },
 }
 
-/// Type alias preserving Track A / CLI import path during one-release shim window.
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Deprecated bool-shim alias for [`CastGateVerdict`] (MP3.3).
-pub type DualGateVerdict = CastGateVerdict;
-
 impl CastGateVerdict {
+    #[must_use]
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_anchor_rationale: Equal-weight AND of printability and thermodynamic legs.
-    #[must_use]
-    #[deprecated(note = "use match CastGateVerdict; removed MP3.6")]
-    pub fn passes(&self) -> bool {
+    /// formal_anchor_rationale: Algebraic admissibility predicate on [`CastGateVerdict`].
+    pub fn is_admissible(self) -> bool {
         matches!(self, Self::Admissible)
     }
 
     #[must_use]
-    #[deprecated(note = "use match CastGateVerdict; removed MP3.6")]
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_anchor_rationale: Deprecated bool shim — printability leg pass bit.
-    pub fn printability_ok(&self) -> bool {
+    /// formal_anchor_rationale: Printability leg pass — not `RejectPrintability` / `RejectBoth`.
+    pub fn printability_leg_pass(self) -> bool {
         !matches!(
             self,
             Self::RejectPrintability(_) | Self::RejectBoth { .. }
@@ -111,23 +103,14 @@ impl CastGateVerdict {
     }
 
     #[must_use]
-    #[deprecated(note = "use match CastGateVerdict; removed MP3.6")]
     /// formal_anchor: NONE
     /// formal_status: NONE
-    /// formal_anchor_rationale: Deprecated bool shim — thermodynamic leg pass bit.
-    pub fn thermodynamic_ok(&self) -> bool {
+    /// formal_anchor_rationale: Thermodynamic leg pass — not `RejectThermodynamic` / `RejectBoth`.
+    pub fn thermodynamic_leg_pass(self) -> bool {
         !matches!(
             self,
             Self::RejectThermodynamic(_) | Self::RejectBoth { .. }
         )
-    }
-
-    #[must_use]
-    /// formal_anchor: NONE
-    /// formal_status: NONE
-    /// formal_anchor_rationale: Algebraic admissibility predicate on [`CastGateVerdict`].
-    pub fn is_admissible(self) -> bool {
-        matches!(self, Self::Admissible)
     }
 }
 
@@ -289,14 +272,11 @@ mod tests {
     }
 
     #[test]
-    fn cast_gate_verdict_bool_shim_roundtrip() {
+    fn cast_gate_verdict_leg_pass_algebra() {
         let admissible = CastGateVerdict::Admissible;
-        #[allow(deprecated)]
-        {
-            assert!(admissible.passes());
-            assert!(admissible.printability_ok());
-            assert!(admissible.thermodynamic_ok());
-        }
+        assert!(admissible.is_admissible());
+        assert!(admissible.printability_leg_pass());
+        assert!(admissible.thermodynamic_leg_pass());
 
         let print_reject = CastGateVerdict::RejectPrintability(
             PrintabilityReject::TauBelowBand {
@@ -305,31 +285,22 @@ mod tests {
                 hi: PRINTABLE_TAU_HI,
             },
         );
-        #[allow(deprecated)]
-        {
-            assert!(!print_reject.passes());
-            assert!(!print_reject.printability_ok());
-            assert!(print_reject.thermodynamic_ok());
-        }
+        assert!(!print_reject.is_admissible());
+        assert!(!print_reject.printability_leg_pass());
+        assert!(print_reject.thermodynamic_leg_pass());
 
         let thermo_reject =
             CastGateVerdict::RejectThermodynamic(ThermoReject(GateRejectReason::RegimeEnvelope));
-        #[allow(deprecated)]
-        {
-            assert!(!thermo_reject.passes());
-            assert!(thermo_reject.printability_ok());
-            assert!(!thermo_reject.thermodynamic_ok());
-        }
+        assert!(!thermo_reject.is_admissible());
+        assert!(thermo_reject.printability_leg_pass());
+        assert!(!thermo_reject.thermodynamic_leg_pass());
 
         let both = CastGateVerdict::RejectBoth {
             printability: PrintabilityReject::ExtrudabilityLow { extr: 0.1, min: 0.35 },
             thermodynamic: ThermoReject(GateRejectReason::MassViolation),
         };
-        #[allow(deprecated)]
-        {
-            assert!(!both.passes());
-            assert!(!both.printability_ok());
-            assert!(!both.thermodynamic_ok());
-        }
+        assert!(!both.is_admissible());
+        assert!(!both.printability_leg_pass());
+        assert!(!both.thermodynamic_leg_pass());
     }
 }
