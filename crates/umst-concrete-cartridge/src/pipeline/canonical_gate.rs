@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     #[cfg(feature = "manifest-bridge")]
-    fn transition_bool_shim_matches_verdict_path() {
+    fn transition_admissible_matches_verdict_path() {
         let profile = default_profile();
         let spec = MixSpec::try_from(crate::facade::MixSpecWire {
             w_c: 0.45,

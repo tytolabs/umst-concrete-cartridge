@@ -242,7 +242,7 @@ impl<B: Backend<FloatElem = f32>> ConcreteCartridge<B> {
         umst: &mut UnifiedMaterialStateTensor<B>,
     ) -> Result<(), String> {
         let _ = &self.profile;
-        apply_physics_to_umst(result, umst)
+        apply_physics_to_umst(result, umst).map_err(|e| e.to_string())
     }
 }
 

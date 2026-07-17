@@ -230,7 +230,7 @@ fn pipeline_stage_manifest_consistent_with_cast_phase_router() {
 }
 
 #[test]
-fn cast_gate_verdict_bool_shim_matches_algebraic_admissibility() {
+fn cast_gate_verdict_leg_pass_matches_admissibility() {
     let profile = Profile::load_bundled("tyto_mortar").expect("tyto_mortar");
     let spec = tyto_s1_spec();
     let report = run_tyto_report();

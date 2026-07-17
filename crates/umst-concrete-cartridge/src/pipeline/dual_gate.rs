@@ -14,7 +14,7 @@
 
 use crate::calibration::Profile;
 use crate::facade::MixSpec;
-use crate::pipeline::canonical_gate::{thermodynamic_admissible, thermodynamic_verdict, ThermoReject};
+use crate::pipeline::canonical_gate::{thermodynamic_verdict, ThermoReject};
 use crate::pipeline::PhysicsPipelineSummary;
 #[cfg(feature = "virtual-proxies")]
 use crate::proxies::{virtual_extrusion, virtual_stack};
@@ -114,22 +114,12 @@ impl CastGateVerdict {
     }
 }
 
-/// formal_anchor: literature://roussel-2018-buildability-window
-/// formal_status: Literature
-/// formal_citation: "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band"
-/// formal_form: "τ₀ band AND extrudability ≥ 0.35"
-/// formal_envelope: "tests/printability.rs"
-#[must_use]
-pub fn printability_window_ok(tau_y_pa: f32, extrudability: f32) -> bool {
-    printability_leg_scalars(tau_y_pa, extrudability).is_ok()
-}
-
 /// Printability leg on scalar τ₀ and extrudability (no virtual proxies).
 /// formal_anchor: literature://roussel-2018-buildability-window
 /// formal_status: Literature
 /// formal_citation: "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band"
 /// formal_form: "τ₀ ∈ [180, 360] Pa AND extrudability ≥ 0.35"
-/// formal_anchor_rationale: Enum leg evaluator; bool shim via [`printability_window_ok`].
+/// formal_anchor_rationale: Enum leg evaluator for printability band (MP3.3).
 #[must_use]
 pub fn printability_leg_scalars(tau_y_pa: f32, extrudability: f32) -> Result<(), PrintabilityReject> {
     if !extrudability.is_finite() {
@@ -184,40 +174,12 @@ pub fn printability_leg(summary: &PhysicsPipelineSummary) -> Result<(), Printabi
     Ok(())
 }
 
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Summary-scalar wrapper over [`printability_window_ok`].
-#[must_use]
-pub fn printability_from_summary(summary: &PhysicsPipelineSummary) -> bool {
-    printability_leg(summary).is_ok()
-}
-
-/// Printability leg augmented by virtual-lab proxy scores (feature `virtual-proxies`).
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Lazy AND of summary band + Roussel stack/extrusion surrogates.
-#[cfg(feature = "virtual-proxies")]
-#[must_use]
-pub fn printability_with_virtual_proxies(summary: &PhysicsPipelineSummary) -> bool {
-    printability_leg(summary).is_ok()
-}
-
-/// Thermodynamic leg: canonical composed gate (regime envelope + manifold CD); Phase 0d routing.
-/// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
-/// formal_status: Mechanised
-/// formal_axioms: physicalSecondLaw
-/// catalog_id: umst.gate.cd_transition
-#[must_use]
-pub fn thermodynamic_ok(profile: &Profile, spec: &MixSpec) -> bool {
-    thermodynamic_admissible(profile, spec)
-}
-
 /// Thermodynamic leg verdict — maps manifold [`ThermoReject`] at cartridge boundary.
 /// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
-/// formal_anchor_rationale: Enum leg evaluator; bool shim via [`thermodynamic_ok`].
+/// formal_anchor_rationale: Enum leg evaluator for thermodynamic CD transition (MP3.3).
 #[must_use]
 pub fn thermodynamic_leg(profile: &Profile, spec: &MixSpec) -> Result<(), ThermoReject> {
     thermodynamic_verdict(profile, spec)
@@ -253,7 +215,7 @@ mod tests {
     use umst_manifold::gate::verdict::GateRejectReason;
 
     #[test]
-    fn printability_band_matches_bool_shim() {
+    fn printability_band_scalar_leg() {
         let cases = [
             (250.0_f32, 0.5_f32, true),
             (100.0, 0.5, false),
@@ -263,11 +225,10 @@ mod tests {
         ];
         for (tau, extr, expected) in cases {
             assert_eq!(
-                printability_window_ok(tau, extr),
+                printability_leg_scalars(tau, extr).is_ok(),
                 expected,
                 "tau={tau} extr={extr}"
             );
-            assert_eq!(printability_leg_scalars(tau, extr).is_ok(), expected);
         }
     }
 
