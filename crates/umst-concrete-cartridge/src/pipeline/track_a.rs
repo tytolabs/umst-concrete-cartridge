@@ -54,6 +54,11 @@ pub struct MixSpecWireOut {
     pub profile_name: String,
 }
 
+/// v1 JSON wire block for `proposed_next_mix.v1` sidecar.
+///
+/// Bool fields (`printability_ok`, `thermodynamic_ok`, `passes`) are **wire-compat
+/// keys** for operator scripts and CLI contract tests — not MP3.6 Rust shim debt
+/// (bool shims closed @ MP3.6; values from [`CastGateVerdict`] leg-pass helpers).
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Dual-gate audit block for proposed mix JSON sidecar.
@@ -64,6 +69,26 @@ pub struct DualGateWire {
     pub passes: bool,
     pub yield_stress_pa: f64,
     pub printability_extrudability: f64,
+}
+
+impl DualGateWire {
+    /// Build v1 wire-stable bool block from [`CastGateVerdict`] leg-pass helpers.
+    ///
+    /// Wire-compat only: JSON keys are frozen for `proposed_next_mix.v1`; intentional
+    /// serde surface, not residual MP3.6 bool-shim debt.
+    /// formal_anchor: NONE
+    /// formal_status: NONE
+    /// formal_anchor_rationale: SSOT for dual-gate sidecar bools from enum algebra.
+    #[must_use]
+    pub fn from_verdict(verdict: &CastGateVerdict, summary: &PhysicsPipelineSummary) -> Self {
+        Self {
+            printability_ok: verdict.printability_leg_pass(),
+            thermodynamic_ok: verdict.thermodynamic_leg_pass(),
+            passes: verdict.is_admissible(),
+            yield_stress_pa: f64::from(summary.rheology_yield_stress_pa),
+            printability_extrudability: f64::from(summary.printability_extrudability),
+        }
+    }
 }
 
 impl From<&MixSpec> for MixSpecWireOut {
@@ -404,13 +429,7 @@ pub fn proposed_next_mix_json(
         calibration_profile: profile.bundle_id.clone(),
         base_mix: MixSpecWireOut::from(base),
         proposed_mix: MixSpecWireOut::from(proposed),
-        dual_gate: DualGateWire {
-            printability_ok: verdict.printability_leg_pass(),
-            thermodynamic_ok: verdict.thermodynamic_leg_pass(),
-            passes: verdict.is_admissible(),
-            yield_stress_pa: f64::from(summary.rheology_yield_stress_pa),
-            printability_extrudability: f64::from(summary.printability_extrudability),
-        },
+        dual_gate: DualGateWire::from_verdict(verdict, summary),
         objective: objective.to_string(),
         steps,
     }
