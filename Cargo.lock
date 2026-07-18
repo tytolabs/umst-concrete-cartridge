@@ -4337,7 +4337,7 @@ dependencies = [
 [[package]]
 name = "umst-ucrs"
 version = "1.0.0"
-source = "git+https://github.com/tytolabs/umst-ucrs.git?rev=eda7ac052a05cff82e64027799ad42124872518a#eda7ac052a05cff82e64027799ad42124872518a"
+source = "git+https://github.com/tytolabs/umst-ucrs.git?rev=a1202338638241749daa226855f682fd73f8f872#a1202338638241749daa226855f682fd73f8f872"
 dependencies = [
  "clap",
  "pqcrypto-dilithium",
@@ -5215,7 +5215,3 @@ checksum = "73ab332fe2f6680068f3582b16a24f90ad7096d5d39b974d1c0aff0125116f02"
 dependencies = [
  "simd-adler32",
 ]
-
-[[patch.unused]]
-name = "umst-runtime"
-version = "0.1.0"
