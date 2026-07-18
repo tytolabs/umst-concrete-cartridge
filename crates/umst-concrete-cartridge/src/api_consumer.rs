@@ -3,19 +3,22 @@
 
 //! M1 — concrete cartridge implements [`umst_cartridge_api::UMSTCartridge`] at scalar parity.
 //!
-//! Potentials are evaluated from homogeneous Powers closures (no solver imports). The frozen
-//! MCP gate path is unchanged; this module is the semver-locked contract surface for Wave 1.
+//! With `b1-delegate` (S2 production wire), constitutive evaluation routes through
+//! `umst-cartridge-concrete::gate_route_composed` instead of monolith homogeneous closures.
 
 use std::sync::OnceLock;
 
 use umst_cartridge_api::{
-    constitutive_response, CartridgeId, ClausiusDuhemWitness, ConstitutiveResponse,
+    CartridgeId, ClausiusDuhemWitness, ConstitutiveResponse,
     MassConservationWitness, PhysicalAxiom, Rates, ScalarAlgebra, State, StateSchema, StateVar,
     StateVarKind, TensorAlgebra, UMSTCartridge,
 };
 
 use crate::calibration::Profile;
 use crate::homogeneous::{self as homog, MixRow};
+
+#[cfg(feature = "b1-delegate")]
+use crate::api_consumer_compose::{gate_route_via_compose, scalar_fields_from_composed};
 
 /// Stable registry id for the cementitious consumer cartridge.
 /// formal_anchor: NONE
@@ -48,7 +51,7 @@ static CD_AXIOM: ClausiusDuhemWitness = ClausiusDuhemWitness {
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
-/// formal_anchor_rationale: M1 consumer implementing semver-locked [`UMSTCartridge`] via homogeneous closures.
+/// formal_anchor_rationale: M1 consumer implementing semver-locked [`UMSTCartridge`] via B1 composed delegate when `b1-delegate` is enabled.
 #[derive(Debug, Clone)]
 pub struct ConcreteApiCartridge {
     /// Active calibration profile (matches MCP / CLI `predict` profile).
@@ -84,6 +87,17 @@ impl ConcreteApiCartridge {
         Ok((concrete_state_schema(), fields))
     }
 
+    /// S2 composed delegate seam — routes through `gate_route_composed`.
+    #[cfg(feature = "b1-delegate")]
+    #[must_use]
+    pub fn gate_route_via_compose(
+        &self,
+        row: &MixRow,
+        alpha_dot: f64,
+    ) -> umst_cartridge_concrete::ComposedGateOutcome {
+        gate_route_via_compose(&self.profile, row, alpha_dot)
+    }
+
     /// formal_anchor: STRUCTURAL
     /// formal_status: Structural
     /// formal_anchor_rationale: Adapter seam toward Core `gate<R>` (`ConstitutiveResponse` bundle).
@@ -93,17 +107,30 @@ impl ConcreteApiCartridge {
         row: &MixRow,
         alpha_dot: f64,
     ) -> Result<ConstitutiveResponse<ScalarAlgebra>, homog::HomogeneousError> {
-        let (schema, values) = self.scalar_state_from_mix_row(row)?;
-        let state = State {
-            values: &values,
-            schema: &schema,
-        };
-        let rates = Rates::<ScalarAlgebra> {
-            internal: alpha_dot,
-            species_source: None,
-            values: None,
-        };
-        Ok(constitutive_response(self, &state, &rates))
+        #[cfg(feature = "b1-delegate")]
+        {
+            let outcome = gate_route_via_compose(&self.profile, row, alpha_dot);
+            return Ok(ConstitutiveResponse::passive(
+                outcome.constitutive.psi_total(),
+                outcome.constitutive.dissipation_total(),
+                alpha_dot,
+            ));
+        }
+        #[cfg(not(feature = "b1-delegate"))]
+        {
+            use umst_cartridge_api::constitutive_response;
+            let (schema, values) = self.scalar_state_from_mix_row(row)?;
+            let state = State {
+                values: &values,
+                schema: &schema,
+            };
+            let rates = Rates::<ScalarAlgebra> {
+                internal: alpha_dot,
+                species_source: None,
+                values: None,
+            };
+            Ok(constitutive_response(self, &state, &rates))
+        }
     }
 }
 
@@ -175,12 +202,20 @@ fn scalar_state_fields(
     profile: &Profile,
     row: &MixRow,
 ) -> Result<Vec<f64>, homog::HomogeneousError> {
-    let (w_c_eff, alpha, _temp_c) = homog::mix_hydration_state(profile, row)?;
-    let fc_mpa = homog::powers_compressive_strength_mpa(profile, row, alpha, w_c_eff)?;
-    let psi_j_per_m3 = -f64::from(fc_mpa) * 1e6;
-    let density = concrete_bulk_density_kg_m3(row);
-    let eta = dissipation_modulus_from_profile(profile);
-    Ok(vec![psi_j_per_m3, density, eta])
+    #[cfg(feature = "b1-delegate")]
+    {
+        let (psi_j_per_m3, density, eta) = scalar_fields_from_composed(profile, row, 0.0);
+        return Ok(vec![psi_j_per_m3, density, eta]);
+    }
+    #[cfg(not(feature = "b1-delegate"))]
+    {
+        let (w_c_eff, alpha, _temp_c) = homog::mix_hydration_state(profile, row)?;
+        let fc_mpa = homog::powers_compressive_strength_mpa(profile, row, alpha, w_c_eff)?;
+        let psi_j_per_m3 = -f64::from(fc_mpa) * 1e6;
+        let density = concrete_bulk_density_kg_m3(row);
+        let eta = dissipation_modulus_from_profile(profile);
+        Ok(vec![psi_j_per_m3, density, eta])
+    }
 }
 
 #[must_use]

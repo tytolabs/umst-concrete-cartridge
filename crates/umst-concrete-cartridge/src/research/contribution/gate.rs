@@ -13,6 +13,9 @@ use crate::calibration::Profile;
 use crate::facade::MixSpec;
 use serde_json::Value;
 
+#[cfg(feature = "b1-delegate")]
+use crate::api_consumer_compose::gate_admissible_via_compose;
+
 use super::super::mi::estimate_mi_bits_rational;
 use super::super::reject::{build_gate_reject, GateRejectRow};
 use super::super::types::{
@@ -37,28 +40,47 @@ pub struct GateContext<'a> {
 /// catalog_id: umst.gate.cd_transition
 #[must_use]
 pub fn gate_check_mix(profile: &Profile, mix_json: &Value) -> GateSummary {
-    let admissible = mix_spec_from_json(profile, mix_json)
-        .map(|spec| {
-            gate_recheck_with_spec(
-                &GateContext { profile },
-                &stub_contribution(mix_json),
-                &spec,
-            )
-        })
-        .unwrap_or(false);
+    #[cfg(feature = "b1-delegate")]
+    {
+        let admissible = gate_admissible_via_compose(profile, mix_json);
+        let mi_bits_est = estimate_mi_bits_rational(mix_json, profile);
+        return GateSummary {
+            admissible,
+            verdict: if admissible {
+                GateVerdict::Pass
+            } else {
+                GateVerdict::Reject
+            },
+            catalog_ids: vec!["umst.gate.cd_transition".into()],
+            safety_margin: None,
+            mi_bits_est,
+        };
+    }
+    #[cfg(not(feature = "b1-delegate"))]
+    {
+        let admissible = mix_spec_from_json(profile, mix_json)
+            .map(|spec| {
+                gate_recheck_with_spec(
+                    &GateContext { profile },
+                    &stub_contribution(mix_json),
+                    &spec,
+                )
+            })
+            .unwrap_or(false);
 
-    let mi_bits_est = estimate_mi_bits_rational(mix_json, profile);
+        let mi_bits_est = estimate_mi_bits_rational(mix_json, profile);
 
-    GateSummary {
-        admissible,
-        verdict: if admissible {
-            GateVerdict::Pass
-        } else {
-            GateVerdict::Reject
-        },
-        catalog_ids: vec!["umst.gate.cd_transition".into()],
-        safety_margin: None,
-        mi_bits_est,
+        GateSummary {
+            admissible,
+            verdict: if admissible {
+                GateVerdict::Pass
+            } else {
+                GateVerdict::Reject
+            },
+            catalog_ids: vec!["umst.gate.cd_transition".into()],
+            safety_margin: None,
+            mi_bits_est,
+        }
     }
 }
 

@@ -51,8 +51,10 @@ formal-witness = ["umst-manifold/formal-witness"]
 virtual-proxies = ["solver-research", "umst-manifold/rheology-bingham"]
 # Track A/B optimisation loop: manifest CD + virtual proxies + local manifold patch.
 proxy-loop = ["manifest-bridge", "virtual-proxies"]
+# S2 B1 composed delegate — routes production api_consumer + gate through gate_route_composed.
+b1-delegate = ["dep:umst-cartridge-concrete", "dep:umst-cartridge-continuum"]
 # Physical Reasoning Layer: gate-validated research memory + MCP contribute/query (default off).
-agent-layer = ["manifest-bridge", "dep:rusqlite", "dep:uuid", "dep:thiserror", "dep:sha2", "dep:serde_json", "dep:serde_yaml"]
+agent-layer = ["manifest-bridge", "b1-delegate", "dep:rusqlite", "dep:uuid", "dep:thiserror", "dep:sha2", "dep:serde_json", "dep:serde_yaml"]
 # UCRS Tier-2 observation stamps on memory ingest (git-pinned `umst-ucrs`; local `[patch]` optional).
 ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
 
@@ -60,6 +62,8 @@ ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
 burn-ndarray = "=0.13.2"
 umst-cartridge-api = { workspace = true }
+umst-cartridge-concrete = { workspace = true, optional = true }
+umst-cartridge-continuum = { workspace = true, optional = true }
 umst-manifold = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"

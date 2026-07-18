@@ -30,6 +30,16 @@ fn parity_mix_row(profile: &Profile) -> MixRow {
 }
 
 #[test]
+fn delegate_wire_path_uses_gate_route_composed() {
+    let profile = default_profile();
+    let cartridge = ConcreteApiCartridge::with_profile(profile.clone());
+    let row = parity_mix_row(&profile);
+    let outcome = cartridge.gate_route_via_compose(&row, 0.0);
+    assert!(outcome.route.admissible, "G1 parity mix must PASS via composed delegate");
+    assert!(outcome.constitutive.psi_closure_holds(1e-3));
+}
+
+#[test]
 fn concrete_implements_umst_cartridge_contract() {
     let cartridge = ConcreteApiCartridge::with_profile(default_profile());
     assert_eq!(cartridge.id().as_str(), CONCRETE_CARTRIDGE_ID);

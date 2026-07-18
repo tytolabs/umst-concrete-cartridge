@@ -6,6 +6,8 @@
 #![allow(clippy::doc_lazy_continuation)]
 
 pub mod api_consumer;
+#[cfg(feature = "b1-delegate")]
+pub mod api_consumer_compose;
 pub mod calibration;
 pub mod calibration_fit;
 pub mod calibration_metrics;

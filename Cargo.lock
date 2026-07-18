@@ -4189,6 +4189,22 @@ name = "umst-cartridge-api"
 version = "0.1.0"
 
 [[package]]
+name = "umst-cartridge-concrete"
+version = "0.1.0"
+dependencies = [
+ "umst-cartridge-continuum",
+ "umst-gate",
+]
+
+[[package]]
+name = "umst-cartridge-continuum"
+version = "0.1.0"
+dependencies = [
+ "umst-cartridge-api",
+ "umst-gate",
+]
+
+[[package]]
 name = "umst-cli"
 version = "0.2.1"
 dependencies = [
@@ -4233,6 +4249,8 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "umst-cartridge-api",
+ "umst-cartridge-concrete",
+ "umst-cartridge-continuum",
  "umst-manifold",
  "umst-ucrs",
  "uuid",
