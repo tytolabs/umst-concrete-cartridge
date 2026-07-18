@@ -78,6 +78,10 @@ name = "cli_public_contract"
 path = "tests/public_contract.rs"
 
 [[test]]
+name = "cli_ops_host"
+path = "tests/ops_host.rs"
+
+[[test]]
 name = "calibration_migration_anchor"
 path = "tests/calibration/migration_anchor.rs"
 

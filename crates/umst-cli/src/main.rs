@@ -12,6 +12,7 @@ use std::process::ExitCode;
 use umst_cli::{
     audit,
     cli::{self, mix_spec_from_json_value, MixSpec, PredictionWireVersion},
+    ops_host::{self, ScratchTargetMode},
 };
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::facade::schema_audit_v1_json;
@@ -122,6 +123,34 @@ enum Command {
     Memory {
         #[command(subcommand)]
         cmd: MemoryCmd,
+    },
+    /// Fleet / parity IO helpers (Darwin scratch + digest witness).
+    #[command(subcommand)]
+    Ops(OpsCmd),
+}
+
+#[derive(Subcommand)]
+enum OpsCmd {
+    /// Print `gate_parity_v0.json` SHA256 witness (locked pin `149081fa…`).
+    ParityDigest {
+        #[arg(long, value_name = "DIR")]
+        workspace: Option<PathBuf>,
+        #[arg(long)]
+        json: bool,
+    },
+    /// Resolve Darwin fleet `CARGO_TARGET_DIR` for a compile card id.
+    ScratchTarget {
+        card: String,
+        #[arg(long, value_name = "DIR")]
+        workspace: Option<PathBuf>,
+        /// Emit `export VAR=…` lines for `eval`.
+        #[arg(long, conflicts_with = "print_env")]
+        export: bool,
+        /// Emit `VAR=value` lines (picker `--print-env` shape).
+        #[arg(long, conflicts_with = "export")]
+        print_env: bool,
+        #[arg(long)]
+        json: bool,
     },
 }
 
@@ -510,6 +539,7 @@ fn main() -> ExitCode {
                     .map_err(|e| e.to_string())
             }
         },
+        Command::Ops(cmd) => handle_ops(cmd).map_err(|e| e.to_string()),
     };
 
     match result {
@@ -517,6 +547,44 @@ fn main() -> ExitCode {
         Err(e) => {
             eprintln!("{e}");
             ExitCode::from(1)
+        }
+    }
+}
+
+fn handle_ops(cmd: &OpsCmd) -> Result<(), ops_host::OpsHostError> {
+    match cmd {
+        OpsCmd::ParityDigest { workspace, json } => {
+            let report = ops_host::parity_digest_report(workspace.as_deref())?;
+            if *json {
+                println!("{}", ops_host::parity_digest_json(&report)?);
+            } else {
+                println!("{}", ops_host::format_parity_digest_line(&report));
+                println!("fixture: {}", report.fixture_path);
+                println!("sha256: {}", report.sha256);
+            }
+            Ok(())
+        }
+        OpsCmd::ScratchTarget {
+            card,
+            workspace,
+            export,
+            print_env,
+            json,
+        } => {
+            let mode = if *export {
+                ScratchTargetMode::Export
+            } else if *print_env {
+                ScratchTargetMode::PrintEnv
+            } else {
+                ScratchTargetMode::Path
+            };
+            let report = ops_host::scratch_target_resolve(workspace.as_deref(), card, mode)?;
+            if *json {
+                println!("{}", ops_host::scratch_target_json(&report)?);
+            } else {
+                println!("{}", ops_host::format_scratch_target_output(&report, mode));
+            }
+            Ok(())
         }
     }
 }

@@ -6,6 +6,7 @@
 pub mod audit;
 pub mod canonical;
 pub mod cli;
+pub mod ops_host;
 
 #[cfg(feature = "agent-layer")]
 pub mod memory_export;
