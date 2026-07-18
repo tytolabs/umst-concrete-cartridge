@@ -159,7 +159,9 @@ fn core_axiom_witnesses_accept_hydration_transition() {
     aged.age_days = (aged.age_days + 7.0).min(365.0);
     let (_, after_vals) = cartridge
         .scalar_state_from_mix_row(&aged)
-        .expect("after");
+        .expect(
+            "scalar_state_from_mix_row after hydration transition StateSnapshot (FP §6 Track M1 api_consumer parity)",
+        );
     let after = StateSnapshot {
         density: after_vals[1],
         free_energy: after_vals[0],
