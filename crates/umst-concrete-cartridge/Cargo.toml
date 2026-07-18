@@ -52,9 +52,10 @@ virtual-proxies = ["solver-research", "umst-manifold/rheology-bingham"]
 # Track A/B optimisation loop: manifest CD + virtual proxies + local manifold patch.
 proxy-loop = ["manifest-bridge", "virtual-proxies"]
 # S2 B1 composed delegate — routes production api_consumer + gate through gate_route_composed.
-b1-delegate = ["dep:umst-cartridge-concrete", "dep:umst-cartridge-continuum"]
+# S5: consumer path deps are always linked; feature gates routing only.
+b1-delegate = []
 # Physical Reasoning Layer: gate-validated research memory + MCP contribute/query (default off).
-agent-layer = ["manifest-bridge", "b1-delegate", "dep:rusqlite", "dep:uuid", "dep:thiserror", "dep:sha2", "dep:serde_json", "dep:serde_yaml"]
+agent-layer = ["manifest-bridge", "b1-delegate", "umst-cartridge-concrete/agent-layer", "dep:rusqlite", "dep:uuid", "dep:thiserror", "dep:sha2", "dep:serde_json", "dep:serde_yaml"]
 # UCRS Tier-2 observation stamps on memory ingest (git-pinned `umst-ucrs`; local `[patch]` optional).
 ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
 
@@ -62,9 +63,11 @@ ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
 burn-ndarray = "=0.13.2"
 umst-cartridge-api = { workspace = true }
-umst-cartridge-concrete = { workspace = true, optional = true }
-umst-cartridge-continuum = { workspace = true, optional = true }
+umst-cartridge-concrete = { workspace = true }
+umst-cartridge-continuum = { workspace = true }
+umst-cartridge-solid-inelastic = { workspace = true }
 umst-manifold = { workspace = true }
+umst-chem = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 time = "0.3.47"
@@ -92,6 +95,15 @@ name = "umst_concrete_cartridge"
 path = "src/lib.rs"
 
 [[test]]
+name = "s6_psi_mix_scalars_witness"
+path = "tests/s6_psi_mix_scalars_witness.rs"
+
+[[test]]
+name = "concrete_bridge_witness"
+path = "tests/concrete_bridge_witness.rs"
+required-features = ["agent-layer"]
+
+[[test]]
 name = "api_consumer_parity"
 path = "tests/api_consumer_parity.rs"
 required-features = ["agent-layer"]
@@ -110,6 +122,11 @@ required-features = ["tier2c-handshake", "manifold-gate", "solver-experimental"]
 name = "manifest_bridge_catalog_grounding"
 path = "tests/manifest_bridge_catalog_grounding.rs"
 required-features = ["manifest-bridge"]
+
+[[test]]
+name = "chem_adapter_parity"
+path = "tests/chem_adapter_parity.rs"
+required-features = ["manifold-gate", "tier2c-handshake"]
 
 [[test]]
 name = "formal_anchors"

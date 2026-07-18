@@ -6,8 +6,14 @@
 #![allow(clippy::doc_lazy_continuation)]
 
 pub mod api_consumer;
-#[cfg(feature = "b1-delegate")]
+/// S2 B1 composed delegate — always linked post-S5 path-dep bridge.
 pub mod api_consumer_compose;
+/// S5 path-dep bridge — re-export seam into `umst-cartridge-concrete`.
+pub mod concrete_bridge;
+pub use concrete_bridge::{
+    gate_route_composed, gate_route_composed_with_history, ComposedGateOutcome, MixScalars,
+};
+pub mod chem_adapter;
 pub mod calibration;
 pub mod calibration_fit;
 pub mod calibration_metrics;

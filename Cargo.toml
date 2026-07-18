@@ -28,11 +28,16 @@ repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 # Single CI pin for all workspace crates (bump after umst-manifold releases).
 [workspace.dependencies]
 umst-cartridge-api = { path = "../umst-cartridge-api" }
+# S5 path-dep bridge — full B1+B2+B3 compose stack reachable from monolith workspace.
 umst-cartridge-concrete = { path = "../umst-cartridges/crates/umst-cartridge-concrete" }
 umst-cartridge-continuum = { path = "../umst-cartridges/crates/umst-cartridge-continuum" }
+umst-cartridge-solid-inelastic = { path = "../umst-cartridges/crates/umst-cartridge-solid-inelastic" }
+umst-cartridge-poromechanics = { path = "../umst-cartridges/crates/umst-cartridge-poromechanics" }
+umst-gate = { path = "../umst-foundations/crates/umst-gate" }
 umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "575d9508f872e6c5ae3d5fc9fe3bfcb1f44d5ab1" }
 umst-runtime-arena = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "575d9508f872e6c5ae3d5fc9fe3bfcb1f44d5ab1", package = "umst-runtime-arena" }
 umst-ucrs = { git = "https://github.com/tytolabs/umst-ucrs.git", rev = "a1202338638241749daa226855f682fd73f8f872" }
+umst-chem = { path = "../umst-chem" }
 
 # Local dev: copy `.cargo/config.toml.example` → `.cargo/config.toml` to patch sibling umst-manifold.
 

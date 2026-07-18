@@ -3,6 +3,10 @@
 
 use burn::tensor::{backend::Backend, Tensor};
 
+use crate::chem_adapter::{
+    nano_cartridge_calibration, nano_deferred_kinetics_pins,
+};
+
 /// Pure tensor implementation of the Nanomaterial Engine.
 /// Computes nucleation seeding (C-S-H), pozzolanic acceleration, and pore refinement.
 /// formal_anchor: empirical://datasets/csh-nano-calibration-grid.v1.csv
@@ -32,23 +36,25 @@ impl<B: Backend> NanoEngine<B> {
         nano_ssa: Tensor<B, 4>,
         nano_reactivity: Tensor<B, 4>,
     ) -> (Tensor<B, 4>, Tensor<B, 4>, Tensor<B, 4>, Tensor<B, 4>) {
-        let ssa_ref = 200.0_f32;
+        let pins = nano_deferred_kinetics_pins();
+        let cal = nano_cartridge_calibration();
+        let ssa_ref = pins.ssa_ref_m2_per_g;
         let ssa_ratio = nano_ssa.div_scalar(ssa_ref);
 
         // 1. Pozzolanic Activity Factor (Nazari & Riahi, 2011)
-        let alpha = 0.5_f32;
+        let alpha = pins.pozzolanic_alpha;
         let ssa_ln = ssa_ratio.clone().log().clamp_min(0.0_f32);
         let pozzolanic_factor = ssa_ln.mul_scalar(alpha).exp().clamp(1.0_f32, 5.0_f32);
 
         // 2. Nucleation Seeding: Set Time Acceleration (Thomas et al., 2009)
         // dt = -beta * ln(1 + dosage * ssa_ratio)
-        let beta = 30.0_f32; // 30 mins per decade
+        let beta = pins.nucleation_beta_min_per_decade;
         let dosage_ssa = nano_dosage.clone().mul(ssa_ratio.clone());
         let set_time_change = dosage_ssa.add_scalar(1.0_f32).log().mul_scalar(-beta);
 
         // 3. Strength Enhancement (Sanchez & Sobolev, 2010)
         // Parabolic efficiency curve: peaks at ~2.5% dosage, drops due to agglomeration
-        let optimal_dosage = 2.5_f32;
+        let optimal_dosage = cal.optimal_dosage_pct;
         let dosage_diff = nano_dosage
             .clone()
             .sub_scalar(optimal_dosage)
@@ -59,7 +65,7 @@ impl<B: Backend> NanoEngine<B> {
             .add_scalar(1.0_f32)
             .clamp_min(0.1_f32);
 
-        let gamma = 0.15_f32;
+        let gamma = cal.strength_gamma;
         let strength_boost = dosage_efficiency
             .clone()
             .mul(nano_reactivity)
@@ -68,7 +74,7 @@ impl<B: Backend> NanoEngine<B> {
         let strength_factor = strength_boost.add_scalar(1.0_f32).clamp(1.0_f32, 1.5_f32);
 
         // 4. Pore Refinement (Mondal et al., 2010)
-        let delta = 5.0_f32;
+        let delta = cal.pore_refinement_delta;
         let pore_reduction = nano_dosage
             .clone()
             .div_scalar(100.0_f32)

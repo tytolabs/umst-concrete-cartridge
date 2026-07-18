@@ -4192,7 +4192,11 @@ version = "0.1.0"
 name = "umst-cartridge-concrete"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
  "umst-cartridge-continuum",
+ "umst-cartridge-poromechanics",
+ "umst-cartridge-solid-inelastic",
+ "umst-chem",
  "umst-gate",
 ]
 
@@ -4201,8 +4205,25 @@ name = "umst-cartridge-continuum"
 version = "0.1.0"
 dependencies = [
  "umst-cartridge-api",
- "umst-gate",
 ]
+
+[[package]]
+name = "umst-cartridge-poromechanics"
+version = "0.1.0"
+dependencies = [
+ "umst-cartridge-api",
+]
+
+[[package]]
+name = "umst-cartridge-solid-inelastic"
+version = "0.1.0"
+dependencies = [
+ "umst-cartridge-api",
+]
+
+[[package]]
+name = "umst-chem"
+version = "0.1.0"
 
 [[package]]
 name = "umst-cli"
@@ -4251,6 +4272,8 @@ dependencies = [
  "umst-cartridge-api",
  "umst-cartridge-concrete",
  "umst-cartridge-continuum",
+ "umst-cartridge-solid-inelastic",
+ "umst-chem",
  "umst-manifold",
  "umst-ucrs",
  "uuid",
