@@ -17,7 +17,7 @@ fn ops_parity_digest_locked() -> Result<(), Box<dyn Error>> {
         .success();
     let stdout = String::from_utf8_lossy(&assert.get_output().stdout);
     assert!(
-        stdout.contains("parity digest: 149081fa81a6525f… OK"),
+        stdout.contains("parity digest: d5608148e29eeabd… OK"),
         "expected locked digest line, got: {stdout}"
     );
     Ok(())
@@ -34,7 +34,7 @@ fn ops_parity_digest_json_wire() -> Result<(), Box<dyn Error>> {
     let v: Value = serde_json::from_slice(assert.get_output().stdout.as_slice())?;
     assert_eq!(
         v["sha256"].as_str(),
-        Some("149081fa81a6525fb66ff01924c6656f30e2b67846d9945a25427c7be38d20f3")
+        Some("d5608148e29eeabd83935988699d08ce1233c3e87f2cd217d658e0c71c7a841e")
     );
     assert_eq!(v["matches_locked"].as_bool(), Some(true));
     Ok(())

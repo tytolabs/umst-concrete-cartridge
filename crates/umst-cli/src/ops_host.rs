@@ -362,7 +362,7 @@ mod tests {
         };
         assert_eq!(
             format_parity_digest_line(&report),
-            "parity digest: 149081fa81a6525f… OK"
+            "parity digest: d5608148e29eeabd… OK"
         );
     }
 

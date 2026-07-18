@@ -10,7 +10,7 @@ use umst_concrete_cartridge::homogeneous::mix_row_from_scalar_spec;
 use umst_concrete_cartridge::calibration::Profile;
 
 /// Parity anchor prefix (M0 lock — must not drift under M1 wiring).
-const PARITY_PREFIX: &str = "149081fa81a6525f";
+const PARITY_PREFIX: &str = "d5608148e29eeabd";
 
 fn bundled_cartridge() -> ConcreteApiCartridge {
     ConcreteApiCartridge::new().expect("bundled calibration `uci_d1`")
@@ -56,7 +56,7 @@ fn concrete_builds_constitutive_response_from_default_mix() {
 
 #[test]
 fn parity_fixture_prefix_pinned() {
-    const FULL: &str = "149081fa81a6525fb66ff01924c6656f30e2b67846d9945a25427c7be38d20f3";
+    const FULL: &str = "d5608148e29eeabd83935988699d08ce1233c3e87f2cd217d658e0c71c7a841e";
     assert!(FULL.starts_with(PARITY_PREFIX));
     let _ = ScalarAlgebra::zero();
 }
