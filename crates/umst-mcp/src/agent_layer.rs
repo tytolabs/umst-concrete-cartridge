@@ -83,6 +83,7 @@ fn with_schema_2020(mut tool: Value, read_only: bool) -> Value {
 }
 
 /// Async contribute job state (in-memory stub for heavy physics path).
+/// Board **TODO-M3-006 OPEN** — post-S7 heavy job queue; see `outputs/.tmp/RESEARCH_TODO_NIGHT_2334.md`.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: MCP job status wire; physics on `gate_check_mix` / `accept`.
