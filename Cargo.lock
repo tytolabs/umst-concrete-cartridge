@@ -4328,6 +4328,7 @@ dependencies = [
  "umst-agent-mcp-core",
  "umst-cli",
  "umst-concrete-cartridge",
+ "umst-manifold",
  "umst-runtime-arena",
  "uuid",
 ]
