@@ -14,10 +14,7 @@
 //!
 //! **Phase 0f lock:** fixture bytes SHA256 pinned below; must match census + manifold phase0f suite.
 
-/// Live `gate_parity_v0.json` digest (Phase 0f / M0 acceptance receipt).
-const GATE_PARITY_V0_SHA256: &str =
-    "149081fa81a6525fb66ff01924c6656f30e2b67846d9945a25427c7be38d20f3";
-
+use umst_manifold::gate::{GATE_PARITY_V0_FIXTURE_REL, GATE_PARITY_V0_SHA256};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::io::{BufRead, BufReader, Write};
@@ -45,6 +42,11 @@ fn sha256_hex(bytes: &[u8]) -> String {
 #[test]
 fn gate_parity_v0_fixture_sha256_locked() {
     let path = fixtures_dir().join("gate_parity_v0.json");
+    assert!(
+        path.ends_with(GATE_PARITY_V0_FIXTURE_REL),
+        "local fixture owner path must suffix-match SSOT rel: {} vs {GATE_PARITY_V0_FIXTURE_REL}",
+        path.display()
+    );
     let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
     assert_eq!(
         sha256_hex(&bytes),

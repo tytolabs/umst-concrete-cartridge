@@ -8,10 +8,7 @@ use umst_concrete_cartridge::api_consumer::{ConcreteApiCartridge, CONCRETE_CARTR
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::homogeneous::{mix_row_from_scalar_spec, MixRow};
 use umst_concrete_cartridge::research::{gate_check_mix, gate_check_mix_result, ObservedAt};
-
-/// Live `gate_parity_v0.json` digest (Phase 0f / M0 / M1 acceptance).
-const GATE_PARITY_V0_SHA256: &str =
-    "149081fa81a6525fb66ff01924c6656f30e2b67846d9945a25427c7be38d20f3";
+use umst_manifold::gate::{GATE_PARITY_V0_SHA256, GATE_PARITY_V0_SHA256_PREFIX};
 
 fn default_profile() -> Profile {
     Profile::load_bundled("default").expect(
@@ -115,8 +112,7 @@ fn gate_admissibility_unchanged_for_parity_mixes() {
 
 #[test]
 fn parity_fixture_sha256_prefix_is_pinned() {
-    const PREFIX: &str = "149081fa81a6525f";
-    assert!(GATE_PARITY_V0_SHA256.starts_with(PREFIX));
+    assert!(GATE_PARITY_V0_SHA256.starts_with(GATE_PARITY_V0_SHA256_PREFIX));
 }
 
 #[test]

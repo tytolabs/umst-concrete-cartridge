@@ -74,3 +74,4 @@ tokio = { version = "1", optional = true, features = ["rt-multi-thread", "macros
 
 [dev-dependencies]
 sha2 = "0.10"
+umst-manifold = { workspace = true }
