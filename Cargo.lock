@@ -4298,6 +4298,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "umst-math"
+version = "0.1.0"
+dependencies = [
+ "ordered-float",
+ "petgraph",
+ "pqcrypto-dilithium",
+ "pqcrypto-kyber",
+ "pqcrypto-sphincsplus",
+ "pqcrypto-traits",
+ "serde_json",
+ "sha2",
+ "sha3",
+ "thiserror 1.0.69",
+ "umst-layout-codegen",
+]
+
+[[package]]
 name = "umst-mcp"
 version = "0.2.1"
 dependencies = [
@@ -4337,7 +4354,6 @@ dependencies = [
 [[package]]
 name = "umst-ucrs"
 version = "1.0.0"
-source = "git+https://github.com/tytolabs/umst-ucrs.git?rev=a1202338638241749daa226855f682fd73f8f872#a1202338638241749daa226855f682fd73f8f872"
 dependencies = [
  "clap",
  "pqcrypto-dilithium",
@@ -4352,6 +4368,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "umst-math",
 ]
 
 [[package]]
@@ -5215,3 +5232,7 @@ checksum = "73ab332fe2f6680068f3582b16a24f90ad7096d5d39b974d1c0aff0125116f02"
 dependencies = [
  "simd-adler32",
 ]
+
+[[patch.unused]]
+name = "umst-runtime"
+version = "0.1.0"
