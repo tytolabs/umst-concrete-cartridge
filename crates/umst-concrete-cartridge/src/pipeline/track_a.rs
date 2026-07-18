@@ -59,19 +59,63 @@ pub struct MixSpecWireOut {
 /// Bool fields (`printability_ok`, `thermodynamic_ok`, `passes`) are **wire-compat
 /// keys** for operator scripts and CLI contract tests — not MP3.6 Rust shim debt
 /// (bool shims closed @ MP3.6; values from [`CastGateVerdict`] leg-pass helpers).
+/// Prefer [`Self::is_printability_ok`], [`Self::is_thermodynamic_ok`], [`Self::is_admissible`].
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Dual-gate audit block for proposed mix JSON sidecar.
+#[allow(missing_docs)] // Legacy bool mirrors — prefer accessor predicates (P26).
 #[derive(Debug, Clone, Serialize)]
 pub struct DualGateWire {
+    /// Legacy v1 wire mirror — prefer [`Self::is_printability_ok`].
+    #[deprecated(
+        since = "0.2.0",
+        note = "use DualGateWire::is_printability_ok() — v1 JSON key unchanged"
+    )]
     pub printability_ok: bool,
+    /// Legacy v1 wire mirror — prefer [`Self::is_thermodynamic_ok`].
+    #[deprecated(
+        since = "0.2.0",
+        note = "use DualGateWire::is_thermodynamic_ok() — v1 JSON key unchanged"
+    )]
     pub thermodynamic_ok: bool,
+    /// Legacy v1 wire mirror — prefer [`Self::is_admissible`].
+    #[deprecated(
+        since = "0.2.0",
+        note = "use DualGateWire::is_admissible() — v1 JSON key `passes` unchanged"
+    )]
     pub passes: bool,
     pub yield_stress_pa: f64,
     pub printability_extrudability: f64,
 }
 
 impl DualGateWire {
+    /// Printability leg pass — mirrors [`CastGateVerdict::printability_leg_pass`].
+    #[must_use]
+    pub fn is_printability_ok(&self) -> bool {
+        #[allow(deprecated)]
+        {
+            self.printability_ok
+        }
+    }
+
+    /// Thermodynamic leg pass — mirrors [`CastGateVerdict::thermodynamic_leg_pass`].
+    #[must_use]
+    pub fn is_thermodynamic_ok(&self) -> bool {
+        #[allow(deprecated)]
+        {
+            self.thermodynamic_ok
+        }
+    }
+
+    /// Composite admissibility — mirrors [`CastGateVerdict::is_admissible`].
+    #[must_use]
+    pub fn is_admissible(&self) -> bool {
+        #[allow(deprecated)]
+        {
+            self.passes
+        }
+    }
+
     /// Build v1 wire-stable bool block from [`CastGateVerdict`] leg-pass helpers.
     ///
     /// Wire-compat only: JSON keys are frozen for `proposed_next_mix.v1`; intentional
@@ -80,6 +124,7 @@ impl DualGateWire {
     /// formal_status: NONE
     /// formal_anchor_rationale: SSOT for dual-gate sidecar bools from enum algebra.
     #[must_use]
+    #[allow(deprecated)]
     pub fn from_verdict(verdict: &CastGateVerdict, summary: &PhysicsPipelineSummary) -> Self {
         Self {
             printability_ok: verdict.printability_leg_pass(),
@@ -446,4 +491,59 @@ pub fn thermodynamic_gate_ok(profile: &Profile, spec: &MixSpec) -> bool {
         ..PredictOptions::default()
     };
     predict_with_options(profile, spec, opts).is_ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pipeline::dual_gate::{CastGateVerdict, PrintabilityReject};
+    use crate::pipeline::ThermoReject;
+    use umst_manifold::gate::verdict::GateRejectReason;
+
+    fn stub_summary(tau_pa: f32, extr: f32) -> PhysicsPipelineSummary {
+        PhysicsPipelineSummary {
+            effective_water_cement_ratio: 0.45,
+            hydration_alpha: 0.1,
+            porosity_capillary: 0.15,
+            strength_jennings_mpa: 20.0,
+            rheology_yield_stress_pa: tau_pa,
+            thermo_adiabatic_rise_proxy_c: 5.0,
+            chloride_diffusivity_m2_s: 1e-12,
+            printability_buildability: 0.5,
+            printability_extrudability: extr,
+            rheology_plastic_viscosity_pa_s: 50.0,
+            itz_thickness_microns: 30.0,
+            fracture_toughness_k_ic_mpa_sqrt_m: 1.0,
+            sustainability_gwp_kg_co2_m3: 300.0,
+            sustainability_cost_usd_per_m3: 100.0,
+            dlvo_potential_kt_minimum: 0.9,
+            shrinkage_microstrain_proxy: 200.0,
+            freeze_thaw_durability_factor: 0.8,
+            creep_compliance_1_over_gpa: 1e-2,
+        }
+    }
+
+    #[test]
+    fn dual_gate_wire_accessors_match_verdict_legs() {
+        let summary = stub_summary(250.0, 0.5);
+        let cases = [
+            CastGateVerdict::Admissible,
+            CastGateVerdict::RejectPrintability(PrintabilityReject::TauBelowBand {
+                tau_pa: 100.0,
+                lo: PRINTABLE_TAU_LO,
+                hi: PRINTABLE_TAU_HI,
+            }),
+            CastGateVerdict::RejectThermodynamic(ThermoReject(GateRejectReason::RegimeEnvelope)),
+            CastGateVerdict::RejectBoth {
+                printability: PrintabilityReject::ExtrudabilityLow { extr: 0.1, min: 0.35 },
+                thermodynamic: ThermoReject(GateRejectReason::MassViolation),
+            },
+        ];
+        for verdict in cases {
+            let wire = DualGateWire::from_verdict(&verdict, &summary);
+            assert_eq!(wire.is_printability_ok(), verdict.printability_leg_pass());
+            assert_eq!(wire.is_thermodynamic_ok(), verdict.thermodynamic_leg_pass());
+            assert_eq!(wire.is_admissible(), verdict.is_admissible());
+        }
+    }
 }
