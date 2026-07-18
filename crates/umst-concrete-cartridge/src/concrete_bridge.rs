@@ -38,10 +38,12 @@ mod witness {
             temperature_k: 293.15,
             fly_ash_pct: 0.0,
             silica_fume_pct: 0.0,
+            superplasticiser_pct: 0.0,
             target_age_hours: 28.0 * 24.0,
             s_intrinsic_mpa: None,
             w_c_max: None,
             total_binder_kg_m3: None,
+            aggregate_volume_fraction: None,
         }
     }
 
