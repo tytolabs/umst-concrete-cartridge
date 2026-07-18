@@ -14,7 +14,9 @@ const GATE_PARITY_V0_SHA256: &str =
     "149081fa81a6525fb66ff01924c6656f30e2b67846d9945a25427c7be38d20f3";
 
 fn default_profile() -> Profile {
-    Profile::load_bundled("default").expect("bundled default profile")
+    Profile::load_bundled("default").expect(
+        "Profile::load_bundled(\"default\") for M1 api_consumer parity harness (FP §6 Track M1 api_consumer parity)",
+    )
 }
 
 fn parity_mix_row(profile: &Profile) -> MixRow {
@@ -45,7 +47,9 @@ fn constitutive_response_is_passive_and_non_negative_dissipation() {
     let row = parity_mix_row(&profile);
     let response = cartridge
         .constitutive_response_from_mix_row(&row, 0.01)
-        .expect("homogeneous row");
+        .expect(
+            "ConcreteApiCartridge::constitutive_response_from_mix_row on parity MixRow (FP §6 Track M1 api_consumer parity)",
+        );
     assert!(response.dissipation >= 0.0);
     assert!((response.power_input - 0.0).abs() < f64::EPSILON);
     assert!(response.free_energy_density < 0.0);
@@ -88,7 +92,9 @@ fn gate_admissibility_unchanged_for_parity_mixes() {
         let row = parity_mix_row(&profile);
         let _ = cartridge
             .constitutive_response_from_mix_row(&row, 0.0)
-            .expect("constitutive lift");
+            .expect(
+                "constitutive_response_from_mix_row admissibility drift guard lift at zero rate (FP §6 Track M1 api_consumer parity)",
+            );
 
         let observed = ObservedAt {
             stamp_tier: "Synthetic".into(),
@@ -120,10 +126,14 @@ fn scalar_algebra_idempotency_on_zero_rates() {
     let row = parity_mix_row(&profile);
     let r0 = cartridge
         .constitutive_response_from_mix_row(&row, 0.0)
-        .expect("r0");
+        .expect(
+            "constitutive_response_from_mix_row idempotency first arm at zero rate (FP §6 Track M1 api_consumer parity)",
+        );
     let r1 = cartridge
         .constitutive_response_from_mix_row(&row, 0.0)
-        .expect("r1");
+        .expect(
+            "constitutive_response_from_mix_row idempotency second arm at zero rate (FP §6 Track M1 api_consumer parity)",
+        );
     assert_eq!(r0, r1);
 }
 
@@ -136,7 +146,9 @@ fn core_axiom_witnesses_accept_hydration_transition() {
     let row = parity_mix_row(&profile);
     let (schema, before_vals) = cartridge
         .scalar_state_from_mix_row(&row)
-        .expect("before");
+        .expect(
+            "scalar_state_from_mix_row before hydration transition StateSnapshot (FP §6 Track M1 api_consumer parity)",
+        );
     let before = StateSnapshot {
         density: before_vals[1],
         free_energy: before_vals[0],
