@@ -24,6 +24,7 @@ fn compose_profile_pins_from(profile: &Profile) -> ComposeProfilePins {
         s_intrinsic_mpa: profile.powers.s_intrinsic,
         w_c_max: profile.regime.w_c_max,
         total_binder_kg_m3: DEFAULT_TOTAL_BINDER_KG_M3,
+        ..ComposeProfilePins::default_bundle()
     }
 }
 
@@ -85,6 +86,8 @@ pub fn mix_row_to_mix_scalars(row: &MixRow) -> MixScalars {
         w_c_max: None,
         total_binder_kg_m3: None,
         aggregate_volume_fraction: None,
+        strength_model: None,
+        jennings_exponent: None,
     }
 }
 
@@ -105,6 +108,8 @@ pub fn mix_json_to_mix_scalars(mix_json: &Value, mix_key: Option<&str>) -> Optio
         w_c_max: None,
         total_binder_kg_m3: None,
         aggregate_volume_fraction: wire.aggregate_volume_fraction,
+        strength_model: None,
+        jennings_exponent: None,
     })
 }
 
