@@ -67,8 +67,8 @@ fn broadcast_scalar_to_nodes<B: Backend<FloatElem = f32>>(
 /// **Scalar convention:** [`SCALAR_TEMPERATURE`], [`SCALAR_DAMAGE`] from [`umst_manifold::core`].
 /// **Strain:** `matrix_features[:, 0, :, :]` is treated as ε `[N, 3, 3]`; if `F_matrices == 0`, strain is zero.
 /// **\(G_c\):** if `scalar_features` includes column [`SCALAR_FRACTURE_ENERGY_GC`], per-node values
-/// [J/m²]; otherwise a uniform scalar from
-/// [`crate::physics::fracture_material::fracture_energy_gc_j_per_m2_from_profile`] (broadcast).
+/// [J/m²]; otherwise a uniform scalar from B2
+/// [`crate::pipeline::b2_orchestrator_delegate::fracture_energy_gc_j_m2_orchestrator`] (broadcast).
 ///
 /// Returns typed fracture inputs: ε `[1,N,3,3]`, damage `[1,N,1]`, \(G_c\) `[1,N,1]`.
 #[cfg(feature = "solver-experimental")]
@@ -102,8 +102,9 @@ fn phase_field_inputs_from_umst<B: Backend<FloatElem = f32>>(
         .slice([0..n_nodes, SCALAR_DAMAGE..SCALAR_DAMAGE + 1])
         .unsqueeze_dim::<3>(0);
 
-    let gc_scalar =
-        crate::physics::fracture_material::fracture_energy_gc_j_per_m2_from_profile(profile);
+    let gc_scalar = crate::pipeline::b2_orchestrator_delegate::fracture_energy_gc_j_m2_orchestrator(
+        profile.powers.s_intrinsic,
+    );
     let gc = if nf > SCALAR_FRACTURE_ENERGY_GC {
         features
             .clone()

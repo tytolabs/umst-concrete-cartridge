@@ -12,8 +12,9 @@
 
 use umst_cartridge_concrete::capillary_porosity_from_chem;
 use umst_cartridge_solid_inelastic::{
-    try_autogenous_shrinkage_microstrain, try_creep_compliance, try_fracture_phase_ledger,
-    AutogenousShrinkageInput, CreepComplianceInput,
+    fracture_energy_gc_j_m2, try_autogenous_shrinkage_microstrain, try_creep_compliance,
+    try_fracture_energy_gc_j_m2, try_fracture_phase_ledger, AutogenousShrinkageInput,
+    CreepComplianceInput,
 };
 
 /// Orchestrator creep stage ambient RH pin — matches legacy `CreepEngine` call site.
@@ -86,6 +87,16 @@ pub fn try_autogenous_shrinkage_orchestrator(mix: OrchestratorMixScalars) -> Opt
     }
 }
 
+/// B2 scalar fracture energy `G_c` [J/m²] from profile `s_intrinsic`.
+///
+/// Strict [`try_fracture_energy_gc_j_m2`] with B2 saturating fallback — no monolith hot path.
+#[must_use]
+pub fn fracture_energy_gc_j_m2_orchestrator(s_intrinsic: f64) -> f32 {
+    let gc = try_fracture_energy_gc_j_m2(s_intrinsic)
+        .unwrap_or_else(|_| fracture_energy_gc_j_m2(s_intrinsic));
+    gc as f32
+}
+
 /// B2 fracture tail given B1-supplied `e_eff` scalar and profile `s_intrinsic`.
 ///
 /// `e_eff_gpa` must be in the same numeric scale as the legacy tensor path (GPa-class).
@@ -148,6 +159,28 @@ mod tests {
         let gc = fracture_energy_gc_j_m2(UCI_D1_S_INTRINSIC_REF);
         let expected = (e_eff * gc).sqrt() as f32;
         assert!((k_ic - expected).abs() / expected.max(1e-6) < 1e-5);
+    }
+
+    #[test]
+    fn gc_orchestrator_matches_monolith_oracle_at_uci_d1() {
+        use crate::calibration::Profile;
+        use crate::physics::fracture_material::fracture_energy_gc_j_per_m2_from_profile;
+
+        let profile = Profile::load_bundled("uci_d1").expect("bundled uci_d1");
+        let bridge = fracture_energy_gc_j_m2_orchestrator(profile.powers.s_intrinsic);
+        let oracle = fracture_energy_gc_j_per_m2_from_profile(&profile);
+        assert!(
+            (bridge - oracle).abs() / oracle.max(1e-6) < 1e-6,
+            "G_c bridge drift: bridge={bridge} oracle={oracle}"
+        );
+    }
+
+    #[test]
+    fn gc_orchestrator_matches_b2_scalar_scaled_profile() {
+        let s = 90.0_f64;
+        let bridge = fracture_energy_gc_j_m2_orchestrator(s);
+        let b2 = fracture_energy_gc_j_m2(s) as f32;
+        assert!((bridge - b2).abs() / b2.max(1e-6) < 1e-6);
     }
 
     #[test]
