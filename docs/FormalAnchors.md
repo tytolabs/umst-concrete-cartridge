@@ -57,7 +57,7 @@ Full inventory: [`docs/PROOF-STATUS.md`](PROOF-STATUS.md) (sorted, regenerated).
 
 - **Adjoint / terminal gradient:** `lean://umst-formal/Lean/Adjoint.lean#adjoint_recovers_gradient` — belongs with **`umst-manifold`** adjoint sensitivities, not TOML serde structs.
 - **DEC / graph Laplacian:** `lean://umst-formal/Lean/DEC.lean#laplacian_row_sum_zero` — target manifold **`physics::laplacian`** once anchor-audited.
-- **Jennings homogeneous branch:** `lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone` — tensor **`physics/hydration.rs`** already cites this lemma; homogeneous Powers dispatch still returns `JenningsNotImplemented` until the Jennings profile path lands.
+- **Jennings homogeneous branch:** `lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone` — tensor **`physics/hydration.rs`** already cites this lemma; homogeneous dispatch still returns `JenningsNotImplemented` until CC-P-JENNINGS (board: `outputs/.tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002). Tensor CM-II `compute_strength_jennings` is a separate micromechanics surface and does not close this item.
 
 ### Empirical modules with highest-leverage Mechanised candidates (v0.2)
 

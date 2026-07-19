@@ -3,6 +3,15 @@
 
 use burn::tensor::{backend::Backend, Tensor};
 
+use crate::chem_adapter::{
+    dlvo_boltzmann_f32, dlvo_collapse_separation_f32, dlvo_debye_prefactor_f32,
+    dlvo_dielectric_water_f32, dlvo_hamaker_f32, dlvo_reference_temperature_f32,
+    dlvo_tensor_collapse_sentinel_kt_f32, dlvo_tensor_ionic_floor_m_f32,
+    dlvo_tensor_mv_to_v_f32, dlvo_tensor_sep_floor_nm_f32, dlvo_vacuum_permittivity_f32,
+    flocculation_barrier_kt_f32, flocculation_multiplier_base_f32,
+    flocculation_multiplier_max_f32, flocculation_yield_stress_slope_f32,
+};
+
 /// Pure tensor implementation of the Colloidal Engine.
 /// Computes DLVO (Derjaguin, Landau, Verwey, Overbeek) theory
 /// to determine particle flocculation, dispersion, and structural stability.
@@ -35,13 +44,13 @@ impl<B: Backend> ColloidalEngine<B> {
         zeta_potential_mv: Tensor<B, 4>,
         ionic_strength_m: Tensor<B, 4>,
     ) -> Tensor<B, 4> {
-        let hamaker = 2.0e-20_f32; // J (Cement-Water-Cement approx)
-        let epsilon = 78.5_f32 * 8.854e-12_f32; // Dielectric of water
-        let k_b = 1.38e-23_f32;
-        let temp = 298.0_f32; // K
-        let kt_joules = k_b * temp;
+        let hamaker = dlvo_hamaker_f32();
+        let epsilon = dlvo_dielectric_water_f32() * dlvo_vacuum_permittivity_f32();
+        let kt_joules = dlvo_boltzmann_f32() * dlvo_reference_temperature_f32();
 
-        let safe_separation = separation_nm.clone().clamp_min(0.1_f32);
+        let safe_separation = separation_nm
+            .clone()
+            .clamp_min(dlvo_tensor_sep_floor_nm_f32());
         let sep_m = safe_separation.clone().mul_scalar(1e-9_f32);
 
         // 1. Van der Waals Attraction (simplified sphere-plate or close range flat plates)
@@ -50,13 +59,13 @@ impl<B: Backend> ColloidalEngine<B> {
 
         // 2. Electrostatic Repulsion (Double Layer)
         // Debye length: kappa^-1 (nm) approx 0.304 / sqrt(I)
-        let safe_ionic = ionic_strength_m.clamp_min(0.001_f32);
+        let safe_ionic = ionic_strength_m.clamp_min(dlvo_tensor_ionic_floor_m_f32());
         let debye_len_nm = safe_ionic
             .sqrt()
             .powf_scalar(-1.0_f32)
-            .mul_scalar(0.304_f32);
+            .mul_scalar(dlvo_debye_prefactor_f32());
 
-        let zeta_v = zeta_potential_mv.div_scalar(1000.0_f32);
+        let zeta_v = zeta_potential_mv.div_scalar(dlvo_tensor_mv_to_v_f32());
         let zeta_sq = zeta_v.clone().mul(zeta_v);
 
         // Decay term: exp(-h / debye_len)
@@ -71,10 +80,10 @@ impl<B: Backend> ColloidalEngine<B> {
         let total_kt = total_joules.div_scalar(kt_joules);
 
         // Mask out physical anomalies
-        let collapse_mask = separation_nm.lower_elem(0.11_f32);
+        let collapse_mask = separation_nm.lower_elem(dlvo_collapse_separation_f32());
         let mut final_kt = total_kt;
-        // If separation < 0.1, particles are aggregated, immense negative potential
-        final_kt = final_kt.mask_fill(collapse_mask, -999.0_f32);
+        // Collapse sentinel routed through cartridge tensor witness (not umst-chem SSOT).
+        final_kt = final_kt.mask_fill(collapse_mask, dlvo_tensor_collapse_sentinel_kt_f32());
 
         final_kt
     }
@@ -88,12 +97,16 @@ impl<B: Backend> ColloidalEngine<B> {
     /// formal_citation: "Flatt & Bowen (2007) J. Am. Ceram. Soc. 89, 1244 (YODEL)"
     /// formal_envelope: "Headline compressive strength vs dataset_d1.csv: MAE ≤ 35 MPa, RMSE ≤ 45 MPa, R² ≥ −5 ([acceptance] uci_d1.v1.toml); DLVO pathway exercised under tests/realism/adversarial_physics.rs"
     pub fn compute_flocculation_multiplier(dlvo_potential_kt: Tensor<B, 4>) -> Tensor<B, 4> {
-        // If potential < -5 kT, flocculation increases yield stress
-        // multiplier ranges from 1.0 (stable) to ~3.0 (highly flocculated)
-        let negative_barrier = dlvo_potential_kt.clone().clamp_max(-5.0_f32);
+        // Barrier + clamp policy routed through cartridge witnesses (not umst-chem SSOT).
+        let negative_barrier = dlvo_potential_kt
+            .clone()
+            .clamp_max(flocculation_barrier_kt_f32());
         negative_barrier
-            .mul_scalar(-0.1_f32)
-            .add_scalar(1.0_f32)
-            .clamp(1.0_f32, 5.0_f32)
+            .mul_scalar(flocculation_yield_stress_slope_f32())
+            .add_scalar(flocculation_multiplier_base_f32())
+            .clamp(
+                flocculation_multiplier_base_f32(),
+                flocculation_multiplier_max_f32(),
+            )
     }
 }

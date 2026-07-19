@@ -2,25 +2,17 @@
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! Pure `f32`/`f64` cement physics — no tensors, no heap handles.
+//!
+//! All chemistry scalars route through [`umst_concrete_cartridge::chem_adapter`] → `umst-chem` SSOT.
 
+use umst_concrete_cartridge::chem_adapter;
 use umst_concrete_cartridge::material_transition::CementMaterialParams;
 use umst_manifold::gate::ThermodynamicStateSnapshot;
-
-use umst_concrete_cartridge::CEMENT_DEFAULT_S_INTRINSIC_MPA;
 
 /// Avrami–Parrott hydration degree α ∈ [0, 1].
 #[must_use]
 pub fn hydration_degree(age_days: f32, temp_c: f32, scm_ratio: f32) -> f32 {
-    let alpha_max = 0.95 - scm_ratio * 0.15;
-    let k_ref = 0.55f32;
-    let t_ref_k = 293.15f32;
-    let t_k = temp_c + 273.15;
-    let e_over_r = 5000.0f32;
-    let temp_factor = (e_over_r * (1.0 / t_ref_k - 1.0 / t_k)).exp();
-    let scm_factor = 1.0 - scm_ratio * 0.4;
-    let k = k_ref * temp_factor * scm_factor;
-    let alpha = alpha_max * (1.0 - (-k * age_days.sqrt()).exp());
-    alpha.clamp(0.0, 1.0)
+    chem_adapter::hydration_degree_calibrated(age_days, temp_c, scm_ratio, 1.0)
 }
 
 /// Powers gel-space compressive strength (MPa).
@@ -31,17 +23,12 @@ pub fn strength_powers(
     air_content: f32,
     intrinsic_strength: f32,
 ) -> f32 {
-    if wc_ratio > 100.0 {
-        return 0.0;
-    }
-    let vg_volume_gel = 0.68 * degree_hydration;
-    let vc_volume_capillary = wc_ratio - 0.36 * degree_hydration;
-    let space = vg_volume_gel + vc_volume_capillary + air_content;
-    if space <= 0.001 {
-        return 0.0;
-    }
-    let x = vg_volume_gel / space;
-    intrinsic_strength * x.powi(3)
+    chem_adapter::powers_compressive_strength_f32(
+        wc_ratio,
+        degree_hydration,
+        air_content,
+        intrinsic_strength,
+    )
 }
 
 /// Thermodynamic snapshot from mix scalars (Powers closure).
@@ -51,7 +38,7 @@ pub fn thermo_snapshot_from_mix(w_c: f64, alpha: f64, temp: f64) -> Thermodynami
         w_c,
         alpha,
         temp,
-        CEMENT_DEFAULT_S_INTRINSIC_MPA,
+        chem_adapter::cartridge_default_intrinsic_strength_mpa(),
         &CementMaterialParams,
     )
 }
@@ -75,7 +62,7 @@ pub fn c_state_from_mix(w_c: f64, alpha: f64, temp: f64) -> CThermodynamicState 
         free_energy: snap.free_energy,
         hydration_degree: snap.reaction_extent,
         strength: snap.strength,
-        max_strength: CEMENT_DEFAULT_S_INTRINSIC_MPA,
+        max_strength: chem_adapter::cartridge_default_intrinsic_strength_mpa(),
     }
 }
 

@@ -7,6 +7,9 @@
 //! documented in [`docs/Constitutive-Equations.md`](../../docs/Constitutive-Equations.md).
 //! Calibrated rate parameters are not duplicated here; callers pass multipliers from
 //! [`crate::calibration::Profile`].
+//!
+//! T2-S6 dup-ψ inventory — card `g_spawn_i_s6_form_2054`. Under `b1-delegate`, thin shims
+//! re-export [`crate::chem_adapter`] directly (cfg-gated bypass).
 
 #![allow(clippy::excessive_precision)]
 
@@ -16,10 +19,16 @@
 /// formal_form: "α_inf(w/c) = 1.031·w/c / (0.194 + w/c)"
 ///
 /// Asymptotic ultimate degree of hydration α∞(w/c) for OPC-dominated pastes (Mills 1966 closure used in routing).
+/// T2-S6 dup-ψ allowlist [PARTIAL] `ultimate_doh_wc` — cfg-gated thin shim @ `g_spawn_i_s6_form_2054`
+/// consumer SSOT: `umst-chem::ultimate_degree_of_hydration` via `chem_adapter`
+#[cfg(not(feature = "b1-delegate"))]
 #[must_use]
 pub fn ultimate_doh_wc(w_c: f32) -> f32 {
-    1.031 * w_c / (0.194 + w_c)
+    crate::chem_adapter::ultimate_degree_of_hydration_f32(w_c)
 }
+
+#[cfg(feature = "b1-delegate")]
+pub use crate::chem_adapter::ultimate_degree_of_hydration_f32 as ultimate_doh_wc;
 
 /// formal_anchor: empirical://datasets/hydration-kinetics-calibration-grid.v1.csv
 /// formal_status: Empirical
@@ -28,7 +37,10 @@ pub fn ultimate_doh_wc(w_c: f32) -> f32 {
 /// formal_envelope: "tests/hydration.rs::powers_doh_envelope"
 ///
 /// Calibrated hydration degree α(t) with Arrhenius temperature factor and SCM slowdown.
+/// T2-S6 dup-ψ allowlist [PARTIAL] `hydration_degree_calibrated` — defer until T3 chem adapter
+/// cfg-gated thin shim @ `g_spawn_i_s6_form_2054` · consumer: `b3_chem_inject::hydration_alpha_from_chem`
 /// `k_ref_multiplier` folds dataset-specific `k_ref` scaling from the active profile.
+#[cfg(not(feature = "b1-delegate"))]
 #[must_use]
 pub fn hydration_degree_calibrated(
     age_days: f32,
@@ -36,14 +48,8 @@ pub fn hydration_degree_calibrated(
     scm_ratio: f32,
     k_ref_multiplier: f32,
 ) -> f32 {
-    let alpha_max = 0.95 - scm_ratio * 0.15;
-    let k_ref = 0.55 * k_ref_multiplier;
-    let t_ref_k = 293.15_f32;
-    let t_k = temp_c + 273.15;
-    let e_over_r = 5000.0;
-    let temp_factor = (e_over_r * (1.0 / t_ref_k - 1.0 / t_k)).exp();
-    let scm_factor = 1.0 - scm_ratio * 0.4;
-    let k = k_ref * temp_factor * scm_factor;
-    let alpha = alpha_max * (1.0 - (-k * age_days.sqrt()).exp());
-    alpha.clamp(0.0, 1.0)
+    crate::chem_adapter::hydration_degree_calibrated(age_days, temp_c, scm_ratio, k_ref_multiplier)
 }
+
+#[cfg(feature = "b1-delegate")]
+pub use crate::chem_adapter::hydration_degree_calibrated;

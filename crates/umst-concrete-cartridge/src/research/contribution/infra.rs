@@ -18,7 +18,7 @@ use super::super::gate_explain_ssot::{
     MIX_SPEC_WIRE_INVALID, THERMODYNAMIC_CD_FAIL, THERMODYNAMIC_FAIL,
 };
 use super::super::types::{GateSummary, ObservedAt};
-#[cfg(feature = "manifest-bridge")]
+#[cfg(all(not(feature = "b1-delegate"), feature = "manifest-bridge"))]
 use crate::pipeline::canonical_gate::thermodynamic_admissible;
 
 /// Field-level hint for gate REJECT diagnostics.
@@ -184,21 +184,38 @@ fn collect_gate_explain_codes(
     if admissible {
         return codes;
     }
-    #[cfg(feature = "manifest-bridge")]
-    {
-        if !thermodynamic_admissible(profile, &spec) {
-            codes.push(explain_code_cd_fail());
-        }
-    }
-    #[cfg(not(feature = "manifest-bridge"))]
+    #[cfg(feature = "b1-delegate")]
     {
         let _ = spec;
-        codes.push(explain_code_manifest_bridge_disabled());
-    }
-    if codes.is_empty() {
+        use crate::api_consumer_compose::mix_json_to_mix_scalars_for_profile;
+        use crate::concrete_bridge::regime_hyperbox_admits_w_c_for_max;
+        if let Some(mix) = mix_json_to_mix_scalars_for_profile(profile, mix_json, None) {
+            if !regime_hyperbox_admits_w_c_for_max(mix.effective_w_c(), profile.regime.w_c_max) {
+                codes.push(explain_code_cd_fail());
+                return codes;
+            }
+        }
         codes.push(explain_code_thermodynamic_fail());
+        return codes;
     }
-    codes
+    #[cfg(not(feature = "b1-delegate"))]
+    {
+        #[cfg(feature = "manifest-bridge")]
+        {
+            if !thermodynamic_admissible(profile, &spec) {
+                codes.push(explain_code_cd_fail());
+            }
+        }
+        #[cfg(not(feature = "manifest-bridge"))]
+        {
+            let _ = spec;
+            codes.push(explain_code_manifest_bridge_disabled());
+        }
+        if codes.is_empty() {
+            codes.push(explain_code_thermodynamic_fail());
+        }
+        codes
+    }
 }
 
 fn explain_code_rational_parse_fail() -> String {

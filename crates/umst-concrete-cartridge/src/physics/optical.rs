@@ -20,7 +20,7 @@
 //! When Helmholtz lands, replace the interior field with `solve_helmholtz` energy flux; keep these
 //! functions as fast analytic regression guards.
 
-use crate::physics::clinker_eos::{voigt_bulk_modulus_gpa, ClinkerPhase};
+use crate::chem_adapter;
 
 /// Re-export: manifold **phasor** photonics driver (`[B,N,3]` **E**-field contract). With
 /// `--features solver-experimental`, the `photonics` feature enables the experimental path (still
@@ -181,7 +181,7 @@ pub fn plain_portland_visible_profile() -> Vec<(f32, f32)> {
 }
 
 /// **Strength module bridge:** Voigt bulk modulus (GPa) mixing HD / LD C-S-H literature moduli from
-/// [`ClinkerPhase::Csh14nmTobermorite`] (nanopaste analogue) with Jennings-style LD fraction at `wc`.
+/// cluster D Vinet `K₀` (nanopaste analogue) with Jennings-style LD fraction at `wc`.
 ///
 /// This does **not** replace tensor [`crate::physics::strength::StrengthEngine`]; it exposes EOS-grade
 /// \\(K_0\\) scalars for calibration JSON / future wiring to manifold `VinetEos`.
@@ -191,13 +191,7 @@ pub fn plain_portland_visible_profile() -> Vec<(f32, f32)> {
 /// formal_form: "K = f_ld K_ld + (1-f_ld) K_hd with f_ld(w/c) from Jennings linear fit"
 #[must_use]
 pub fn paste_bulk_modulus_voigt_from_wc_gpa(wc_ratio: f32) -> f32 {
-    let wc = wc_ratio.clamp(0.2, 0.8);
-    let ld_fraction = (3.017 * wc - 0.347).clamp(0.0, 1.0);
-    let k_csh = ClinkerPhase::Csh14nmTobermorite.bulk_modulus_ambient_gpa();
-    // Map LD / HD to two literature anchors: LD softer, HD stiffer (Ulm & Constantinides nanoindent).
-    let k_ld = k_csh * 0.31_f32;
-    let k_hd = k_csh * 0.42_f32;
-    voigt_bulk_modulus_gpa(ld_fraction, k_ld, k_hd)
+    chem_adapter::paste_bulk_modulus_voigt_from_wc_gpa(wc_ratio)
 }
 
 #[cfg(test)]
@@ -242,5 +236,68 @@ mod tests {
     fn paste_bulk_modulus_finite() {
         let k = paste_bulk_modulus_voigt_from_wc_gpa(0.4);
         assert!(k > 5.0 && k < 40.0, "k={k}");
+    }
+
+    /// Pins cluster E LD/HD bulk-modulus scales on the optical Voigt bridge (inventory E-03/E-04).
+    /// If cluster D `K₀` or cluster E gel scales drift, this catches regression on the
+    /// `optical.rs` historical closure site (`k_ld = k_csh × 0.31`, `k_hd = k_csh × 0.42`).
+    #[test]
+    fn optical_module_uses_chem_adapter_csh_bulk_scales() {
+        use crate::chem_adapter::{
+            clinker_bulk_modulus_ambient_gpa_f32, csh_hd_scale_of_bulk_f32,
+            csh_ld_scale_of_bulk_f32, csh_ld_volume_fraction_f32, voigt_bulk_modulus_gpa_f32,
+            ClinkerPhaseTag,
+        };
+
+        let wc = 0.4_f32;
+        let k_csh = clinker_bulk_modulus_ambient_gpa_f32(ClinkerPhaseTag::Csh14nmTobermorite);
+        let k_ld = k_csh * csh_ld_scale_of_bulk_f32();
+        let k_hd = k_csh * csh_hd_scale_of_bulk_f32();
+        let ld_fraction = csh_ld_volume_fraction_f32(wc);
+        let k = paste_bulk_modulus_voigt_from_wc_gpa(wc);
+        let expected = voigt_bulk_modulus_gpa_f32(ld_fraction, k_ld, k_hd);
+        assert!(
+            (k - expected).abs() < 1e-5_f32,
+            "Voigt closure regressed: k={k} expected={expected}"
+        );
+        assert!(
+            (k_ld / k_csh - csh_ld_scale_of_bulk_f32()).abs() < 1e-6_f32,
+            "LD scale factor regressed"
+        );
+        assert!(
+            (k_hd / k_csh - csh_hd_scale_of_bulk_f32()).abs() < 1e-6_f32,
+            "HD scale factor regressed"
+        );
+        let ld_scale = csh_ld_scale_of_bulk_f32();
+        let hd_scale = csh_hd_scale_of_bulk_f32();
+        assert!(
+            (k_ld - k_csh * ld_scale).abs() < 0.5_f32,
+            "k_ld drift: got {k_ld}, expected ≈{} GPa",
+            k_csh * ld_scale
+        );
+        assert!(
+            (k_hd - k_csh * hd_scale).abs() < 0.5_f32,
+            "k_hd drift: got {k_hd}, expected ≈{} GPa",
+            k_csh * hd_scale
+        );
+        assert!(k_hd > k_ld, "HD must be stiffer than LD; got k_ld={k_ld}, k_hd={k_hd}");
+    }
+
+    /// Pins Jennings LD fraction at the optical bridge wc — inventory E-05 / E-10.
+    #[test]
+    fn optical_ld_fraction_matches_jennings_fit_at_bridge_wc() {
+        use crate::chem_adapter::{
+            csh_ld_frac_intercept_subtrahend_f32, csh_ld_frac_slope_f32,
+            csh_ld_volume_fraction_f32,
+        };
+
+        let wc = 0.4_f32;
+        let ld_fraction = csh_ld_volume_fraction_f32(wc);
+        let expected =
+            (csh_ld_frac_slope_f32() * wc - csh_ld_frac_intercept_subtrahend_f32()).clamp(0.0, 1.0);
+        assert!(
+            (ld_fraction - expected).abs() < 1e-5_f32,
+            "Jennings LD fraction drift: got {ld_fraction}, expected {expected}"
+        );
     }
 }

@@ -6,9 +6,12 @@
 //! No explain codes, no rational parsing, no MCP wire formatting — only
 //! thermodynamic admissibility (blueprint §7 0c). Phase 0d routes through
 //! [`crate::pipeline::canonical_gate`] (manifold `core_gate` ∧ `material_gate`).
+//!
+//! T2-S6 dup-ψ inventory — card `g_spawn_i_s6_gate_2054`. Under `b1-delegate`,
+//! admissibility routes through consumer `gate_route_composed`; legacy
+//! `thermodynamic_admissible` formula cfg-gated off on the delegate path.
 
 use super::adapter::mix_spec_from_json;
-use super::DEFAULT_CATALOG_HASH;
 use crate::calibration::Profile;
 use crate::facade::MixSpec;
 use serde_json::Value;
@@ -18,11 +21,9 @@ use crate::api_consumer_compose::gate_admissible_via_compose;
 
 use super::super::mi::estimate_mi_bits_rational;
 use super::super::reject::{build_gate_reject, GateRejectRow};
-use super::super::types::{
-    Contribution, GateSummary, GateVerdict, ObservedAt, CANON_VERSION, CONTRIBUTION_SCHEMA,
-};
+use super::super::types::{Contribution, GateSummary, GateVerdict, ObservedAt};
 
-#[cfg(feature = "manifest-bridge")]
+#[cfg(all(not(feature = "b1-delegate"), feature = "manifest-bridge"))]
 use crate::pipeline::canonical_gate::thermodynamic_admissible;
 
 /// Gate evaluation context (bundled calibration profile).
@@ -38,49 +39,45 @@ pub struct GateContext<'a> {
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
+///
+/// T2-S6 dup-ψ `gate_check_mix` — cfg-gated @ `g_spawn_i_s6_gate_2054`.
+/// `b1-delegate`: consumer `gate_route_composed` SSOT; legacy `thermodynamic_admissible` cfg-gated off.
 #[must_use]
 pub fn gate_check_mix(profile: &Profile, mix_json: &Value) -> GateSummary {
-    #[cfg(feature = "b1-delegate")]
-    {
-        let admissible = gate_admissible_via_compose(profile, mix_json);
-        let mi_bits_est = estimate_mi_bits_rational(mix_json, profile);
-        return GateSummary {
-            admissible,
-            verdict: if admissible {
-                GateVerdict::Pass
-            } else {
-                GateVerdict::Reject
-            },
-            catalog_ids: vec!["umst.gate.cd_transition".into()],
-            safety_margin: None,
-            mi_bits_est,
-        };
+    let admissible = gate_admissible_for_mix(profile, mix_json);
+    let mi_bits_est = estimate_mi_bits_rational(mix_json, profile);
+    GateSummary {
+        admissible,
+        verdict: if admissible {
+            GateVerdict::Pass
+        } else {
+            GateVerdict::Reject
+        },
+        catalog_ids: vec!["umst.gate.cd_transition".into()],
+        safety_margin: None,
+        mi_bits_est,
     }
-    #[cfg(not(feature = "b1-delegate"))]
+}
+
+/// S6 production path — composed gate delegate (card `g_spawn_i_s6_gate_2054`).
+#[cfg(feature = "b1-delegate")]
+fn gate_admissible_for_mix(profile: &Profile, mix_json: &Value) -> bool {
+    gate_admissible_via_compose(profile, mix_json)
+}
+
+/// Pre-S6 manifest-bridge thermodynamic formula — cfg-gated duplicate retained for non-delegate builds.
+#[cfg(not(feature = "b1-delegate"))]
+fn gate_admissible_for_mix(profile: &Profile, mix_json: &Value) -> bool {
+    #[cfg(feature = "manifest-bridge")]
     {
-        let admissible = mix_spec_from_json(profile, mix_json)
-            .map(|spec| {
-                gate_recheck_with_spec(
-                    &GateContext { profile },
-                    &stub_contribution(mix_json),
-                    &spec,
-                )
-            })
+        return mix_spec_from_json(profile, mix_json)
+            .map(|spec| thermodynamic_admissible(profile, &spec))
             .unwrap_or(false);
-
-        let mi_bits_est = estimate_mi_bits_rational(mix_json, profile);
-
-        GateSummary {
-            admissible,
-            verdict: if admissible {
-                GateVerdict::Pass
-            } else {
-                GateVerdict::Reject
-            },
-            catalog_ids: vec!["umst.gate.cd_transition".into()],
-            safety_margin: None,
-            mi_bits_est,
-        }
+    }
+    #[cfg(not(feature = "manifest-bridge"))]
+    {
+        let _ = (profile, mix_json);
+        false
     }
 }
 
@@ -102,13 +99,22 @@ pub fn gate_recheck(ctx: &GateContext<'_>, contribution: &Contribution) -> bool 
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
+///
+/// T2-S6 dup-ψ `gate_recheck_with_spec` — cfg-gated @ `g_spawn_i_s6_gate_2054`.
+/// `b1-delegate`: routes via `gate_admissible_via_compose`; legacy `thermodynamic_admissible` cfg-gated off.
 #[must_use]
 pub fn gate_recheck_with_spec(
     ctx: &GateContext<'_>,
     contribution: &Contribution,
     spec: &MixSpec,
 ) -> bool {
-    #[cfg(feature = "manifest-bridge")]
+    #[cfg(feature = "b1-delegate")]
+    {
+        let _ = spec;
+        return gate_admissible_via_compose(ctx.profile, &contribution.mix_spec);
+    }
+
+    #[cfg(all(not(feature = "b1-delegate"), feature = "manifest-bridge"))]
     {
         let _ = contribution;
         thermodynamic_admissible(ctx.profile, spec)
@@ -143,34 +149,4 @@ pub fn gate_reject_row_for_mix(
         observed_at,
         Some(vec!["thermodynamic_fail".into()]),
     ))
-}
-
-fn stub_contribution(mix_json: &Value) -> Contribution {
-    Contribution {
-        schema_version: CONTRIBUTION_SCHEMA.to_string(),
-        canon_version: CANON_VERSION.to_string(),
-        mix_spec: mix_json.clone(),
-        process: Value::Object(Default::default()),
-        outcome: Value::Object(Default::default()),
-        gate_summary: GateSummary {
-            admissible: true,
-            verdict: GateVerdict::Pass,
-            catalog_ids: vec!["umst.gate.cd_transition".into()],
-            safety_margin: None,
-            mi_bits_est: None,
-        },
-        catalog_hash: DEFAULT_CATALOG_HASH.to_string(),
-        observed_at: ObservedAt {
-            stamp_tier: "Synthetic".into(),
-            ucrs_seq: Some(0),
-            phase_entropy_bits_q: None,
-            phase_entropy_bits_scale: None,
-            credit_head_bits_q: None,
-            credit_head_bits_scale: None,
-            wall_ms: None,
-        },
-        content_hash: None,
-        scope_token: None,
-        idempotency_key: None,
-    }
 }

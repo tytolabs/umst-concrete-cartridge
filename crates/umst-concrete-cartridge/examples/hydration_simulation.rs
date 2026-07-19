@@ -13,16 +13,14 @@
 //! cargo run --example hydration_simulation --release
 //! ```
 
+use umst_concrete_cartridge::chem_adapter::ultimate_degree_of_hydration_f32;
+
 const W_C: f32 = 0.40;
 const TAU_HOURS: f32 = 10.0;
 const BETA: f32 = 0.85;
 
-fn ultimate_degree_of_hydration(w_c: f32) -> f32 {
-    1.031 * w_c / (0.194 + w_c)
-}
-
 fn doh_at(t_hours: f32, w_c: f32) -> f32 {
-    let alpha_inf = ultimate_degree_of_hydration(w_c);
+    let alpha_inf = ultimate_degree_of_hydration_f32(w_c);
     let exp_arg = (t_hours / TAU_HOURS).powf(BETA);
     alpha_inf * (1.0 - (-exp_arg).exp())
 }
@@ -32,7 +30,7 @@ fn main() {
     println!("===========================================");
     println!("System: OPC paste, w/c = {W_C}, T = 293 K, isothermal");
 
-    let alpha_inf = ultimate_degree_of_hydration(W_C);
+    let alpha_inf = ultimate_degree_of_hydration_f32(W_C);
     println!("Mills ultimate DoH α∞ = {alpha_inf:.4}");
     println!();
 

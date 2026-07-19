@@ -3,8 +3,9 @@
 
 //! M1 — concrete cartridge implements [`umst_cartridge_api::UMSTCartridge`] at scalar parity.
 //!
-//! With `b1-delegate` (S2 production wire), constitutive evaluation routes through
-//! `umst-cartridge-concrete::gate_route_composed` instead of monolith homogeneous closures.
+//! Post-T2-S6 (`g_spawn_i_s6_api_2054`), constitutive + scalar state routing is **unconditional**
+//! through `api_consumer_compose` → `concrete_bridge` → consumer `gate_route_composed`.
+//! T2-DMG slice-2 `*_with_history` delegates are additive only — not cfg-gated.
 
 use std::sync::OnceLock;
 
@@ -17,8 +18,11 @@ use umst_cartridge_api::{
 use crate::calibration::Profile;
 use crate::homogeneous::{self as homog, MixRow};
 
-#[cfg(feature = "b1-delegate")]
-use crate::api_consumer_compose::{gate_route_via_compose, scalar_fields_from_composed};
+use crate::api_consumer_compose::{
+    gate_route_via_compose, gate_route_via_compose_with_history,
+    scalar_fields_from_composed, try_gate_route_via_compose_with_history,
+};
+use umst_cartridge_continuum::ContinuumAtomStateWithHistory;
 
 /// Stable registry id for the cementitious consumer cartridge.
 /// formal_anchor: NONE
@@ -51,7 +55,7 @@ static CD_AXIOM: ClausiusDuhemWitness = ClausiusDuhemWitness {
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
-/// formal_anchor_rationale: M1 consumer implementing semver-locked [`UMSTCartridge`] via B1 composed delegate when `b1-delegate` is enabled.
+/// formal_anchor_rationale: M1 consumer implementing semver-locked [`UMSTCartridge`] via composed delegate (post-S6 unconditional).
 #[derive(Debug, Clone)]
 pub struct ConcreteApiCartridge {
     /// Active calibration profile (matches MCP / CLI `predict` profile).
@@ -83,12 +87,12 @@ impl ConcreteApiCartridge {
         &self,
         row: &MixRow,
     ) -> Result<(StateSchema, Vec<f64>), homog::HomogeneousError> {
-        let fields = scalar_state_fields(&self.profile, row)?;
-        Ok((concrete_state_schema(), fields))
+        let (psi_j_per_m3, density, eta) =
+            scalar_fields_from_composed(&self.profile, row, 0.0);
+        Ok((concrete_state_schema(), vec![psi_j_per_m3, density, eta]))
     }
 
     /// S2 composed delegate seam — routes through `gate_route_composed`.
-    #[cfg(feature = "b1-delegate")]
     #[must_use]
     pub fn gate_route_via_compose(
         &self,
@@ -96,6 +100,36 @@ impl ConcreteApiCartridge {
         alpha_dot: f64,
     ) -> umst_cartridge_concrete::ComposedGateOutcome {
         gate_route_via_compose(&self.profile, row, alpha_dot)
+    }
+
+    /// T2-DMG slice-2 — composed delegate with `DamageHistory` sidecar via `history_prep`.
+    #[must_use]
+    pub fn gate_route_via_compose_with_history(
+        &self,
+        row: &MixRow,
+        alpha_dot: f64,
+        dt: f64,
+    ) -> (
+        umst_cartridge_concrete::ComposedGateOutcome,
+        ContinuumAtomStateWithHistory,
+    ) {
+        gate_route_via_compose_with_history(&self.profile, row, alpha_dot, dt)
+    }
+
+    /// Strict history-threaded delegate — returns evolved sidecar on success.
+    pub fn try_gate_route_via_compose_with_history(
+        &self,
+        row: &MixRow,
+        alpha_dot: f64,
+        dt: f64,
+    ) -> Result<
+        (
+            umst_cartridge_concrete::ComposedGateOutcome,
+            ContinuumAtomStateWithHistory,
+        ),
+        umst_cartridge_continuum::ContinuumPhysicsError,
+    > {
+        try_gate_route_via_compose_with_history(&self.profile, row, alpha_dot, dt)
     }
 
     /// formal_anchor: STRUCTURAL
@@ -107,30 +141,12 @@ impl ConcreteApiCartridge {
         row: &MixRow,
         alpha_dot: f64,
     ) -> Result<ConstitutiveResponse<ScalarAlgebra>, homog::HomogeneousError> {
-        #[cfg(feature = "b1-delegate")]
-        {
-            let outcome = gate_route_via_compose(&self.profile, row, alpha_dot);
-            return Ok(ConstitutiveResponse::passive(
-                outcome.constitutive.psi_total(),
-                outcome.constitutive.dissipation_total(),
-                alpha_dot,
-            ));
-        }
-        #[cfg(not(feature = "b1-delegate"))]
-        {
-            use umst_cartridge_api::constitutive_response;
-            let (schema, values) = self.scalar_state_from_mix_row(row)?;
-            let state = State {
-                values: &values,
-                schema: &schema,
-            };
-            let rates = Rates::<ScalarAlgebra> {
-                internal: alpha_dot,
-                species_source: None,
-                values: None,
-            };
-            Ok(constitutive_response(self, &state, &rates))
-        }
+        let outcome = gate_route_via_compose(&self.profile, row, alpha_dot);
+        Ok(ConstitutiveResponse::passive(
+            outcome.constitutive.psi_total(),
+            outcome.constitutive.dissipation_total(),
+            alpha_dot,
+        ))
     }
 }
 
@@ -198,39 +214,3 @@ fn concrete_state_schema() -> StateSchema {
     }
 }
 
-fn scalar_state_fields(
-    profile: &Profile,
-    row: &MixRow,
-) -> Result<Vec<f64>, homog::HomogeneousError> {
-    #[cfg(feature = "b1-delegate")]
-    {
-        let (psi_j_per_m3, density, eta) = scalar_fields_from_composed(profile, row, 0.0);
-        return Ok(vec![psi_j_per_m3, density, eta]);
-    }
-    #[cfg(not(feature = "b1-delegate"))]
-    {
-        let (w_c_eff, alpha, _temp_c) = homog::mix_hydration_state(profile, row)?;
-        let fc_mpa = homog::powers_compressive_strength_mpa(profile, row, alpha, w_c_eff)?;
-        let psi_j_per_m3 = -f64::from(fc_mpa) * 1e6;
-        let density = concrete_bulk_density_kg_m3(row);
-        let eta = dissipation_modulus_from_profile(profile);
-        Ok(vec![psi_j_per_m3, density, eta])
-    }
-}
-
-#[must_use]
-fn concrete_bulk_density_kg_m3(row: &MixRow) -> f64 {
-    let binder = f64::from(row.cement_kg_m3 + row.slag_kg_m3 + row.fly_ash_kg_m3);
-    let water = f64::from(row.water_kg_m3);
-    let sp = f64::from(row.superplasticizer_kg_m3);
-    binder + water + sp
-}
-
-#[must_use]
-fn dissipation_modulus_from_profile(profile: &Profile) -> f64 {
-    // Cartridge SSOT — mirrors `material_transition::CEMENT_REACTION_ENTHALPY_J_PER_KG` (450 J/kg).
-    const CEMENT_REACTION_ENTHALPY_J_PER_KG: f64 = 450.0;
-    let enthalpy = CEMENT_REACTION_ENTHALPY_J_PER_KG;
-    let s_scale = f64::from(profile.powers.s_intrinsic);
-    (enthalpy * s_scale * 1e6).max(1.0)
-}

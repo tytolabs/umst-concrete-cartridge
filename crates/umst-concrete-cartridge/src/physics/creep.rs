@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
+//! # S6_RETIRE — Tier A.2 Burn tensor path (card `g_spawn_i_creep_s6_2054`)
+//!
+//! B2 scalar SSOT: `umst-cartridge-solid-inelastic::try_creep_compliance` (`g_spawn_i_creep_1947`).
+//! Inventory: `s6_creep_tensor_inventory.rs`. **Delete this module** after orchestrator reroute
+//! (`pipeline/orchestrator.rs` L479) delegates exclusively to B2 scalar.
+
 use burn::tensor::{backend::Backend, Tensor};
 
 use crate::burn_compat::bool_and;

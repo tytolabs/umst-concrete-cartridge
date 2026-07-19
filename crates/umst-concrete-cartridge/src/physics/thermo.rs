@@ -3,6 +3,10 @@
 
 use burn::tensor::{backend::Backend, Tensor};
 
+use crate::chem_adapter::{
+    gas_constant_f32, ADIABATIC_TEMP_RISE_PER_ALPHA, CHEM_AFFINITY_EXPONENT, THERMO_REF_RATE,
+};
+
 /// Pure tensor implementation of the Thermodynamic Engine
 /// Computes hydration heat evolution using the Arrhenius law across a differentiable manifold.
 /// formal_anchor: lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz
@@ -32,7 +36,7 @@ impl<B: Backend> ThermoEngine<B> {
         alpha: Tensor<B, 4>,
         activation_energy: Tensor<B, 4>,
     ) -> (Tensor<B, 4>, Tensor<B, 4>) {
-        let r_gas = 8.314_f32;
+        let r_gas = gas_constant_f32();
         let temp_k = temp_c.add_scalar(273.15_f32);
 
         // Affinity term: (1 - alpha)^1.5
@@ -42,7 +46,7 @@ impl<B: Backend> ThermoEngine<B> {
             .mul_scalar(-1.0)
             .add_scalar(1.0)
             .clamp_min(0.0);
-        let chem_affinity = one_minus_alpha.powf_scalar(1.5);
+        let chem_affinity = one_minus_alpha.powf_scalar(CHEM_AFFINITY_EXPONENT);
 
         // Arrhenius: k = exp(-E / RT)
         let rt = temp_k.mul_scalar(r_gas);
@@ -50,12 +54,12 @@ impl<B: Backend> ThermoEngine<B> {
         let rate_constant = negative_e_over_rt.exp();
 
         // Reference rate at 20C approx
-        let ref_rate = 1e6_f32;
+        let ref_rate = THERMO_REF_RATE;
 
         let heat_rate = rate_constant.mul(chem_affinity).mul_scalar(ref_rate);
 
         // Adiabatic temp rise: Simplistic alpha * 50.0
-        let adiabatic_temp_rise = alpha.mul_scalar(50.0_f32);
+        let adiabatic_temp_rise = alpha.mul_scalar(ADIABATIC_TEMP_RISE_PER_ALPHA);
 
         (heat_rate, adiabatic_temp_rise)
     }

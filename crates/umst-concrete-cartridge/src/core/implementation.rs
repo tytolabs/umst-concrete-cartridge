@@ -15,10 +15,9 @@ use umst_manifold::core::{SCALAR_DAMAGE, SCALAR_INTERNAL_VARIABLE_0, SCALAR_TEMP
 use umst_manifold::core::{SCALAR_FRACTURE_ENERGY_GC, VECTOR_MECHANICAL_DISPLACEMENT};
 
 #[cfg(feature = "solver-experimental")]
-use umst_manifold::physics::solvers::{
-    ChemicalPlan, HydrologicPlan, MechanicalPlan, PhaseFieldFractureSolver, ThermalPlan,
-    ThmcSolver, ThmcState,
-};
+use umst_manifold::core::{DamageField, Field, FractureEnergyField, SmallStrainField};
+#[cfg(feature = "solver-experimental")]
+use umst_manifold::physics::solvers::{PhaseFieldFractureSolver, ThmcSolver, ThmcState};
 
 use crate::calibration::Profile;
 use crate::pipeline::{physical_result_from_report, run_full_physics_pipeline};
@@ -43,8 +42,8 @@ fn topology_nodal_safety_margin<B: Backend<FloatElem = f32>>(
         .clamp(0.0, 1.0);
     let porosity = Tensor::<B, 2>::ones_like(&alpha_bn)
         .mul_scalar(w_c_eff)
-        .sub(alpha_bn.mul_scalar(0.36))
-        .div_scalar(w_c_eff + 0.32)
+        .sub(alpha_bn.mul_scalar(crate::chem_adapter::powers_non_evap_water_coeff_f32()))
+        .div_scalar(w_c_eff + crate::chem_adapter::powers_paste_denominator_offset_f32())
         .clamp(0.0, 1.0);
     mills.add(porosity).mul_scalar(0.5).clamp(0.0, 1.0)
 }
@@ -71,12 +70,16 @@ fn broadcast_scalar_to_nodes<B: Backend<FloatElem = f32>>(
 /// [J/m²]; otherwise a uniform scalar from
 /// [`crate::physics::fracture_material::fracture_energy_gc_j_per_m2_from_profile`] (broadcast).
 ///
-/// Returns `(strain [1,N,3,3], damage [1,N,1], gc [1,N,1])`.
+/// Returns typed fracture inputs: ε `[1,N,3,3]`, damage `[1,N,1]`, \(G_c\) `[1,N,1]`.
 #[cfg(feature = "solver-experimental")]
 fn phase_field_inputs_from_umst<B: Backend<FloatElem = f32>>(
     manifold: &UnifiedMaterialStateTensor<B>,
     profile: &Profile,
-) -> (Tensor<B, 4>, Tensor<B, 3>, Tensor<B, 3>) {
+) -> (
+    SmallStrainField<B>,
+    DamageField<B>,
+    FractureEnergyField<B>,
+) {
     let dev = manifold.scalar_features.device();
     let n_nodes = manifold.scalar_features.dims()[0];
     let n_mat = manifold.matrix_features.dims()[1];
@@ -113,7 +116,11 @@ fn phase_field_inputs_from_umst<B: Backend<FloatElem = f32>>(
         Tensor::<B, 3>::zeros([1, n_nodes, 1], &dev).add_scalar(gc_scalar)
     };
 
-    (strain, damage, gc)
+    (
+        SmallStrainField::from_tensor(strain),
+        Field::new(damage),
+        FractureEnergyField::from_tensor(gc),
+    )
 }
 
 /// Build a minimal [`ThmcState`] aligned with `manifold` node count so graph operators are safe to call.
@@ -124,7 +131,7 @@ fn phase_field_inputs_from_umst<B: Backend<FloatElem = f32>>(
 #[cfg(feature = "solver-experimental")]
 fn thmc_state_from_umst<B: Backend<FloatElem = f32>>(
     manifold: &UnifiedMaterialStateTensor<B>,
-    damage_bn1: Tensor<B, 3>,
+    damage_bn1: DamageField<B>,
 ) -> ThmcState<B> {
     let dev = manifold.scalar_features.device();
     let n = manifold.scalar_features.dims()[0];
@@ -173,16 +180,14 @@ fn thmc_state_from_umst<B: Backend<FloatElem = f32>>(
         Tensor::<B, 3>::zeros([1, n, 3], &dev)
     };
 
-    ThmcState {
-        thermal: ThermalPlan { temperature },
-        hydro: HydrologicPlan { humidity },
-        mechanical: MechanicalPlan { displacement },
-        chemical: ChemicalPlan {
-            reaction_extent: hydration_alpha,
-        },
-        damage: damage_bn1,
-        time: 0.0_f32,
-    }
+    ThmcState::from_tensors(
+        temperature,
+        humidity,
+        displacement,
+        hydration_alpha,
+        damage_bn1.into_tensor(),
+        0.0_f32,
+    )
 }
 
 /// The concrete domain [`IScienceCartridge`] implementation: bulk `MixTensor` → tensor physics → [`PhysicalResult`] summary.
@@ -348,7 +353,9 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
                     length_scale: DEFAULT_PHASE_FIELD_LENGTH_SCALE,
                 };
                 let edges: Tensor<B, 2, Int> = manifold.edges_b1.clone();
-                let damage_pf = fracture.update_damage(strain, damage_bn1, gc_bn1, edges);
+                let damage_pf = fracture
+                    .update_damage(strain, damage_bn1, gc_bn1, edges)
+                    .expect("phase-field damage update must not fail in experimental mode");
 
                 let mut thmc = ThmcSolver {
                     dt: 1.0_f32,
@@ -359,12 +366,21 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
                     ..Default::default()
                 };
                 let state0 = thmc_state_from_umst(manifold, damage_pf);
+                let mut manifold_work = manifold.clone();
                 let state1 = thmc
-                    .step(self, state0, manifold)
+                    .step(self, state0, &mut manifold_work)
                     .expect("THMC step must not fail in experimental mode");
 
-                let alpha_exp = state1.chemical.reaction_extent.clone().squeeze::<2>(2);
-                (state1.damage.squeeze::<2>(2), alpha_exp)
+                let alpha_exp = state1
+                    .chemical
+                    .reaction_extent
+                    .as_tensor()
+                    .clone()
+                    .squeeze::<2>(2);
+                (
+                    state1.damage.as_tensor().clone().squeeze::<2>(2),
+                    alpha_exp,
+                )
             }
             #[cfg(not(feature = "solver-experimental"))]
             {

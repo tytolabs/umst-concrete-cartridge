@@ -4,6 +4,7 @@
 use burn::tensor::{backend::Backend, Tensor};
 
 use crate::burn_compat::bool_and;
+use crate::chem_adapter::critical_wc_f32;
 
 /// Pure tensor implementation of the Shrinkage Engine.
 /// Computes Autogenous and Drying shrinkage strain using fib Model Code 2010 / B4 model approximations.
@@ -38,18 +39,18 @@ impl<B: Backend> ShrinkageEngine<B> {
         cement_content_kg: Tensor<B, 4>,
         scm_ratio: Tensor<B, 4>,
     ) -> Tensor<B, 4> {
-        let critical_wc = 0.42_f32;
+        let critical_wc = critical_wc_f32();
 
         // 1. Ultimate shrinkage as a function of w/c (empirical B4 fit)
         // High shrinkage at low w/c, low shrinkage at high w/c
         let low_wc_mask = wc_ratio.clone().lower_equal_elem(0.30_f32);
         let mid_wc_mask = bool_and(
-            wc_ratio.clone().lower_equal_elem(0.42_f32),
+            wc_ratio.clone().lower_equal_elem(critical_wc),
             wc_ratio.clone().greater_elem(0.30_f32),
         );
         let high_wc_mask = bool_and(
             wc_ratio.clone().lower_equal_elem(0.50_f32),
-            wc_ratio.clone().greater_elem(0.42_f32),
+            wc_ratio.clone().greater_elem(critical_wc),
         );
 
         let mut eps_as_ult = wc_ratio.clone().zeros_like();
@@ -66,7 +67,7 @@ impl<B: Backend> ShrinkageEngine<B> {
         let eps_mid = wc_ratio
             .clone()
             .mul_scalar(-1.0_f32)
-            .add_scalar(0.42_f32)
+            .add_scalar(critical_wc)
             .div_scalar(0.12_f32)
             .mul_scalar(-400.0_f32)
             .sub_scalar(600.0_f32);

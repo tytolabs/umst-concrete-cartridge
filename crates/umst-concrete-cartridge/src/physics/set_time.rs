@@ -3,6 +3,8 @@
 
 use burn::tensor::{backend::Backend, Tensor};
 
+use crate::chem_adapter::{gas_constant_f32, set_time_activation_energy_f32};
+
 /// Pure tensor implementation of the Set Time Engine.
 /// Computes initial and final setting kinetics (Vicant penetration mapping)
 /// dynamically across the spatial manifold based on local temperature and chemistry.
@@ -56,9 +58,9 @@ impl<B: Backend> SetTimeEngine<B> {
             .mul(wc_factor)
             .mul_scalar(180.0_f32);
 
-        // 2. Temperature Effect (Arrhenius)
-        let e_a = 40000.0_f32; // J/mol
-        let r = 8.314_f32;
+        // 2. Temperature Effect (Arrhenius) — E_a from umst-chem SSOT (cluster B / I-02).
+        let e_a = set_time_activation_energy_f32();
+        let r = gas_constant_f32();
         let t_ref = 293.0_f32;
         let t_kelvin = temperature_c.add_scalar(273.15_f32);
 

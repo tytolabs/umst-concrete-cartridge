@@ -3,6 +3,10 @@
 
 use burn::tensor::{backend::Backend, Tensor};
 
+use crate::chem_adapter::{
+    powers_non_evap_water_coeff_f32, powers_paste_denominator_offset_f32,
+};
+
 /// Pure tensor implementation of the Transport Engine.
 /// Models capillary porosity, tortuosity, and chloride diffusivity
 /// across the material manifold.
@@ -29,10 +33,10 @@ impl<B: Backend> TransportEngine<B> {
         wc_ratio: Tensor<B, 4>,
         degree_hydration: Tensor<B, 4>,
     ) -> Tensor<B, 4> {
-        let alpha_036 = degree_hydration.mul_scalar(0.36_f32);
+        let alpha_036 = degree_hydration.mul_scalar(powers_non_evap_water_coeff_f32());
         let numerator = wc_ratio.clone().sub(alpha_036);
 
-        let denominator = wc_ratio.add_scalar(0.32_f32);
+        let denominator = wc_ratio.add_scalar(powers_paste_denominator_offset_f32());
 
         // Denominator is always positive for valid W/C, but clamp for safety
         let safe_den = denominator.clamp_min(0.01_f32);

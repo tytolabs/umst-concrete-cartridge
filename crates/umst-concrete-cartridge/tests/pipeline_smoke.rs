@@ -93,3 +93,26 @@ fn orchestrator_reports_many_stages() {
     assert!(report.summary.hydration_alpha.is_finite());
     assert!(report.summary.strength_jennings_mpa >= 0.0);
 }
+
+#[test]
+fn orchestrator_b2_delegate_summary_scalars_finite_on_bulk_path() {
+    let profile = Profile::load_bundled("uci_d1").expect("uci_d1");
+    let row = MixRow {
+        cement_kg_m3: 350.0,
+        slag_kg_m3: 0.0,
+        fly_ash_kg_m3: 0.0,
+        water_kg_m3: 140.0,
+        superplasticizer_kg_m3: 0.0,
+        age_days: 28.0,
+        temperature_c: 20.0,
+    };
+    let mix = mix_tensor_from_layout::<B>(&fractions_from_mix_row(&row, 0.65), &dev());
+    let report = run_full_physics_pipeline::<B>(&profile, &mix);
+
+    let summary = &report.summary;
+    assert!(summary.creep_compliance_1_over_gpa.is_finite());
+    assert!(summary.creep_compliance_1_over_gpa > 0.0);
+    assert!(summary.shrinkage_microstrain_proxy.is_finite());
+    assert!(summary.fracture_toughness_k_ic_mpa_sqrt_m.is_finite());
+    assert!(summary.fracture_toughness_k_ic_mpa_sqrt_m > 0.0);
+}

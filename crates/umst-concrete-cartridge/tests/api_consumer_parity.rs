@@ -182,3 +182,19 @@ fn core_axiom_witnesses_accept_hydration_transition() {
     assert!(w_mass.satisfied);
     assert!(w_cd.satisfied);
 }
+
+/// T2-DMG slice-2 — production delegate threads history; verdict matches bare path.
+#[test]
+fn delegate_history_threading_matches_bare_verdict_at_g0() {
+    let profile = default_profile();
+    let cartridge = ConcreteApiCartridge::with_profile(profile.clone());
+    let row = parity_mix_row(&profile);
+    let bare = cartridge.gate_route_via_compose(&row, 0.0);
+    let strict = cartridge
+        .try_gate_route_via_compose_with_history(&row, 0.0, 1.0)
+        .expect("strict production delegate history");
+    let saturating = cartridge.gate_route_via_compose_with_history(&row, 0.0, 1.0);
+    assert_eq!(strict, saturating);
+    assert_eq!(bare, strict.0, "history threading must not change gate verdict");
+    assert!(bare.route.admissible);
+}

@@ -7,41 +7,30 @@
 //! GO-LIVE Step 3: package `default = ["agent-layer"]` → default `tools/list` is **13** tools.
 //! Gate `gate_check_mix_result` bytes are unchanged (surface expansion only).
 //!
-//! ## L4 composed wire — PARTIAL (Q+R green; P blocked on digest + six-mix verdict)
+//! ## L4 composed stdio wire — **CLOSED** (post `b1-parity-green` @ `7d0ca7b`)
 //!
-//! **Q path:** `api_consumer` + `gate_check_mix` route through `gate_route_composed` when
-//! `b1-delegate` is enabled. **P blocked:** fixture digest drift + `pass_high_wc_in_regime`
-//! verdict mismatch (composed w/c threshold vs CON monolith) — sibling six-mix lane owns resolution.
+//! Conjuncts **Q ∧ P ∧ R ∧ U** green @ 2026-07-18. Stdio harness (`gate_parity` 7/7) exercises the
+//! composed delegate path through live `umst-mcp` spawn — not L5 adapter witness alone.
 //!
-//! **Close path (serial, post-S2 delegate):**
-//! 1. S2 thin rewire `api_consumer.rs` → `gate_route_composed` (conjunct **Q**).
-//! 2. Rewire `gate_check_mix_result_parity_fixture` + `mcp_gate_check_matches_library_admissible_catalog`
-//!    to the delegate seam (not CON `infra::gate_check_mix_result`).
-//! 3. Hold fixture digest `149081fa…`; re-run 6/6 here (conjunct **P**).
+//! **Digest SSOT:** `d5608148…` (5-row UNLOCK-3). Legacy `149081fa…` departed.
 //!
-//! **Blocked slots until wire:** 2–6 (stdio JSON envelope, `tools/list`, `tools/call` frames).
-//! Slot 1 (digest pin) is witness-only and already green.
+//! Residue: `R-gateway-wrap-native-mcp` · A9 gateway wrap remains **post** L4 close per WAVE3 TOP 3 #3.
 //!
-//! Residue: `R-gateway-wrap-native-mcp` · A9 gateway wrap is **post** L4 close per WAVE3 TOP 3 #3.
-//!
-//! ## Phase 2 @ S0 signed (14:38) — wire still OPEN
-//!
-//! Operator hold file [`S0_PROVISIONAL_AUTHORIZED.md`](../../../../outputs/.tmp/S0_PROVISIONAL_AUTHORIZED.md)
-//! unlocks S0–S1 + S2 **authoring** only. L4 harness IMPL remains **serial after Q**:
+//! ## Serial close (landed)
 //!
 //! ```text
-//! Q  api_consumer production delegate  →  P  this harness rewire  →  R  api_consumer_parity  →  U  tag
+//! Q  api_consumer production delegate  →  P  this harness stdio  →  R  api_consumer_parity  →  U  tag
 //! ```
 //!
 //! Slot inventory (see [`l4_wire_phase2_inventory`] module):
-//! | Slot | Test | Wire @ phase 2 | Blocker |
-//! |------|------|----------------|---------|
-//! | 1 | `gate_parity_v0_fixture_sha256_locked` | witness-only ✅ | — |
-//! | 2 | `gate_check_mix_result_parity_fixture` | ❌ CON monolith | Q |
-//! | 3 | `tools_list_default_thirteen_names` | ❌ spawn; gate bytes CON | Q → P |
-//! | 4 | `tools_list_agent_layer_thirteen_names` | ❌ spawn; gate bytes CON | Q → P |
-//! | 5 | `tools_call_result_frames_parity` | ❌ `umst_gate_check` frame CON | Q → P |
-//! | 6 | `mcp_gate_check_matches_library_admissible_catalog` | ❌ stdio vs CON cold | Q → P |
+//! | Slot | Test | Wire @ post-tag | Status |
+//! |------|------|-----------------|--------|
+//! | 1 | `gate_parity_v0_fixture_sha256_locked` | digest witness | ✅ |
+//! | 2 | `gate_check_mix_result_parity_fixture` | composed cold oracle | ✅ |
+//! | 3 | `tools_list_default_thirteen_names` | stdio spawn | ✅ |
+//! | 4 | `tools_list_agent_layer_thirteen_names` | stdio spawn | ✅ |
+//! | 5 | `tools_call_result_frames_parity` | `umst_gate_check` frame | ✅ |
+//! | 6 | `mcp_gate_check_matches_library_admissible_catalog` | stdio vs cold | ✅ |
 //!
 //! Run:
 //! - default (13-tool list + gate + call frames): `cargo test -p umst-mcp --test gate_parity`
@@ -50,21 +39,23 @@
 //!
 //! **Phase 0f lock:** fixture bytes SHA256 pinned below; must match census + manifold phase0f suite.
 
-/// Phase 2 wire inventory — doc-only stub; no runtime behavior change.
+/// L4 wire inventory — post-tag attestation pin (`WIRE_OPEN=false` after U ceremony).
 ///
-/// SSOT: `outputs/.tmp/research_l4_phase2_s0_1438.md`
+/// SSOT: `outputs/.tmp/research_l4_phase2_s0_1438.md` · close receipt `g_spawn_m3_l4_1542b.md`
 mod l4_wire_phase2_inventory {
     /// Harness slot count (S0 Stage 0f lock).
     pub const SLOT_COUNT: usize = 6;
-    /// L4 composed wire remains OPEN until conjunct P fully green on delegate stdio path.
-    pub const WIRE_OPEN: bool = true;
+    /// L4 composed stdio wire closed @ `b1-parity-green` (`7d0ca7b`).
+    pub const WIRE_OPEN: bool = false;
+    /// Operator tag attestation — flip `WIRE_OPEN` only on honest P∧Q∧R receipt.
+    pub const TAG_ATTESTATION: &str = "b1-parity-green@7d0ca7b";
     /// Binding serial order: delegate before harness rewire before parity before tag.
     pub const SERIAL_ORDER: [&str; 4] = ["Q", "P", "R", "U"];
-    /// Fixture digest pin — immutable pre-wire.
+    /// Fixture digest pin — held through wire close.
     pub const FIXTURE_DIGEST: &str =
         "d5608148e29eeabd83935988699d08ce1233c3e87f2cd217d658e0c71c7a841e";
-    /// Slots 2–6 blocked on composed delegate seam (slot 1 is digest witness only).
-    pub const WIRE_BLOCKED_SLOTS: [usize; 5] = [2, 3, 4, 5, 6];
+    /// No blocked slots after post-tag hardening (was `[2,3,4,5,6]` while wire open).
+    pub const WIRE_BLOCKED_SLOTS: [usize; 0] = [];
 }
 
 use umst_manifold::gate::{GATE_PARITY_V0_FIXTURE_REL, GATE_PARITY_V0_SHA256};
@@ -116,10 +107,10 @@ fn gate_parity_v0_fixture_sha256_locked() {
 
 fn mcp_binary_path() -> PathBuf {
     let profile = option_env!("PROFILE").unwrap_or("debug");
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../target")
-        .join(profile)
-        .join("umst-mcp")
+    let target_base = std::env::var("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target"));
+    target_base.join(profile).join("umst-mcp")
 }
 
 fn read_json_line<R: BufRead>(reader: &mut R) -> Value {
@@ -232,8 +223,7 @@ fn tools_list_base_four_names_without_agent_layer() {
 
 /// Default package features (`default = ["agent-layer"]`): tools/list must be the 13-tool set.
 ///
-/// **L4 slot 3 · conjunct P · wire-blocked @ phase 2:** stdio spawn green on CON path;
-/// composed gate bytes for wire close wait Q → P.
+/// **L4 slot 3 · conjunct P · post-tag closed:** stdio spawn green on composed delegate path.
 #[cfg(feature = "agent-layer")]
 #[test]
 fn tools_list_default_thirteen_names() {
@@ -281,8 +271,7 @@ mod agent_layer_parity {
 
     /// Cold library `gate_check_mix_result` JSON (sorted keys) byte-identical to fixture.
     ///
-    /// **L4 slot 2 · conjunct P · wire-blocked @ phase 2:** routes CON `gate_check_mix_result`;
-    /// rewire target is delegate seam post-Q (`gate_route_composed` / production `api_consumer`).
+    /// **L4 slot 2 · conjunct P · post-tag closed:** cold oracle matches fixture @ digest pin.
     #[test]
     fn gate_check_mix_result_parity_fixture() {
         let root = load_fixture_root();
@@ -309,8 +298,7 @@ mod agent_layer_parity {
 
     /// Agent-layer binary: tools/list name set must be exactly the 13 tools.
     ///
-    /// **L4 slot 4 · conjunct P · wire-blocked @ phase 2:** stdio spawn green on CON path;
-    /// gate byte parity for composed wire waits Q → P.
+    /// **L4 slot 4 · conjunct P · post-tag closed:** stdio spawn on composed delegate path.
     #[test]
     fn tools_list_agent_layer_thirteen_names() {
         let root = load_fixture_root();
@@ -337,8 +325,7 @@ mod agent_layer_parity {
 
     /// MCP `umst_gate_check` envelope matches cold library for `admissible` + `catalog_ids`.
     ///
-    /// **L4 slot 6 · conjunct P · wire-blocked @ phase 2:** cold oracle is CON monolith;
-    /// stdio `tools/call` envelope must match delegate seam after Q lands.
+    /// **L4 slot 6 · conjunct P · post-tag closed:** stdio `tools/call` matches cold oracle.
     #[test]
     fn mcp_gate_check_matches_library_admissible_catalog() {
         let root = load_fixture_root();
@@ -461,8 +448,7 @@ mod agent_layer_parity {
 
     /// N golden `tools/call` `result` frames (ids/timestamps redacted).
     ///
-    /// **L4 slot 5 · conjunct P · wire-blocked @ phase 2:** `umst_gate_check` frame bytes
-    /// sourced from CON path; golden rewrite only after delegate green (`UMST_GATE_PARITY_UPDATE=1`).
+    /// **L4 slot 5 · conjunct P · post-tag closed:** `umst_gate_check` frame bytes locked.
     #[test]
     fn tools_call_result_frames_parity() {
         let root = load_fixture_root();
@@ -506,16 +492,21 @@ mod agent_layer_parity {
             .unwrap_or_else(|e| panic!("write {}: {e}", path.display()));
     }
 
-    /// Doc-only phase-2 inventory pin — asserts serial order constants; no wire close claimed.
+    /// Post-tag L4 inventory pin — asserts wire close constants; no reopen without operator receipt.
     #[test]
     fn l4_wire_phase2_inventory_doc_only() {
         use super::l4_wire_phase2_inventory::{
-            FIXTURE_DIGEST, SERIAL_ORDER, SLOT_COUNT, WIRE_BLOCKED_SLOTS, WIRE_OPEN,
+            FIXTURE_DIGEST, SERIAL_ORDER, SLOT_COUNT, TAG_ATTESTATION, WIRE_BLOCKED_SLOTS,
+            WIRE_OPEN,
         };
         assert_eq!(SLOT_COUNT, 6);
-        assert!(WIRE_OPEN, "phase 2: L4 wire intentionally OPEN until Q delegate");
+        assert!(
+            !WIRE_OPEN,
+            "post-tag: L4 composed stdio wire must stay CLOSED (WIRE_OPEN=false)"
+        );
+        assert_eq!(TAG_ATTESTATION, "b1-parity-green@7d0ca7b");
         assert_eq!(SERIAL_ORDER, ["Q", "P", "R", "U"]);
-        assert_eq!(WIRE_BLOCKED_SLOTS, [2, 3, 4, 5, 6]);
+        assert!(WIRE_BLOCKED_SLOTS.is_empty(), "no blocked slots post-close");
         assert_eq!(FIXTURE_DIGEST, GATE_PARITY_V0_SHA256);
     }
 }

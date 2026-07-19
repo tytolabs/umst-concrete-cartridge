@@ -131,7 +131,7 @@ enum Command {
 
 #[derive(Subcommand)]
 enum OpsCmd {
-    /// Print `gate_parity_v0.json` SHA256 witness (locked pin `149081fa…`).
+    /// Print `gate_parity_v0.json` SHA256 witness (locked pin `d5608148…`).
     ParityDigest {
         #[arg(long, value_name = "DIR")]
         workspace: Option<PathBuf>,

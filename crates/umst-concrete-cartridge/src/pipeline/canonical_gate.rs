@@ -177,6 +177,44 @@ mod tests {
 
     #[test]
     #[cfg(feature = "manifest-bridge")]
+    fn six_mix_draft_t270k_wire_rejects_below_273k() {
+        let err = MixSpec::try_from(crate::facade::MixSpecWire {
+            w_c: 0.45,
+            temperature_k: 270.0,
+            superplasticiser_pct: None,
+            silica_fume_pct: None,
+            fly_ash_pct: None,
+            aggregate_volume_fraction: Some(0.7),
+            target_age_hours: Some(672.0),
+        });
+        assert!(
+            matches!(err, Err(crate::facade::MixSpecError::TemperatureOutOfRange(x)) if (x - 270.0).abs() < f32::EPSILON),
+            "T=270 K must fail MixSpec wire (273 K floor) before gate"
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "manifest-bridge")]
+    fn six_mix_draft_t277k_passes_regime_union() {
+        let profile = default_profile();
+        let spec = MixSpec::try_from(crate::facade::MixSpecWire {
+            w_c: 0.45,
+            temperature_k: 277.0,
+            superplasticiser_pct: None,
+            silica_fume_pct: None,
+            fly_ash_pct: None,
+            aggregate_volume_fraction: Some(0.7),
+            target_age_hours: Some(672.0),
+        })
+        .expect("wire");
+        assert!(
+            thermodynamic_verdict(&profile, &spec).is_ok(),
+            "T=277 K six-mix DRAFT must PASS — specialty profile union covers"
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "manifest-bridge")]
     fn transition_admissible_matches_verdict_path() {
         let profile = default_profile();
         let spec = MixSpec::try_from(crate::facade::MixSpecWire {

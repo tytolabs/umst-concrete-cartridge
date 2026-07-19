@@ -157,7 +157,7 @@ pub struct RegimeBounds {
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Dispatch metadata only; Jennings gel-space monotone strength witness applies once `powers_compressive_strength_mpa` ships a Jennings branch (TODO_FORMAL note on that function).
+/// formal_anchor_rationale: Dispatch metadata only; Jennings gel-space path returns `HomogeneousError::JenningsNotImplemented` until operator boards CC-P-JENNINGS (see `outputs/.tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002).
 pub struct CalibrationModelSection {
     pub kind: ModelKind,
 }
@@ -424,6 +424,117 @@ pub fn any_bundled_profile_covers_scalars(
             })
             .unwrap_or(false)
     })
+}
+
+/// Lowest bundled `temperature_k_min` [K] across [`BUNDLED_PROFILE_IDS`].
+#[must_use]
+pub fn bundled_union_temperature_floor_k() -> f32 {
+    BUNDLED_PROFILE_IDS
+        .iter()
+        .filter_map(|id| Profile::load_bundled(id).ok())
+        .map(|p| p.regime.temperature_k_min as f32)
+        .fold(f32::INFINITY, f32::min)
+}
+
+/// Finding-only three-lens regime posture — **no gate verdict change**.
+///
+/// Surfaces union envelope vs `MixSpec` wire floor without routing through
+/// compose-delegate admissibility (see `RESEARCH_270K_REGIME_2218.md`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct RegimeUnionDiagnostic {
+    /// `any_bundled_profile_covers_scalars` (canonical / predict path).
+    pub union_covers: bool,
+    /// `MixSpec` wire floor \[273, 353\] K.
+    pub wire_temperature_ok: bool,
+    /// Lowest bundled `temperature_k_min` [K].
+    pub union_floor_k: f32,
+    /// `union_floor_k - temperature_k` when below floor; else 0.
+    pub gap_k_below_union: f32,
+    /// Canonical gate would reject (`!union_covers`).
+    pub canonical_regime_reject: bool,
+}
+
+/// Three-lens regime diagnostic for operator probes (finding-only).
+#[must_use]
+pub fn regime_union_diagnostic(
+    w_c: f32,
+    temperature_k: f32,
+    age_hours: f32,
+    fly_ash_pct: f32,
+    silica_fume_pct: f32,
+) -> RegimeUnionDiagnostic {
+    let union_covers = any_bundled_profile_covers_scalars(
+        w_c,
+        temperature_k,
+        age_hours,
+        fly_ash_pct,
+        silica_fume_pct,
+    );
+    let union_floor_k = bundled_union_temperature_floor_k();
+    let wire_temperature_ok = (273.0..=353.0).contains(&temperature_k);
+    let gap_k_below_union = if temperature_k < union_floor_k {
+        union_floor_k - temperature_k
+    } else {
+        0.0
+    };
+    RegimeUnionDiagnostic {
+        union_covers,
+        wire_temperature_ok,
+        union_floor_k,
+        gap_k_below_union,
+        canonical_regime_reject: !union_covers,
+    }
+}
+
+#[cfg(test)]
+mod six_mix_temp_regime_probe {
+    use super::{
+        any_bundled_profile_covers_scalars, bundled_union_temperature_floor_k,
+        regime_union_diagnostic,
+    };
+
+    /// Six-mix row-6 DRAFT scalars — w/c=0.45, age=672 h, SCM=0.
+    const W_C: f32 = 0.45;
+    const AGE_H: f32 = 672.0;
+
+    /// T=277 K — library PASS (specialty profiles min 273 K cover); finding-only @ 2102.
+    #[test]
+    fn bundled_union_covers_t277k_six_mix_draft() {
+        assert!(
+            any_bundled_profile_covers_scalars(W_C, 277.0, AGE_H, 0.0, 0.0),
+            "T=277 K must be in-box for at least one bundled profile (highscm/zenodo class)"
+        );
+    }
+
+    /// T=270 K — below every bundled `temperature_k_min` (lowest 273 K); finding-only @ 2102.
+    #[test]
+    fn bundled_union_rejects_t270k_six_mix_draft() {
+        assert!(
+            !any_bundled_profile_covers_scalars(W_C, 270.0, AGE_H, 0.0, 0.0),
+            "T=270 K must fall outside all bundled profile hyperboxes"
+        );
+    }
+
+    /// T=270 K — three-lens gap witness (union REJECT · wire REJECT · compose-delegate PASS).
+    #[test]
+    fn six_mix_t270k_regime_gap_diagnostic_witness() {
+        assert_eq!(bundled_union_temperature_floor_k(), 273.0);
+        let d = regime_union_diagnostic(W_C, 270.0, AGE_H, 0.0, 0.0);
+        assert!(!d.union_covers);
+        assert!(!d.wire_temperature_ok);
+        assert!((d.gap_k_below_union - 3.0).abs() < f32::EPSILON);
+        assert!(d.canonical_regime_reject);
+    }
+
+    /// T=277 K — union PASS aligns with wire OK (compose-delegate also PASS).
+    #[test]
+    fn six_mix_t277k_regime_diagnostic_union_pass() {
+        let d = regime_union_diagnostic(W_C, 277.0, AGE_H, 0.0, 0.0);
+        assert!(d.union_covers);
+        assert!(d.wire_temperature_ok);
+        assert!(!d.canonical_regime_reject);
+        assert_eq!(d.gap_k_below_union, 0.0);
+    }
 }
 
 fn bundle_id_normalized(name: &str) -> Result<String, CalibrationError> {

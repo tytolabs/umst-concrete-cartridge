@@ -6,7 +6,7 @@
 //! Phase 0c — three-way split of MCP gate path (`contribution` module).
 //!
 //! **Card:** Phase 0c (gate consolidation).  
-//! **Parity anchor:** `gate_parity_v0.json` · SHA256 `149081fa81a6525fb66ff01924c6656f30e2b67846d9945a25427c7be38d20f3`.  
+//! **Parity anchor:** `gate_parity_v0.json` · SHA256 `d5608148e29eeabd83935988699d08ce1233c3e87f2cd217d658e0c71c7a841e`.  
 //! **Next:** Phase 0d — route every caller through one `umst-gate`. **Done** (canonical_gate).
 //!
 //! | Boundary | Module | Owns |

@@ -8,7 +8,8 @@
 #![allow(clippy::excessive_precision)]
 
 use crate::calibration::{ModelKind, Profile};
-use crate::formulas::{hydration_degree_calibrated, ultimate_doh_wc};
+use crate::chem_adapter::hydration_k_ref_f32;
+use crate::formulas::ultimate_doh_wc;
 use std::fmt;
 
 /// formal_anchor: STRUCTURAL
@@ -30,6 +31,7 @@ pub struct MixRow {
 /// formal_anchor_rationale: Dispatch error: Jennings-not-yet, invalid mix; no formal claim.
 #[derive(Debug)]
 pub enum HomogeneousError {
+    /// Boarded @ `outputs/.tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002 — Powers path ships; homogeneous Jennings gel-space OPEN (CC-P-JENNINGS).
     JenningsNotImplemented,
     InvalidMix,
 }
@@ -73,69 +75,31 @@ pub fn ultimate_doh(_profile: &Profile, w_c: f32) -> f32 {
     ultimate_doh_wc(w_c)
 }
 
-/// Effective w/c, degree of hydration, curing temperature (deg C). Mirrors prototype-2a `mix_hydration_state`.
+/// Effective w/c, degree of hydration, curing temperature (deg C).
+/// T2-S6 dup-ψ [FULL] `mix_hydration_state` — archived @ `g_spawn_i_s6_mh_2054`.
+/// Consumer SSOT: `MixScalars::hydration_alpha` + `MixScalars::effective_w_c`.
+/// Pre-S6 profile-aware body: `_archive/s6-homog-psi-2026-07-18/mix_hydration_state.rs`.
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Internal homogeneous helper composing calibrated α(t,T,scm) and effective w/c from profile parameters.
+/// formal_anchor_rationale: Thin delegate — consumer MixScalars SSOT; profile retained for API stability.
 pub fn mix_hydration_state(
     profile: &Profile,
     row: &MixRow,
 ) -> Result<(f32, f32, f32), HomogeneousError> {
-    let dk = dataset_key(profile);
-
+    let _ = profile;
     let binder = row.cement_kg_m3 + row.slag_kg_m3 + row.fly_ash_kg_m3;
     if binder <= 0.0 {
         return Err(HomogeneousError::InvalidMix);
     }
-
-    let p = &profile.powers;
-    let effective_cement = row.cement_kg_m3
-        + p.k_slag as f32 * row.slag_kg_m3
-        + p.k_fly_ash as f32 * row.fly_ash_kg_m3;
-    if effective_cement <= 0.0 {
-        return Err(HomogeneousError::InvalidMix);
-    }
-
-    let mut w_c_raw = (row.water_kg_m3 / effective_cement).clamp(0.10, 1.0);
-    if dk == "SELFHEAL" {
-        w_c_raw += 0.03 * 0.06;
-    }
-    let sp_water_reduction = if dk == "UHPC" {
-        0.35 * (row.superplasticizer_kg_m3 / 30.0).min(1.0)
-    } else {
-        0.20 * (row.superplasticizer_kg_m3 / 5.0).min(1.0)
-    };
-    let w_c_effective = w_c_raw * (1.0 - sp_water_reduction);
-    let scm_ratio = (row.slag_kg_m3 + row.fly_ash_kg_m3) / binder;
-
-    let mut k_ref_eff = p.k_ref as f32;
-    if dk == "UHPC" {
-        k_ref_eff = (p.k_ref as f32 / 0.55) * 2.68;
-    }
-
-    let effective_age = row.age_days.min(365.0);
-    let temp_c = row.temperature_c;
-
-    let mut alpha = hydration_degree_calibrated(effective_age, temp_c, scm_ratio, k_ref_eff);
-
-    if dk == "ZENODO-SONREB" && effective_age >= 14.0 {
-        let alpha_14 = hydration_degree_calibrated(14.0, temp_c, scm_ratio, k_ref_eff);
-        let diff = effective_age - 14.0;
-        alpha = alpha_14 + (1.0 - alpha_14) * (1.0 - (-k_ref_eff * diff.sqrt()).exp());
-    }
-
-    if dk == "HIGHSCM" && row.age_days > 7.0 {
-        alpha += p.k_slag as f32 * (1.0 - (-0.02 * (row.age_days - 7.0)).exp());
-    }
-
-    if dk == "UHPC" && w_c_raw < 0.22 {
-        alpha = alpha.min(0.65);
-    }
-    alpha = alpha.min(1.0);
-
-    Ok((w_c_effective, alpha, temp_c))
+    Ok(crate::api_consumer_compose::mix_hydration_scalars_from_row(row))
 }
 
+/// Powers compressive strength [MPa] with dataset-specific modifiers.
+///
+/// T2-S6 dup-ψ [FULL] `powers_compressive_strength_mpa` — archived @ `g_spawn_i_s6_pfc_2054`.
+/// Under `b1-delegate`, base f_c routes through consumer `MixScalars::fc_mpa` (default) or
+/// `chem_adapter` SSOT (non-default); inline gel-space cube cfg-gated off. Pre-S6 body:
+/// `_archive/s6-homog-psi-2026-07-18/powers_compressive_strength_mpa.rs`.
 /// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#powers_monotone
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
@@ -150,20 +114,66 @@ pub fn powers_compressive_strength_mpa(
         return Err(HomogeneousError::JenningsNotImplemented);
     }
 
+    #[cfg(feature = "b1-delegate")]
+    {
+        return powers_compressive_strength_mpa_delegate(profile, row, alpha, w_c_effective);
+    }
+
+    #[cfg(not(feature = "b1-delegate"))]
+    powers_compressive_strength_mpa_legacy(profile, row, alpha, w_c_effective)
+}
+
+/// S6 production path — consumer `MixScalars::fc_mpa` + `chem_adapter` SSOT (card `g_spawn_i_s6_pfc_2054`).
+#[cfg(feature = "b1-delegate")]
+fn powers_compressive_strength_mpa_delegate(
+    profile: &Profile,
+    row: &MixRow,
+    alpha: f32,
+    w_c_effective: f32,
+) -> Result<f32, HomogeneousError> {
     let dk = dataset_key(profile);
     let p = &profile.powers;
 
-    let vg = 0.68 * alpha;
-    let vc = w_c_effective - 0.36 * alpha;
-    let space = vg + vc.max(0.0) + 0.02;
-    if space <= 0.001 {
+    let mut fc = if dk == "DEFAULT" {
+        crate::api_consumer_compose::powers_compressive_strength_mpa_from_row(row) as f32
+    } else {
+        crate::chem_adapter::powers_compressive_strength_f32(
+            w_c_effective,
+            alpha,
+            0.02,
+            p.s_intrinsic as f32,
+        )
+    };
+
+    apply_powers_fc_dataset_modifiers(profile, row, &mut fc);
+    Ok(fc.clamp(0.0, 250.0))
+}
+
+/// Pre-S6 inline gel-space cube — cfg-gated duplicate retained for non-delegate builds.
+#[cfg(not(feature = "b1-delegate"))]
+fn powers_compressive_strength_mpa_legacy(
+    profile: &Profile,
+    row: &MixRow,
+    alpha: f32,
+    w_c_effective: f32,
+) -> Result<f32, HomogeneousError> {
+    let p = &profile.powers;
+    let x = crate::chem_adapter::gel_space_ratio_f32(w_c_effective, alpha);
+    if x <= 0.0 {
         return Ok(0.0);
     }
-    let x = vg / space;
     let mut fc = (p.s_intrinsic as f32) * x.powi(3);
+    apply_powers_fc_dataset_modifiers(profile, row, &mut fc);
+    Ok(fc.clamp(0.0, 250.0))
+}
+
+/// Dataset-specific f_c modifiers — cartridge policy, not chem SSOT.
+fn apply_powers_fc_dataset_modifiers(profile: &Profile, row: &MixRow, fc: &mut f32) {
+    let dk = dataset_key(profile);
+    let p = &profile.powers;
 
     if row.age_days < 7.0 {
-        fc *= p.early_boost as f32;
+        *fc *= p.early_boost as f32;
     }
 
     let long_term_gain = if row.age_days > 365.0 && dk != "UHPC" {
@@ -173,26 +183,60 @@ pub fn powers_compressive_strength_mpa(
         1.0
     };
 
-    fc *= long_term_gain;
+    *fc *= long_term_gain;
 
     if dk == "UHPC" {
-        fc *= 1.635;
+        *fc *= 1.635;
     }
 
     if dk == "SELFHEAL" && row.age_days > 7.0 {
         let heal_gain = 0.15;
         let heal_progress = ((row.age_days - 7.0) / 21.0).clamp(0.0, 1.0);
-        fc *= 1.0 + heal_gain * heal_progress;
+        *fc *= 1.0 + heal_gain * heal_progress;
     }
-
-    Ok(fc.clamp(0.0, 250.0))
 }
 
+/// T2-S6 dup-ψ [FULL] `compressive_strength_mpa` — archived @ `g_spawn_i_s6_homog_2101`.
+/// Under `b1-delegate`, default profile routes through `MixScalars::fc_mpa` SSOT; non-default
+/// profiles chain through archived `powers_compressive_strength_mpa` delegate. Pre-S6 body:
+/// `_archive/s6-homog-psi-2026-07-18/compressive_strength_mpa.rs`.
 /// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
 /// catalog_id: thermodynamic_mix
 /// formal_status: Mechanised
 /// formal_axioms: physicalSecondLaw
 pub fn compressive_strength_mpa(profile: &Profile, row: &MixRow) -> Result<f32, HomogeneousError> {
+    #[cfg(feature = "b1-delegate")]
+    {
+        return compressive_strength_mpa_delegate(profile, row);
+    }
+
+    #[cfg(not(feature = "b1-delegate"))]
+    compressive_strength_mpa_legacy(profile, row)
+}
+
+/// S6 production path — default `MixScalars::fc_mpa`; non-default → powers delegate (card `g_spawn_i_s6_homog_2101`).
+#[cfg(feature = "b1-delegate")]
+fn compressive_strength_mpa_delegate(
+    profile: &Profile,
+    row: &MixRow,
+) -> Result<f32, HomogeneousError> {
+    if dataset_key(profile) == "DEFAULT" {
+        let binder = row.cement_kg_m3 + row.slag_kg_m3 + row.fly_ash_kg_m3;
+        if binder <= 0.0 {
+            return Err(HomogeneousError::InvalidMix);
+        }
+        return Ok(crate::api_consumer_compose::compressive_strength_mpa_from_row(row) as f32);
+    }
+    mix_hydration_state(profile, row)
+        .and_then(|(wc, alpha, _tc)| powers_compressive_strength_mpa(profile, row, alpha, wc))
+}
+
+/// Pre-S6 profile-unified orchestration — cfg-gated duplicate retained for non-delegate builds.
+#[cfg(not(feature = "b1-delegate"))]
+fn compressive_strength_mpa_legacy(
+    profile: &Profile,
+    row: &MixRow,
+) -> Result<f32, HomogeneousError> {
     mix_hydration_state(profile, row)
         .and_then(|(wc, alpha, _tc)| powers_compressive_strength_mpa(profile, row, alpha, wc))
 }
@@ -211,7 +255,7 @@ pub fn degree_of_hydration_alpha(profile: &Profile, row: &MixRow) -> Result<f32,
 /// formal_axioms: NONE
 #[must_use]
 pub fn capillary_porosity(_profile: &Profile, w_c: f32, alpha: f32) -> f32 {
-    ((w_c - 0.36 * alpha) / (w_c + 0.32)).clamp(0.0, 1.0)
+    crate::chem_adapter::powers_capillary_porosity_f32(w_c, alpha).clamp(0.0, 1.0)
 }
 
 /// formal_anchor: empirical://datasets/printability-rheology-yield-proxy.v1.csv
@@ -343,5 +387,26 @@ mod tests {
         };
         let fc = compressive_strength_mpa(&p, &row).unwrap();
         assert!(fc > 0.0);
+    }
+
+    #[test]
+    fn mix_hydration_state_routes_consumer_mix_scalars_ssot() {
+        let p = Profile::load_bundled("uci_d1").unwrap();
+        let row = MixRow {
+            cement_kg_m3: 540.0,
+            slag_kg_m3: 0.0,
+            fly_ash_kg_m3: 0.0,
+            water_kg_m3: 162.0,
+            superplasticizer_kg_m3: 2.5,
+            age_days: 28.0,
+            temperature_c: 21.0,
+        };
+        let (w_c, alpha, temp_c) = mix_hydration_state(&p, &row).unwrap();
+        let expected = crate::api_consumer_compose::mix_hydration_scalars_from_row(&row);
+        assert!((w_c - expected.0).abs() < 1e-6);
+        assert!((alpha - expected.1).abs() < 1e-6);
+        assert!((temp_c - expected.2).abs() < 1e-6);
+        assert!((0.0..=1.0).contains(&alpha));
+        assert!(w_c > 0.0);
     }
 }
