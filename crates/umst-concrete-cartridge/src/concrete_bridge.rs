@@ -44,6 +44,8 @@ mod witness {
             w_c_max: None,
             total_binder_kg_m3: None,
             aggregate_volume_fraction: None,
+            strength_model: None,
+            jennings_exponent: None,
         }
     }
 

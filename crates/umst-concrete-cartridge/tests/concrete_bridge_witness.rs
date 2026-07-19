@@ -75,6 +75,8 @@ fn s5_mcp_gate_admissible_matches_bridge_oracle() {
         w_c_max: None,
         total_binder_kg_m3: None,
         aggregate_volume_fraction: None,
+        strength_model: None,
+        jennings_exponent: None,
     };
     let via_bridge = gate_route_composed(
         &wire,
