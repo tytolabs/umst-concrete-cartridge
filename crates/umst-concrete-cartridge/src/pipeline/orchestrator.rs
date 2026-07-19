@@ -20,7 +20,6 @@ use crate::mix_layout::{
 use crate::physics::chemo_water::ChemoWaterEngine;
 use crate::physics::colloidal::ColloidalEngine;
 use crate::physics::cost::compute_cost;
-use crate::physics::fracture::FractureEngine;
 use crate::physics::freeze_thaw::FreezeThawEngine;
 use crate::physics::hydration::compute_hydration_degree;
 use crate::physics::itz::{
@@ -37,6 +36,7 @@ use crate::physics::strength::StrengthEngine;
 use crate::physics::sustainability::SustainabilityEngine;
 use crate::physics::thermo::ThermoEngine;
 use crate::physics::transport::TransportEngine;
+use crate::pipeline::b1_orchestrator_delegate::compute_effective_modulus_mt_orchestrator;
 use crate::pipeline::b2_orchestrator_delegate::{
     capillary_porosity_b3_audit, try_autogenous_shrinkage_orchestrator,
     try_creep_compliance_orchestrator, try_fracture_k_ic_orchestrator, OrchestratorMixScalars,
@@ -408,21 +408,8 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     }
 
     if stage_eligible("fracture", material_phase) {
-        let e_paste = mix_layout::collapsed_rank4_from_rank2_scalar(
-            Tensor::from_data(
-                Data::new(vec![(fc_scalar * 5.0_f32).max(1.0_f32)], Shape::new([1, 1])),
-                &dev,
-            ),
-            &dev,
-        );
-        let e_agg = Tensor::from_data(Data::new(vec![60e9_f32], Shape::new([1, 1, 1, 1])), &dev);
-        let e_itz = Tensor::from_data(Data::new(vec![20e9_f32], Shape::new([1, 1, 1, 1])), &dev);
-        let v_agg = Tensor::from_data(Data::new(vec![0.65_f32], Shape::new([1, 1, 1, 1])), &dev);
-        let v_itz = Tensor::from_data(Data::new(vec![0.06_f32], Shape::new([1, 1, 1, 1])), &dev);
-        // B1 carve deferred — Mori–Tanaka `E_eff` tensor path retained until S6.
-        let e_eff =
-            FractureEngine::<B>::compute_effective_modulus_mt(e_paste, e_agg, e_itz, v_agg, v_itz);
-        let e_eff_scalar = min_f32_rank4(e_eff) as f64;
+        // B1 carve @ g_spawn_i_b16_mt_carve_0721 — continuum homogenization; monolith tensor retained until S7.
+        let e_eff_scalar = compute_effective_modulus_mt_orchestrator(fc_scalar as f64);
         k_ic_scalar = try_fracture_k_ic_orchestrator(e_eff_scalar, profile.powers.s_intrinsic)
             .unwrap_or(PHASE_SKIP_SENTINEL);
         stages.push(PipelineStageRecord::ok("fracture"));

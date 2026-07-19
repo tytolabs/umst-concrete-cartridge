@@ -5,6 +5,7 @@
 //! [`run_full_physics_pipeline`] is the cartridge functor root; [`evaluate_dual_gate`] composes
 //! printability ⊗ thermodynamic witnesses (see [`dual_gate`] module docs and witness ladder R1).
 
+pub mod b1_orchestrator_delegate;
 pub mod b2_orchestrator_delegate;
 pub mod canonical_gate;
 pub mod cast_phase;

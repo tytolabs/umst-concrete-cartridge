@@ -10,6 +10,9 @@
 //!
 //! T2-S6 dup-ψ inventory — card `g_spawn_i_s6_form_2054`. Under `b1-delegate`, thin shims
 //! re-export [`crate::chem_adapter`] directly (cfg-gated bypass).
+//!
+//! R-H3 monolith cfg-gate honesty @ `g_spawn_i_rh2h6_impl_0721` — thin delegate retained
+//! until T3 archive; consumer SSOT routes through `b1-delegate` builds.
 
 #![allow(clippy::excessive_precision)]
 
@@ -37,8 +40,8 @@ pub use crate::chem_adapter::ultimate_degree_of_hydration_f32 as ultimate_doh_wc
 /// formal_envelope: "tests/hydration.rs::powers_doh_envelope"
 ///
 /// Calibrated hydration degree α(t) with Arrhenius temperature factor and SCM slowdown.
-/// T2-S6 dup-ψ allowlist [PARTIAL] `hydration_degree_calibrated` — defer until T3 chem adapter
-/// cfg-gated thin shim @ `g_spawn_i_s6_form_2054` · consumer: `b3_chem_inject::hydration_alpha_from_chem`
+/// T2-S6 dup-ψ allowlist [PARTIAL] `hydration_degree_calibrated` — R-H3 cfg-gate thin shim
+/// @ `g_spawn_i_rh2h6_impl_0721` · consumer: `b3_chem_inject::hydration_alpha_from_chem`
 /// `k_ref_multiplier` folds dataset-specific `k_ref` scaling from the active profile.
 #[cfg(not(feature = "b1-delegate"))]
 #[must_use]
