@@ -9,6 +9,13 @@ spdx = "MIT"
 layer = "cartridge"
 formal_anchors = ["physicalSecondLaw", "gateMaterialAgnostic"]
 status = "wip"
+stability = "evolving"
+semver = "0.1.0"
+
+# Target position in the reorg structure — declares WHERE this composes to without
+# moving a byte. Nothing is retired; migration becomes checkable instead of remembered.
+composes_into = "self"
+composes_note = "Packaging/FFI/CLI/MCP/py shell for concrete. Material physics lives in materials/umst-cartridge-concrete; this stays as the delivery surface."
 
 [registry]
 id = "tytolabs/umst-cartridge-concrete"
