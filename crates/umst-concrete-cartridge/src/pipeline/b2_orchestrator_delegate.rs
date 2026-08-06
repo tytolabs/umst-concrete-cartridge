@@ -162,16 +162,15 @@ mod tests {
     }
 
     #[test]
-    fn gc_orchestrator_matches_monolith_oracle_at_uci_d1() {
+    fn gc_orchestrator_matches_b2_scalar_at_uci_d1() {
         use crate::calibration::Profile;
-        use crate::physics::fracture_material::fracture_energy_gc_j_per_m2_from_profile;
 
         let profile = Profile::load_bundled("uci_d1").expect("bundled uci_d1");
         let bridge = fracture_energy_gc_j_m2_orchestrator(profile.powers.s_intrinsic);
-        let oracle = fracture_energy_gc_j_per_m2_from_profile(&profile);
+        let b2 = fracture_energy_gc_j_m2(profile.powers.s_intrinsic) as f32;
         assert!(
-            (bridge - oracle).abs() / oracle.max(1e-6) < 1e-6,
-            "G_c bridge drift: bridge={bridge} oracle={oracle}"
+            (bridge - b2).abs() / b2.max(1e-6) < 1e-6,
+            "G_c bridge drift: bridge={bridge} b2={b2}"
         );
     }
 

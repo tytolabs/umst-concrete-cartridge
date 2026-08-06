@@ -15,11 +15,14 @@ fn read_json_line<R: BufRead>(reader: &mut R) -> Value {
 }
 
 fn mcp_binary_path() -> PathBuf {
+    if let Ok(exe) = std::env::var("CARGO_BIN_EXE_umst-mcp") {
+        return PathBuf::from(exe);
+    }
     let profile = option_env!("PROFILE").unwrap_or("debug");
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../target")
-        .join(profile)
-        .join("umst-mcp")
+    let target_base = std::env::var("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target"));
+    target_base.join(profile).join("umst-mcp")
 }
 
 #[test]

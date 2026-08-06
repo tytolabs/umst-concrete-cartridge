@@ -7,7 +7,7 @@
 //! hydration degree `α` alone routes macroscopic phase; printable τ₀ band is a **gate** on `Fluid`
 //! (see [`super::dual_gate`]), not a phase discriminator.
 //!
-//! Schedule: `outputs/.tmp/fp_concrete_dual_gate_adt_plan.md` MP3.1.
+//! Schedule: `archived/residuals/misc-outputs-tmp/fp_concrete_dual_gate_adt_plan.md` MP3.1.
 
 use serde::{Deserialize, Serialize};
 use umst_manifold::core::MaterialPhaseKind;

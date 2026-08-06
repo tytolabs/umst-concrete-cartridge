@@ -2,7 +2,7 @@
 
 Labs contribute **validated memory rows** to the shared corpus via **pull request**, not live MCP to a central server.
 
-**Full spec:** [MaOS-Workspace `git-contribution-inbox` plan](https://github.com/tytolabs/MaOS-Workspace/blob/prime-spectral-research/outputs/.plans/git-contribution-inbox.md)
+**Full spec:** [tyto-workspace `git-contribution-inbox` plan](https://github.com/tytolabs/tyto-workspace/blob/prime-spectral-research/outputs/.plans/git-contribution-inbox.md)
 
 ## Quick flow
 

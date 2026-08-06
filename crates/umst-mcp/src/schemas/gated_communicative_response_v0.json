@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gated_communicative_response_v0",
+  "title": "GatedCommunicativeResponse",
+  "description": "Hybrid frontier proposal + local gate outcome for propose_communicative_act (HCOM-029).",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "gated_communicative_response.v0"
+    },
+    "proposed": {
+      "type": "boolean",
+      "description": "True when served from honest stub / mock LLM path."
+    },
+    "mock_llm": {
+      "type": "boolean",
+      "description": "True when frontier proposal came from mock_llm_fixture."
+    },
+    "proposal": {
+      "type": "object",
+      "properties": {
+        "surface_form": { "type": "string" },
+        "geometry_ref": { "type": "string" },
+        "fixture": { "type": "string" },
+        "lang": { "type": "string" }
+      },
+      "required": ["surface_form", "geometry_ref", "lang"],
+      "additionalProperties": false
+    },
+    "gate": {
+      "type": "object",
+      "properties": {
+        "admissible": { "type": "boolean" },
+        "verdict": { "type": "string", "enum": ["ADMIT", "REJECT"] },
+        "response_family": { "type": "string", "const": "Semantic" },
+        "response_type": { "type": "string", "const": "SemanticResponse" }
+      },
+      "required": ["admissible", "verdict", "response_family", "response_type"],
+      "additionalProperties": false
+    },
+    "semantic_witness": {
+      "type": "object",
+      "properties": {
+        "consistency_defect": { "type": "number", "minimum": 0 },
+        "mi_deficit": { "type": "number", "minimum": 0 },
+        "understanding_cost": { "type": "number", "minimum": 0 }
+      },
+      "required": ["consistency_defect", "mi_deficit", "understanding_cost"],
+      "additionalProperties": false
+    },
+    "audit": {
+      "type": "object",
+      "properties": {
+        "decision_id": { "type": "string" },
+        "content_hash_prefix": { "type": "string", "minLength": 8 }
+      },
+      "required": ["decision_id", "content_hash_prefix"],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "proposed",
+    "mock_llm",
+    "proposal",
+    "gate",
+    "semantic_witness",
+    "audit"
+  ],
+  "additionalProperties": false
+}

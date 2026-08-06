@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "refine_shape_v0",
+  "title": "RefineShape",
+  "description": "Refine a meaning shape with agent/human feedback (HCOM-029 stub — Kleisli dialogue deferred).",
+  "type": "object",
+  "properties": {
+    "shape": {
+      "type": "object",
+      "description": "MeaningState or quotient witness envelope"
+    },
+    "feedback": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Refinement feedback surface form"
+    },
+    "trust": {
+      "type": "object",
+      "description": "Trust attestation — device scope required for refine_shape"
+    }
+  },
+  "required": ["shape", "feedback"],
+  "additionalProperties": true
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "audit_digest_response_v0",
+  "title": "AuditDigestResponse",
+  "description": "Content-addressed audit digest wire for get_audit_digest (HCOM-029).",
+  "type": "object",
+  "properties": {
+    "schema_version": { "type": "string" },
+    "proposed": { "type": "boolean" },
+    "decision_id": { "type": "string" },
+    "digest_hex": { "type": "string" },
+    "digest_source": {
+      "type": "string",
+      "enum": ["fixture_log", "ephemeral_hash"]
+    },
+    "immutable_log_wired": { "type": "boolean" }
+  },
+  "required": ["schema_version", "decision_id", "digest_hex"],
+  "additionalProperties": true
+}

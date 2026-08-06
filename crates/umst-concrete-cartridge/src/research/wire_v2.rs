@@ -58,8 +58,8 @@ pub fn observed_at_to_v2(obs: &ObservedAt) -> ObservedAtV2 {
 /// formal_status: Structural
 /// formal_anchor_rationale: UCRS crate → v2 wire functor; monotonicity on `is_monotonic_after`.
 #[must_use]
-pub fn ucrs_observed_at_to_v2(u: &umst_ucrs::observation::UcrsObservedAt) -> ObservedAtV2 {
-    use umst_ucrs::observation::WIRE_SCALE;
+pub fn ucrs_observed_at_to_v2(u: &umst_ucrs::shared_types::observation::UcrsObservedAt) -> ObservedAtV2 {
+    use umst_ucrs::shared_types::observation::WIRE_SCALE;
     ObservedAtV2 {
         schema_version: OBSERVED_AT_V2_SCHEMA.into(),
         stamp_tier: u.stamp_tier.as_wire_str().to_string(),
@@ -80,7 +80,7 @@ mod tests {
     #[cfg(feature = "ucrs-provenance")]
     #[test]
     fn ucrs_observed_at_roundtrip_v2() {
-        use umst_ucrs::observation::UcrsObservedAt;
+        use umst_ucrs::shared_types::observation::UcrsObservedAt;
         let u = UcrsObservedAt::synthetic(7, 0.5);
         let v2 = ucrs_observed_at_to_v2(&u);
         assert_eq!(v2.ucrs_seq, Some(7));

@@ -9,6 +9,7 @@ use umst_chem::{
     csh_youngs_moduli_gpa,
     gel_space_ratio,
     hydration_degree_calibrated as chem_hydration_degree_calibrated,
+    jennings_capillary_porosity_clamped, jennings_compressive_strength,
     kinetics::ReactionExtentKineticsSpec as ChemKineticsSpec, desiccation_params,
     dlvo_params, powers::powers_capillary_water_volume, powers_capillary_porosity, powers_gel_volume,
     set_time_activation_energy_j_per_mol, ultimate_degree_of_hydration, vinet_pressure_gpa,
@@ -17,7 +18,7 @@ use umst_chem::{
     CSH_HD_SCALE_OF_BULK, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE, CSH_LD_SCALE_OF_BULK,
     CSH_VOLUME_FACTOR, DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER,
     DLVO_COLLAPSE_SEPARATION_NM, GAS_CONSTANT_J_PER_MOL_K, HAMAKER_CEMENT_WATER_J,
-    KELVIN_CAPILLARY_SCALE_MPA, NANO_HEALING_BOOST_PER_DOSAGE, NANO_SSA_REF_M2_PER_G,
+    JENNINGS_STRENGTH_EXPONENT_DEFAULT, KELVIN_CAPILLARY_SCALE_MPA, NANO_HEALING_BOOST_PER_DOSAGE, NANO_SSA_REF_M2_PER_G,
     NUCLEATION_BETA_MIN_PER_DECADE, OPC_REACTION_ENTHALPY_J_PER_KG, POZZOLANIC_ALPHA,
     POWERS_GEL_VOLUME_FACTOR, POWERS_NON_EVAP_WATER_COEFF, POWERS_PASTE_DENOMINATOR_OFFSET,
     PowersIntrinsicStrength, SpeciesId, VACUUM_PERMITTIVITY, DLVO_REFERENCE_TEMPERATURE_K,
@@ -34,6 +35,8 @@ use umst_concrete_cartridge::chem_adapter::{
     hydration_activation_over_r_f32, hydration_alpha_max_opc_f32,
     hydration_alpha_max_scm_slope_f32, hydration_degree_calibrated,
     hydration_k_ref_f32, hydration_scm_rate_slope_f32, hydration_t_ref_k_f32,
+    jennings_capillary_porosity_clamped_f32, jennings_compressive_strength_f32,
+    jennings_strength_exponent_default,
     paste_bulk_modulus_voigt_from_wc_gpa,
     set_time_activation_energy_f32,
     desiccation_rh_drop_scale, desiccation_rh_drop_scale_f32, dlvo_boltzmann_f32,
@@ -56,6 +59,7 @@ use umst_concrete_cartridge::chem_adapter::{
     nano_ssa_ref_m2_per_g_f32, nano_strength_gamma_f32,
 };
 use umst_concrete_cartridge::{
+    calibration::{ModelKind, Profile},
     cement_reaction_extent_kinetics_spec as material_transition_kinetics_spec,
     physics::optical::paste_bulk_modulus_voigt_from_wc_gpa as optical_paste_bulk_modulus_voigt_from_wc_gpa,
     CEMENT_REACTION_ENTHALPY_J_PER_KG,
@@ -604,4 +608,73 @@ fn cluster_h_deferred_boundary_does_not_block_e_f_clusters() {
     );
     // Shrinkage chem seam (G-04) routes only `critical_wc` — nano literals are OUT-OF-SCOPE.
     assert!((f64::from(critical_wc_f32()) - CRITICAL_WC).abs() < EPS_F32);
+}
+
+// ── Cluster I — Jennings homogeneous gel-space (inventory B-19 / B-20) ────────
+
+const G0_W_C: f32 = 0.45;
+const G0_ALPHA: f32 = 0.55;
+const G0_S_INTRINSIC: f32 = 80.0;
+
+#[test]
+fn cluster_i_jennings_exponent_default_matches_b19() {
+    assert_eq!(
+        jennings_strength_exponent_default(),
+        JENNINGS_STRENGTH_EXPONENT_DEFAULT
+    );
+    assert_eq!(jennings_strength_exponent_default(), 3);
+}
+
+#[test]
+fn cluster_i_jennings_phi_cap_matches_powers_capillary_porosity() {
+    let adapter = jennings_capillary_porosity_clamped_f32(G0_W_C, G0_ALPHA);
+    let chem = jennings_capillary_porosity_clamped(f64::from(G0_ALPHA), f64::from(G0_W_C));
+    let powers = powers_capillary_porosity(f64::from(G0_ALPHA), f64::from(G0_W_C));
+    assert!((f64::from(adapter) - chem).abs() < EPS_F32);
+    assert!((f64::from(adapter) - powers).abs() < EPS_F32);
+}
+
+#[test]
+fn cluster_i_jennings_strength_matches_chem_ssot_closure() {
+    let p = jennings_strength_exponent_default();
+    let adapter =
+        jennings_compressive_strength_f32(G0_W_C, G0_ALPHA, G0_S_INTRINSIC, p);
+    let chem = jennings_compressive_strength(
+        f64::from(G0_W_C),
+        f64::from(G0_ALPHA),
+        f64::from(G0_S_INTRINSIC),
+        p,
+    );
+    assert!((f64::from(adapter) - chem).abs() < EPS_F32);
+    assert!(f64::from(adapter) > 0.0);
+}
+
+#[test]
+fn cluster_i_jennings_strength_monotone_in_alpha() {
+    let p = jennings_strength_exponent_default();
+    let f_early = jennings_compressive_strength_f32(G0_W_C, 0.2, G0_S_INTRINSIC, p);
+    let f_late = jennings_compressive_strength_f32(G0_W_C, 0.6, G0_S_INTRINSIC, p);
+    assert!(f_late >= f_early, "monotone in α per jennings_strength_monotone");
+}
+
+#[test]
+fn cluster_i_jennings_strength_differs_from_powers_at_g0_pin() {
+    let p = jennings_strength_exponent_default();
+    let powers = powers_compressive_strength_f32(G0_W_C, G0_ALPHA, 0.02, G0_S_INTRINSIC);
+    let jennings = jennings_compressive_strength_f32(G0_W_C, G0_ALPHA, G0_S_INTRINSIC, p);
+    assert!((powers - jennings).abs() > 1e-4, "parallel witnesses must not collapse");
+}
+
+#[test]
+fn cluster_i_bundled_jennings_gel_space_profile_loads() {
+    let profile = Profile::load_bundled("jennings_gel_space").expect("bundled profile");
+    assert_eq!(profile.model_section.kind, ModelKind::JenningsGelSpace);
+    assert!((profile.powers.s_intrinsic - 80.0).abs() < f64::EPSILON);
+    assert_eq!(profile.contract.verification_status, "Boundary");
+    let formal = profile
+        .provenance
+        .formal
+        .as_ref()
+        .expect("formal block");
+    assert!(formal.anchor.contains("JenningsGelSpace"));
 }

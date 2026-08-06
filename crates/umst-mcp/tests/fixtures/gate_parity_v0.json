@@ -1,6 +1,6 @@
 {
   "schema_version": "gate_parity_v0",
-  "description": "S0 golden lock — gate_check_mix_result (sorted keys) for fixed mix table; ObservedAt frozen Synthetic/ucrs_seq=0/wall_ms=1000; explain=true; profile=default. GO-LIVE Step 3: tools_list_names.default is the 13-tool agent-native surface (was 4); base_four preserves the prior no-agent-layer list. Gate verdict bytes unchanged for classic pair; UNLOCK-3 honest 5-row land (5/6 aspiration; reject_cold_regime deferred).",
+  "description": "S0 golden lock — gate_check_mix_result (sorted keys) for fixed mix table; ObservedAt frozen Synthetic/ucrs_seq=0/wall_ms=1000; explain=true; profile=default. GO-LIVE Step 3: tools_list_names.default is the 13-tool agent-native surface (was 4); base_four preserves the prior no-agent-layer list. UNLOCK-6 six-mix land @ AGAP-2033-LIB-PARITY: reject_cold_regime cold-byte PASS @ T=277K (library truth; DRAFT REJECT mis-expectation per R-gate-temp-regime.md). 5 PASS + 1 CD REJECT (reject_high_wc).",
   "observed_at": {
     "stamp_tier": "Synthetic",
     "ucrs_seq": 0,
@@ -38,6 +38,12 @@
       "target_age_hours": "672/1",
       "temperature_k": "29315/100",
       "w_c": "3/4"
+    },
+    "reject_cold_regime": {
+      "aggregate_volume_fraction": "7/10",
+      "target_age_hours": "672/1",
+      "temperature_k": "277/1",
+      "w_c": "9/20"
     }
   },
   "gate_check_mix_result": {
@@ -152,6 +158,22 @@
         ],
         "mi_bits_est": "5500/10000",
         "verdict": "REJECT"
+      }
+    },
+    "reject_cold_regime": {
+      "explain": {
+        "catalog_witnesses": [
+          "umst.gate.cd_transition"
+        ],
+        "regime_violations": []
+      },
+      "gate_summary": {
+        "admissible": true,
+        "catalog_ids": [
+          "umst.gate.cd_transition"
+        ],
+        "mi_bits_est": "3730/10000",
+        "verdict": "PASS"
       }
     }
   },

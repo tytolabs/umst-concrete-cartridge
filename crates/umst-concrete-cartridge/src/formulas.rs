@@ -12,6 +12,9 @@
 //! re-export [`crate::chem_adapter`] directly (cfg-gated bypass).
 //!
 //! R-H3 monolith cfg-gate honesty @ `g_spawn_i_rh2h6_impl_0721` — thin delegate retained
+//! until T3 archive.
+//!
+//! R-H3 monolith cfg-gate honesty @ `g_spawn_i_rh2h6_impl_0721` — thin delegate retained
 //! until T3 archive; consumer SSOT routes through `b1-delegate` builds.
 
 #![allow(clippy::excessive_precision)]

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "web_propose_delta_response_v0",
+  "title": "WebProposeDeltaResponse",
+  "description": "Accept/Reject outcome for web.propose_delta with UCRS stamp on admissible commits (WEB-009).",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "web_propose_delta_response.v0"
+        },
+        "outcome": {
+          "type": "string",
+          "const": "Accept"
+        },
+        "new_state": {
+          "type": "string",
+          "description": "Base64-encoded umst-web-tensor-v1 after admissible delta application."
+        },
+        "ucrs_stamp": {
+          "type": "object",
+          "description": "observed_at.v2 UCRS TemporalWitness wire",
+          "required": ["schema_version", "stamp_tier"],
+          "properties": {
+            "schema_version": { "type": "string", "const": "observed_at.v2" },
+            "stamp_tier": {
+              "type": "string",
+              "enum": ["UcrsTier2", "WallOnly", "Absent", "Synthetic"]
+            },
+            "ucrs_seq": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "proof": {
+          "type": "string",
+          "description": "Opaque informational gate proof digest."
+        },
+        "response_family": {
+          "type": "string",
+          "const": "Informational"
+        }
+      },
+      "required": ["schema_version", "outcome", "new_state", "ucrs_stamp", "response_family"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "web_propose_delta_response.v0"
+        },
+        "outcome": {
+          "type": "string",
+          "const": "Reject"
+        },
+        "gradient": {
+          "type": "object",
+          "properties": {
+            "informational_net": { "type": "number" },
+            "repair_direction": { "type": "string" }
+          },
+          "required": ["informational_net", "repair_direction"],
+          "additionalProperties": false
+        },
+        "reason": {
+          "type": "string"
+        },
+        "response_family": {
+          "type": "string",
+          "const": "Informational"
+        }
+      },
+      "required": ["schema_version", "outcome", "gradient", "reason", "response_family"],
+      "additionalProperties": false
+    }
+  ]
+}

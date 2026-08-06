@@ -16,7 +16,7 @@ use umst_concrete_cartridge::research::{
     gate_check_mix_result, mix_wire_from_spec_value, query_page, synthetic_observed_at,
     AcceptError, AcceptResult, GateCheckResult, GateContext, MemoryQuery, MemoryQueryPage,
     ProvenanceClock, ResearchStore, StoreError, WallClock, CANON_VERSION, CONTRIBUTION_SCHEMA,
-    DEFAULT_CATALOG_HASH,
+    grounded_catalog_hash,
 };
 
 const JSON_SCHEMA_2020: &str = "https://json-schema.org/draft/2020-12/schema";
@@ -83,7 +83,7 @@ fn with_schema_2020(mut tool: Value, read_only: bool) -> Value {
 }
 
 /// Async contribute job state (in-memory stub for heavy physics path).
-/// Board **TODO-M3-006 OPEN** — post-S7 heavy job queue; see `outputs/.tmp/RESEARCH_TODO_NIGHT_2334.md`.
+/// Board **TODO-M3-006 OPEN** — post-S7 heavy job queue; see `archived/residuals/misc-outputs-tmp/RESEARCH_TODO_NIGHT_2334.md`.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: MCP job status wire; physics on `gate_check_mix` / `accept`.
@@ -326,7 +326,7 @@ impl AgentSession {
             "process": process.cloned().unwrap_or_else(|| json!({})),
             "outcome": outcome_obj,
             "gate_summary": gate.gate_summary,
-            "catalog_hash": DEFAULT_CATALOG_HASH,
+            "catalog_hash": grounded_catalog_hash(),
             "observed_at": observed,
         });
 
@@ -766,5 +766,11 @@ pub fn agent_tools_schema() -> Vec<Value> {
         feature = "tool-arena-session-unified"
     ))]
     tools.extend(crate::proposed_tools::proposed_tool_schemas());
+    #[cfg(feature = "tool-propose-communicative-act")]
+    tools.extend(crate::semantic_hcom::hcom_semantic_agent_tool_schemas());
+    #[cfg(all(feature = "tool-semantic-hcom", not(feature = "tool-propose-communicative-act")))]
+    tools.push(crate::semantic_hcom_schema::propose_communicative_act_tool_schema());
+    #[cfg(feature = "tool-web-propose-delta")]
+    tools.push(crate::web_propose_delta::web_propose_delta_tool_schema());
     tools
 }

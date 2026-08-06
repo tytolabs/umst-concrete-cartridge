@@ -6,7 +6,7 @@
 use umst_manifold::gate::{GateEvaluator, HttpGateManifest as GateManifest};
 use umst_manifold::manifest::UmstManifest;
 
-use crate::cartridge_registry::{
+use umst_cartridge_registry::{
     CONCRETE_POWERS_MANIFEST_GATE_FAMILY, DOMAIN_POLICY_CATALOG_ID,
     MIX_PREDICTION_VS_PHYSICS_GATE_FAMILY,
 };

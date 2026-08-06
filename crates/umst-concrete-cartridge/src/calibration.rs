@@ -20,6 +20,7 @@ use std::path::Path;
 /// Ordered names of bundled [`Profile`] artefacts embedded via [`include_str!`].
 pub const BUNDLED_PROFILE_IDS: &[&str] = &[
     "default",
+    "jennings_gel_space",
     "uci_d1",
     "zenodo_ndt",
     "zenodo_sonreb",
@@ -157,7 +158,7 @@ pub struct RegimeBounds {
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Dispatch metadata only; Jennings gel-space path returns `HomogeneousError::JenningsNotImplemented` until operator boards CC-P-JENNINGS (see `outputs/.tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002).
+/// formal_anchor_rationale: Dispatch metadata only; Jennings gel-space path returns `HomogeneousError::JenningsNotImplemented` until operator boards CC-P-JENNINGS (see `archived/residuals/misc-outputs-tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002).
 pub struct CalibrationModelSection {
     pub kind: ModelKind,
 }
@@ -550,6 +551,9 @@ fn bundled_toml_source(name: &str) -> Result<&'static str, CalibrationError> {
     let id = bundle_id_normalized(name)?;
     let s = match id.as_str() {
         "default" => include_str!("../../../calibration/profiles/default.v1.toml"),
+        "jennings_gel_space" => {
+            include_str!("../../../calibration/profiles/jennings_gel_space.v1.toml")
+        }
         "uci_d1" => include_str!("../../../calibration/profiles/uci_d1.v1.toml"),
         "zenodo_ndt" => include_str!("../../../calibration/profiles/zenodo_ndt.v1.toml"),
         "zenodo_sonreb" => include_str!("../../../calibration/profiles/zenodo_sonreb.v1.toml"),
@@ -600,6 +604,10 @@ pub fn profile_descriptions() -> HashMap<&'static str, &'static str> {
     m.insert(
         "default",
         "generic OPC fallback (Contract, synthetic anchor)",
+    );
+    m.insert(
+        "jennings_gel_space",
+        "Jennings–Brownyard gel-space homogeneous witness (Boundary, G0 pins)",
     );
     m.insert("uci_d1", "Yeh 1998 UCI concrete strength (D1, 1030 rows)");
     m.insert(

@@ -129,6 +129,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrayref"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb"
+
+[[package]]
 name = "arrayvec"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -259,6 +265,20 @@ name = "bitflags"
 version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4388bee8683e3d04af747c73422af53102d2bd24d9eadb6cbc100baef4b43f8"
+
+[[package]]
+name = "blake3"
+version = "1.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0aa83c34e62843d924f905e0f5c866eb1dd6545fc4d719e803d9ba6030371fce"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "cc",
+ "cfg-if",
+ "constant_time_eq 0.4.2",
+ "cpufeatures 0.3.0",
+]
 
 [[package]]
 name = "blas-src"
@@ -806,6 +826,12 @@ name = "constant_time_eq"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
+
+[[package]]
+name = "constant_time_eq"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
 name = "core-foundation"
@@ -2108,7 +2134,32 @@ dependencies = [
  "num-cmp",
  "once_cell",
  "percent-encoding",
- "referencing",
+ "referencing 0.26.2",
+ "regex-syntax",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "uuid-simd",
+]
+
+[[package]]
+name = "jsonschema"
+version = "0.29.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "161c33c3ec738cfea3288c5c53dfcdb32fd4fc2954de86ea06f71b5a1a40bfcd"
+dependencies = [
+ "ahash",
+ "base64",
+ "bytecount",
+ "email_address",
+ "fancy-regex",
+ "fraction",
+ "idna",
+ "itoa",
+ "num-cmp",
+ "once_cell",
+ "percent-encoding",
+ "referencing 0.29.1",
  "regex-syntax",
  "reqwest",
  "serde",
@@ -3156,6 +3207,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "referencing"
+version = "0.29.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40a64b3a635fad9000648b4d8a59c8710c523ab61a23d392a7d91d47683f5adc"
+dependencies = [
+ "ahash",
+ "fluent-uri",
+ "once_cell",
+ "parking_lot",
+ "percent-encoding",
+ "serde_json",
+]
+
+[[package]]
 name = "regex"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4171,15 +4236,18 @@ version = "0.2.1"
 name = "umst-algebra"
 version = "0.1.0"
 dependencies = [
+ "blake3",
  "ordered-float",
  "petgraph",
  "pqcrypto-dilithium",
  "pqcrypto-kyber",
  "pqcrypto-sphincsplus",
  "pqcrypto-traits",
+ "serde",
  "serde_json",
  "sha2",
  "sha3",
+ "subtle",
  "thiserror 1.0.69",
  "umst-layout-codegen",
 ]
@@ -4187,12 +4255,16 @@ dependencies = [
 [[package]]
 name = "umst-cartridge-api"
 version = "0.1.0"
+dependencies = [
+ "umst-algebra",
+]
 
 [[package]]
 name = "umst-cartridge-concrete"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+ "umst-cartridge-api",
  "umst-cartridge-continuum",
  "umst-cartridge-poromechanics",
  "umst-cartridge-solid-inelastic",
@@ -4204,6 +4276,8 @@ dependencies = [
 name = "umst-cartridge-continuum"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "umst-cartridge-api",
 ]
 
@@ -4212,6 +4286,14 @@ name = "umst-cartridge-poromechanics"
 version = "0.1.0"
 dependencies = [
  "umst-cartridge-api",
+]
+
+[[package]]
+name = "umst-cartridge-registry"
+version = "0.0.0"
+dependencies = [
+ "jsonschema 0.29.1",
+ "serde_json",
 ]
 
 [[package]]
@@ -4236,7 +4318,7 @@ dependencies = [
  "burn-ndarray",
  "clap",
  "csv",
- "jsonschema",
+ "jsonschema 0.26.2",
  "predicates",
  "rand 0.8.7",
  "ryu",
@@ -4272,9 +4354,11 @@ dependencies = [
  "umst-cartridge-api",
  "umst-cartridge-concrete",
  "umst-cartridge-continuum",
+ "umst-cartridge-registry",
  "umst-cartridge-solid-inelastic",
  "umst-chem",
  "umst-manifold",
+ "umst-trust",
  "umst-ucrs",
  "uuid",
  "walkdir",
@@ -4334,6 +4418,9 @@ dependencies = [
  "sha2",
  "time",
  "tracing",
+ "umst-algebra",
+ "umst-cartridge-api",
+ "umst-cartridge-concrete",
  "umst-gate",
  "umst-layout-codegen",
 ]
@@ -4369,8 +4456,11 @@ dependencies = [
  "umst-agent-mcp-core",
  "umst-cli",
  "umst-concrete-cartridge",
+ "umst-gate",
  "umst-manifold",
  "umst-runtime-arena",
+ "umst-semantics",
+ "umst-trust",
  "uuid",
 ]
 
@@ -4394,6 +4484,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "umst-semantics"
+version = "0.0.0"
+dependencies = [
+ "bincode",
+ "serde",
+ "serde_json",
+ "sha2",
+ "umst-gate",
+ "umst-trust",
+]
+
+[[package]]
+name = "umst-trust"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "umst-algebra",
+]
+
+[[package]]
 name = "umst-ucrs"
 version = "1.0.0"
 dependencies = [
@@ -4411,6 +4523,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "umst-math",
+ "umst-trust",
 ]
 
 [[package]]
@@ -5220,7 +5333,7 @@ dependencies = [
  "aes",
  "byteorder",
  "bzip2",
- "constant_time_eq",
+ "constant_time_eq 0.1.5",
  "crc32fast",
  "crossbeam-utils",
  "flate2",

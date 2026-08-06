@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 //
 //! MP3.5 — CastPhase orchestrator router + CastGateVerdict integration golden pins.
-//! Schedule: `outputs/.tmp/fp_concrete_dual_gate_adt_plan.md` MP3.5.
+//! Schedule: `archived/residuals/misc-outputs-tmp/fp_concrete_dual_gate_adt_plan.md` MP3.5.
 
 use burn_ndarray::{NdArray, NdArrayDevice};
 use umst_concrete_cartridge::calibration::Profile;

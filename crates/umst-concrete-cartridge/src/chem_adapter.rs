@@ -17,6 +17,8 @@ use umst_chem::{
     kinetics::ReactionExtentKineticsSpec as ChemKineticsSpec,
     powers::{
         gel_space_ratio as chem_gel_space_ratio,
+        jennings_capillary_porosity_clamped as chem_jennings_capillary_porosity_clamped,
+        jennings_compressive_strength as chem_jennings_compressive_strength,
         powers_capillary_water_volume as chem_powers_capillary_water_volume,
         powers_compressive_strength as chem_powers_compressive_strength,
     },
@@ -32,7 +34,7 @@ use umst_chem::{
     POWERS_NON_EVAP_WATER_COEFF, POWERS_PASTE_DENOMINATOR_OFFSET, SpeciesId, VACUUM_PERMITTIVITY,
     CementChemService, ChemistryService, GAS_CONSTANT_J_PER_MOL_K, HydrationKineticsBundle,
     OPC_REACTION_ENTHALPY_J_PER_KG, PowersIntrinsicStrength, Reaction, ThermoState,
-    DLVO_REFERENCE_TEMPERATURE_K, NANO_HEALING_BOOST_PER_DOSAGE, NANO_SSA_REF_M2_PER_G,
+    DLVO_REFERENCE_TEMPERATURE_K, JENNINGS_STRENGTH_EXPONENT_DEFAULT, NANO_HEALING_BOOST_PER_DOSAGE, NANO_SSA_REF_M2_PER_G,
     NUCLEATION_BETA_MIN_PER_DECADE, POZZOLANIC_ALPHA,
 };
 use umst_manifold::core::ReactionExtentKineticsSpec;
@@ -146,6 +148,34 @@ pub fn powers_compressive_strength_f32(
         f64::from(alpha),
         f64::from(voids_volume),
         f64::from(intrinsic_strength),
+    ) as f32
+}
+
+/// Jennings strength exponent `p` default — inventory B-19 (J-O1).
+#[must_use]
+pub const fn jennings_strength_exponent_default() -> u32 {
+    JENNINGS_STRENGTH_EXPONENT_DEFAULT
+}
+
+/// Jennings φ_cap clamped — inventory B-10 / B-20 (mirrors Lean `φ_cap`).
+#[must_use]
+pub fn jennings_capillary_porosity_clamped_f32(water_cement: f32, alpha: f32) -> f32 {
+    chem_jennings_capillary_porosity_clamped(f64::from(alpha), f64::from(water_cement)) as f32
+}
+
+/// Jennings compressive strength f_c = a · (1 − φ_cap)^p — inventory B-20.
+#[must_use]
+pub fn jennings_compressive_strength_f32(
+    water_cement: f32,
+    alpha: f32,
+    intrinsic_strength: f32,
+    exponent: u32,
+) -> f32 {
+    chem_jennings_compressive_strength(
+        f64::from(water_cement),
+        f64::from(alpha),
+        f64::from(intrinsic_strength),
+        exponent,
     ) as f32
 }
 
@@ -628,7 +658,7 @@ pub const fn chemo_diffusion_weight_scale_f32() -> f32 {
 //
 // **Lifted to `umst-chem` SSOT (A4b-5):** H-01 → `NANO_SSA_REF_M2_PER_G`; H-02 → `POZZOLANIC_ALPHA`;
 // H-03 → `NUCLEATION_BETA_MIN_PER_DECADE`; H-07 → `NANO_HEALING_BOOST_PER_DOSAGE`.
-// **TODO-M3-003 CLOSED** @ `outputs/.tmp/RESEARCH_TODO_NIGHT_2334.md` — parity witnesses green.
+// **TODO-M3-003 CLOSED** @ `archived/residuals/misc-outputs-tmp/RESEARCH_TODO_NIGHT_2334.md` — parity witnesses green.
 // **TODO-M3-003b CLOSED** @ 2334 — `DeferredToChemSsot` has zero live manifest rows; `NanoDeferredKineticsPins` name is historical (H-01…H-03 all `LiftedToChemSsot`).
 // H-04…H-06 are permanent cartridge calibration per a4b §2.4.
 

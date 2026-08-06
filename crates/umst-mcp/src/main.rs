@@ -70,6 +70,10 @@ fn contribute_tool_error(id: Value, err: ContributeError) -> Value {
             "contribute_non_monotonic_stamp",
             "Use server-assigned observed_at stamps; do not regress session clock.",
         ),
+        ContributeError::CatalogPin(_) => (
+            "contribute_catalog_pin_fail",
+            "Set catalog_hash to grounded manifest lock digest or the CI placeholder; see umst_profiles / manifest_bridge_catalog_grounding.",
+        ),
         ContributeError::Store(_) => (
             "contribute_store_fail",
             "Check UMST_MEMORY_DB path and permissions; duplicate content_id may be idempotent success.",
@@ -799,6 +803,82 @@ fn tool_umst_promote_contribution(id: Value, args: &Value) -> Value {
     )
 }
 
+#[cfg(feature = "tool-web-propose-delta")]
+fn tool_web_propose_delta(id: Value, args: &Value) -> Value {
+    for field in umst_mcp::web_propose_delta::WEB_PROPOSE_DELTA_INPUT_REQUIRED {
+        let missing = match *field {
+            "intent_witness" => {
+                let w = args.get("intent_witness");
+                w.is_none()
+                    || w.is_some_and(|v| {
+                        v.is_null()
+                            || (v.is_string() && v.as_str().unwrap_or("").is_empty())
+                            || (v.is_array() && v.as_array().is_some_and(|a| a.is_empty()))
+                    })
+            }
+            other => args
+                .get(other)
+                .and_then(|v| v.as_str())
+                .is_none_or(str::is_empty),
+        };
+        if missing {
+            let remediation = format!(
+                "Supply {field} per web_propose_delta_v0 schema (method web.propose_delta)."
+            );
+            return agent_tool_error(
+                id,
+                "missing_argument",
+                format!("missing {field}"),
+                &remediation,
+            );
+        }
+    }
+    let out = umst_mcp::web_propose_delta::exec_web_propose_delta_mock(args);
+    let is_error = out.get("outcome").and_then(|o| o.as_str()) == Some("Reject");
+    text_result(
+        id,
+        serde_json::to_string_pretty(&out).unwrap_or_default(),
+        is_error,
+    )
+}
+
+#[cfg(feature = "tool-propose-communicative-act")]
+fn tool_semantic_agent(id: Value, name: &str, args: &Value) -> Value {
+    let (out, is_error) = match name {
+        "propose_communicative_act" => umst_mcp::semantic_hcom::exec_propose_communicative_act(args),
+        "map_to_geometry" => umst_mcp::semantic_hcom::exec_map_to_geometry(args),
+        "refine_shape" => umst_mcp::semantic_hcom::exec_refine_shape(args),
+        "get_audit_digest" => umst_mcp::semantic_hcom::exec_get_audit_digest(args),
+        other => {
+            return agent_tool_error(
+                id,
+                "unknown_semantic_agent_tool",
+                format!("unknown semantic agent tool: {other}"),
+                "Use propose_communicative_act, map_to_geometry, refine_shape, or get_audit_digest.",
+            );
+        }
+    };
+    text_result(
+        id,
+        serde_json::to_string_pretty(&out).unwrap_or_default(),
+        is_error,
+    )
+}
+
+#[cfg(any(feature = "tool-semantic-hcom", feature = "tool-propose-communicative-act"))]
+fn tool_propose_communicative_act(id: Value, args: &Value) -> Value {
+    #[cfg(feature = "tool-propose-communicative-act")]
+    let (out, is_error) = umst_mcp::semantic_hcom::exec_propose_communicative_act(args);
+    #[cfg(all(feature = "tool-semantic-hcom", not(feature = "tool-propose-communicative-act")))]
+    let (out, is_error) =
+        umst_mcp::semantic_hcom_schema::exec_propose_communicative_act_mock(args);
+    text_result(
+        id,
+        serde_json::to_string_pretty(&out).unwrap_or_default(),
+        is_error,
+    )
+}
+
 #[cfg(all(feature = "agent-layer", feature = "tool-arena-session-unified"))]
 fn tool_umst_arena_session(
     id: Value,
@@ -903,6 +983,18 @@ fn handle_tools_call(
         "umst_promote_contribution" => (tool_umst_promote_contribution(id, &args), session),
         #[cfg(feature = "tool-arena-session-unified")]
         "umst_arena_session" => tool_umst_arena_session(id, &args, session),
+        #[cfg(any(feature = "tool-semantic-hcom", feature = "tool-propose-communicative-act"))]
+        "propose_communicative_act" => (
+            tool_propose_communicative_act(id, &args),
+            session,
+        ),
+        #[cfg(feature = "tool-propose-communicative-act")]
+        "map_to_geometry" | "refine_shape" | "get_audit_digest" => (
+            tool_semantic_agent(id, name, &args),
+            session,
+        ),
+        #[cfg(feature = "tool-web-propose-delta")]
+        "web_propose_delta" => (tool_web_propose_delta(id, &args), session),
         other => (
             json!({
                 "jsonrpc": "2.0",

@@ -18,8 +18,8 @@ pub use umst_manifold::gate::{
     GATE_PARITY_V0_SHA256_PREFIX,
 };
 
-const FLEET_PICKER_REL: &str = "outputs/.tmp/fleet_pick_target_dir.sh";
-const FLEET_SCRATCH_LOADER_REL: &str = "outputs/.tmp/fleet_load_scratch.sh";
+const FLEET_PICKER_REL: &str = "archived/residuals/misc-outputs-tmp/fleet_pick_target_dir.sh";
+const FLEET_SCRATCH_LOADER_REL: &str = "archived/residuals/misc-outputs-tmp/fleet_load_scratch.sh";
 
 /// Parity digest witness (stdout / JSON wire).
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -98,7 +98,7 @@ pub fn default_parity_fixture_path() -> PathBuf {
         .join("../umst-mcp/tests/fixtures/gate_parity_v0.json")
 }
 
-/// Resolve MaOS-Workspace integration root (env or walk-up from crate dir).
+/// Resolve tyto-workspace integration root (env or walk-up from crate dir).
 pub fn resolve_workspace_root(explicit: Option<&Path>) -> Result<PathBuf, OpsHostError> {
     if let Some(root) = explicit {
         return Ok(root.to_path_buf());

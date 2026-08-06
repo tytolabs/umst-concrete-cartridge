@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "map_to_geometry_v0",
+  "title": "MapToGeometry",
+  "description": "Map surface form to meaning geometry via semantic cartridge (HCOM-029). Chair EN/TA scope @ P1.",
+  "type": "object",
+  "properties": {
+    "surface": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Utterance or lemma surface form"
+    },
+    "lang": {
+      "type": "string",
+      "enum": ["en", "ta"],
+      "default": "en",
+      "description": "Language lane for cartridge mapping"
+    },
+    "trust": {
+      "type": "object",
+      "description": "Optional trust attestation — ephemeral scope suffices (SEC-MCP-WRAP)"
+    }
+  },
+  "required": ["surface"],
+  "additionalProperties": true
+}

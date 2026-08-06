@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "get_audit_digest_v0",
+  "title": "GetAuditDigest",
+  "description": "Content-addressed digest for a gated communicative decision (HCOM-029 · HCOM-022 fixture log).",
+  "type": "object",
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque decision / proposal id from prior gate outcome or fixture log"
+    }
+  },
+  "required": ["decision_id"],
+  "additionalProperties": false
+}

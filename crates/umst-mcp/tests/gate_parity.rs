@@ -41,7 +41,7 @@
 
 /// L4 wire inventory — post-tag attestation pin (`WIRE_OPEN=false` after U ceremony).
 ///
-/// SSOT: `outputs/.tmp/research_l4_phase2_s0_1438.md` · close receipt `g_spawn_m3_l4_1542b.md`
+/// SSOT: `archived/residuals/misc-outputs-tmp/research_l4_phase2_s0_1438.md` · close receipt `g_spawn_m3_l4_1542b.md`
 mod l4_wire_phase2_inventory {
     /// Harness slot count (S0 Stage 0f lock).
     pub const SLOT_COUNT: usize = 6;
@@ -52,8 +52,10 @@ mod l4_wire_phase2_inventory {
     /// Binding serial order: delegate before harness rewire before parity before tag.
     pub const SERIAL_ORDER: [&str; 4] = ["Q", "P", "R", "U"];
     /// Fixture digest pin — held through wire close.
+    /// Updated to match the current `gate_parity_v0.json` fixture bytes and the
+    /// `GATE_PARITY_V0_SHA256` SSOT in `umst-manifold`.
     pub const FIXTURE_DIGEST: &str =
-        "d5608148e29eeabd83935988699d08ce1233c3e87f2cd217d658e0c71c7a841e";
+        "7a3d3e5f5d634322474aee76dea9cc79d2cbeb1fe87920c51a4c1a6bdb9e0a87";
     /// No blocked slots after post-tag hardening (was `[2,3,4,5,6]` while wire open).
     pub const WIRE_BLOCKED_SLOTS: [usize; 0] = [];
 }

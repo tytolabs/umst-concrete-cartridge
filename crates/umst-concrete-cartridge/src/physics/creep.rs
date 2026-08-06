@@ -108,3 +108,113 @@ impl<B: Backend> CreepEngine<B> {
         elastic_compliance.add(basic_creep).add(drying_creep)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use burn::tensor::{Data, Shape, Tensor};
+    use burn_ndarray::{NdArray, NdArrayDevice};
+
+    type B = NdArray<f32>;
+
+    /// Orchestrator creep pin — matches `pipeline/b2_orchestrator_delegate` call site.
+    /// Class: **Primitive-fact** (routing contract, not fitted from compliance output).
+    const PIN_FC_MPA: f32 = 40.0;
+    const PIN_WC: f32 = 0.45;
+    const PIN_AMBIENT_RH: f32 = 0.55;
+    const PIN_T_LOAD_DAYS: f32 = 7.0;
+    const PIN_T_CURRENT_DAYS: f32 = 28.0;
+
+    /// Measured golden compliance [1/GPa] at orchestrator pin (Burn tensor path).
+    /// Class: **Measured** — witness 2026-07-21 AC13 · `cargo test --lib creep_engine`.
+    const GOLDEN_COMPLIANCE_1_OVER_GPA: f32 = 0.044_552_77_f32;
+
+    fn scalar_rank4(v: f32) -> Tensor<B, 4> {
+        let dev = NdArrayDevice::default();
+        Tensor::from_data(Data::new(vec![v], Shape::new([1, 1, 1, 1])), &dev)
+    }
+
+    fn compliance_at_pin(
+        fc_mpa: f32,
+        wc: f32,
+        rh: f32,
+        t_load_days: f32,
+        t_current_days: f32,
+    ) -> f32 {
+        let compliance = CreepEngine::<B>::compute_compliance(
+            scalar_rank4(fc_mpa),
+            scalar_rank4(wc),
+            scalar_rank4(rh),
+            t_load_days,
+            t_current_days,
+        );
+        compliance.into_data().value[0]
+    }
+
+    /// Monolith golden vector — pins Burn tensor path at orchestrator mix contract.
+    #[test]
+    fn creep_engine_measured_golden_vector_at_orchestrator_pin() {
+        let measured = compliance_at_pin(
+            PIN_FC_MPA,
+            PIN_WC,
+            PIN_AMBIENT_RH,
+            PIN_T_LOAD_DAYS,
+            PIN_T_CURRENT_DAYS,
+        );
+        assert!(
+            measured.is_finite() && measured > 0.0,
+            "orchestrator-pin compliance must be finite and positive; got {measured}"
+        );
+        let rel_err = (measured - GOLDEN_COMPLIANCE_1_OVER_GPA).abs() / GOLDEN_COMPLIANCE_1_OVER_GPA;
+        assert!(
+            rel_err < 1e-5,
+            "creep golden drift: measured={measured} golden={GOLDEN_COMPLIANCE_1_OVER_GPA} rel_err={rel_err}"
+        );
+    }
+
+    /// Admissibility: compliance non-decreases with elapsed time at fixed pin.
+    #[test]
+    fn creep_engine_compliance_monotone_in_duration() {
+        let early = compliance_at_pin(
+            PIN_FC_MPA,
+            PIN_WC,
+            PIN_AMBIENT_RH,
+            PIN_T_LOAD_DAYS,
+            PIN_T_LOAD_DAYS + 1.0,
+        );
+        let late = compliance_at_pin(
+            PIN_FC_MPA,
+            PIN_WC,
+            PIN_AMBIENT_RH,
+            PIN_T_LOAD_DAYS,
+            PIN_T_CURRENT_DAYS,
+        );
+        assert!(
+            late >= early,
+            "creep compliance must not decrease with time: early={early} late={late}"
+        );
+    }
+
+    /// Drying term: lower RH ⇒ higher compliance (Pickett pathway exercised).
+    #[test]
+    fn creep_engine_compliance_increases_as_rh_decreases() {
+        let humid = compliance_at_pin(
+            PIN_FC_MPA,
+            PIN_WC,
+            0.90,
+            PIN_T_LOAD_DAYS,
+            PIN_T_CURRENT_DAYS,
+        );
+        let dry = compliance_at_pin(
+            PIN_FC_MPA,
+            PIN_WC,
+            0.40,
+            PIN_T_LOAD_DAYS,
+            PIN_T_CURRENT_DAYS,
+        );
+        assert!(
+            dry > humid,
+            "drying creep must rise as RH falls: humid={humid} dry={dry}"
+        );
+    }
+}

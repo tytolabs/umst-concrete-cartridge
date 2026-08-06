@@ -8,7 +8,6 @@
 #![allow(clippy::excessive_precision)]
 
 use crate::calibration::{ModelKind, Profile};
-use crate::chem_adapter::hydration_k_ref_f32;
 use crate::formulas::ultimate_doh_wc;
 use std::fmt;
 
@@ -31,7 +30,7 @@ pub struct MixRow {
 /// formal_anchor_rationale: Dispatch error: Jennings-not-yet, invalid mix; no formal claim.
 #[derive(Debug)]
 pub enum HomogeneousError {
-    /// Boarded @ `outputs/.tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002 — Powers path ships; homogeneous Jennings gel-space OPEN (CC-P-JENNINGS).
+    /// Boarded @ `archived/residuals/misc-outputs-tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002 — Powers path ships; homogeneous Jennings gel-space OPEN (CC-P-JENNINGS).
     JenningsNotImplemented,
     InvalidMix,
 }

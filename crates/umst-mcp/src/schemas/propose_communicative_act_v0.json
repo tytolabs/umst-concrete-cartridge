@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "propose_communicative_act_v0",
+  "title": "ProposeCommunicativeAct",
+  "description": "HCOM hybrid loop input: frontier intent + dialogue context → local semantic gate (blueprint §5 · HCOM-029).",
+  "type": "object",
+  "properties": {
+    "intent": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Communicative intent surface form (e.g. describe chair geometry to human operator)."
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "lang": {
+          "type": "string",
+          "enum": ["en", "ta", "sa"],
+          "default": "en",
+          "description": "ISO-style language tag for cartridge mapping."
+        },
+        "dialogue_turn": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based turn index in multi-turn dialogue."
+        },
+        "prior_decision_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Content-addressed audit ids from prior gated acts."
+        }
+      },
+      "required": ["lang"],
+      "additionalProperties": false
+    },
+    "mock_llm_fixture": {
+      "type": "string",
+      "enum": ["consistent_chair", "inconsistent_no_back", "mi_shortfall"],
+      "description": "Deterministic mock frontier proposal for integration tests (honest stub only)."
+    }
+  },
+  "required": ["intent", "context"],
+  "additionalProperties": false
+}

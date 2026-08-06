@@ -14,6 +14,8 @@ pub mod adapter;
 pub mod gate;
 pub mod infra;
 
+use super::cart_provenance::ConstitutiveAdmitStamp;
+use super::catalog_pin::{resolve_catalog_hash_for_ingest, CatalogPinError};
 use super::geometry::mix_geometry_key;
 use super::governance::validate_scope_token;
 use super::memory::{ResearchStore, StoreError};
@@ -62,6 +64,8 @@ pub enum AcceptError {
     Scope(#[from] super::governance::ScopeError),
     #[error("observed_at stamp is not monotonic after session clock")]
     NonMonotonicStamp,
+    #[error(transparent)]
+    CatalogPin(#[from] CatalogPinError),
     #[error(transparent)]
     Store(#[from] StoreError),
 }
@@ -188,8 +192,15 @@ pub fn accept(
         return Err(AcceptError::GateReject(Box::new(row)));
     }
 
+    let catalog_hash = resolve_catalog_hash_for_ingest(&contribution.catalog_hash)?;
+
     let (clock, observed_at) =
         ensure_observed_at(Some(contribution.observed_at.clone()), clock, wall);
+    let admit_stamp = ConstitutiveAdmitStamp::from_admit(&observed_at, catalog_hash.clone());
+
+    let mut contribution = contribution;
+    contribution.catalog_hash = catalog_hash;
+
     let memory_id = Uuid::new_v4().to_string();
     let record =
         memory_record_from_contribution(&contribution, memory_id.clone(), observed_at.clone());
@@ -206,6 +217,13 @@ pub fn accept(
             content_id: content,
             observed_at,
             stamp_tier,
+            catalog_hash: admit_stamp.catalog_hash,
+            constitutive_admit: admit_stamp.constitutive_admit,
+            #[cfg(feature = "ucrs-provenance")]
+            durable_accept: admit_stamp
+                .durable_accept
+                .as_ref()
+                .and_then(|w| serde_json::to_value(w).ok()),
         },
     ))
 }

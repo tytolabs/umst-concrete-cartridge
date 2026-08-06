@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "web_propose_delta_v0",
+  "title": "WebProposeDelta",
+  "description": "WEB-009 informational web delta proposal — current_state + proposed_delta + intent_witness (blueprint §5).",
+  "type": "object",
+  "properties": {
+    "current_state": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Base64-encoded umst-web-tensor-v1 wire for the current mesh state."
+    },
+    "proposed_delta": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Base64-encoded umst-web-tensor-delta wire describing the proposed change."
+    },
+    "intent_witness": {
+      "description": "Embedding vector or Lean term witness anchoring operator intent.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 1
+        },
+        {
+          "type": "string",
+          "minLength": 1
+        }
+      ]
+    },
+    "mock_fixture": {
+      "type": "string",
+      "enum": ["balanced_accept", "under_budget_reject", "missing_witness_reject"],
+      "description": "Deterministic mock gate outcome for integration tests (honest stub only)."
+    }
+  },
+  "required": ["current_state", "proposed_delta", "intent_witness"],
+  "additionalProperties": false
+}

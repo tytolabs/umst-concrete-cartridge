@@ -57,7 +57,7 @@ b1-delegate = []
 # Physical Reasoning Layer: gate-validated research memory + MCP contribute/query (default off).
 agent-layer = ["manifest-bridge", "b1-delegate", "umst-cartridge-concrete/agent-layer", "dep:rusqlite", "dep:uuid", "dep:thiserror", "dep:sha2", "dep:serde_json", "dep:serde_yaml"]
 # UCRS Tier-2 observation stamps on memory ingest (git-pinned `umst-ucrs`; local `[patch]` optional).
-ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
+ucrs-provenance = ["agent-layer", "dep:umst-ucrs", "dep:umst-trust"]
 
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
@@ -67,6 +67,7 @@ umst-cartridge-concrete = { workspace = true }
 umst-cartridge-continuum = { workspace = true }
 umst-cartridge-solid-inelastic = { workspace = true }
 umst-manifold = { workspace = true }
+umst-cartridge-registry = { path = "../../../umst-cartridge-registry" }
 umst-chem = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
@@ -81,7 +82,8 @@ thiserror = { version = "2", optional = true }
 sha2 = { version = "0.10", optional = true }
 serde_json = { version = "1.0", optional = true }
 serde_yaml = { version = "0.9", optional = true }
-umst-ucrs = { workspace = true, optional = true }
+umst-ucrs = { workspace = true, optional = true, default-features = false }
+umst-trust = { workspace = true, optional = true }
 
 [dev-dependencies]
 approx = "0.5"
@@ -147,6 +149,16 @@ path = "examples/hydration_simulation.rs"
 [[test]]
 name = "rheology_sweep"
 path = "tests/rheology_sweep.rs"
+
+[[test]]
+name = "cart_provenance_stamp"
+path = "tests/cart_provenance_stamp.rs"
+required-features = ["agent-layer", "ucrs-provenance"]
+
+[[test]]
+name = "ucrs_wire_v2_parity"
+path = "tests/ucrs_wire_v2_parity.rs"
+required-features = ["ucrs-provenance"]
 
 [[test]]
 name = "research_memory"

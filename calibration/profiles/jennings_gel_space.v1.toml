@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar,
+# Santosh Prabhu Shenbagamoorthy — Studio TYTO
+#
+# Jennings gel-space homogeneous witness profile — CC-P-JENNINGS IMPL @ 07:21.
+# Parameters thread default G0 calibration pins (no invented J-O2/J-O3 numbers).
+# Exponent p = 3 per J-O1 / inventory B-19 (code default, not a separate TOML field).
+# Headline CSV strength acceptance omitted — Boundary until operator Jennings refit dataset.
+
+[meta]
+name = "jennings_gel_space"
+schema = "calibration.v1"
+material = "concrete"
+model = "jennings_gel_space"
+source_repo = "umst-prototype-2a"
+
+[provenance]
+dataset_lift_from = "default G0 calibration pins (s_intrinsic, k_*) lifted verbatim — no separate Jennings dataset"
+provenance_sha256 = "6ca1128a251d66ae3e70782779f8c46f2f29fadf04e379134ad1dff257a704e1"
+primary_reference = "Jennings–Brownyard gel-space homogeneous witness (CC-P-JENNINGS @ 07:21)"
+
+[provenance.formal]
+anchor = "lean://umst-formal/Lean/JenningsGelSpace.lean#jennings_strength_monotone"
+status = "Mechanised"
+axioms = ["physicalSecondLaw"]
+rationale = "Homogeneous Jennings dispatch; s_intrinsic threads profile pin (J-O2); p=3 default (J-O1/B-19)."
+
+[regime]
+w_c_min = 0.30
+w_c_max = 0.65
+temperature_k_min = 278.0
+temperature_k_max = 313.0
+age_hours_min = 1.0
+age_hours_max = 87600.0
+
+[cast_lifecycle]
+alpha_set = 0.15
+alpha_hard = 0.85
+
+[model]
+kind = "jennings_gel_space"
+
+[parameters.powers_gel_space]
+s_intrinsic = 80.0000
+k_slag = 0.6000
+k_fly_ash = 0.4000
+k_ref = 0.5500
+early_boost = 1.0000
+
+[contract]
+verification_status = "Boundary"

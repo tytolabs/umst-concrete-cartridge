@@ -13,18 +13,26 @@ use crate::concrete_bridge::{
     PSI_CLOSURE_ABS_TOL,
 };
 
-use crate::calibration::Profile;
+use crate::calibration::{ModelKind, Profile};
 use crate::homogeneous::MixRow;
-use umst_cartridge_concrete::{ComposeProfilePins, DEFAULT_TOTAL_BINDER_KG_M3};
+use umst_cartridge_concrete::{
+    chem_b3_capwrap::JENNINGS_STRENGTH_EXPONENT_DEFAULT, homogeneous::ModelKind as ConsumerModelKind,
+    ComposeProfilePins, DEFAULT_TOTAL_BINDER_KG_M3,
+};
 
 /// Lift monolith [`Profile`] into consumer compose profile pins (regime + Powers SSOT).
 #[must_use]
 fn compose_profile_pins_from(profile: &Profile) -> ComposeProfilePins {
+    let strength_model = match profile.model_section.kind {
+        ModelKind::PowersGelSpace => ConsumerModelKind::PowersGelSpace,
+        ModelKind::JenningsGelSpace => ConsumerModelKind::JenningsGelSpace,
+    };
     ComposeProfilePins {
         s_intrinsic_mpa: profile.powers.s_intrinsic,
         w_c_max: profile.regime.w_c_max,
         total_binder_kg_m3: DEFAULT_TOTAL_BINDER_KG_M3,
-        ..ComposeProfilePins::default_bundle()
+        strength_model,
+        jennings_exponent: JENNINGS_STRENGTH_EXPONENT_DEFAULT,
     }
 }
 

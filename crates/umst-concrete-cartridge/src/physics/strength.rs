@@ -4,10 +4,10 @@
 use burn::tensor::{backend::Backend, Tensor};
 
 use crate::chem_adapter::{
-    cement_volume_per_wc_f32, clinker_bulk_modulus_ambient_gpa_f32, csh_hd_scale_of_bulk_f32,
-    csh_ld_frac_intercept_subtrahend_f32, csh_ld_frac_slope_f32, csh_ld_scale_of_bulk_f32,
-    csh_volume_factor_f32, csh_youngs_moduli_from_k0_f32, e_to_fc_stiffness_bridge_f32,
-    powers_non_evap_water_coeff_f32, ClinkerPhaseTag,
+    cement_volume_per_wc_f32, clinker_bulk_modulus_ambient_gpa_f32,
+    csh_ld_frac_intercept_subtrahend_f32, csh_ld_frac_slope_f32, csh_volume_factor_f32,
+    csh_youngs_moduli_from_k0_f32, e_to_fc_stiffness_bridge_f32, powers_non_evap_water_coeff_f32,
+    ClinkerPhaseTag,
 };
 
 // Track H2 (v0.4): DFT-backed bulk moduli for clinker / C-S-H phases live in [`super::clinker_eos`].
@@ -133,9 +133,46 @@ impl<B: Backend> StrengthEngine<B> {
     }
 }
 
+/// Orchestrator strength pin — matches `pipeline/orchestrator.rs` air default and
+/// `calibration/profiles/default.v1.toml` `s_intrinsic`.
+/// Class: **Primitive-fact** (routing contract, not fitted from f_c output).
+pub(crate) const ORCHESTRATOR_PIN_WC: f32 = 0.45;
+pub(crate) const ORCHESTRATOR_PIN_ALPHA: f32 = 0.75;
+pub(crate) const ORCHESTRATOR_PIN_AIR: f32 = 0.02;
+pub(crate) const ORCHESTRATOR_PIN_S_INTRINSIC: f32 = 80.0;
+
+/// Measured golden compressive strength [MPa] at orchestrator paste pin — pinned by
+/// `strength_engine_measured_golden_vector_paste_at_orchestrator_pin`.
+/// Class: **Measured** (engine output under recorded pin, not invented).
+pub(crate) const STRENGTH_GOLDEN_FC_MPA: f32 = 35.689_57_f32;
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use burn::tensor::{Data, Shape, Tensor};
+    use burn_ndarray::{NdArray, NdArrayDevice};
+    use crate::chem_adapter::{csh_hd_scale_of_bulk_f32, csh_ld_scale_of_bulk_f32};
+
+    type B = NdArray<f32>;
+
+    fn scalar_rank4(v: f32) -> Tensor<B, 4> {
+        let dev = NdArrayDevice::default();
+        Tensor::from_data(Data::new(vec![v], Shape::new([1, 1, 1, 1])), &dev)
+    }
+
+    fn strength_at_pin(wc: f32, alpha: f32, air: f32, s_intrinsic: f32) -> (f32, f32, f32) {
+        let (fc, v_hd, v_ld) = StrengthEngine::<B>::compute_strength_jennings(
+            scalar_rank4(wc),
+            scalar_rank4(alpha),
+            scalar_rank4(air),
+            scalar_rank4(s_intrinsic),
+        );
+        (
+            fc.into_data().value[0],
+            v_hd.into_data().value[0],
+            v_ld.into_data().value[0],
+        )
+    }
 
     /// Pins the Vinet-anchored gel moduli to the historical Ulm–Constantinides nano-indentation
     /// anchors (21.7 / 29.4 GPa). If cluster D `K₀` or cluster E LD/HD scales ever drift, this
@@ -168,6 +205,54 @@ mod tests {
         assert!(
             (e_hd / k_csh - csh_hd_scale_of_bulk_f32()).abs() < 1e-6_f32,
             "HD scaling factor regressed"
+        );
+    }
+
+    /// Monolith golden vector — pins Jennings paste strength at orchestrator mix contract.
+    /// Constant class: **Measured** (first witness under pin; tolerance guards drift).
+    #[test]
+    fn strength_engine_measured_golden_vector_paste_at_orchestrator_pin() {
+        let (fc_mpa, v_hd, v_ld) = strength_at_pin(
+            ORCHESTRATOR_PIN_WC,
+            ORCHESTRATOR_PIN_ALPHA,
+            ORCHESTRATOR_PIN_AIR,
+            ORCHESTRATOR_PIN_S_INTRINSIC,
+        );
+        assert!(
+            fc_mpa.is_finite() && fc_mpa > 0.0,
+            "orchestrator-pin f_c must be finite and positive; got {fc_mpa}"
+        );
+        assert!(
+            v_hd.is_finite() && v_ld.is_finite() && v_hd >= 0.0 && v_ld >= 0.0,
+            "C-S-H phase volumes must be finite and non-negative: v_hd={v_hd} v_ld={v_ld}"
+        );
+        // Witness value recorded 2026-07-21 AC11 — update only with new measured run + receipt.
+        const GOLDEN_FC_MPA: f32 = STRENGTH_GOLDEN_FC_MPA;
+        let rel_err = (fc_mpa - GOLDEN_FC_MPA).abs() / GOLDEN_FC_MPA;
+        assert!(
+            rel_err < 1e-5,
+            "strength paste golden drift: measured={fc_mpa} golden={GOLDEN_FC_MPA} rel_err={rel_err}"
+        );
+    }
+
+    /// Admissibility: higher hydration at fixed w/c ⇒ higher paste strength.
+    #[test]
+    fn strength_engine_paste_fc_increases_with_hydration() {
+        let (fc_early, _, _) = strength_at_pin(
+            ORCHESTRATOR_PIN_WC,
+            0.40,
+            ORCHESTRATOR_PIN_AIR,
+            ORCHESTRATOR_PIN_S_INTRINSIC,
+        );
+        let (fc_late, _, _) = strength_at_pin(
+            ORCHESTRATOR_PIN_WC,
+            0.90,
+            ORCHESTRATOR_PIN_AIR,
+            ORCHESTRATOR_PIN_S_INTRINSIC,
+        );
+        assert!(
+            fc_late > fc_early,
+            "f_c must rise with α at fixed w/c: early={fc_early} late={fc_late}"
         );
     }
 }

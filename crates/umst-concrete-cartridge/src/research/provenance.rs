@@ -4,11 +4,15 @@
 //! Observation stamping — **immutable clock threading** (no global mutex).
 //!
 //! `ProvenanceClock::advance` is the sole state transition; wall time is injected via [`WallClock`] at the IO boundary.
+//!
+//! Consumer contract: `umst_ucrs::shared_types::observation` (Wave 2 · CELL_UCRS_READY_U5_CONCRETE).
 
 use super::types::ObservedAt;
 
 #[cfg(feature = "ucrs-provenance")]
-use umst_ucrs::observation::UcrsObservedAt;
+use umst_ucrs::shared_types::observation::{
+    wall_epoch_ms, TemporalWitness, UcrsObservedAt,
+};
 
 /// Wall-clock effect, isolated at MCP/CLI boundary.
 /// formal_anchor: NONE
@@ -26,7 +30,7 @@ impl WallClock {
     pub fn epoch_ms(self) -> u64 {
         #[cfg(feature = "ucrs-provenance")]
         {
-            return umst_ucrs::observation::wall_epoch_ms();
+            return wall_epoch_ms();
         }
         #[cfg(not(feature = "ucrs-provenance"))]
         {
@@ -75,7 +79,7 @@ pub struct ProvenanceClock {
     #[cfg(feature = "ucrs-provenance")]
     mode: UcrsStampMode,
     #[cfg(feature = "ucrs-provenance")]
-    live: Option<umst_ucrs::observation::TemporalWitness>,
+    live: Option<TemporalWitness>,
 }
 
 impl Clone for ProvenanceClock {
@@ -126,9 +130,7 @@ impl ProvenanceClock {
         #[cfg(feature = "ucrs-provenance")]
         {
             let live = if mode == UcrsStampMode::Live {
-                Some(umst_ucrs::witness_for_agent(
-                    &umst_ucrs::AgentConfig::default(),
-                ))
+                Some(TemporalWitness::new(0))
             } else {
                 None
             };

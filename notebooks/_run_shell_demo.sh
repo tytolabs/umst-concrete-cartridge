@@ -24,7 +24,7 @@
 #   # Roof load: default uniform (B6 full); UMST_SHELL_ROOF_RAMP=1 => x ramp at UMST_SHELL_ROOF_RAMP_F (default 0.2)
 #   bash notebooks/_run_shell_demo.sh 2>&1 | tee shell_track_l_40cube4_i200.log
 #
-# Rust writes under MaOS-Workspace/crates/umst-topology-opt-archived/examples/_artifacts/shell/ (manifest.json, final.npy, …).
+# Rust writes under tyto-workspace/crates/umst-topology-opt-archived/examples/_artifacts/shell/ (manifest.json, final.npy, …).
 # This script writes under notebooks/_artifacts/: striatus_emergence.gif, striatus_shell_v0.4.stl,
 # striatus_shell_v0.4.print_ready.json (via export_print_ready.py). Re-run exporter only from repo root:
 #   python3 notebooks/export_print_ready.py
