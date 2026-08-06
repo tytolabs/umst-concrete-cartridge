@@ -136,15 +136,17 @@ impl<B: Backend> StrengthEngine<B> {
 /// Orchestrator strength pin — matches `pipeline/orchestrator.rs` air default and
 /// `calibration/profiles/default.v1.toml` `s_intrinsic`.
 /// Class: **Primitive-fact** (routing contract, not fitted from f_c output).
-pub(crate) const ORCHESTRATOR_PIN_WC: f32 = 0.45;
-pub(crate) const ORCHESTRATOR_PIN_ALPHA: f32 = 0.75;
-pub(crate) const ORCHESTRATOR_PIN_AIR: f32 = 0.02;
-pub(crate) const ORCHESTRATOR_PIN_S_INTRINSIC: f32 = 80.0;
+/// Pub for `umst-diff` B3 old-side adapter (DIFF-HARNESS-B3).
+pub const ORCHESTRATOR_PIN_WC: f32 = 0.45;
+pub const ORCHESTRATOR_PIN_ALPHA: f32 = 0.75;
+pub const ORCHESTRATOR_PIN_AIR: f32 = 0.02;
+pub const ORCHESTRATOR_PIN_S_INTRINSIC: f32 = 80.0;
 
 /// Measured golden compressive strength [MPa] at orchestrator paste pin — pinned by
 /// `strength_engine_measured_golden_vector_paste_at_orchestrator_pin`.
 /// Class: **Measured** (engine output under recorded pin, not invented).
-pub(crate) const STRENGTH_GOLDEN_FC_MPA: f32 = 35.689_57_f32;
+/// Pub for `umst-diff` B3 old-side adapter (DIFF-HARNESS-B3).
+pub const STRENGTH_GOLDEN_FC_MPA: f32 = 35.689_57_f32;
 
 #[cfg(test)]
 mod tests {
