@@ -1,6 +1,6 @@
-# Local dev patch — copy to `.cargo/config.toml` when testing against sibling umst-manifold.
-# Required: sibling `umst-manifold/` + `umst-foundations/` (umst-gate SSOT). Pure-git pin
-# `575d9508` alone fails: `no matching package named umst-gate` — see
+# Optional local override — R2-1 also tracks the same manifold patch in
+# `umst-concrete-cartridge/Cargo.toml`. Pure-git pin `575d9508` alone still fails
+# (`no matching package named umst-gate`) — see
 # `umst-foundations/crates/umst-gate/CONSUMER_PATH.md`.
 
 [patch."https://github.com/tytolabs/umst-manifold.git"]

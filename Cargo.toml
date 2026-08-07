@@ -43,7 +43,15 @@ umst-chem = { path = "../umst-chem" }
 [patch."https://github.com/tytolabs/umst-ucrs.git"]
 umst-ucrs = { path = "../umst-ucrs/Rust" }
 
-# Local dev: copy `.cargo/config.toml.example` → `.cargo/config.toml` to patch sibling umst-manifold.
+# R2-1: tracked sibling patch so gate_parity resolves umst-gate after A2 carve.
+# Pure git pin 575d9508 alone fails ("no matching package named umst-gate") because
+# the remote rev predates the carve; local umst-manifold path-deps foundations.
+# See umst-foundations/crates/umst-gate/CONSUMER_PATH.md.
+[patch."https://github.com/tytolabs/umst-manifold.git"]
+umst-manifold = { path = "../umst-manifold" }
+umst-runtime = { path = "../umst-manifold/crates/umst-runtime" }
+umst-runtime-arena = { path = "../umst-manifold/umst-runtime-arena" }
+
 
 # Striatus dev loop: keep harness code debuggable; compile Burn/ndarray deps at full speed.
 [profile.dev.package."*"]
