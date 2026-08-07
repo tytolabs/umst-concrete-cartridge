@@ -2,7 +2,7 @@
 # Consumed by umst-meta when implemented; not checked yet.
 
 name = "tytolabs/umst-concrete-cartridge"
-path = "umst-concrete-cartridge"
+path = "umst/umst-concrete-cartridge"
 
 kind = "cartridge"
 spdx = "MIT"
