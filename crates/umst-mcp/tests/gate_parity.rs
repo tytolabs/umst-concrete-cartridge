@@ -12,7 +12,7 @@
 //! Conjuncts **Q ∧ P ∧ R ∧ U** green @ 2026-07-18. Stdio harness (`gate_parity` 7/7) exercises the
 //! composed delegate path through live `umst-mcp` spawn — not L5 adapter witness alone.
 //!
-//! **Digest SSOT:** `d5608148…` (5-row UNLOCK-3). Legacy `149081fa…` departed.
+//! **Digest SSOT:** `7a3d3e5f…` (UNLOCK-6 six-mix land; `reject_cold_regime`). Prior digest superseded — see `workspace/ops/gate_parity_digest_superseded_by.json`; `149081fa…` departed earlier.
 //!
 //! Residue: `R-gateway-wrap-native-mcp` · A9 gateway wrap remains **post** L4 close per WAVE3 TOP 3 #3.
 //!
