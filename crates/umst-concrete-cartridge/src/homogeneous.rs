@@ -30,7 +30,7 @@ pub struct MixRow {
 /// formal_anchor_rationale: Dispatch error: Jennings-not-yet, invalid mix; no formal claim.
 #[derive(Debug)]
 pub enum HomogeneousError {
-    /// Boarded @ `archived/residuals/misc-outputs-tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002 — Powers path ships; homogeneous Jennings gel-space OPEN (CC-P-JENNINGS).
+    /// Boarded @ `old/residuals/residuals/misc-outputs-tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002 — Powers path ships; homogeneous Jennings gel-space OPEN (CC-P-JENNINGS).
     JenningsNotImplemented,
     InvalidMix,
 }

@@ -4253,6 +4253,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "umst-cartridge-active"
+version = "0.1.0"
+dependencies = [
+ "umst-cartridge-api",
+]
+
+[[package]]
 name = "umst-cartridge-api"
 version = "0.1.0"
 dependencies = [
@@ -4264,8 +4271,13 @@ name = "umst-cartridge-concrete"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+ "umst-cartridge-active",
  "umst-cartridge-api",
  "umst-cartridge-continuum",
+ "umst-cartridge-fabrication",
+ "umst-cartridge-fieldcoupled",
+ "umst-cartridge-fluids",
+ "umst-cartridge-polymer",
  "umst-cartridge-poromechanics",
  "umst-cartridge-solid-inelastic",
  "umst-chem",
@@ -4278,6 +4290,36 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+ "umst-cartridge-api",
+]
+
+[[package]]
+name = "umst-cartridge-fabrication"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "toml",
+ "umst-cartridge-api",
+]
+
+[[package]]
+name = "umst-cartridge-fieldcoupled"
+version = "0.1.0"
+dependencies = [
+ "umst-cartridge-api",
+]
+
+[[package]]
+name = "umst-cartridge-fluids"
+version = "0.1.0"
+dependencies = [
+ "umst-cartridge-api",
+]
+
+[[package]]
+name = "umst-cartridge-polymer"
+version = "0.1.0"
+dependencies = [
  "umst-cartridge-api",
 ]
 
@@ -4357,6 +4399,7 @@ dependencies = [
  "umst-cartridge-registry",
  "umst-cartridge-solid-inelastic",
  "umst-chem",
+ "umst-jennings-legacy",
  "umst-manifold",
  "umst-trust",
  "umst-ucrs",
@@ -4394,6 +4437,10 @@ dependencies = [
  "serde_json",
  "umst-concrete-cartridge",
 ]
+
+[[package]]
+name = "umst-jennings-legacy"
+version = "0.2.1"
 
 [[package]]
 name = "umst-layout-codegen"

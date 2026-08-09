@@ -148,6 +148,27 @@ pub const ORCHESTRATOR_PIN_S_INTRINSIC: f32 = 80.0;
 /// Pub for `umst-diff` B3 old-side adapter (DIFF-HARNESS-B3).
 pub const STRENGTH_GOLDEN_FC_MPA: f32 = 35.689_57_f32;
 
+/// Pure f64 image of [`StrengthEngine::compute_strength_jennings`] for differential harnesses
+/// (`umst-diff` R10-A0). Delegates to [`umst_jennings_legacy`] — the Burn-free extract of this
+/// algorithm living under the concrete cartridge tree.
+///
+/// Returns `(fc_mpa, v_hd, v_ld)`. Does **not** return the pinned golden constant — callers
+/// must compute from inputs. Not a claim of physics GREEN.
+#[must_use]
+pub fn compute_strength_jennings_f64(
+    wc_ratio: f64,
+    degree_hydration: f64,
+    air_content: f64,
+    intrinsic_strength: f64,
+) -> (f64, f64, f64) {
+    umst_jennings_legacy::compute_strength_jennings_f64(
+        wc_ratio,
+        degree_hydration,
+        air_content,
+        intrinsic_strength,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

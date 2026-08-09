@@ -658,7 +658,7 @@ pub const fn chemo_diffusion_weight_scale_f32() -> f32 {
 //
 // **Lifted to `umst-chem` SSOT (A4b-5):** H-01 → `NANO_SSA_REF_M2_PER_G`; H-02 → `POZZOLANIC_ALPHA`;
 // H-03 → `NUCLEATION_BETA_MIN_PER_DECADE`; H-07 → `NANO_HEALING_BOOST_PER_DOSAGE`.
-// **TODO-M3-003 CLOSED** @ `archived/residuals/misc-outputs-tmp/RESEARCH_TODO_NIGHT_2334.md` — parity witnesses green.
+// **TODO-M3-003 CLOSED** @ `old/residuals/residuals/misc-outputs-tmp/RESEARCH_TODO_NIGHT_2334.md` — parity witnesses green.
 // **TODO-M3-003b CLOSED** @ 2334 — `DeferredToChemSsot` has zero live manifest rows; `NanoDeferredKineticsPins` name is historical (H-01…H-03 all `LiftedToChemSsot`).
 // H-04…H-06 are permanent cartridge calibration per a4b §2.4.
 

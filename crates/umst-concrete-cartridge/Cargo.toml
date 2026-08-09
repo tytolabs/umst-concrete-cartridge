@@ -62,12 +62,13 @@ ucrs-provenance = ["agent-layer", "dep:umst-ucrs", "dep:umst-trust"]
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
 burn-ndarray = "=0.13.2"
+umst-jennings-legacy = { path = "../umst-jennings-legacy" }
 umst-cartridge-api = { workspace = true }
 umst-cartridge-concrete = { workspace = true }
 umst-cartridge-continuum = { workspace = true }
 umst-cartridge-solid-inelastic = { workspace = true }
 umst-manifold = { workspace = true }
-umst-cartridge-registry = { path = "../../../umst-cartridge-registry" }
+umst-cartridge-registry = { version = "0.0.0", path = "../../../umst-cartridge-registry" }
 umst-chem = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"

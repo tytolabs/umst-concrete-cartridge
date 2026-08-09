@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+# Standalone (no workspace.package inherit) — callable from root `umst-diff` and from the
+# concrete cartridge workspace. R10-A0: legacy Jennings f64 path without Burn.
+
+[package]
+name = "umst-jennings-legacy"
+version = "0.2.1"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+description = "Pure-f64 Jennings strength path extracted from umst-concrete-cartridge (no Burn)"
+publish = false
+
+[lib]
+name = "umst_jennings_legacy"
+path = "src/lib.rs"
+
+[lints.rust]
+unsafe_code = "forbid"

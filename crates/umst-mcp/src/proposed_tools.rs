@@ -260,7 +260,7 @@ pub fn exec_dry_run(
 }
 
 /// Promotion stub (P3) — structured not-wired response; never writes memory.
-/// Board **TODO-M3-005 OPEN** — S7 operator ceremony; see `archived/residuals/misc-outputs-tmp/RESEARCH_TODO_NIGHT_2334.md`.
+/// Board **TODO-M3-005 OPEN** — S7 operator ceremony; see `old/residuals/residuals/misc-outputs-tmp/RESEARCH_TODO_NIGHT_2334.md`.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Human gate placeholder; federated inbox remains SSOT.

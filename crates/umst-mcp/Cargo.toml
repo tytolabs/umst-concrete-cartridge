@@ -95,9 +95,9 @@ umst-agent-mcp-core = { path = "../umst-agent-mcp-core" }
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
 umst-cli = { path = "../umst-cli" }
 umst-runtime-arena = { workspace = true, optional = true }
-umst-semantics = { path = "../../../umst-semantics/crates/umst-semantics", default-features = false, features = ["p2-chair", "gate"], optional = true }
+umst-semantics = { version = "0.0.0-prep", path = "../../../umst-semantics/crates/umst-semantics", default-features = false, features = ["p2-chair", "gate"], optional = true }
 umst-gate = { workspace = true, optional = true }
-umst-trust = { path = "../../../umst-foundations/crates/umst-trust", optional = true }
+umst-trust = { version = "0.1.0", path = "../../../umst-foundations/crates/umst-trust", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"

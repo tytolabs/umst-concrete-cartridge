@@ -158,7 +158,7 @@ pub struct RegimeBounds {
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_axioms: NONE
-/// formal_anchor_rationale: Dispatch metadata only; Jennings gel-space path returns `HomogeneousError::JenningsNotImplemented` until operator boards CC-P-JENNINGS (see `archived/residuals/misc-outputs-tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002).
+/// formal_anchor_rationale: Dispatch metadata only; Jennings gel-space path returns `HomogeneousError::JenningsNotImplemented` until operator boards CC-P-JENNINGS (see `old/residuals/residuals/misc-outputs-tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002).
 pub struct CalibrationModelSection {
     pub kind: ModelKind,
 }

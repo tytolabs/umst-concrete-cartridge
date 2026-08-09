@@ -11,7 +11,7 @@ use thiserror::Error;
 pub const JOB_ID: &str = "SEC-CART-PROV";
 
 /// Completion receipt cross-ref (AGAP-2127 re-verify deepens AGAP-2033 landing).
-pub const RECEIPT_PATH: &str = "archived/residuals/misc-outputs-tmp/COMPLETION_AGAP_AGENT_SEC-CART-PROV_2127.md";
+pub const RECEIPT_PATH: &str = "old/residuals/residuals/misc-outputs-tmp/COMPLETION_AGAP_AGENT_SEC-CART-PROV_2127.md";
 
 /// Catalog pin witness failure on constitutive admit ingest.
 /// formal_anchor: NONE

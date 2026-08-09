@@ -41,7 +41,7 @@
 
 /// L4 wire inventory — post-tag attestation pin (`WIRE_OPEN=false` after U ceremony).
 ///
-/// SSOT: `archived/residuals/misc-outputs-tmp/research_l4_phase2_s0_1438.md` · close receipt `g_spawn_m3_l4_1542b.md`
+/// SSOT: `old/residuals/residuals/misc-outputs-tmp/research_l4_phase2_s0_1438.md` · close receipt `g_spawn_m3_l4_1542b.md`
 mod l4_wire_phase2_inventory {
     /// Harness slot count (S0 Stage 0f lock).
     pub const SLOT_COUNT: usize = 6;

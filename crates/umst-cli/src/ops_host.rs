@@ -18,8 +18,8 @@ pub use umst_manifold::gate::{
     GATE_PARITY_V0_SHA256_PREFIX,
 };
 
-const FLEET_PICKER_REL: &str = "archived/residuals/misc-outputs-tmp/fleet_pick_target_dir.sh";
-const FLEET_SCRATCH_LOADER_REL: &str = "archived/residuals/misc-outputs-tmp/fleet_load_scratch.sh";
+const FLEET_PICKER_REL: &str = "old/residuals/residuals/misc-outputs-tmp/fleet_pick_target_dir.sh";
+const FLEET_SCRATCH_LOADER_REL: &str = "old/residuals/residuals/misc-outputs-tmp/fleet_load_scratch.sh";
 
 /// Parity digest witness (stdout / JSON wire).
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
