@@ -11,8 +11,8 @@ use umst_concrete_cartridge::api_consumer_compose::{
 };
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::concrete_bridge::{
-    gate_route_composed, g0_probe_atom_state, MixScalars, ContinuumAtomRates,
-    D_CLOSURE_ABS_TOL, GATE_W_C_REGIME_HYPERBOX_MAX, PSI_CLOSURE_ABS_TOL,
+    g0_probe_atom_state, gate_route_composed, ContinuumAtomRates, MixScalars, D_CLOSURE_ABS_TOL,
+    GATE_W_C_REGIME_HYPERBOX_MAX, PSI_CLOSURE_ABS_TOL,
 };
 use umst_concrete_cartridge::homogeneous::{mix_row_from_scalar_spec, MixRow};
 
@@ -21,16 +21,7 @@ fn default_profile() -> Profile {
 }
 
 fn parity_mix_row(profile: &Profile) -> MixRow {
-    mix_row_from_scalar_spec(
-        profile,
-        0.45,
-        0.0,
-        0.0,
-        0.0,
-        0.7,
-        28.0 * 24.0,
-        293.15,
-    )
+    mix_row_from_scalar_spec(profile, 0.45, 0.0, 0.0, 0.0, 0.7, 28.0 * 24.0, 293.15)
 }
 
 #[test]
@@ -88,7 +79,10 @@ fn s5_mcp_gate_admissible_matches_bridge_oracle() {
     )
     .route
     .admissible;
-    assert_eq!(via_mcp, via_bridge, "MCP gate path must match bridge oracle");
+    assert_eq!(
+        via_mcp, via_bridge,
+        "MCP gate path must match bridge oracle"
+    );
 }
 
 #[test]

@@ -88,7 +88,7 @@ fn s7_features_off_thirteen_tools() {
     )
 ))]
 #[test]
-fn s7_proposed_tools_extend_list() {
+fn proposed_tools_extend_list() {
     let exe = mcp_binary_path();
     let mut child = StdCmd::new(&exe)
         .stdin(Stdio::piped())

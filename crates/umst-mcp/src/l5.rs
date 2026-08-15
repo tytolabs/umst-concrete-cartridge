@@ -264,7 +264,10 @@ mod tests {
     #[test]
     fn l4_l5_semantic_agent_tools_surface() {
         use crate::semantic_hcom::{hcom_semantic_agent_tool_schemas, HCOM_SEMANTIC_AGENT_TOOLS};
-        assert_eq!(hcom_semantic_agent_tool_schemas().len(), L5_SEMANTIC_TOOL_COUNT);
+        assert_eq!(
+            hcom_semantic_agent_tool_schemas().len(),
+            L5_SEMANTIC_TOOL_COUNT
+        );
         assert_eq!(HCOM_SEMANTIC_AGENT_TOOLS.len(), L5_SEMANTIC_TOOL_COUNT);
     }
 }

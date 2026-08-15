@@ -17,16 +17,7 @@ fn default_profile() -> Profile {
 }
 
 fn g0_pass_row(profile: &Profile) -> umst_concrete_cartridge::homogeneous::MixRow {
-    mix_row_from_scalar_spec(
-        profile,
-        9.0 / 20.0,
-        0.0,
-        0.0,
-        0.0,
-        0.7,
-        28.0 * 24.0,
-        293.15,
-    )
+    mix_row_from_scalar_spec(profile, 9.0 / 20.0, 0.0, 0.0, 0.0, 0.7, 28.0 * 24.0, 293.15)
 }
 
 #[test]

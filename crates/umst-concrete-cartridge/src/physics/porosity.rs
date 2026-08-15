@@ -3,9 +3,7 @@
 
 use burn::tensor::{backend::Backend, Tensor};
 
-use crate::chem_adapter::{
-    powers_non_evap_water_coeff_f32, powers_paste_denominator_offset_f32,
-};
+use crate::chem_adapter::{powers_non_evap_water_coeff_f32, powers_paste_denominator_offset_f32};
 
 /// Pure function to calculate the bulk capillary porosity of the cement paste over time.
 ///

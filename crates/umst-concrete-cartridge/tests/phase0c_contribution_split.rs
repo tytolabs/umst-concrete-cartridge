@@ -80,7 +80,10 @@ fn phase0c_infra_gate_check_mix_result_preserves_parity_path() {
         wall_ms: None,
     };
     let result = gate_check_mix_result(&profile, &mix, true, observed);
-    assert_eq!(result.gate_summary.catalog_ids, vec!["umst.gate.cd_transition"]);
+    assert_eq!(
+        result.gate_summary.catalog_ids,
+        vec!["umst.gate.cd_transition"]
+    );
     assert!(result.explain.is_some());
 }
 

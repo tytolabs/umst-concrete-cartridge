@@ -148,8 +148,14 @@ mod tests {
         let v0 = scalar_4(q0);
         let v_mid = scalar_4(q_mid);
         let v1 = scalar_4(q1);
-        assert!(v0 > v_mid && v_mid > v1, "heat rate must decrease with α: {v0} {v_mid} {v1}");
-        assert!(v1 < 1e-3_f32 * v0, "α=1 should quench affinity: v0={v0} v1={v1}");
+        assert!(
+            v0 > v_mid && v_mid > v1,
+            "heat rate must decrease with α: {v0} {v_mid} {v1}"
+        );
+        assert!(
+            v1 < 1e-3_f32 * v0,
+            "α=1 should quench affinity: v0={v0} v1={v1}"
+        );
     }
 
     #[test]
@@ -171,6 +177,9 @@ mod tests {
         let heat = scalar_4(q);
         let rise = scalar_4(dt);
         assert!(heat.is_finite() && heat > 0.0_f32);
-        assert!((rise - 25.0_f32).abs() < 1e-4_f32, "α=0.5 adiabatic proxy: rise={rise}");
+        assert!(
+            (rise - 25.0_f32).abs() < 1e-4_f32,
+            "α=0.5 adiabatic proxy: rise={rise}"
+        );
     }
 }

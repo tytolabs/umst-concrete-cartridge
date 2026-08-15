@@ -12,8 +12,7 @@
 
 use umst_chem::{
     csh_gel_modulus_scales, csh_ld_volume_fraction, csh_paste_bulk_modulus_voigt_gpa,
-    csh_youngs_moduli_gpa,
-    hydration_degree_calibrated as chem_hydration_degree_calibrated,
+    csh_youngs_moduli_gpa, hydration_degree_calibrated as chem_hydration_degree_calibrated,
     kinetics::ReactionExtentKineticsSpec as ChemKineticsSpec,
     powers::{
         gel_space_ratio as chem_gel_space_ratio,
@@ -23,19 +22,18 @@ use umst_chem::{
         powers_compressive_strength as chem_powers_compressive_strength,
     },
     powers_capillary_porosity as chem_powers_capillary_porosity,
-    powers_gel_volume as chem_powers_gel_volume,
-    set_time_activation_energy_j_per_mol,
+    powers_gel_volume as chem_powers_gel_volume, set_time_activation_energy_j_per_mol,
     ultimate_degree_of_hydration as chem_ultimate_degree_of_hydration,
     vinet_pressure_gpa as chem_vinet_pressure_gpa,
-    voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa,
+    voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa, CementChemService, ChemistryService,
+    HydrationKineticsBundle, PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState,
     BOLTZMANN_J_PER_K, CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE,
-    CSH_VOLUME_FACTOR, DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER, DLVO_COLLAPSE_SEPARATION_NM,
-    HAMAKER_CEMENT_WATER_J, KELVIN_CAPILLARY_SCALE_MPA, POWERS_GEL_VOLUME_FACTOR,
-    POWERS_NON_EVAP_WATER_COEFF, POWERS_PASTE_DENOMINATOR_OFFSET, SpeciesId, VACUUM_PERMITTIVITY,
-    CementChemService, ChemistryService, GAS_CONSTANT_J_PER_MOL_K, HydrationKineticsBundle,
-    OPC_REACTION_ENTHALPY_J_PER_KG, PowersIntrinsicStrength, Reaction, ThermoState,
-    DLVO_REFERENCE_TEMPERATURE_K, JENNINGS_STRENGTH_EXPONENT_DEFAULT, NANO_HEALING_BOOST_PER_DOSAGE, NANO_SSA_REF_M2_PER_G,
-    NUCLEATION_BETA_MIN_PER_DECADE, POZZOLANIC_ALPHA,
+    CSH_VOLUME_FACTOR, DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER,
+    DLVO_COLLAPSE_SEPARATION_NM, DLVO_REFERENCE_TEMPERATURE_K, GAS_CONSTANT_J_PER_MOL_K,
+    HAMAKER_CEMENT_WATER_J, JENNINGS_STRENGTH_EXPONENT_DEFAULT, KELVIN_CAPILLARY_SCALE_MPA,
+    NANO_HEALING_BOOST_PER_DOSAGE, NANO_SSA_REF_M2_PER_G, NUCLEATION_BETA_MIN_PER_DECADE,
+    OPC_REACTION_ENTHALPY_J_PER_KG, POWERS_GEL_VOLUME_FACTOR, POWERS_NON_EVAP_WATER_COEFF,
+    POWERS_PASTE_DENOMINATOR_OFFSET, POZZOLANIC_ALPHA, VACUUM_PERMITTIVITY,
 };
 use umst_manifold::core::ReactionExtentKineticsSpec;
 
@@ -369,11 +367,7 @@ pub fn vinet_pressure_gpa_f32(v0: f32, k0_gpa: f32, k0_prime: f32, v_per_fu_ang3
 /// Voigt upper bound on bulk modulus (GPa) — inventory cluster D homogenisation.
 #[must_use]
 pub fn voigt_bulk_modulus_gpa_f32(fv_phase_a: f32, k_a: f32, k_b: f32) -> f32 {
-    chem_voigt_bulk_modulus_gpa(
-        f64::from(fv_phase_a),
-        f64::from(k_a),
-        f64::from(k_b),
-    ) as f32
+    chem_voigt_bulk_modulus_gpa(f64::from(fv_phase_a), f64::from(k_a), f64::from(k_b)) as f32
 }
 
 // ── Cluster E — C-S-H micromechanics (inventory E-01 … E-09) ─────────────────

@@ -9,8 +9,8 @@ use std::path::PathBuf;
 use std::process::{Command as StdCmd, Stdio};
 use umst_mcp::mcp_trust_gate::{check_semantic_agent_trust, MCP_TRUST_GATE_SCHEMA};
 use umst_mcp::semantic_hcom::{
-    exec_get_audit_digest, exec_map_to_geometry, exec_propose_communicative_act,
-    exec_refine_shape, hcom_semantic_agent_tool_schemas, HCOM_SEMANTIC_AGENT_TOOLS,
+    exec_get_audit_digest, exec_map_to_geometry, exec_propose_communicative_act, exec_refine_shape,
+    hcom_semantic_agent_tool_schemas, HCOM_SEMANTIC_AGENT_TOOLS,
 };
 
 fn mcp_binary_path() -> PathBuf {
@@ -54,7 +54,10 @@ fn hcom_029_trust_refuse_propose_without_device_scope() {
     }));
     assert!(is_error);
     assert_eq!(body["agent_error"]["code"], json!("trust_refused"));
-    assert_eq!(body["agent_error"]["trust_gate_schema"], json!(MCP_TRUST_GATE_SCHEMA));
+    assert_eq!(
+        body["agent_error"]["trust_gate_schema"],
+        json!(MCP_TRUST_GATE_SCHEMA)
+    );
 }
 
 #[test]
@@ -105,7 +108,9 @@ fn hcom_029_get_audit_digest_fixture_log() {
 #[test]
 fn hcom_029_trust_gate_unit_matches_tool_classes() {
     assert!(check_semantic_agent_trust("map_to_geometry", &json!({ "surface": "x" })).is_ok());
-    assert!(check_semantic_agent_trust("propose_communicative_act", &json!({ "intent": "x" })).is_err());
+    assert!(
+        check_semantic_agent_trust("propose_communicative_act", &json!({ "intent": "x" })).is_err()
+    );
 }
 
 #[test]

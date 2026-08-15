@@ -166,7 +166,10 @@ mod tests {
             (ClinkerPhase::BeliteBetaC2s, ClinkerPhaseTag::BeliteBetaC2s),
             (ClinkerPhase::Portlandite, ClinkerPhaseTag::Portlandite),
             (ClinkerPhase::Ettringite, ClinkerPhaseTag::Ettringite),
-            (ClinkerPhase::Csh14nmTobermorite, ClinkerPhaseTag::Csh14nmTobermorite),
+            (
+                ClinkerPhase::Csh14nmTobermorite,
+                ClinkerPhaseTag::Csh14nmTobermorite,
+            ),
         ] {
             let local = phase.params();
             let ssot = clinker_vinet_params_f32(tag);

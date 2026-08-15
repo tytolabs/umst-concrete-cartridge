@@ -535,7 +535,10 @@ mod tests {
             }),
             CastGateVerdict::RejectThermodynamic(ThermoReject(GateRejectReason::RegimeEnvelope)),
             CastGateVerdict::RejectBoth {
-                printability: PrintabilityReject::ExtrudabilityLow { extr: 0.1, min: 0.35 },
+                printability: PrintabilityReject::ExtrudabilityLow {
+                    extr: 0.1,
+                    min: 0.35,
+                },
                 thermodynamic: ThermoReject(GateRejectReason::MassViolation),
             },
         ];

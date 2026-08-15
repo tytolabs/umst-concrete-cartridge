@@ -7,7 +7,7 @@
 //! `umst-cartridge-concrete::gate_route_composed` instead of monolith homogeneous closures.
 
 use crate::concrete_bridge::{
-    gate_route_composed, g0_consumer_history_binding, g0_probe_atom_state,
+    g0_consumer_history_binding, g0_probe_atom_state, gate_route_composed,
     try_consumer_gate_route_with_history, ComposedGateOutcome, ContinuumAtomRates,
     ContinuumAtomStateWithHistory, ContinuumPhysicsError, MixScalars, D_CLOSURE_ABS_TOL,
     PSI_CLOSURE_ABS_TOL,
@@ -16,8 +16,8 @@ use crate::concrete_bridge::{
 use crate::calibration::{ModelKind, Profile};
 use crate::homogeneous::MixRow;
 use umst_cartridge_concrete::{
-    chem_b3_capwrap::JENNINGS_STRENGTH_EXPONENT_DEFAULT, homogeneous::ModelKind as ConsumerModelKind,
-    ComposeProfilePins, DEFAULT_TOTAL_BINDER_KG_M3,
+    chem_b3_capwrap::JENNINGS_STRENGTH_EXPONENT_DEFAULT,
+    homogeneous::ModelKind as ConsumerModelKind, ComposeProfilePins, DEFAULT_TOTAL_BINDER_KG_M3,
 };
 
 /// Lift monolith [`Profile`] into consumer compose profile pins (regime + Powers SSOT).
@@ -37,9 +37,9 @@ fn compose_profile_pins_from(profile: &Profile) -> ComposeProfilePins {
 }
 
 #[cfg(feature = "agent-layer")]
-use serde_json::Value;
-#[cfg(feature = "agent-layer")]
 use crate::research::contribution::adapter::mix_wire_from_spec_value;
+#[cfg(feature = "agent-layer")]
+use serde_json::Value;
 
 /// S6 — consumer [`MixScalars`] SSOT for `(w_c_eff, α, T°C)`.
 ///

@@ -265,7 +265,10 @@ mod refuse_matrix {
 }
 
 #[cfg(feature = "tool-propose-communicative-act")]
-pub use refuse_matrix::{refuse_path_row_honest, sec_mcp_wrap_refuse_path_matrix_honest, McpTrustRefusePathRow, REFUSE_PATH_MATRIX};
+pub use refuse_matrix::{
+    refuse_path_row_honest, sec_mcp_wrap_refuse_path_matrix_honest, McpTrustRefusePathRow,
+    REFUSE_PATH_MATRIX,
+};
 
 #[cfg(not(feature = "tool-propose-communicative-act"))]
 /// Feature-off stub — live matrix requires `tool-propose-communicative-act`.

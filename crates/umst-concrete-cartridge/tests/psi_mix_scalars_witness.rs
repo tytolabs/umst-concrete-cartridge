@@ -7,12 +7,13 @@
 //! Powers closure math on the default-profile hot path. Digest `d5608148…` held — fixture bytes unchanged.
 
 use umst_concrete_cartridge::api_consumer_compose::{
-    compressive_strength_mpa_from_row, mix_row_to_mix_scalars, powers_compressive_strength_mpa_from_row,
-    psi_m1_oracle_from_row,
+    compressive_strength_mpa_from_row, mix_row_to_mix_scalars,
+    powers_compressive_strength_mpa_from_row, psi_m1_oracle_from_row,
 };
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::homogeneous::{
-    compressive_strength_mpa, mix_hydration_state, mix_row_from_scalar_spec, powers_compressive_strength_mpa,
+    compressive_strength_mpa, mix_hydration_state, mix_row_from_scalar_spec,
+    powers_compressive_strength_mpa,
 };
 
 fn default_profile() -> Profile {
@@ -20,20 +21,11 @@ fn default_profile() -> Profile {
 }
 
 fn g0_pass_row(profile: &Profile) -> umst_concrete_cartridge::homogeneous::MixRow {
-    mix_row_from_scalar_spec(
-        profile,
-        9.0 / 20.0,
-        0.0,
-        0.0,
-        0.0,
-        0.7,
-        28.0 * 24.0,
-        293.15,
-    )
+    mix_row_from_scalar_spec(profile, 9.0 / 20.0, 0.0, 0.0, 0.0, 0.7, 28.0 * 24.0, 293.15)
 }
 
 #[test]
-fn s6_powers_fc_matches_mix_scalars_on_default_profile() {
+fn powers_fc_matches_mix_scalars_on_default_profile() {
     let profile = default_profile();
     let row = g0_pass_row(&profile);
     let mix = mix_row_to_mix_scalars(&row);
@@ -52,7 +44,7 @@ fn s6_powers_fc_matches_mix_scalars_on_default_profile() {
 }
 
 #[test]
-fn s6_default_fc_matches_mix_scalars_fc_mpa() {
+fn default_fc_matches_mix_scalars_fc_mpa() {
     let profile = default_profile();
     let row = g0_pass_row(&profile);
     let mix = mix_row_to_mix_scalars(&row);
@@ -69,7 +61,7 @@ fn s6_default_fc_matches_mix_scalars_fc_mpa() {
 }
 
 #[test]
-fn s6_psi_m1_oracle_matches_mix_scalars() {
+fn psi_m1_oracle_matches_mix_scalars() {
     let profile = default_profile();
     let row = g0_pass_row(&profile);
     let mix = mix_row_to_mix_scalars(&row);

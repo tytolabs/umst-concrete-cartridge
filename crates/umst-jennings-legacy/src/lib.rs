@@ -41,8 +41,7 @@ pub fn compute_strength_jennings_f64(
     let v_ld = v_csh_total * ld_fraction;
     let v_hd = v_csh_total * hd_fraction;
     let e_matrix = v_ld * E_LD_GPA + v_hd * E_HD_GPA;
-    let porosity_capillary =
-        (safe_wc - degree_hydration * POWERS_NON_EVAP_WATER_COEFF).max(0.0);
+    let porosity_capillary = (safe_wc - degree_hydration * POWERS_NON_EVAP_WATER_COEFF).max(0.0);
     let total_porosity = porosity_capillary + air_content;
     let solid_fraction = (1.0 - total_porosity).max(0.01);
     let e_eff = e_matrix * solid_fraction.powi(3);

@@ -99,10 +99,7 @@ pub fn propose_communicative_act_tool_schema() -> Value {
         "readOnlyHint": true,
         "destructiveHint": false,
     });
-    if let Some(schema) = tool
-        .get_mut("inputSchema")
-        .and_then(|s| s.as_object_mut())
-    {
+    if let Some(schema) = tool.get_mut("inputSchema").and_then(|s| s.as_object_mut()) {
         schema.insert("$schema".into(), json!(JSON_SCHEMA_2020));
     }
     tool
@@ -170,10 +167,7 @@ pub fn exec_propose_communicative_act_mock(args: &Value) -> (Value, bool) {
     let admissible = fixture.admissible();
     let verdict = if admissible { "ADMIT" } else { "REJECT" };
 
-    let decision_seed = format!(
-        "{intent}|{lang}|{dialogue_turn}|{}",
-        fixture.as_str()
-    );
+    let decision_seed = format!("{intent}|{lang}|{dialogue_turn}|{}", fixture.as_str());
     let decision_id = format!("hcom-act:{lang}:turn{dialogue_turn}:{}", fixture.as_str());
     let hash_prefix = content_hash_prefix(&decision_seed);
 
@@ -212,7 +206,10 @@ mod tests {
 
     #[test]
     fn embedded_schemas_parse() {
-        for raw in [PROPOSE_COMMUNICATIVE_ACT_JSON, GATED_COMMUNICATIVE_RESPONSE_JSON] {
+        for raw in [
+            PROPOSE_COMMUNICATIVE_ACT_JSON,
+            GATED_COMMUNICATIVE_RESPONSE_JSON,
+        ] {
             let v: Value = serde_json::from_str(raw).expect("valid JSON");
             assert!(v.get("$schema").is_some());
             assert!(v.get("properties").is_some());

@@ -12,10 +12,10 @@
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use umst_semantics::{
-    chair_compose_quotient_id, chair_cross_lang_semantic_response, chair_no_back_state,
-    chair_ok_witness, chair_profile, chair_surface_form, gate_chair_no_back, gate_chair_surface,
-    project_semantic_response, action_quotient_id_hex, get_audit_digest, AuditDigestError,
-    LangCode, SemanticResponse, CHAIR_GATE_TOLERANCE,
+    action_quotient_id_hex, chair_compose_quotient_id, chair_cross_lang_semantic_response,
+    chair_no_back_state, chair_ok_witness, chair_profile, chair_surface_form, gate_chair_no_back,
+    gate_chair_surface, get_audit_digest, project_semantic_response, AuditDigestError, LangCode,
+    SemanticResponse, CHAIR_GATE_TOLERANCE,
 };
 
 const JSON_SCHEMA_2020: &str = "https://json-schema.org/draft/2020-12/schema";
@@ -190,8 +190,7 @@ pub fn orchestrate_communicative_act(
 
     let (response, gate_outcome, mapping) = if no_back_injection {
         let state = chair_no_back_state(lang);
-        let response =
-            project_semantic_response(&state, &chair_ok_witness(), &chair_profile());
+        let response = project_semantic_response(&state, &chair_ok_witness(), &chair_profile());
         let outcome = gate_chair_no_back(lang, mass_conserved);
         (
             response,
@@ -675,14 +674,8 @@ mod tests {
             no_back_injection: true,
             ..Default::default()
         };
-        let body = orchestrate_communicative_act(
-            "describe stool",
-            LangCode::En,
-            true,
-            1.0,
-            &llm,
-            true,
-        );
+        let body =
+            orchestrate_communicative_act("describe stool", LangCode::En, true, 1.0, &llm, true);
         assert_eq!(body["gate_summary"]["admissible"], json!(false));
         assert_eq!(body["gate_summary"]["verdict"], json!("REJECT"));
         assert!(body["orchestration"]["external_signal_query_recommended"]
@@ -696,10 +689,7 @@ mod tests {
             "trust": { "scope": "device" }
         }));
         assert!(is_error);
-        assert_eq!(
-            body["agent_error"]["code"].as_str(),
-            Some("missing_intent")
-        );
+        assert_eq!(body["agent_error"]["code"].as_str(), Some("missing_intent"));
     }
 
     #[test]
@@ -732,7 +722,10 @@ mod tests {
         let (body, err) =
             exec_get_audit_digest(&json!({"decision_id": FIXTURE_CHAIR_EN_PROPOSAL_ID}));
         assert!(!err);
-        assert_eq!(body["digest_hex"], json!(GOLDEN_CHAIR_EN_PROPOSAL_DIGEST_HEX));
+        assert_eq!(
+            body["digest_hex"],
+            json!(GOLDEN_CHAIR_EN_PROPOSAL_DIGEST_HEX)
+        );
         assert_eq!(body["digest_source"], json!("fixture_log"));
     }
 

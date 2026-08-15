@@ -32,7 +32,10 @@ fn read_json_line<R: BufRead>(reader: &mut R) -> Value {
     let mut buf = String::new();
     reader.read_line(&mut buf).expect("read stdout line");
     let trimmed = buf.trim();
-    assert!(!trimmed.is_empty(), "empty stdout line — stderr may have leaked");
+    assert!(
+        !trimmed.is_empty(),
+        "empty stdout line — stderr may have leaked"
+    );
     serde_json::from_str(trimmed).expect("valid json line")
 }
 
@@ -65,7 +68,10 @@ fn spawn_mcp() -> (
 fn assert_jsonrpc_ok(resp: &Value, id: i64) {
     assert_eq!(resp["jsonrpc"].as_str(), Some("2.0"), "{resp}");
     assert_eq!(resp["id"], json!(id), "{resp}");
-    assert!(resp.get("error").is_none(), "unexpected error frame: {resp}");
+    assert!(
+        resp.get("error").is_none(),
+        "unexpected error frame: {resp}"
+    );
     assert!(resp.get("result").is_some(), "missing result: {resp}");
 }
 

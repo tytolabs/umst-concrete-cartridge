@@ -8,17 +8,16 @@
 //! for composed constitutive + gate helpers. MCP harness bytes and fixture routing
 //! remain frozen — see `umst-mcp/tests/gate_parity.rs`.
 
-pub use umst_cartridge_concrete::{
-    regime_hyperbox_admits_w_c, regime_hyperbox_admits_w_c_for_max,
-    dissipation_modulus_eta, dissipation_modulus_eta_from_profile,
-    dissipation_modulus_eta_from_s_intrinsic, gate_route_composed, g0_probe_atom_state,
-    ComposedGateOutcome, MixScalars, D_CLOSURE_ABS_TOL, GATE_W_C_REGIME_HYPERBOX_MAX,
-    PSI_CLOSURE_ABS_TOL,
-};
 pub use umst_cartridge_concrete::api_consumer_history_prep::{
     g0_consumer_history_binding, try_consumer_gate_route_with_history,
 };
 pub use umst_cartridge_concrete::compose::gate_route_composed_with_history;
+pub use umst_cartridge_concrete::{
+    dissipation_modulus_eta, dissipation_modulus_eta_from_profile,
+    dissipation_modulus_eta_from_s_intrinsic, g0_probe_atom_state, gate_route_composed,
+    regime_hyperbox_admits_w_c, regime_hyperbox_admits_w_c_for_max, ComposedGateOutcome,
+    MixScalars, D_CLOSURE_ABS_TOL, GATE_W_C_REGIME_HYPERBOX_MAX, PSI_CLOSURE_ABS_TOL,
+};
 pub use umst_cartridge_continuum::{
     ContinuumAtomRates, ContinuumAtomStateWithHistory, ContinuumPhysicsError,
 };
@@ -26,8 +25,8 @@ pub use umst_cartridge_continuum::{
 #[cfg(test)]
 mod witness {
     use super::{
-        dissipation_modulus_eta, gate_route_composed, g0_probe_atom_state, MixScalars,
-        ContinuumAtomRates, D_CLOSURE_ABS_TOL, PSI_CLOSURE_ABS_TOL,
+        dissipation_modulus_eta, g0_probe_atom_state, gate_route_composed, ContinuumAtomRates,
+        MixScalars, D_CLOSURE_ABS_TOL, PSI_CLOSURE_ABS_TOL,
     };
 
     /// G0 pass mix — mirrors `gate_parity_v0.json` first admissible row.

@@ -8,8 +8,8 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Command as StdCmd, Stdio};
 use umst_mcp::semantic_hcom::{
-    exec_propose_communicative_act, orchestrate_communicative_act, propose_communicative_act_tool_schema,
-    MockFrontierLlm, ORCHESTRATION_STEPS,
+    exec_propose_communicative_act, orchestrate_communicative_act,
+    propose_communicative_act_tool_schema, MockFrontierLlm, ORCHESTRATION_STEPS,
 };
 use umst_semantics::LangCode;
 
@@ -57,7 +57,10 @@ fn hcom_021_mock_llm_three_step_orchestration_admits() {
     assert!(!is_error);
     assert_eq!(body["schema_version"], json!(GATED_WIRE_SCHEMA));
     assert_eq!(body["gate_summary"]["admissible"], json!(true));
-    assert_eq!(body["orchestration"]["schema_version"], json!(HYBRID_SCHEMA));
+    assert_eq!(
+        body["orchestration"]["schema_version"],
+        json!(HYBRID_SCHEMA)
+    );
     let steps = body["orchestration"]["steps"].as_array().expect("steps");
     assert_eq!(steps.len(), ORCHESTRATION_STEPS.len());
     for (step, expected) in steps.iter().zip(ORCHESTRATION_STEPS.iter()) {
@@ -145,11 +148,12 @@ fn hcom_021_stdio_mock_llm_integration_green() {
 
     assert!(resp.get("error").is_none(), "stdio error: {resp}");
     assert_eq!(resp["result"]["isError"], json!(false));
-    let text = resp["result"]["content"][0]["text"]
-        .as_str()
-        .expect("text");
+    let text = resp["result"]["content"][0]["text"].as_str().expect("text");
     let body: Value = serde_json::from_str(text).expect("json body");
     assert_eq!(body["schema_version"], json!(GATED_WIRE_SCHEMA));
     assert_eq!(body["gate_summary"]["admissible"], json!(true));
-    assert_eq!(body["orchestration"]["schema_version"], json!(HYBRID_SCHEMA));
+    assert_eq!(
+        body["orchestration"]["schema_version"],
+        json!(HYBRID_SCHEMA)
+    );
 }

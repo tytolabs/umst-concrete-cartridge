@@ -60,12 +60,12 @@ mod l4_wire_phase2_inventory {
     pub const WIRE_BLOCKED_SLOTS: [usize; 0] = [];
 }
 
-use umst_manifold::gate::{GATE_PARITY_V0_FIXTURE_REL, GATE_PARITY_V0_SHA256};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command as StdCmd, Stdio};
+use umst_manifold::gate::{GATE_PARITY_V0_FIXTURE_REL, GATE_PARITY_V0_SHA256};
 #[cfg(feature = "agent-layer")]
 use umst_mcp::parity::{canonical_bytes, canonicalize_tools_call_result, sort_keys};
 

@@ -68,18 +68,14 @@ fn broadcast_scalar_to_nodes<B: Backend<FloatElem = f32>>(
 /// **Strain:** `matrix_features[:, 0, :, :]` is treated as ε `[N, 3, 3]`; if `F_matrices == 0`, strain is zero.
 /// **\(G_c\):** if `scalar_features` includes column [`SCALAR_FRACTURE_ENERGY_GC`], per-node values
 /// [J/m²]; otherwise a uniform scalar from B2
-/// [`crate::pipeline::pipeline_orchestrator_delegate::fracture_energy_gc_j_m2_orchestrator`] (broadcast).
+/// [`crate::pipeline::mechanics_delegate::fracture_energy_gc_j_m2_orchestrator`] (broadcast).
 ///
 /// Returns typed fracture inputs: ε `[1,N,3,3]`, damage `[1,N,1]`, \(G_c\) `[1,N,1]`.
 #[cfg(feature = "solver-experimental")]
 fn phase_field_inputs_from_umst<B: Backend<FloatElem = f32>>(
     manifold: &UnifiedMaterialStateTensor<B>,
     profile: &Profile,
-) -> (
-    SmallStrainField<B>,
-    DamageField<B>,
-    FractureEnergyField<B>,
-) {
+) -> (SmallStrainField<B>, DamageField<B>, FractureEnergyField<B>) {
     let dev = manifold.scalar_features.device();
     let n_nodes = manifold.scalar_features.dims()[0];
     let n_mat = manifold.matrix_features.dims()[1];
@@ -102,9 +98,10 @@ fn phase_field_inputs_from_umst<B: Backend<FloatElem = f32>>(
         .slice([0..n_nodes, SCALAR_DAMAGE..SCALAR_DAMAGE + 1])
         .unsqueeze_dim::<3>(0);
 
-    let gc_scalar = crate::pipeline::pipeline_orchestrator_delegate::fracture_energy_gc_j_m2_orchestrator(
-        profile.powers.s_intrinsic,
-    );
+    let gc_scalar =
+        crate::pipeline::mechanics_delegate::fracture_energy_gc_j_m2_orchestrator(
+            profile.powers.s_intrinsic,
+        );
     let gc = if nf > SCALAR_FRACTURE_ENERGY_GC {
         features
             .clone()
@@ -378,10 +375,7 @@ impl<B: Backend<FloatElem = f32>> IScienceCartridge<B> for ConcreteCartridge<B> 
                     .as_tensor()
                     .clone()
                     .squeeze::<2>(2);
-                (
-                    state1.damage.as_tensor().clone().squeeze::<2>(2),
-                    alpha_exp,
-                )
+                (state1.damage.as_tensor().clone().squeeze::<2>(2), alpha_exp)
             }
             #[cfg(not(feature = "solver-experimental"))]
             {

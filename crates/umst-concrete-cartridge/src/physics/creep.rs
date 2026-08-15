@@ -117,7 +117,7 @@ mod tests {
 
     type B = NdArray<f32>;
 
-    /// Orchestrator creep pin — matches `pipeline/b2_orchestrator_delegate` call site.
+    /// Orchestrator creep pin — matches `pipeline/mechanics_delegate` call site.
     /// Class: **Primitive-fact** (routing contract, not fitted from compliance output).
     const PIN_FC_MPA: f32 = 40.0;
     const PIN_WC: f32 = 0.45;
@@ -165,7 +165,8 @@ mod tests {
             measured.is_finite() && measured > 0.0,
             "orchestrator-pin compliance must be finite and positive; got {measured}"
         );
-        let rel_err = (measured - GOLDEN_COMPLIANCE_1_OVER_GPA).abs() / GOLDEN_COMPLIANCE_1_OVER_GPA;
+        let rel_err =
+            (measured - GOLDEN_COMPLIANCE_1_OVER_GPA).abs() / GOLDEN_COMPLIANCE_1_OVER_GPA;
         assert!(
             rel_err < 1e-5,
             "creep golden drift: measured={measured} golden={GOLDEN_COMPLIANCE_1_OVER_GPA} rel_err={rel_err}"

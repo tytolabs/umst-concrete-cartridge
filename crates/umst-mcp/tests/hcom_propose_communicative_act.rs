@@ -51,10 +51,7 @@ fn idea004_schema_bundle_honest() {
     assert_eq!(bundle["schema_version"], json!("hcom_mcp_v0"));
     assert_eq!(bundle["response_family"], json!("Semantic"));
     let tool = propose_communicative_act_tool_schema();
-    assert_eq!(
-        tool["name"].as_str(),
-        Some(PROPOSE_COMMUNICATIVE_ACT_TOOL)
-    );
+    assert_eq!(tool["name"].as_str(), Some(PROPOSE_COMMUNICATIVE_ACT_TOOL));
 }
 
 #[test]
@@ -110,7 +107,10 @@ fn idea004_stdio_tools_list_includes_propose_communicative_act() {
     let list = read_json_line(&mut reader);
     let names = tool_names(&list);
     assert!(names.contains(PROPOSE_COMMUNICATIVE_ACT_TOOL));
-    assert!(names.len() > 13, "expected additive tool beyond frozen 13: {names:?}");
+    assert!(
+        names.len() > 13,
+        "expected additive tool beyond frozen 13: {names:?}"
+    );
 
     let _ = child.kill();
     let _ = child.wait();
@@ -152,11 +152,12 @@ fn idea004_stdio_mock_llm_integration_green() {
     let _ = read_json_line(&mut reader);
     let resp = read_json_line(&mut reader);
     assert_eq!(resp["result"]["isError"], json!(false));
-    let text = resp["result"]["content"][0]["text"]
-        .as_str()
-        .expect("text");
+    let text = resp["result"]["content"][0]["text"].as_str().expect("text");
     let body: Value = serde_json::from_str(text).expect("json body");
-    assert_eq!(body["schema_version"], json!("gated_communicative_response.v0"));
+    assert_eq!(
+        body["schema_version"],
+        json!("gated_communicative_response.v0")
+    );
     assert_eq!(body["gate"]["admissible"], json!(true));
     assert_eq!(body["mock_llm"], json!(true));
     assert_eq!(body["proposal"]["fixture"], json!("consistent_chair"));
@@ -201,9 +202,7 @@ fn idea004_stdio_mock_llm_reject_is_error_frame() {
     let _ = read_json_line(&mut reader);
     let resp = read_json_line(&mut reader);
     assert_eq!(resp["result"]["isError"], json!(true));
-    let text = resp["result"]["content"][0]["text"]
-        .as_str()
-        .expect("text");
+    let text = resp["result"]["content"][0]["text"].as_str().expect("text");
     let body: Value = serde_json::from_str(text).expect("json");
     assert_eq!(body["gate"]["verdict"], json!("REJECT"));
 

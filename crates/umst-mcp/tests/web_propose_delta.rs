@@ -3,11 +3,11 @@
 
 //! WEB-009 — umst-mcp `web.propose_delta` schema + mock wire tests.
 
+use serde_json::json;
 use umst_mcp::web_propose_delta::{
     exec_web_propose_delta_mock, web_propose_delta_schema_bundle, web_propose_delta_tool_schema,
     WEB_PROPOSE_DELTA_INPUT_REQUIRED, WEB_PROPOSE_DELTA_METHOD, WEB_PROPOSE_DELTA_TOOL,
 };
-use serde_json::json;
 
 #[test]
 fn tool_schema_emits_web_propose_delta() {

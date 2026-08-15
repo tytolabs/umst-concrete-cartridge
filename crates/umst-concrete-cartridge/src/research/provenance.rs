@@ -10,9 +10,7 @@
 use super::types::ObservedAt;
 
 #[cfg(feature = "ucrs-provenance")]
-use umst_ucrs::shared_types::observation::{
-    wall_epoch_ms, TemporalWitness, UcrsObservedAt,
-};
+use umst_ucrs::shared_types::observation::{wall_epoch_ms, TemporalWitness, UcrsObservedAt};
 
 /// Wall-clock effect, isolated at MCP/CLI boundary.
 /// formal_anchor: NONE

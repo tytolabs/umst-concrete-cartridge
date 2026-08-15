@@ -13,10 +13,10 @@ pub mod concrete_bridge;
 pub use concrete_bridge::{
     gate_route_composed, gate_route_composed_with_history, ComposedGateOutcome, MixScalars,
 };
-pub mod chem_adapter;
 pub mod calibration;
 pub mod calibration_fit;
 pub mod calibration_metrics;
+pub mod chem_adapter;
 pub mod core;
 pub mod formulas;
 pub mod homogeneous;
@@ -75,15 +75,6 @@ pub use api_consumer::{
 };
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Re-export contract types for downstream cartridge authors.
-pub use umst_cartridge_api::{
-    constitutive_response, CartridgeId, ClausiusDuhemWitness, ConstitutiveResponse,
-    InvariantWitness, MassConservationWitness, PhysicalAxiom, Rates, ScalarAlgebra, State,
-    StateSchema, StateSnapshot, StateVar, StateVarKind, TensorAlgebra, UMSTCartridge,
-    WitnessScores,
-};
-/// formal_anchor: NONE
-/// formal_status: NONE
 /// formal_anchor_rationale: Re-exports manifold façade symbols for ergonomics only.
 pub use core::{
     apply_physics_to_umst, ConcreteCartridge, IScienceCartridge, MaterialCompositionTensor,
@@ -101,6 +92,15 @@ pub use pipeline::run_full_physics_pipeline;
 /// formal_status: NONE
 /// formal_anchor_rationale: JSON envelope for staged tensor outputs.
 pub use pipeline::PhysicsPipelineReport;
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Re-export contract types for downstream cartridge authors.
+pub use umst_cartridge_api::{
+    constitutive_response, CartridgeId, ClausiusDuhemWitness, ConstitutiveResponse,
+    InvariantWitness, MassConservationWitness, PhysicalAxiom, Rates, ScalarAlgebra, State,
+    StateSchema, StateSnapshot, StateVar, StateVarKind, TensorAlgebra, UMSTCartridge,
+    WitnessScores,
+};
 
 /// formal_anchor: NONE
 /// formal_status: NONE

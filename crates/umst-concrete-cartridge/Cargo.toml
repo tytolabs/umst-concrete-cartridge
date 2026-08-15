@@ -98,7 +98,7 @@ name = "umst_concrete_cartridge"
 path = "src/lib.rs"
 
 [[test]]
-name = "s6_psi_mix_scalars_witness"
+name = "psi_mix_scalars_witness"
 path = "tests/psi_mix_scalars_witness.rs"
 
 [[test]]

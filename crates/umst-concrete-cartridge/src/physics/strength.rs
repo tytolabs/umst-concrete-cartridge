@@ -172,9 +172,9 @@ pub fn compute_strength_jennings_f64(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::chem_adapter::{csh_hd_scale_of_bulk_f32, csh_ld_scale_of_bulk_f32};
     use burn::tensor::{Data, Shape, Tensor};
     use burn_ndarray::{NdArray, NdArrayDevice};
-    use crate::chem_adapter::{csh_hd_scale_of_bulk_f32, csh_ld_scale_of_bulk_f32};
 
     type B = NdArray<f32>;
 

@@ -3,9 +3,7 @@
 
 use burn::tensor::{backend::Backend, Tensor};
 
-use crate::chem_adapter::{
-    nano_cartridge_calibration, nano_deferred_kinetics_pins,
-};
+use crate::chem_adapter::{nano_cartridge_calibration, nano_deferred_kinetics_pins};
 
 /// Pure tensor implementation of the Nanomaterial Engine.
 /// Computes nucleation seeding (C-S-H), pozzolanic acceleration, and pore refinement.

@@ -11,13 +11,11 @@ use crate::calibration::{self as calib, Profile};
 use crate::facade::MixSpec;
 use crate::homogeneous::{self as homog, mix_row_from_scalar_spec};
 
-use umst_manifold::gate::verdict::GateRejectReason;
-#[cfg(feature = "manifest-bridge")]
-use umst_manifold::gate::{
-    transition_outcome, ThermodynamicStateSnapshot, TRANSITION_TOLERANCE,
-};
 #[cfg(feature = "manifest-bridge")]
 use umst_manifold::gate::verdict::ConjunctVerdict;
+use umst_manifold::gate::verdict::GateRejectReason;
+#[cfg(feature = "manifest-bridge")]
+use umst_manifold::gate::{transition_outcome, ThermodynamicStateSnapshot, TRANSITION_TOLERANCE};
 
 /// Thin newtype over manifold P2 [`GateRejectReason`] at manifest-bridge boundary.
 /// formal_anchor: lean://umst-formal/Lean/Compat/Gate.lean#Admissible

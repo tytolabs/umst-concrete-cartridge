@@ -11,9 +11,7 @@
 //! formal_status: Literature
 //! formal_anchor_rationale: Faithful scalar lift; B2 fracture tail consumes GPa-class `e_eff` only.
 
-use umst_cartridge_continuum::{
-    compute_effective_modulus_mt_gpa, ThreePhaseCompositeCoeffs,
-};
+use umst_cartridge_continuum::{compute_effective_modulus_mt_gpa, ThreePhaseCompositeCoeffs};
 
 /// B1 three-phase Voigt–Reuss `E_eff` [GPa] — orchestrator fracture stage pin @ `fc_mpa`.
 ///

@@ -231,12 +231,8 @@ impl<B: Backend> ShrinkageEngine<B> {
             cement_content_kg.clone(),
             scm_ratio,
         );
-        let drying = Self::compute_drying_shrinkage(
-            wc_ratio,
-            ambient_rh,
-            cement_content_kg,
-            age_days,
-        );
+        let drying =
+            Self::compute_drying_shrinkage(wc_ratio, ambient_rh, cement_content_kg, age_days);
         autogenous.add(drying)
     }
 }
@@ -249,7 +245,7 @@ mod tests {
 
     type B = NdArray<f32>;
 
-    /// Orchestrator shrinkage pin — matches `pipeline/b2_orchestrator_delegate` call site.
+    /// Orchestrator shrinkage pin — matches `pipeline/mechanics_delegate` call site.
     /// Class: **Primitive-fact** (routing contract, not fitted from shrinkage output).
     const PIN_WC: f32 = 0.45;
     const PIN_ALPHA: f32 = 0.7;

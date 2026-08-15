@@ -3,11 +3,11 @@
 
 //! M1 acceptance — concrete implements [`UMSTCartridge`] at scalar parity (Wave 1).
 
+use umst_concrete_cartridge::calibration::Profile;
+use umst_concrete_cartridge::homogeneous::mix_row_from_scalar_spec;
 use umst_concrete_cartridge::{
     ConcreteApiCartridge, ScalarAlgebra, TensorAlgebra, UMSTCartridge, CONCRETE_CARTRIDGE_ID,
 };
-use umst_concrete_cartridge::homogeneous::mix_row_from_scalar_spec;
-use umst_concrete_cartridge::calibration::Profile;
 
 /// Parity anchor prefix (M0 lock — must not drift under M1 wiring).
 const PARITY_PREFIX: &str = "d5608148e29eeabd";
@@ -36,16 +36,7 @@ fn concrete_exposes_core_physical_axioms() {
 fn concrete_builds_constitutive_response_from_default_mix() {
     let profile = Profile::load_bundled("default").expect("default profile");
     let cartridge = ConcreteApiCartridge::with_profile(profile.clone());
-    let row = mix_row_from_scalar_spec(
-        &profile,
-        0.45,
-        0.0,
-        0.0,
-        0.0,
-        0.7,
-        28.0 * 24.0,
-        293.15,
-    );
+    let row = mix_row_from_scalar_spec(&profile, 0.45, 0.0, 0.0, 0.0, 0.7, 28.0 * 24.0, 293.15);
     let response = cartridge
         .constitutive_response_from_mix_row(&row, 1e-6)
         .expect("scalar response");

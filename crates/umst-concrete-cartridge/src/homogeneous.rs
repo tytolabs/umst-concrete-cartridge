@@ -90,7 +90,9 @@ pub fn mix_hydration_state(
     if binder <= 0.0 {
         return Err(HomogeneousError::InvalidMix);
     }
-    Ok(crate::api_consumer_compose::mix_hydration_scalars_from_row(row))
+    Ok(crate::api_consumer_compose::mix_hydration_scalars_from_row(
+        row,
+    ))
 }
 
 /// Powers compressive strength [MPa] with dataset-specific modifiers.

@@ -36,7 +36,7 @@ path = "tests/rmcp_parity.rs"
 required-features = ["rmcp-wire"]
 
 [[test]]
-name = "s7_proposed_tools"
+name = "proposed_tools"
 path = "tests/proposed_tools.rs"
 required-features = ["agent-layer", "tool-dry-run", "tool-promote"]
 

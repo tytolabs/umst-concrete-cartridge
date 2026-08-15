@@ -12,11 +12,11 @@ use umst_concrete_cartridge::mix_layout::{fractions_from_mix_row, mix_tensor_fro
 use umst_concrete_cartridge::pipeline::cast_phase::{
     classify_cast_phase, stage_eligible, CastLifecycleThresholds, CastPhase, CastPhaseInputs,
 };
+use umst_concrete_cartridge::pipeline::physical_summary::nominal_mix_tensor_for_mix_spec;
 use umst_concrete_cartridge::pipeline::{
     evaluate_dual_gate, run_full_physics_pipeline, CastGateVerdict, PhysicsPipelineReport,
     PipelineStageStatus, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
 };
-use umst_concrete_cartridge::pipeline::physical_summary::nominal_mix_tensor_for_mix_spec;
 
 type B = NdArray<f32>;
 
@@ -86,16 +86,15 @@ fn run_tyto_report() -> PhysicsPipelineReport {
 fn run_uci_d1_report() -> PhysicsPipelineReport {
     let profile = Profile::load_bundled("uci_d1").expect("uci_d1");
     let row = uci_d1_bulk_row();
-    let mix = mix_tensor_from_layout::<B>(&fractions_from_mix_row(&row, 0.65), &NdArrayDevice::default());
+    let mix = mix_tensor_from_layout::<B>(
+        &fractions_from_mix_row(&row, 0.65),
+        &NdArrayDevice::default(),
+    );
     run_full_physics_pipeline::<B>(&profile, &mix)
 }
 
 fn stage_status(report: &PhysicsPipelineReport, id: &str) -> Option<PipelineStageStatus> {
-    report
-        .stages
-        .iter()
-        .find(|s| s.id == id)
-        .map(|s| s.status)
+    report.stages.iter().find(|s| s.id == id).map(|s| s.status)
 }
 
 #[test]
@@ -129,11 +128,7 @@ fn cast_phase_classifier_golden_threshold_pins() {
             yield_stress_pa: 250.0,
             age_days: 1.0,
         };
-        assert_eq!(
-            classify_cast_phase(&inputs, &THRESH),
-            expected,
-            "α={alpha}"
-        );
+        assert_eq!(classify_cast_phase(&inputs, &THRESH), expected, "α={alpha}");
     }
 }
 
@@ -236,7 +231,10 @@ fn cast_gate_verdict_leg_pass_matches_admissibility() {
     let report = run_tyto_report();
     let verdict = evaluate_dual_gate(&profile, &spec, &report.summary);
 
-    assert_eq!(verdict.is_admissible(), matches!(verdict, CastGateVerdict::Admissible));
+    assert_eq!(
+        verdict.is_admissible(),
+        matches!(verdict, CastGateVerdict::Admissible)
+    );
 
     let leg_pass = verdict.printability_leg_pass() && verdict.thermodynamic_leg_pass();
     assert_eq!(leg_pass, verdict.is_admissible());
@@ -244,9 +242,8 @@ fn cast_gate_verdict_leg_pass_matches_admissibility() {
     // Printability leg pins — τ₀ band from pipeline summary.
     let tau = report.summary.rheology_yield_stress_pa;
     let extr = report.summary.printability_extrudability;
-    let print_ok = (PRINTABLE_TAU_LO..=PRINTABLE_TAU_HI).contains(&tau)
-        && extr.is_finite()
-        && extr >= 0.35;
+    let print_ok =
+        (PRINTABLE_TAU_LO..=PRINTABLE_TAU_HI).contains(&tau) && extr.is_finite() && extr >= 0.35;
     assert_eq!(verdict.printability_leg_pass(), print_ok);
 }
 

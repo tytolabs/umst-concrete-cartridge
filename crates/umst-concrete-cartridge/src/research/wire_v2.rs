@@ -58,7 +58,9 @@ pub fn observed_at_to_v2(obs: &ObservedAt) -> ObservedAtV2 {
 /// formal_status: Structural
 /// formal_anchor_rationale: UCRS crate → v2 wire functor; monotonicity on `is_monotonic_after`.
 #[must_use]
-pub fn ucrs_observed_at_to_v2(u: &umst_ucrs::shared_types::observation::UcrsObservedAt) -> ObservedAtV2 {
+pub fn ucrs_observed_at_to_v2(
+    u: &umst_ucrs::shared_types::observation::UcrsObservedAt,
+) -> ObservedAtV2 {
     use umst_ucrs::shared_types::observation::WIRE_SCALE;
     ObservedAtV2 {
         schema_version: OBSERVED_AT_V2_SCHEMA.into(),

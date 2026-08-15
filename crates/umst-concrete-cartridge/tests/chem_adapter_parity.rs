@@ -4,59 +4,55 @@
 //! Cluster A–H boundary parity — adapter delegates match pre-lift literals and
 //! `umst-chem` SSOT where lifted. Cluster H: H-01, H-02, H-03, and H-07 lifted.
 
+use umst_cartridge_concrete::dissipation_modulus_eta_from_s_intrinsic;
 use umst_chem::{
     csh_gel_modulus_scales, csh_ld_volume_fraction, csh_paste_bulk_modulus_voigt_gpa,
-    csh_youngs_moduli_gpa,
-    gel_space_ratio,
+    csh_youngs_moduli_gpa, desiccation_params, dlvo_params, gel_space_ratio,
     hydration_degree_calibrated as chem_hydration_degree_calibrated,
     jennings_capillary_porosity_clamped, jennings_compressive_strength,
-    kinetics::ReactionExtentKineticsSpec as ChemKineticsSpec, desiccation_params,
-    dlvo_params, powers::powers_capillary_water_volume, powers_capillary_porosity, powers_gel_volume,
+    kinetics::ReactionExtentKineticsSpec as ChemKineticsSpec,
+    powers::powers_capillary_water_volume, powers_capillary_porosity, powers_gel_volume,
     set_time_activation_energy_j_per_mol, ultimate_degree_of_hydration, vinet_pressure_gpa,
-    voigt_bulk_modulus_gpa, HydrationKineticsBundle,
-    BOLTZMANN_J_PER_K, CEMENT_VOLUME_PER_WC, CRITICAL_WC,
-    CSH_HD_SCALE_OF_BULK, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE, CSH_LD_SCALE_OF_BULK,
-    CSH_VOLUME_FACTOR, DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER,
-    DLVO_COLLAPSE_SEPARATION_NM, GAS_CONSTANT_J_PER_MOL_K, HAMAKER_CEMENT_WATER_J,
-    JENNINGS_STRENGTH_EXPONENT_DEFAULT, KELVIN_CAPILLARY_SCALE_MPA, NANO_HEALING_BOOST_PER_DOSAGE, NANO_SSA_REF_M2_PER_G,
-    NUCLEATION_BETA_MIN_PER_DECADE, OPC_REACTION_ENTHALPY_J_PER_KG, POZZOLANIC_ALPHA,
+    voigt_bulk_modulus_gpa, HydrationKineticsBundle, PowersIntrinsicStrength, SpeciesId,
+    BOLTZMANN_J_PER_K, CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_HD_SCALE_OF_BULK,
+    CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE, CSH_LD_SCALE_OF_BULK, CSH_VOLUME_FACTOR,
+    DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER, DLVO_COLLAPSE_SEPARATION_NM,
+    DLVO_REFERENCE_TEMPERATURE_K, GAS_CONSTANT_J_PER_MOL_K, HAMAKER_CEMENT_WATER_J,
+    JENNINGS_STRENGTH_EXPONENT_DEFAULT, KELVIN_CAPILLARY_SCALE_MPA, NANO_HEALING_BOOST_PER_DOSAGE,
+    NANO_SSA_REF_M2_PER_G, NUCLEATION_BETA_MIN_PER_DECADE, OPC_REACTION_ENTHALPY_J_PER_KG,
     POWERS_GEL_VOLUME_FACTOR, POWERS_NON_EVAP_WATER_COEFF, POWERS_PASTE_DENOMINATOR_OFFSET,
-    PowersIntrinsicStrength, SpeciesId, VACUUM_PERMITTIVITY, DLVO_REFERENCE_TEMPERATURE_K,
+    POZZOLANIC_ALPHA, VACUUM_PERMITTIVITY,
 };
 use umst_concrete_cartridge::chem_adapter::{
     cartridge_default_intrinsic_strength_mpa, cement_reaction_enthalpy_j_per_kg,
-    cement_reaction_extent_kinetics_spec,
-    cement_volume_per_wc_f32, chemo_diffusion_weight_scale_f32,
-    clinker_bulk_modulus_ambient_gpa_f32, clinker_vinet_params_f32,
-    critical_wc, critical_wc_f32, csh_hd_scale_of_bulk_f32, ClinkerPhaseTag,
+    cement_reaction_extent_kinetics_spec, cement_volume_per_wc_f32,
+    chemo_diffusion_weight_scale_f32, clinker_bulk_modulus_ambient_gpa_f32,
+    clinker_vinet_params_f32, critical_wc, critical_wc_f32, csh_hd_scale_of_bulk_f32,
     csh_ld_frac_intercept_subtrahend_f32, csh_ld_frac_slope_f32, csh_ld_scale_of_bulk_f32,
     csh_ld_volume_fraction_f32, csh_volume_factor_f32, csh_youngs_moduli_from_k0_f32,
-    dissipation_modulus_eta_from_s_intrinsic_mpa, e_to_fc_stiffness_bridge_f32,
+    desiccation_rh_drop_scale, desiccation_rh_drop_scale_f32,
+    dissipation_modulus_eta_from_s_intrinsic_mpa, dlvo_boltzmann_f32, dlvo_boltzmann_j_per_k,
+    dlvo_collapse_separation_f32, dlvo_collapse_separation_nm, dlvo_debye_prefactor_f32,
+    dlvo_debye_prefactor_nm, dlvo_dielectric_water, dlvo_dielectric_water_f32, dlvo_hamaker_f32,
+    dlvo_hamaker_j, dlvo_reference_temperature_f32, dlvo_reference_temperature_k,
+    dlvo_vacuum_permittivity, dlvo_vacuum_permittivity_f32, e_to_fc_stiffness_bridge_f32,
+    gas_constant_f32, gas_constant_j_per_mol_k, gel_space_ratio_f32,
     hydration_activation_over_r_f32, hydration_alpha_max_opc_f32,
-    hydration_alpha_max_scm_slope_f32, hydration_degree_calibrated,
-    hydration_k_ref_f32, hydration_scm_rate_slope_f32, hydration_t_ref_k_f32,
-    jennings_capillary_porosity_clamped_f32, jennings_compressive_strength_f32,
-    jennings_strength_exponent_default,
-    paste_bulk_modulus_voigt_from_wc_gpa,
-    set_time_activation_energy_f32,
-    desiccation_rh_drop_scale, desiccation_rh_drop_scale_f32, dlvo_boltzmann_f32,
-    dlvo_boltzmann_j_per_k, dlvo_collapse_separation_f32, dlvo_collapse_separation_nm,
-    dlvo_debye_prefactor_f32, dlvo_debye_prefactor_nm, dlvo_dielectric_water,
-    dlvo_dielectric_water_f32, dlvo_hamaker_f32, dlvo_hamaker_j, dlvo_reference_temperature_f32,
-    dlvo_reference_temperature_k, dlvo_vacuum_permittivity, dlvo_vacuum_permittivity_f32,
-    gas_constant_f32, gas_constant_j_per_mol_k, gel_space_ratio_f32, kelvin_capillary_scale_mpa,
-    kelvin_capillary_scale_mpa_f32, powers_capillary_porosity_f32,
-    powers_capillary_water_volume_f32, powers_gel_volume_f32, powers_gel_volume_factor_f32,
-    powers_non_evap_water_coeff_f32, powers_paste_denominator_offset_f32,
-    powers_compressive_strength_f32, reaction_gibbs_opc_hydration_joules,
-    ultimate_degree_of_hydration_f32,
-    vinet_pressure_gpa_f32, voigt_bulk_modulus_gpa_f32,
-    ADIABATIC_TEMP_RISE_PER_ALPHA, CHEM_AFFINITY_EXPONENT, THERMO_REF_RATE,
-    CLUSTER_H_INVENTORY_MANIFEST, NanoChemLiftDisposition,
-    nano_cartridge_calibration, nano_deferred_kinetics_pins, nano_healing_boost_per_dosage_f32,
-    nano_inventory_disposition, nano_nucleation_beta_min_per_decade_f32,
-    nano_optimal_dosage_pct_f32, nano_pore_refinement_delta_f32, nano_pozzolanic_alpha_f32,
-    nano_ssa_ref_m2_per_g_f32, nano_strength_gamma_f32,
+    hydration_alpha_max_scm_slope_f32, hydration_degree_calibrated, hydration_k_ref_f32,
+    hydration_scm_rate_slope_f32, hydration_t_ref_k_f32, jennings_capillary_porosity_clamped_f32,
+    jennings_compressive_strength_f32, jennings_strength_exponent_default,
+    kelvin_capillary_scale_mpa, kelvin_capillary_scale_mpa_f32, nano_cartridge_calibration,
+    nano_deferred_kinetics_pins, nano_healing_boost_per_dosage_f32, nano_inventory_disposition,
+    nano_nucleation_beta_min_per_decade_f32, nano_optimal_dosage_pct_f32,
+    nano_pore_refinement_delta_f32, nano_pozzolanic_alpha_f32, nano_ssa_ref_m2_per_g_f32,
+    nano_strength_gamma_f32, paste_bulk_modulus_voigt_from_wc_gpa, powers_capillary_porosity_f32,
+    powers_capillary_water_volume_f32, powers_compressive_strength_f32, powers_gel_volume_f32,
+    powers_gel_volume_factor_f32, powers_non_evap_water_coeff_f32,
+    powers_paste_denominator_offset_f32, reaction_gibbs_opc_hydration_joules,
+    set_time_activation_energy_f32, ultimate_degree_of_hydration_f32, vinet_pressure_gpa_f32,
+    voigt_bulk_modulus_gpa_f32, ClinkerPhaseTag, NanoChemLiftDisposition,
+    ADIABATIC_TEMP_RISE_PER_ALPHA, CHEM_AFFINITY_EXPONENT, CLUSTER_H_INVENTORY_MANIFEST,
+    THERMO_REF_RATE,
 };
 use umst_concrete_cartridge::{
     calibration::{ModelKind, Profile},
@@ -64,7 +60,6 @@ use umst_concrete_cartridge::{
     physics::optical::paste_bulk_modulus_voigt_from_wc_gpa as optical_paste_bulk_modulus_voigt_from_wc_gpa,
     CEMENT_REACTION_ENTHALPY_J_PER_KG,
 };
-use umst_cartridge_concrete::dissipation_modulus_eta_from_s_intrinsic;
 
 const EPS: f64 = 1e-12;
 const EPS_F32: f64 = 1e-5;
@@ -74,9 +69,7 @@ const VINET_F32_ABS_TOL: f64 = 2e-5;
 
 #[test]
 fn cluster_a_stoichiometry_coefficients_match_chem_ssot() {
-    assert!(
-        (f64::from(powers_gel_volume_factor_f32()) - POWERS_GEL_VOLUME_FACTOR).abs() < EPS_F32
-    );
+    assert!((f64::from(powers_gel_volume_factor_f32()) - POWERS_GEL_VOLUME_FACTOR).abs() < EPS_F32);
     assert!(
         (f64::from(powers_non_evap_water_coeff_f32()) - POWERS_NON_EVAP_WATER_COEFF).abs()
             < EPS_F32
@@ -129,8 +122,9 @@ fn cluster_a_ultimate_doh_matches_mills_closure() {
     let expected = 1.031 * f64::from(wc) / (0.194 + f64::from(wc));
     assert!((f64::from(ultimate_degree_of_hydration_f32(wc)) - expected).abs() < EPS_F32);
     assert!(
-        (f64::from(ultimate_degree_of_hydration_f32(wc)) - ultimate_degree_of_hydration(f64::from(wc)))
-            .abs()
+        (f64::from(ultimate_degree_of_hydration_f32(wc))
+            - ultimate_degree_of_hydration(f64::from(wc)))
+        .abs()
             < EPS_F32
     );
 }
@@ -179,9 +173,7 @@ fn cluster_b_bundle_scalars_match_chem_ssot() {
     assert!(
         (f64::from(hydration_activation_over_r_f32()) - bundle.activation_over_r).abs() < EPS_F32
     );
-    assert!(
-        (f64::from(hydration_scm_rate_slope_f32()) - bundle.scm_rate_slope).abs() < EPS_F32
-    );
+    assert!((f64::from(hydration_scm_rate_slope_f32()) - bundle.scm_rate_slope).abs() < EPS_F32);
     assert!((f64::from(hydration_t_ref_k_f32()) - bundle.t_ref_k).abs() < EPS_F32);
 }
 
@@ -324,12 +316,17 @@ fn cluster_d_vinet_table_matches_chem_ssot() {
         (ClinkerPhaseTag::BeliteBetaC2s, SpeciesId::BeliteBetaC2s),
         (ClinkerPhaseTag::Portlandite, SpeciesId::Portlandite),
         (ClinkerPhaseTag::Ettringite, SpeciesId::Ettringite),
-        (ClinkerPhaseTag::Csh14nmTobermorite, SpeciesId::CshTobermorite14nm),
+        (
+            ClinkerPhaseTag::Csh14nmTobermorite,
+            SpeciesId::CshTobermorite14nm,
+        ),
     ] {
         let adapter = clinker_vinet_params_f32(tag);
         let ssot = species.vinet_params();
         // V₀ uses VINET_F32_ABS_TOL (not EPS_F32): f64 SSOT → f32 cartridge boundary.
-        assert!((f64::from(adapter.v0_per_fu_ang3) - ssot.v0_per_fu_ang3).abs() < VINET_F32_ABS_TOL);
+        assert!(
+            (f64::from(adapter.v0_per_fu_ang3) - ssot.v0_per_fu_ang3).abs() < VINET_F32_ABS_TOL
+        );
         assert!((f64::from(adapter.bulk_modulus_gpa) - ssot.bulk_modulus_gpa).abs() < EPS_F32);
         assert!((f64::from(adapter.k0_prime) - ssot.k0_prime).abs() < EPS_F32);
         assert!(
@@ -386,8 +383,7 @@ fn cluster_e_ld_volume_fraction_matches_jennings_fit() {
     assert!((csh_ld_volume_fraction(f64::from(wc)) - expected).abs() < EPS);
     assert!((f64::from(csh_ld_frac_slope_f32()) - CSH_LD_FRAC_SLOPE).abs() < EPS_F32);
     assert!(
-        (f64::from(csh_ld_frac_intercept_subtrahend_f32()) + CSH_LD_FRAC_INTERCEPT).abs()
-            < EPS_F32
+        (f64::from(csh_ld_frac_intercept_subtrahend_f32()) + CSH_LD_FRAC_INTERCEPT).abs() < EPS_F32
     );
 }
 
@@ -461,8 +457,7 @@ fn cluster_f_dlvo_constants_match_chem_ssot() {
 
     assert!((dlvo_collapse_separation_nm() - DLVO_COLLAPSE_SEPARATION_NM).abs() < f64::EPSILON);
     assert!(
-        (f64::from(dlvo_collapse_separation_f32()) - DLVO_COLLAPSE_SEPARATION_NM).abs()
-            < EPS_F32
+        (f64::from(dlvo_collapse_separation_f32()) - DLVO_COLLAPSE_SEPARATION_NM).abs() < EPS_F32
     );
 }
 
@@ -476,15 +471,13 @@ fn cluster_f_desiccation_constants_match_chem_ssot() {
     assert!((desiccation_rh_drop_scale() - DESICCATION_RH_DROP_SCALE).abs() < f64::EPSILON);
     assert!((desiccation_rh_drop_scale() - p.rh_drop_scale).abs() < f64::EPSILON);
     assert!(
-        (f64::from(desiccation_rh_drop_scale_f32()) - DESICCATION_RH_DROP_SCALE).abs()
-            < EPS_F32
+        (f64::from(desiccation_rh_drop_scale_f32()) - DESICCATION_RH_DROP_SCALE).abs() < EPS_F32
     );
 
     assert!((kelvin_capillary_scale_mpa() - KELVIN_CAPILLARY_SCALE_MPA).abs() < f64::EPSILON);
     assert!((kelvin_capillary_scale_mpa() - p.kelvin_scale_mpa).abs() < f64::EPSILON);
     assert!(
-        (f64::from(kelvin_capillary_scale_mpa_f32()) - KELVIN_CAPILLARY_SCALE_MPA).abs()
-            < EPS_F32
+        (f64::from(kelvin_capillary_scale_mpa_f32()) - KELVIN_CAPILLARY_SCALE_MPA).abs() < EPS_F32
     );
 }
 
@@ -497,9 +490,7 @@ fn cluster_g_chemo_diffusion_weight_is_cartridge_witness() {
 #[test]
 fn cluster_h_h01_ssa_ref_delegates_to_chem_ssot() {
     assert!((NANO_SSA_REF_M2_PER_G - 200.0).abs() < EPS);
-    assert!(
-        (f64::from(nano_ssa_ref_m2_per_g_f32()) - NANO_SSA_REF_M2_PER_G).abs() < EPS_F32
-    );
+    assert!((f64::from(nano_ssa_ref_m2_per_g_f32()) - NANO_SSA_REF_M2_PER_G).abs() < EPS_F32);
     assert_eq!(
         nano_inventory_disposition("H-01"),
         Some(NanoChemLiftDisposition::LiftedToChemSsot)
@@ -537,23 +528,30 @@ fn cluster_h_cartridge_retains_manifest_h04_h06() {
     for witness in CLUSTER_H_INVENTORY_MANIFEST {
         match witness.row_id {
             "H-01" | "H-02" | "H-03" | "H-07" => {
-                assert_eq!(witness.disposition, NanoChemLiftDisposition::LiftedToChemSsot);
+                assert_eq!(
+                    witness.disposition,
+                    NanoChemLiftDisposition::LiftedToChemSsot
+                );
             }
             "H-04" | "H-05" | "H-06" => {
-                assert_eq!(witness.disposition, NanoChemLiftDisposition::CartridgeRetains);
+                assert_eq!(
+                    witness.disposition,
+                    NanoChemLiftDisposition::CartridgeRetains
+                );
             }
             _ => panic!("unexpected cluster H row {}", witness.row_id),
         }
-        assert_eq!(nano_inventory_disposition(witness.row_id), Some(witness.disposition));
+        assert_eq!(
+            nano_inventory_disposition(witness.row_id),
+            Some(witness.disposition)
+        );
     }
 }
 
 #[test]
 fn cluster_h_h02_pozzolanic_alpha_delegates_to_chem_ssot() {
     assert!((POZZOLANIC_ALPHA - 0.5).abs() < EPS);
-    assert!(
-        (f64::from(nano_pozzolanic_alpha_f32()) - POZZOLANIC_ALPHA).abs() < EPS_F32
-    );
+    assert!((f64::from(nano_pozzolanic_alpha_f32()) - POZZOLANIC_ALPHA).abs() < EPS_F32);
     assert_eq!(
         nano_deferred_kinetics_pins().pozzolanic_alpha,
         nano_pozzolanic_alpha_f32()
@@ -637,8 +635,7 @@ fn cluster_i_jennings_phi_cap_matches_powers_capillary_porosity() {
 #[test]
 fn cluster_i_jennings_strength_matches_chem_ssot_closure() {
     let p = jennings_strength_exponent_default();
-    let adapter =
-        jennings_compressive_strength_f32(G0_W_C, G0_ALPHA, G0_S_INTRINSIC, p);
+    let adapter = jennings_compressive_strength_f32(G0_W_C, G0_ALPHA, G0_S_INTRINSIC, p);
     let chem = jennings_compressive_strength(
         f64::from(G0_W_C),
         f64::from(G0_ALPHA),
@@ -654,7 +651,10 @@ fn cluster_i_jennings_strength_monotone_in_alpha() {
     let p = jennings_strength_exponent_default();
     let f_early = jennings_compressive_strength_f32(G0_W_C, 0.2, G0_S_INTRINSIC, p);
     let f_late = jennings_compressive_strength_f32(G0_W_C, 0.6, G0_S_INTRINSIC, p);
-    assert!(f_late >= f_early, "monotone in α per jennings_strength_monotone");
+    assert!(
+        f_late >= f_early,
+        "monotone in α per jennings_strength_monotone"
+    );
 }
 
 #[test]
@@ -662,7 +662,10 @@ fn cluster_i_jennings_strength_differs_from_powers_at_g0_pin() {
     let p = jennings_strength_exponent_default();
     let powers = powers_compressive_strength_f32(G0_W_C, G0_ALPHA, 0.02, G0_S_INTRINSIC);
     let jennings = jennings_compressive_strength_f32(G0_W_C, G0_ALPHA, G0_S_INTRINSIC, p);
-    assert!((powers - jennings).abs() > 1e-4, "parallel witnesses must not collapse");
+    assert!(
+        (powers - jennings).abs() > 1e-4,
+        "parallel witnesses must not collapse"
+    );
 }
 
 #[test]
@@ -671,10 +674,6 @@ fn cluster_i_bundled_jennings_gel_space_profile_loads() {
     assert_eq!(profile.model_section.kind, ModelKind::JenningsGelSpace);
     assert!((profile.powers.s_intrinsic - 80.0).abs() < f64::EPSILON);
     assert_eq!(profile.contract.verification_status, "Boundary");
-    let formal = profile
-        .provenance
-        .formal
-        .as_ref()
-        .expect("formal block");
+    let formal = profile.provenance.formal.as_ref().expect("formal block");
     assert!(formal.anchor.contains("JenningsGelSpace"));
 }

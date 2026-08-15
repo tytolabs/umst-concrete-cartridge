@@ -9,9 +9,9 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Command as StdCmd, Stdio};
 use umst_mcp::semantic_hcom::{
-    exec_get_audit_digest, exec_map_to_geometry, exec_refine_shape,
+    exec_get_audit_digest, exec_map_to_geometry, exec_refine_shape, get_audit_digest_tool_schema,
     hcom_semantic_tools_schema_bundle, map_to_geometry_tool_schema, refine_shape_tool_schema,
-    get_audit_digest_tool_schema, HCOM_TOOLS_SCHEMA_VERSION, HCOM_TOOLS_SLOT_OWNER,
+    HCOM_TOOLS_SCHEMA_VERSION, HCOM_TOOLS_SLOT_OWNER,
 };
 use umst_semantics::{FIXTURE_CHAIR_EN_PROPOSAL_ID, GOLDEN_CHAIR_EN_PROPOSAL_DIGEST_HEX};
 
@@ -122,13 +122,19 @@ fn hcom029_tools_in_process_audit_fixture_golden() {
     let (body, is_error) =
         exec_get_audit_digest(&json!({ "decision_id": FIXTURE_CHAIR_EN_PROPOSAL_ID }));
     assert!(!is_error);
-    assert_eq!(body["digest_hex"], json!(GOLDEN_CHAIR_EN_PROPOSAL_DIGEST_HEX));
+    assert_eq!(
+        body["digest_hex"],
+        json!(GOLDEN_CHAIR_EN_PROPOSAL_DIGEST_HEX)
+    );
     assert_eq!(body["digest_source"], json!("fixture_log"));
 }
 
 #[test]
 fn hcom029_tools_stdio_map_to_geometry_green() {
-    let resp = stdio_tool_call("map_to_geometry", &json!({ "surface": "chair", "lang": "en" }));
+    let resp = stdio_tool_call(
+        "map_to_geometry",
+        &json!({ "surface": "chair", "lang": "en" }),
+    );
     assert!(resp.get("error").is_none(), "stdio error: {resp}");
     assert_eq!(resp["result"]["isError"], json!(false));
     let text = resp["result"]["content"][0]["text"].as_str().expect("text");
@@ -159,7 +165,10 @@ fn hcom029_tools_stdio_get_audit_digest_green() {
     assert_eq!(resp["result"]["isError"], json!(false));
     let text = resp["result"]["content"][0]["text"].as_str().expect("text");
     let body: Value = serde_json::from_str(text).expect("json body");
-    assert_eq!(body["digest_hex"], json!(GOLDEN_CHAIR_EN_PROPOSAL_DIGEST_HEX));
+    assert_eq!(
+        body["digest_hex"],
+        json!(GOLDEN_CHAIR_EN_PROPOSAL_DIGEST_HEX)
+    );
 }
 
 #[test]

@@ -367,9 +367,15 @@ pub fn mcp_product_spine_d25_honest(probe: &McpProductSpineD25Probe) -> bool {
         && probe.composer_model_slug == COMPOSER_MODEL_SLUG
         && probe.composer_d25_wave_slot == COMPOSER_D25_WAVE_SLOT
         && probe.round2_job_id == ROUND2_MCP_GAPS_JOB_ID
-        && probe.round2_gaps_receipt_path.contains("UMST_MCP_GAPS_ROUND2_1514")
-        && probe.round2_absorbed_receipt_path.contains("COMPOSER_C37_R2_MCP_GAPS_1649")
-        && probe.composer_d25_receipt_path.contains("COMPOSER_D25_R2_MCP_GAPS_1741")
+        && probe
+            .round2_gaps_receipt_path
+            .contains("UMST_MCP_GAPS_ROUND2_1514")
+        && probe
+            .round2_absorbed_receipt_path
+            .contains("COMPOSER_C37_R2_MCP_GAPS_1649")
+        && probe
+            .composer_d25_receipt_path
+            .contains("COMPOSER_D25_R2_MCP_GAPS_1741")
         && probe.d23.spine_honest
         && mcp_product_spine_d23_honest(&probe.d23)
         && probe.round2_absorb_honest
@@ -498,7 +504,8 @@ pub fn mcp_product_spine_h08_probe() -> McpProductSpineH08Probe {
         stdio_smoke_slot_count: crate::stdio_smoke::NATIVE_STDIO_SMOKE_SLOT_COUNT,
         stdio_smoke_reproducible: crate::stdio_smoke::native_stdio_smoke_reproducible(),
         web_009_production_closed: crate::stdio_smoke::web_009_production_closed(),
-        native_stdio_smoke_production_wired: crate::stdio_smoke::native_stdio_smoke_production_wired(),
+        native_stdio_smoke_production_wired:
+            crate::stdio_smoke::native_stdio_smoke_production_wired(),
         authority_chain_honest: mcp_product_spine_h08_authority_chain_honest(),
     }
 }

@@ -122,11 +122,10 @@ fn thmc_step_drains_cartridge_gate_evidence() {
 mod s4_prep {
     use super::*;
     use umst_cartridge_concrete::{
-        extract_matches_contribution_at_passive_pin, gate_route_composed,
-        g0_probe_atom_state, hydration_alpha_parity_holds, try_b3_layer_contribution,
-        B3_DISSIPATION_EXTRACT_PARITY_ABS_TOL, B3_PSI_EXTRACT_PARITY_ABS_TOL,
-        D_CLOSURE_ABS_TOL, GATE_PARITY_SHA256, HYDRATION_ALPHA_PARITY_ABS_TOL,
-        MixScalars, PSI_CLOSURE_ABS_TOL,
+        extract_matches_contribution_at_passive_pin, g0_probe_atom_state, gate_route_composed,
+        hydration_alpha_parity_holds, try_b3_layer_contribution, MixScalars,
+        B3_DISSIPATION_EXTRACT_PARITY_ABS_TOL, B3_PSI_EXTRACT_PARITY_ABS_TOL, D_CLOSURE_ABS_TOL,
+        GATE_PARITY_SHA256, HYDRATION_ALPHA_PARITY_ABS_TOL, PSI_CLOSURE_ABS_TOL,
     };
     use umst_cartridge_continuum::ContinuumAtomRates;
     use umst_manifold::gate::transition_proposal::TRANSITION_TOLERANCE;
@@ -217,12 +216,7 @@ mod s4_prep {
         assert_eq!(b3.dissipation_b3, 0.0);
 
         let direct = ThmcSolverStep::attach_gate_evidence(
-            &solver,
-            &science,
-            &pre,
-            &post,
-            &manifold,
-            solver.dt,
+            &solver, &science, &pre, &post, &manifold, solver.dt,
         )
         .expect("attach gate evidence");
         assert_eq!(direct.transition.catalog_id, CD_TRANSITION_CATALOG_ID);

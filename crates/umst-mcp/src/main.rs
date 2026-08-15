@@ -845,7 +845,9 @@ fn tool_web_propose_delta(id: Value, args: &Value) -> Value {
 #[cfg(feature = "tool-propose-communicative-act")]
 fn tool_semantic_agent(id: Value, name: &str, args: &Value) -> Value {
     let (out, is_error) = match name {
-        "propose_communicative_act" => umst_mcp::semantic_hcom::exec_propose_communicative_act(args),
+        "propose_communicative_act" => {
+            umst_mcp::semantic_hcom::exec_propose_communicative_act(args)
+        }
         "map_to_geometry" => umst_mcp::semantic_hcom::exec_map_to_geometry(args),
         "refine_shape" => umst_mcp::semantic_hcom::exec_refine_shape(args),
         "get_audit_digest" => umst_mcp::semantic_hcom::exec_get_audit_digest(args),
@@ -865,13 +867,18 @@ fn tool_semantic_agent(id: Value, name: &str, args: &Value) -> Value {
     )
 }
 
-#[cfg(any(feature = "tool-semantic-hcom", feature = "tool-propose-communicative-act"))]
+#[cfg(any(
+    feature = "tool-semantic-hcom",
+    feature = "tool-propose-communicative-act"
+))]
 fn tool_propose_communicative_act(id: Value, args: &Value) -> Value {
     #[cfg(feature = "tool-propose-communicative-act")]
     let (out, is_error) = umst_mcp::semantic_hcom::exec_propose_communicative_act(args);
-    #[cfg(all(feature = "tool-semantic-hcom", not(feature = "tool-propose-communicative-act")))]
-    let (out, is_error) =
-        umst_mcp::semantic_hcom_schema::exec_propose_communicative_act_mock(args);
+    #[cfg(all(
+        feature = "tool-semantic-hcom",
+        not(feature = "tool-propose-communicative-act")
+    ))]
+    let (out, is_error) = umst_mcp::semantic_hcom_schema::exec_propose_communicative_act_mock(args);
     text_result(
         id,
         serde_json::to_string_pretty(&out).unwrap_or_default(),
@@ -983,16 +990,15 @@ fn handle_tools_call(
         "umst_promote_contribution" => (tool_umst_promote_contribution(id, &args), session),
         #[cfg(feature = "tool-arena-session-unified")]
         "umst_arena_session" => tool_umst_arena_session(id, &args, session),
-        #[cfg(any(feature = "tool-semantic-hcom", feature = "tool-propose-communicative-act"))]
-        "propose_communicative_act" => (
-            tool_propose_communicative_act(id, &args),
-            session,
-        ),
+        #[cfg(any(
+            feature = "tool-semantic-hcom",
+            feature = "tool-propose-communicative-act"
+        ))]
+        "propose_communicative_act" => (tool_propose_communicative_act(id, &args), session),
         #[cfg(feature = "tool-propose-communicative-act")]
-        "map_to_geometry" | "refine_shape" | "get_audit_digest" => (
-            tool_semantic_agent(id, name, &args),
-            session,
-        ),
+        "map_to_geometry" | "refine_shape" | "get_audit_digest" => {
+            (tool_semantic_agent(id, name, &args), session)
+        }
         #[cfg(feature = "tool-web-propose-delta")]
         "web_propose_delta" => (tool_web_propose_delta(id, &args), session),
         other => (

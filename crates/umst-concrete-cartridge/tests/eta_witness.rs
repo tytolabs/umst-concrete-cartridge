@@ -3,15 +3,15 @@
 
 //! T2-S6 PARTIAL η lift witness — `dissipation_modulus_from_profile` → consumer SSOT.
 
+use umst_cartridge_concrete::{
+    dissipation_modulus_eta, dissipation_modulus_eta_from_profile as consumer_eta_from_profile,
+    MixScalars,
+};
 use umst_concrete_cartridge::api_consumer_compose::{
     dissipation_modulus_eta_from_profile, scalar_fields_from_composed,
 };
 use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::homogeneous::MixRow;
-use umst_cartridge_concrete::{
-    dissipation_modulus_eta, dissipation_modulus_eta_from_profile as consumer_eta_from_profile,
-    MixScalars,
-};
 
 fn default_profile() -> Profile {
     Profile::load_bundled("default").expect("bundled default profile for S6 η witness")

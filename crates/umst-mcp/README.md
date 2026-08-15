@@ -82,3 +82,11 @@ The compose file keeps `stdin_open` and `tty` for interactive stdio use.
 ## License
 
 Released under the [MIT License](../../LICENSE).
+
+## Workspace layout dependency (honest)
+
+`umst-mcp` resolves `umst-manifold`, `umst-semantics`, `umst-trust`, and `umst-runtime-arena`
+via relative `path = "../../../…"` entries. A clone of **only** this repository will not
+build those optional/path edges. Build from the Studio TYTO workspace (or replace path deps
+with published crates) — the crates are package-local for MCP sources, not fully standalone
+for the full dependency graph.

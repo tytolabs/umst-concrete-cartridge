@@ -96,10 +96,7 @@ impl CastGateVerdict {
     /// formal_status: NONE
     /// formal_anchor_rationale: Printability leg pass — not `RejectPrintability` / `RejectBoth`.
     pub fn printability_leg_pass(self) -> bool {
-        !matches!(
-            self,
-            Self::RejectPrintability(_) | Self::RejectBoth { .. }
-        )
+        !matches!(self, Self::RejectPrintability(_) | Self::RejectBoth { .. })
     }
 
     #[must_use]
@@ -107,10 +104,7 @@ impl CastGateVerdict {
     /// formal_status: NONE
     /// formal_anchor_rationale: Thermodynamic leg pass — not `RejectThermodynamic` / `RejectBoth`.
     pub fn thermodynamic_leg_pass(self) -> bool {
-        !matches!(
-            self,
-            Self::RejectThermodynamic(_) | Self::RejectBoth { .. }
-        )
+        !matches!(self, Self::RejectThermodynamic(_) | Self::RejectBoth { .. })
     }
 }
 
@@ -121,7 +115,10 @@ impl CastGateVerdict {
 /// formal_form: "τ₀ ∈ [180, 360] Pa AND extrudability ≥ 0.35"
 /// formal_anchor_rationale: Enum leg evaluator for printability band (MP3.3).
 #[must_use]
-pub fn printability_leg_scalars(tau_y_pa: f32, extrudability: f32) -> Result<(), PrintabilityReject> {
+pub fn printability_leg_scalars(
+    tau_y_pa: f32,
+    extrudability: f32,
+) -> Result<(), PrintabilityReject> {
     if !extrudability.is_finite() {
         return Err(PrintabilityReject::NonFiniteExtrudability);
     }
@@ -239,13 +236,11 @@ mod tests {
         assert!(admissible.printability_leg_pass());
         assert!(admissible.thermodynamic_leg_pass());
 
-        let print_reject = CastGateVerdict::RejectPrintability(
-            PrintabilityReject::TauBelowBand {
-                tau_pa: 100.0,
-                lo: PRINTABLE_TAU_LO,
-                hi: PRINTABLE_TAU_HI,
-            },
-        );
+        let print_reject = CastGateVerdict::RejectPrintability(PrintabilityReject::TauBelowBand {
+            tau_pa: 100.0,
+            lo: PRINTABLE_TAU_LO,
+            hi: PRINTABLE_TAU_HI,
+        });
         assert!(!print_reject.is_admissible());
         assert!(!print_reject.printability_leg_pass());
         assert!(print_reject.thermodynamic_leg_pass());
@@ -257,7 +252,10 @@ mod tests {
         assert!(!thermo_reject.thermodynamic_leg_pass());
 
         let both = CastGateVerdict::RejectBoth {
-            printability: PrintabilityReject::ExtrudabilityLow { extr: 0.1, min: 0.35 },
+            printability: PrintabilityReject::ExtrudabilityLow {
+                extr: 0.1,
+                min: 0.35,
+            },
             thermodynamic: ThermoReject(GateRejectReason::MassViolation),
         };
         assert!(!both.is_admissible());

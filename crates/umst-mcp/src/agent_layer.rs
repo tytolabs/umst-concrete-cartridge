@@ -13,10 +13,10 @@ use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::facade::{MixSpec, PredictionWireVersion};
 use umst_concrete_cartridge::research::{
     accept, append_gate_reject_jsonl, append_memory_jsonl, estimate_mi_bits_from_mix,
-    gate_check_mix_result, mix_wire_from_spec_value, query_page, synthetic_observed_at,
-    AcceptError, AcceptResult, GateCheckResult, GateContext, MemoryQuery, MemoryQueryPage,
-    ProvenanceClock, ResearchStore, StoreError, WallClock, CANON_VERSION, CONTRIBUTION_SCHEMA,
-    grounded_catalog_hash,
+    gate_check_mix_result, grounded_catalog_hash, mix_wire_from_spec_value, query_page,
+    synthetic_observed_at, AcceptError, AcceptResult, GateCheckResult, GateContext, MemoryQuery,
+    MemoryQueryPage, ProvenanceClock, ResearchStore, StoreError, WallClock, CANON_VERSION,
+    CONTRIBUTION_SCHEMA,
 };
 
 const JSON_SCHEMA_2020: &str = "https://json-schema.org/draft/2020-12/schema";
@@ -768,7 +768,10 @@ pub fn agent_tools_schema() -> Vec<Value> {
     tools.extend(crate::proposed_tools::proposed_tool_schemas());
     #[cfg(feature = "tool-propose-communicative-act")]
     tools.extend(crate::semantic_hcom::hcom_semantic_agent_tool_schemas());
-    #[cfg(all(feature = "tool-semantic-hcom", not(feature = "tool-propose-communicative-act")))]
+    #[cfg(all(
+        feature = "tool-semantic-hcom",
+        not(feature = "tool-propose-communicative-act")
+    ))]
     tools.push(crate::semantic_hcom_schema::propose_communicative_act_tool_schema());
     #[cfg(feature = "tool-web-propose-delta")]
     tools.push(crate::web_propose_delta::web_propose_delta_tool_schema());

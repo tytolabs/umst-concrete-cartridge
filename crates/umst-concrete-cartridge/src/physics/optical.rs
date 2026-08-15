@@ -280,15 +280,17 @@ mod tests {
             "k_hd drift: got {k_hd}, expected ≈{} GPa",
             k_csh * hd_scale
         );
-        assert!(k_hd > k_ld, "HD must be stiffer than LD; got k_ld={k_ld}, k_hd={k_hd}");
+        assert!(
+            k_hd > k_ld,
+            "HD must be stiffer than LD; got k_ld={k_ld}, k_hd={k_hd}"
+        );
     }
 
     /// Pins Jennings LD fraction at the optical bridge wc — inventory E-05 / E-10.
     #[test]
     fn optical_ld_fraction_matches_jennings_fit_at_bridge_wc() {
         use crate::chem_adapter::{
-            csh_ld_frac_intercept_subtrahend_f32, csh_ld_frac_slope_f32,
-            csh_ld_volume_fraction_f32,
+            csh_ld_frac_intercept_subtrahend_f32, csh_ld_frac_slope_f32, csh_ld_volume_fraction_f32,
         };
 
         let wc = 0.4_f32;

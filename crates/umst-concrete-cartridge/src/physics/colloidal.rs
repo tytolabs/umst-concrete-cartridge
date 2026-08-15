@@ -6,10 +6,10 @@ use burn::tensor::{backend::Backend, Tensor};
 use crate::chem_adapter::{
     dlvo_boltzmann_f32, dlvo_collapse_separation_f32, dlvo_debye_prefactor_f32,
     dlvo_dielectric_water_f32, dlvo_hamaker_f32, dlvo_reference_temperature_f32,
-    dlvo_tensor_collapse_sentinel_kt_f32, dlvo_tensor_ionic_floor_m_f32,
-    dlvo_tensor_mv_to_v_f32, dlvo_tensor_sep_floor_nm_f32, dlvo_vacuum_permittivity_f32,
-    flocculation_barrier_kt_f32, flocculation_multiplier_base_f32,
-    flocculation_multiplier_max_f32, flocculation_yield_stress_slope_f32,
+    dlvo_tensor_collapse_sentinel_kt_f32, dlvo_tensor_ionic_floor_m_f32, dlvo_tensor_mv_to_v_f32,
+    dlvo_tensor_sep_floor_nm_f32, dlvo_vacuum_permittivity_f32, flocculation_barrier_kt_f32,
+    flocculation_multiplier_base_f32, flocculation_multiplier_max_f32,
+    flocculation_yield_stress_slope_f32,
 };
 
 /// Pure tensor implementation of the Colloidal Engine.

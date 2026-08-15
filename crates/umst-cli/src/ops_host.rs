@@ -19,7 +19,8 @@ pub use umst_manifold::gate::{
 };
 
 const FLEET_PICKER_REL: &str = "old/residuals/residuals/misc-outputs-tmp/fleet_pick_target_dir.sh";
-const FLEET_SCRATCH_LOADER_REL: &str = "old/residuals/residuals/misc-outputs-tmp/fleet_load_scratch.sh";
+const FLEET_SCRATCH_LOADER_REL: &str =
+    "old/residuals/residuals/misc-outputs-tmp/fleet_load_scratch.sh";
 
 /// Parity digest witness (stdout / JSON wire).
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -70,7 +71,10 @@ impl fmt::Display for OpsHostError {
         match self {
             Self::DarwinOnly => write!(f, "scratch-target is Darwin-only (macOS host expected)"),
             Self::WorkspaceNotFound => {
-                write!(f, "MaOS workspace root not found (set WS or UMST_WORKSPACE)")
+                write!(
+                    f,
+                    "MaOS workspace root not found (set WS or UMST_WORKSPACE)"
+                )
             }
             Self::FleetPickerMissing(p) => write!(f, "fleet picker missing: {}", p.display()),
             Self::FleetPickerFailed(msg) => write!(f, "fleet_pick_target_dir failed: {msg}"),
@@ -94,8 +98,7 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
 /// Default `gate_parity_v0.json` path from the `umst-cli` crate layout.
 #[must_use]
 pub fn default_parity_fixture_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../umst-mcp/tests/fixtures/gate_parity_v0.json")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../umst-mcp/tests/fixtures/gate_parity_v0.json")
 }
 
 /// Resolve tyto-workspace integration root (env or walk-up from crate dir).
@@ -173,10 +176,7 @@ pub fn parity_digest_report(workspace: Option<&Path>) -> Result<ParityDigestRepo
 #[must_use]
 pub fn format_parity_digest_line(report: &ParityDigestReport) -> String {
     let status = if report.matches_locked { "OK" } else { "DRIFT" };
-    format!(
-        "parity digest: {}… {status}",
-        &report.sha256_prefix
-    )
+    format!("parity digest: {}… {status}", &report.sha256_prefix)
 }
 
 /// Serialize parity digest witness as pretty JSON.
@@ -238,9 +238,7 @@ pub fn scratch_target_resolve(
     let mut fields = parse_print_env(&stdout);
     let report = ScratchTargetReport {
         card: card.to_string(),
-        umst_dynamic_target_dir: fields
-            .remove("UMST_DYNAMIC_TARGET_DIR")
-            .unwrap_or_default(),
+        umst_dynamic_target_dir: fields.remove("UMST_DYNAMIC_TARGET_DIR").unwrap_or_default(),
         umst_target_ttl_mins: fields.remove("UMST_TARGET_TTL_MINS").unwrap_or_default(),
         umst_target_pressure: fields.remove("UMST_TARGET_PRESSURE").unwrap_or_default(),
         umst_target_free_gi: fields.remove("UMST_TARGET_FREE_GI").unwrap_or_default(),
@@ -260,7 +258,10 @@ pub fn scratch_target_resolve(
 
 /// Format scratch target for stdout (path | export | print-env).
 #[must_use]
-pub fn format_scratch_target_output(report: &ScratchTargetReport, mode: ScratchTargetMode) -> String {
+pub fn format_scratch_target_output(
+    report: &ScratchTargetReport,
+    mode: ScratchTargetMode,
+) -> String {
     match mode {
         ScratchTargetMode::Path => report.umst_dynamic_target_dir.clone(),
         ScratchTargetMode::Export => {
@@ -374,6 +375,9 @@ mod tests {
             map.get("UMST_DYNAMIC_TARGET_DIR").map(String::as_str),
             Some("/Volumes/Darwin/umst-scratch/umst-p-card")
         );
-        assert_eq!(map.get("UMST_TARGET_PRESSURE").map(String::as_str), Some("scratch"));
+        assert_eq!(
+            map.get("UMST_TARGET_PRESSURE").map(String::as_str),
+            Some("scratch")
+        );
     }
 }

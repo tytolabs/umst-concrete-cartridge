@@ -10,17 +10,17 @@
 use std::sync::OnceLock;
 
 use umst_cartridge_api::{
-    CartridgeId, ClausiusDuhemWitness, ConstitutiveResponse,
-    MassConservationWitness, PhysicalAxiom, Rates, ScalarAlgebra, State, StateSchema, StateVar,
-    StateVarKind, TensorAlgebra, UMSTCartridge,
+    CartridgeId, ClausiusDuhemWitness, ConstitutiveResponse, MassConservationWitness,
+    PhysicalAxiom, Rates, ScalarAlgebra, State, StateSchema, StateVar, StateVarKind, TensorAlgebra,
+    UMSTCartridge,
 };
 
 use crate::calibration::Profile;
 use crate::homogeneous::{self as homog, MixRow};
 
 use crate::api_consumer_compose::{
-    gate_route_via_compose, gate_route_via_compose_with_history,
-    scalar_fields_from_composed, try_gate_route_via_compose_with_history,
+    gate_route_via_compose, gate_route_via_compose_with_history, scalar_fields_from_composed,
+    try_gate_route_via_compose_with_history,
 };
 use umst_cartridge_continuum::ContinuumAtomStateWithHistory;
 
@@ -47,9 +47,7 @@ pub const IDX_DENSITY_KG_M3: usize = 1;
 pub const IDX_DISSIPATION_MODULUS: usize = 2;
 
 static MASS_AXIOM: MassConservationWitness = MassConservationWitness::parity_default();
-static CD_AXIOM: ClausiusDuhemWitness = ClausiusDuhemWitness {
-    tolerance: 1e-9,
-};
+static CD_AXIOM: ClausiusDuhemWitness = ClausiusDuhemWitness { tolerance: 1e-9 };
 
 /// formal_anchor: lean://umst-formal/Lean/Concrete/Powers.lean#PowersState
 /// catalog_id: thermodynamic_mix
@@ -87,8 +85,7 @@ impl ConcreteApiCartridge {
         &self,
         row: &MixRow,
     ) -> Result<(StateSchema, Vec<f64>), homog::HomogeneousError> {
-        let (psi_j_per_m3, density, eta) =
-            scalar_fields_from_composed(&self.profile, row, 0.0);
+        let (psi_j_per_m3, density, eta) = scalar_fields_from_composed(&self.profile, row, 0.0);
         Ok((concrete_state_schema(), vec![psi_j_per_m3, density, eta]))
     }
 
@@ -213,4 +210,3 @@ fn concrete_state_schema() -> StateSchema {
         ],
     }
 }
-

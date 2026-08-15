@@ -27,7 +27,9 @@ fn wire_v2_fixture_roundtrip_via_shared_types() {
 
 #[test]
 fn research_wire_v2_maps_shared_types_stamp() {
-    use umst_concrete_cartridge::research::wire_v2::{ucrs_observed_at_to_v2, OBSERVED_AT_V2_SCHEMA};
+    use umst_concrete_cartridge::research::wire_v2::{
+        ucrs_observed_at_to_v2, OBSERVED_AT_V2_SCHEMA,
+    };
 
     let u = UcrsObservedAt::synthetic(3, 0.25);
     let v2 = ucrs_observed_at_to_v2(&u);

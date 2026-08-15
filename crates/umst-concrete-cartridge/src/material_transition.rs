@@ -16,7 +16,8 @@ use crate::chem_adapter;
 /// formal_citation: "Representative cementitious hydration enthalpy scale (order 450 J/g binder mass basis)."
 /// formal_form: "`CEMENT_REACTION_ENTHALPY_J_PER_KG` feeds Clausius–Duhem transition gate via [`MaterialTransitionParams`]."
 /// formal_anchor_rationale: Cartridge SSOT for W9 Tier-2c; kernel must not duplicate this literal.
-pub const CEMENT_REACTION_ENTHALPY_J_PER_KG: f64 = chem_adapter::cement_reaction_enthalpy_j_per_kg();
+pub const CEMENT_REACTION_ENTHALPY_J_PER_KG: f64 =
+    chem_adapter::cement_reaction_enthalpy_j_per_kg();
 
 /// formal_anchor: literature://powers-intrinsic-strength-scale
 /// formal_status: Literature
@@ -29,7 +30,8 @@ pub const CEMENT_DEFAULT_S_INTRINSIC_MPA: f64 = 240.0;
 /// formal_status: NONE
 /// formal_anchor_rationale: Bundled THMC kinetics witness for parity harnesses; values mirror cartridge calibration lane.
 #[must_use]
-pub const fn cement_reaction_extent_kinetics_spec() -> umst_manifold::core::ReactionExtentKineticsSpec {
+pub const fn cement_reaction_extent_kinetics_spec(
+) -> umst_manifold::core::ReactionExtentKineticsSpec {
     chem_adapter::cement_reaction_extent_kinetics_spec()
 }
 

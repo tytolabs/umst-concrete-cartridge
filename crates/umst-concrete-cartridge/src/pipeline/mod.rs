@@ -5,13 +5,13 @@
 //! [`run_full_physics_pipeline`] is the cartridge functor root; [`evaluate_dual_gate`] composes
 //! printability ⊗ thermodynamic witnesses (see [`dual_gate`] module docs and witness ladder R1).
 
-pub mod orchestrator_delegate;
-pub mod pipeline_orchestrator_delegate;
 pub mod canonical_gate;
 pub mod cast_phase;
 pub mod dual_gate;
 pub mod orchestrator;
+pub mod orchestrator_delegate;
 pub mod physical_summary;
+pub mod mechanics_delegate;
 pub mod report;
 #[cfg(feature = "proxy-loop")]
 pub mod track_a;
@@ -22,20 +22,18 @@ pub mod track_a;
 pub use canonical_gate::thermodynamic_admissible;
 /// formal_anchor: NONE
 /// formal_status: NONE
+/// formal_anchor_rationale: Thermodynamic leg reject newtype (P2 `GateRejectReason` bridge).
+pub use canonical_gate::ThermoReject;
+/// formal_anchor: NONE
+/// formal_status: NONE
 /// formal_anchor_rationale: MP3.1 cast lifecycle classifier (α thresholds; orchestrator wiring deferred).
-pub use cast_phase::{
-    classify_cast_phase, CastLifecycleThresholds, CastPhase, CastPhaseInputs,
-};
+pub use cast_phase::{classify_cast_phase, CastLifecycleThresholds, CastPhase, CastPhaseInputs};
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-export dual-gate verdict for MCP/CLI Track A.
 pub use dual_gate::{
     evaluate_dual_gate, CastGateVerdict, PrintabilityReject, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
 };
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Thermodynamic leg reject newtype (P2 `GateRejectReason` bridge).
-pub use canonical_gate::ThermoReject;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Stable import path for staged tensor physics.

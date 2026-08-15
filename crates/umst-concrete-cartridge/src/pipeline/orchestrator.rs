@@ -36,13 +36,11 @@ use crate::physics::strength::StrengthEngine;
 use crate::physics::sustainability::SustainabilityEngine;
 use crate::physics::thermo::ThermoEngine;
 use crate::physics::transport::TransportEngine;
+use crate::pipeline::cast_phase::{classify_cast_phase, stage_eligible, CastPhaseInputs};
 use crate::pipeline::orchestrator_delegate::compute_effective_modulus_mt_orchestrator;
-use crate::pipeline::pipeline_orchestrator_delegate::{
+use crate::pipeline::mechanics_delegate::{
     capillary_porosity_b3_audit, try_autogenous_shrinkage_orchestrator,
     try_creep_compliance_orchestrator, try_fracture_k_ic_orchestrator, OrchestratorMixScalars,
-};
-use crate::pipeline::cast_phase::{
-    classify_cast_phase, stage_eligible, CastPhaseInputs,
 };
 use crate::pipeline::report::{
     PhysicsPipelineReport, PhysicsPipelineSummary, PipelineStageRecord,
@@ -232,7 +230,8 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     }
 
     if stage_eligible("colloidal_dlvo", material_phase) {
-        let zeta_nom = Tensor::from_data(Data::new(vec![-25.0_f32], Shape::new([1, 1, 1, 1])), &dev);
+        let zeta_nom =
+            Tensor::from_data(Data::new(vec![-25.0_f32], Shape::new([1, 1, 1, 1])), &dev);
         let ionic = Tensor::from_data(Data::new(vec![0.03_f32], Shape::new([1, 1, 1, 1])), &dev);
         let sep = Tensor::from_data(Data::new(vec![50.0_f32], Shape::new([1, 1, 1, 1])), &dev);
         let dlvo_col = ColloidalEngine::<B>::compute_dlvo_potential(sep, zeta_nom, ionic);
@@ -312,7 +311,10 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     let phi_cap_t = if stage_eligible("transport_chloride", material_phase)
         || stage_eligible("chemo_water", material_phase)
     {
-        Some(TransportEngine::<B>::compute_capillary_porosity(wc4.clone(), a4.clone()))
+        Some(TransportEngine::<B>::compute_capillary_porosity(
+            wc4.clone(),
+            a4.clone(),
+        ))
     } else {
         None
     };
@@ -381,14 +383,16 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
         ));
         stages.push(PipelineStageRecord::ok("itz"));
     } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase("itz", material_phase));
+        stages.push(PipelineStageRecord::skip_incompatible_phase(
+            "itz",
+            material_phase,
+        ));
     }
 
     if stage_eligible("chemo_water", material_phase) {
-        let phi_cap = phi_cap_t
-            .as_ref()
-            .cloned()
-            .unwrap_or_else(|| TransportEngine::<B>::compute_capillary_porosity(wc4.clone(), a4.clone()));
+        let phi_cap = phi_cap_t.as_ref().cloned().unwrap_or_else(|| {
+            TransportEngine::<B>::compute_capillary_porosity(wc4.clone(), a4.clone())
+        });
         let (_rh_internal, tension) = ChemoWaterEngine::<B>::compute_moisture_transport(
             wc4.clone(),
             a4.clone(),
@@ -414,7 +418,10 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
             .unwrap_or(PHASE_SKIP_SENTINEL);
         stages.push(PipelineStageRecord::ok("fracture"));
     } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase("fracture", material_phase));
+        stages.push(PipelineStageRecord::skip_incompatible_phase(
+            "fracture",
+            material_phase,
+        ));
     }
 
     if stage_eligible("nano_enhancement_baseline", material_phase) {
@@ -479,11 +486,14 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
 
     // S6_RETIRE @ g_spawn_i_orch_2054 — B2 scalar delegate; Burn `physics/creep.rs` retained.
     if stage_eligible("creep", material_phase) {
-        creep_scalar = try_creep_compliance_orchestrator(orchestrator_mix)
-            .unwrap_or(PHASE_SKIP_SENTINEL);
+        creep_scalar =
+            try_creep_compliance_orchestrator(orchestrator_mix).unwrap_or(PHASE_SKIP_SENTINEL);
         stages.push(PipelineStageRecord::ok("creep"));
     } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase("creep", material_phase));
+        stages.push(PipelineStageRecord::skip_incompatible_phase(
+            "creep",
+            material_phase,
+        ));
     }
 
     let scm_r_t = scm_mass_fraction(&row);
@@ -503,7 +513,10 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
         );
         stages.push(PipelineStageRecord::ok("set_time"));
     } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase("set_time", material_phase));
+        stages.push(PipelineStageRecord::skip_incompatible_phase(
+            "set_time",
+            material_phase,
+        ));
     }
 
     if stage_eligible("shrinkage", material_phase) {
@@ -512,7 +525,10 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
             .unwrap_or(PHASE_SKIP_SENTINEL);
         stages.push(PipelineStageRecord::ok("shrinkage"));
     } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase("shrinkage", material_phase));
+        stages.push(PipelineStageRecord::skip_incompatible_phase(
+            "shrinkage",
+            material_phase,
+        ));
     }
 
     if stage_eligible("freeze_thaw", material_phase) {
@@ -548,10 +564,17 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
             Tensor::from_data(Data::new(vec![0.92_f32], Shape::new([1, 1])), &dev),
             &dev,
         );
-        SelfHealEngine::<B>::compute_healing_potential(a4.clone(), internal_rh, t4_scalar(0.0, &dev));
+        SelfHealEngine::<B>::compute_healing_potential(
+            a4.clone(),
+            internal_rh,
+            t4_scalar(0.0, &dev),
+        );
         stages.push(PipelineStageRecord::ok("self_heal"));
     } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase("self_heal", material_phase));
+        stages.push(PipelineStageRecord::skip_incompatible_phase(
+            "self_heal",
+            material_phase,
+        ));
     }
 
     stages.push(PipelineStageRecord::skip_missing(

@@ -297,10 +297,7 @@ pub fn optimize_mix_with_gate(
 
     let mix = optimize_mix(profile, base, field, target, steps)?;
     let (_, verdict) = evaluate_mix_dual_gate(profile, &mix);
-    Ok((
-        mix,
-        matches!(verdict, CastGateVerdict::Admissible),
-    ))
+    Ok((mix, matches!(verdict, CastGateVerdict::Admissible)))
 }
 
 fn optimize_w_c_for_strength(

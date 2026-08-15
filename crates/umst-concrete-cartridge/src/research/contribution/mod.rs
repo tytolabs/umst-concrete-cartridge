@@ -32,11 +32,11 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 use uuid::Uuid;
 
+pub(crate) use adapter::field_as_rational;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports Phase 0c adapter symbols from [`adapter`].
 pub use adapter::{mix_spec_from_json, mix_wire_from_spec_value, rational_to_f64};
-pub(crate) use adapter::field_as_rational;
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports Phase 0c gate predicate symbols from [`gate`].
@@ -46,9 +46,7 @@ pub use gate::{
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports Phase 0c infra / MCP wire symbols from [`infra`].
-pub use infra::{
-    gate_check_mix_result, GateCheckExplain, GateCheckResult, GateFieldIssue,
-};
+pub use infra::{gate_check_mix_result, GateCheckExplain, GateCheckResult, GateFieldIssue};
 
 /// Accept pipeline errors (validation, gate reject, scope, monotonic stamp, store).
 /// formal_anchor: NONE

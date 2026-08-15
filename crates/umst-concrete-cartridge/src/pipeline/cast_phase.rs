@@ -197,10 +197,7 @@ mod tests {
             classify_cast_phase(&inputs(0.89), &custom),
             CastPhase::Setting
         );
-        assert_eq!(
-            classify_cast_phase(&inputs(0.9), &custom),
-            CastPhase::Solid
-        );
+        assert_eq!(classify_cast_phase(&inputs(0.9), &custom), CastPhase::Solid);
     }
 
     #[test]

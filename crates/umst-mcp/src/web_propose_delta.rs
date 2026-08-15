@@ -95,10 +95,7 @@ pub fn web_propose_delta_tool_schema() -> Value {
         "readOnlyHint": true,
         "destructiveHint": false,
     });
-    if let Some(schema) = tool
-        .get_mut("inputSchema")
-        .and_then(|s| s.as_object_mut())
-    {
+    if let Some(schema) = tool.get_mut("inputSchema").and_then(|s| s.as_object_mut()) {
         schema.insert("$schema".into(), json!(JSON_SCHEMA_2020));
     }
     tool
@@ -202,16 +199,10 @@ pub fn exec_web_propose_delta_mock(args: &Value) -> Value {
         .get("proposed_delta")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    let intent_witness = args
-        .get("intent_witness")
-        .cloned()
-        .unwrap_or(Value::Null);
+    let intent_witness = args.get("intent_witness").cloned().unwrap_or(Value::Null);
     let mock_fixture = args.get("mock_fixture").and_then(|f| f.as_str());
     let fixture = infer_fixture(current_state, proposed_delta, &intent_witness, mock_fixture);
-    let seed = format!(
-        "{current_state}|{proposed_delta}|{}",
-        fixture.as_str()
-    );
+    let seed = format!("{current_state}|{proposed_delta}|{}", fixture.as_str());
     let proof = format!("web-proof:{}", content_hash_prefix(&seed));
 
     if fixture.admissible() {

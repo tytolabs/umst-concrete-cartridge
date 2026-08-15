@@ -101,8 +101,8 @@ fn trust_from_env() -> Option<Trust> {
     if root.trim().len() != 64 || !root.bytes().all(|b| b.is_ascii_hexdigit()) {
         return None;
     }
-    let authority = std::env::var("UMST_TRUST_AUTHORITY")
-        .unwrap_or_else(|_| "cartridge-mcp".into());
+    let authority =
+        std::env::var("UMST_TRUST_AUTHORITY").unwrap_or_else(|_| "cartridge-mcp".into());
     let scope_raw = std::env::var("UMST_TRUST_SCOPE").unwrap_or_else(|_| "device".into());
     Some(Trust {
         authority: TrustAuthority(authority),

@@ -17,16 +17,7 @@ fn default_profile() -> Profile {
 }
 
 fn parity_mix_row(profile: &Profile) -> MixRow {
-    mix_row_from_scalar_spec(
-        profile,
-        0.45,
-        0.0,
-        0.0,
-        0.0,
-        0.7,
-        28.0 * 24.0,
-        293.15,
-    )
+    mix_row_from_scalar_spec(profile, 0.45, 0.0, 0.0, 0.0, 0.7, 28.0 * 24.0, 293.15)
 }
 
 #[test]
@@ -35,7 +26,10 @@ fn delegate_wire_path_uses_gate_route_composed() {
     let cartridge = ConcreteApiCartridge::with_profile(profile.clone());
     let row = parity_mix_row(&profile);
     let outcome = cartridge.gate_route_via_compose(&row, 0.0);
-    assert!(outcome.route.admissible, "G1 parity mix must PASS via composed delegate");
+    assert!(
+        outcome.route.admissible,
+        "G1 parity mix must PASS via composed delegate"
+    );
     assert!(outcome.constitutive.psi_closure_holds(1e-3));
 }
 
@@ -145,7 +139,9 @@ fn scalar_algebra_idempotency_on_zero_rates() {
 
 #[test]
 fn core_axiom_witnesses_accept_hydration_transition() {
-    use umst_cartridge_api::{ClausiusDuhemWitness, MassConservationWitness, PhysicalAxiom, StateSnapshot};
+    use umst_cartridge_api::{
+        ClausiusDuhemWitness, MassConservationWitness, PhysicalAxiom, StateSnapshot,
+    };
 
     let profile = default_profile();
     let cartridge = ConcreteApiCartridge::with_profile(profile.clone());
@@ -195,6 +191,9 @@ fn delegate_history_threading_matches_bare_verdict_at_g0() {
         .expect("strict production delegate history");
     let saturating = cartridge.gate_route_via_compose_with_history(&row, 0.0, 1.0);
     assert_eq!(strict, saturating);
-    assert_eq!(bare, strict.0, "history threading must not change gate verdict");
+    assert_eq!(
+        bare, strict.0,
+        "history threading must not change gate verdict"
+    );
     assert!(bare.route.admissible);
 }
