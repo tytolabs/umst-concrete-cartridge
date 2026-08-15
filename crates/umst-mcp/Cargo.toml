@@ -5,15 +5,17 @@
 
 [package]
 name = "umst-mcp"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-license.workspace = true
-repository.workspace = true
+version = "0.2.1"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+authors = [
+    "Santhosh Shyamsundar <santhoshshyamsundar@tyto.studio>",
+    "Santosh Prabhu Shenbagamoorthy",
+]
+repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 description = "Model Context Protocol (MCP) server exposing the UMST concrete engine to AI agents."
 publish = false
-default-run = "umst-mcp"
 
 [lib]
 name = "umst_mcp"
@@ -35,7 +37,7 @@ required-features = ["rmcp-wire"]
 
 [[test]]
 name = "s7_proposed_tools"
-path = "tests/s7_proposed_tools.rs"
+path = "tests/proposed_tools.rs"
 required-features = ["agent-layer", "tool-dry-run", "tool-promote"]
 
 [[test]]
@@ -94,8 +96,8 @@ required-features = ["agent-layer", "tool-web-propose-delta"]
 umst-agent-mcp-core = { path = "../umst-agent-mcp-core" }
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
 umst-cli = { path = "../umst-cli" }
-umst-runtime-arena = { workspace = true, optional = true }
-umst-semantics = { version = "0.0.0-prep", path = "../../../umst-semantics/crates/umst-semantics", default-features = false, features = ["p2-chair", "gate"], optional = true }
+umst-runtime-arena = { version = "0.1.0", path = "../../../umst-manifold/umst-runtime-arena", optional = true }
+umst-semantics = { version = "0.0.0-prep", path = "../../../umst-semantics", default-features = false, features = ["p2-chair", "gate"], optional = true }
 umst-gate = { workspace = true, optional = true }
 umst-trust = { version = "0.1.0", path = "../../../umst-foundations/crates/umst-trust", optional = true }
 serde = { version = "1.0", features = ["derive"] }
@@ -109,4 +111,4 @@ tokio = { version = "1", optional = true, features = ["rt-multi-thread", "macros
 
 [dev-dependencies]
 sha2 = "0.10"
-umst-manifold = { workspace = true }
+umst-manifold = { version = "0.1.0", path = "../../../umst-manifold" }

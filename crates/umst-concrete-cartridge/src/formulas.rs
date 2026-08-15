@@ -44,7 +44,7 @@ pub use crate::chem_adapter::ultimate_degree_of_hydration_f32 as ultimate_doh_wc
 ///
 /// Calibrated hydration degree α(t) with Arrhenius temperature factor and SCM slowdown.
 /// T2-S6 dup-ψ allowlist [PARTIAL] `hydration_degree_calibrated` — R-H3 cfg-gate thin shim
-/// @ `g_spawn_i_rh2h6_impl_0721` · consumer: `b3_chem_inject::hydration_alpha_from_chem`
+/// @ `g_spawn_i_rh2h6_impl_0721` · consumer: `chem_inject_module::hydration_alpha_from_chem`
 /// `k_ref_multiplier` folds dataset-specific `k_ref` scaling from the active profile.
 #[cfg(not(feature = "b1-delegate"))]
 #[must_use]

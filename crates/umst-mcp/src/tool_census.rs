@@ -96,7 +96,7 @@ pub fn expected_tools_list_count_for_build() -> usize {
 /// Operator-facing census row for S7 proposed tools (markdown table cell).
 #[must_use]
 pub fn s7_proposed_census_markdown_row() -> &'static str {
-    "| S7 proposed (P2–P4) | `gate-explain-v2` (schema patch, +0) · `tool-dry-run` · `tool-promote` · `tool-arena-session-unified` | +0..+3 | 13→16 max | `tests/s7_proposed_tools.rs` |"
+    "| S7 proposed (P2–P4) | `gate-explain-v2` (schema patch, +0) · `tool-dry-run` · `tool-promote` · `tool-arena-session-unified` | +0..+3 | 13→16 max | `tests/proposed_tools.rs` |"
 }
 
 #[cfg(test)]

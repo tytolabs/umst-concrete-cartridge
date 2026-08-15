@@ -9,7 +9,7 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
-repository.workspace = true
+repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 autobenches = false
 description = "Differentiable constitutive engine for cementitious materials, mounted on the UMST manifold."
 documentation = "https://docs.rs/umst-concrete-cartridge"
@@ -99,7 +99,7 @@ path = "src/lib.rs"
 
 [[test]]
 name = "s6_psi_mix_scalars_witness"
-path = "tests/s6_psi_mix_scalars_witness.rs"
+path = "tests/psi_mix_scalars_witness.rs"
 
 [[test]]
 name = "concrete_bridge_witness"

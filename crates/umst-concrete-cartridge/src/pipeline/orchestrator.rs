@@ -36,8 +36,8 @@ use crate::physics::strength::StrengthEngine;
 use crate::physics::sustainability::SustainabilityEngine;
 use crate::physics::thermo::ThermoEngine;
 use crate::physics::transport::TransportEngine;
-use crate::pipeline::b1_orchestrator_delegate::compute_effective_modulus_mt_orchestrator;
-use crate::pipeline::b2_orchestrator_delegate::{
+use crate::pipeline::orchestrator_delegate::compute_effective_modulus_mt_orchestrator;
+use crate::pipeline::pipeline_orchestrator_delegate::{
     capillary_porosity_b3_audit, try_autogenous_shrinkage_orchestrator,
     try_creep_compliance_orchestrator, try_fracture_k_ic_orchestrator, OrchestratorMixScalars,
 };

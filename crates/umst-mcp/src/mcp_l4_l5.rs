@@ -5,7 +5,7 @@
 //
 // Thin facade over `l4_l5` close predicates. Absorbs Z29 owner slice; does not redo census.
 
-pub use crate::l4_l5::{
+pub use crate::l5::{
     l4_l5_close_eligible, l4_l5_probe, l4_l5_production_wired, l4_l5_surface_wired,
     L4L5SurfaceProbe, L4_STDIO_WIRE_CLOSED, L5_ADDITIVE_TOOL_COUNT, L5_FULL_PROFILE_TOOLS_LIST_COUNT,
     L5_SURFACE_WIRE_HOPS,

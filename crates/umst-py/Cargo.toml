@@ -8,7 +8,7 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
-repository.workspace = true
+repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 description = "PyO3 extension for UMST concrete cartridge wire APIs."
 publish = false
 

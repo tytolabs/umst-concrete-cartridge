@@ -5,7 +5,7 @@
 //! `umst-mcp` library surface — pure helpers referenced by agent docs and tests.
 
 pub mod handlers;
-pub mod l4_l5;
+pub mod l5;
 pub mod mcp_l4_l5;
 pub mod mcp_spine;
 pub mod sec_mcp_wrap;

@@ -5,12 +5,15 @@
 
 [package]
 name = "umst-agent-mcp-core"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-authors.workspace = true
-license.workspace = true
-repository.workspace = true
+version = "0.2.1"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+authors = [
+    "Santhosh Shyamsundar <santhoshshyamsundar@tyto.studio>",
+    "Santosh Prabhu Shenbagamoorthy",
+]
+repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 description = "Domain-agnostic agent MCP core: soft gates and shared tool helpers."
 publish = false
 
