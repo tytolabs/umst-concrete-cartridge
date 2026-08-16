@@ -10,6 +10,12 @@ SPDX-License-Identifier: MIT
 > _This ecosystem is dedicated to the thousands of unnamed contributors who wrote formal proofs, maintained open-source compilers, and built mathematical libraries for years — often without evidence that any of it would be used beyond pure theory. They chose to make their work free, because they understood that knowledge about physical reality cannot be owned. Whatever this system achieves is yours._
 
 <!-- readme:status -->
+[![CI — Rust](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
+[![CI — Notebook](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml)
+[![CI — Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
+[![CI — Agent layer](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml)
+[![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 
 ### Cartridge in plain words
 Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through the **thermodynamic admissibility gate**: conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.
