@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
+[umst-foundations]
+sha = "85bda074c1a34788f60210d09c15e22ac76b0e74"
+repo = "https://github.com/tytolabs/umst-foundations"
+
+[umst-cartridge-api]
+sha = "30e353236fde3a21f3c9d1c268826f7aa263414e"
+repo = "https://github.com/tytolabs/umst-cartridge-api"

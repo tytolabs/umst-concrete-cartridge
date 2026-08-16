@@ -26,6 +26,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Clone private UMST siblings (foundations + cartridge-api)
+        env:
+          UMST_PRIVATE_CHECKOUT: ${{ secrets.UMST_PRIVATE_CHECKOUT }}
+        run: |
+          set -euo pipefail
+          fsha=$(python3 -c "import tomllib; print(tomllib.load(open('.umst-pins.toml','rb'))['umst-foundations']['sha'])")
+          asha=$(python3 -c "import tomllib; print(tomllib.load(open('.umst-pins.toml','rb'))['umst-cartridge-api']['sha'])")
+          bash .github/scripts/checkout-umst-siblings.sh "umst-foundations@${fsha}" "umst-cartridge-api@${asha}"
+
       - name: Generate + mandatory --check (generated == hand)
         run: |
           python3 scripts/gen_tool_contracts.py --out docs/TOOL_CONTRACTS.generated.md
