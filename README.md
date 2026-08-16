@@ -744,7 +744,7 @@ Released under the [MIT License](LICENSE). © 2026 .
 <!-- AUTO-LATTICE:BEGIN -->
 ## Lattice position
 
-**What it is:** `tytolabs/umst-concrete-cartridge` — cartridge · layer=cartridge
+**Role.** `tytolabs/umst-concrete-cartridge` — cartridge · layer=cartridge
 
 **One-line role:** `cartridge` on layer `cartridge` (status `wip`, stability `evolving`, semver `0.1.0`).
 
