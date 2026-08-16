@@ -3,7 +3,7 @@
 # Clone private UMST siblings next to the runner workspace (../<repo>).
 set -euo pipefail
 if [ -z "${UMST_PRIVATE_CHECKOUT:-}" ]; then
-  echo "::error::UMST_PRIVATE_CHECKOUT secret missing. Operator: gh secret set UMST_PRIVATE_CHECKOUT -R tytolabs/REPO --body "<PAT>" (see workspace/ops/G14_CI.json OPERATOR_ACTION)"
+  echo "::error::UMST_PRIVATE_CHECKOUT secret missing. Operator: gh secret set UMST_PRIVATE_CHECKOUT -R tytolabs/REPO --body YOUR_PAT (see workspace/ops/G14_CI.json OPERATOR_ACTION)"
   exit 1
 fi
 PARENT="$(dirname "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE required}")"
