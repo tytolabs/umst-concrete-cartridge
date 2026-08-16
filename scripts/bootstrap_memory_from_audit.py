@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 """Bootstrap contribution.v1 JSONL from dataset_d1-compatible audit CSV (stdin or file).
 
 Each row becomes one contribution line suitable for bulk import.

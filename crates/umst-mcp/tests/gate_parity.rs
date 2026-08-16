@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! S0 parity harness (`docs/MCP_BUILD_PLAN.md` Stage S0).
 //!
 //! Locks gate + `tools/list` / `tools/call` responses as golden fixtures.

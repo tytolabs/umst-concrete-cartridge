@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 # RFC 3161 timestamp countersign for promotion_record.v1 sidecar (operator-only).
 # Usage: promotion_tsa_timestamp.sh PROMOTION_RECORD.json [OUT_DIR]
 # Env: TSA_URL (default FreeTSA), SKIP_TSA=1 to write stub sidecar only.

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! M3 T3 A4 chem adapter — **Clusters A–D, E–F, H boundary** (Powers stoichiometry,
 //! hydration kinetics, reaction thermochemistry, Vinet phase EOS, C-S-H micromechanics,
 //! colloidal / chemo-hydric, nano-silica partial lift).

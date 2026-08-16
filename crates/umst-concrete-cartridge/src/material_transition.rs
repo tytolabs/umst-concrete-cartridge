@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Cementitious transition closure values (W9 Tier 2c SSOT).
 //!
 //! **FP contract:** all closures are `const`/`Copy` witnesses — no IO, no ambient state.

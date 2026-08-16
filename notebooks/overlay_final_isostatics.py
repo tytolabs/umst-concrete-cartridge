@@ -1,5 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 """Re-render the last PNG frames with principal-compression streamlines (PyVista).
 
 Reads `final.npy` and optional `final_sigma.npy` from the shell artefact directory

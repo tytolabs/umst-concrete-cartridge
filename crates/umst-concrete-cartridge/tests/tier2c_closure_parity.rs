@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! W9 Tier-2c closure parity: cartridge SSOT vs kernel injection paths (byte-equiv).
 
 use umst_concrete_cartridge::{

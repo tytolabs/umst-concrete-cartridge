@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! WEB-009 — MCP `web.propose_delta` schema + honest mock gate wire.
 //!
 //! **FENCE:** additive schema in `umst-mcp`; frozen 13-tool manifest unchanged unless

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Fleet / parity IO boundary for Darwin operators and agents.
 //!
 //! [`crate::physics`] and cartridge facades stay pure; fixture reads, env lookups,

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! B1 scalar delegate for [`super::orchestrator::run_full_physics_pipeline`] fracture `E_eff` head.
 //!
 //! Card `g_spawn_i_b16_mt_carve_0721` — reroute Mori–Tanaka homogenization off monolith

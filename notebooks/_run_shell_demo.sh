@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 # End-to-end Striatus shell demo: Rust (`cargo run --release` … optimize_shell_3d) -> PNG frames -> GIF -> STL ->
 # `notebooks/export_print_ready.py` (last step in this script).
 #

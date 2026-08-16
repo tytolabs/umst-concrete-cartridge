@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 # Two back-to-back mini demo runs; STL SHA-256 must match (acceptance #5 subset).
 # Override iteration count: UMST_SHELL_ITERS=5 (default here).
 set -euo pipefail

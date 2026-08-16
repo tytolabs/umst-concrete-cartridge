@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Hydration regression test against Powers (1948) OPC isothermal calorimetry.
 //!
 //! Asserts that the predicted degree of hydration at 1 d, 7 d, 28 d, and 90 d

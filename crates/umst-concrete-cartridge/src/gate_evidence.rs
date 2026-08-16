@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Concrete-cartridge [`GateCartridge::transition_evidence`] — dissipation / strength / hydration SSOT.
 
 use umst_manifold::gate::transition_proposal::{

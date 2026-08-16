@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Maps [`PhysicsPipelineReport`](super::PhysicsPipelineReport) into manifold [`PhysicalResult`](umst_manifold::core::traits::PhysicalResult).
 //!
 //! This is **control-policy**, not a thermodynamic identity:

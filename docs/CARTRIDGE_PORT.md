@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # Cartridge port guide — Physical Reasoning Layer
 
 **Audience:** Authors of new `IScienceCartridge` repos (geomaterial, structure, alloy contexts)  

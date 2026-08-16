@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 # Smoke: restore UMST_MEMORY_DB copy and verify row count (Litestream operator checklist).
 set -euo pipefail
 

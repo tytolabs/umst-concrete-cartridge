@@ -1,5 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-
 .PHONY: develop test clean
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))../..

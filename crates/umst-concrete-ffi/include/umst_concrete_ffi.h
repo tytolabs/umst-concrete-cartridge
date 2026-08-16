@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 /* SPDX-License-Identifier: MIT
  *
  * umst_concrete_ffi.h — C header for cement chemistry FFI (cartridge fiber)

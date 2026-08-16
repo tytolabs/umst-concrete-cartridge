@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 # Sigstore cosign sign-blob for promotion_record.v1 (operator-only).
 # Usage: cosign_promotion_bundle.sh PROMOTION_RECORD.json [OUT_DIR]
 # Env: COSIGN_IDENTITY (keyless), or COSIGN_KEY / COSIGN_PASSWORD for keyed mode.

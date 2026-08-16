@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # EPISTEMIC_PRIMITIVES.md — composed agent workflows (B7)
 
 Maps blueprint §7 primitives to **real** tools/examples, or marks **Proposed**.

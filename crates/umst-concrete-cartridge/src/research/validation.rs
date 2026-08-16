@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Pure validation for `contribution.v1` JSON (rationals, required fields, admissible gate).
 
 use super::types::{Contribution, CANON_VERSION, CONTRIBUTION_SCHEMA};

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Stage S1 — declarative tool manifest (feature `tool-manifest`, default off).
 //!
 //! Hand-rolled `base_tools()` / `agent_tools_schema()` remain the live default.

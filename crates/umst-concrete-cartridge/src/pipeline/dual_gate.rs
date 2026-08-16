@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Track A dual gate: lazy witness composition **W_print ∧ W_thermo** (equal weight).
 //!
 //! Each leg is a morphism from proposed mix → admissible or reject. Composition short-circuits

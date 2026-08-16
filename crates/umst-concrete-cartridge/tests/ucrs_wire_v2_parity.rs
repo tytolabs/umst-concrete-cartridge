@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! U5 concrete consumer wire parity — `shared_types::observation` fixture roundtrip (CELL_UCRS_READY_U5_CONCRETE).
 
 use umst_ucrs::shared_types::observation::{ObservedAtV2Wire, UcrsObservedAt, WIRE_SCALE};

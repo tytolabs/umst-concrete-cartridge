@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! HCOM semantic MCP schema — `propose_communicative_act` (HCOM-029 · IDEA-004).
 //!
 //! **FENCE:** additive schema + honest mock stub in `umst-mcp` only; frozen 13-tool manifest

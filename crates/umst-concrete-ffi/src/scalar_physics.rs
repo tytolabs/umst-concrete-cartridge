@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Pure `f32`/`f64` cement physics — no tensors, no heap handles.
 //!
 //! All chemistry scalars route through [`umst_concrete_cartridge::chem_adapter`] → `umst-chem` SSOT.

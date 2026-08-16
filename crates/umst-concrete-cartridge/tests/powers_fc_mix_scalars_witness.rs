@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! T2-S6 batch B2 witness — `powers_compressive_strength_mpa` default path ≡ `MixScalars` SSOT.
 //!
 //! Proves archived inline gel-space cube removal preserves default-profile f_c on the gate hot path.

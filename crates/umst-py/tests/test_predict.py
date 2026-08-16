@@ -1,5 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-
 """Stdlib-only tests against a built `_umst_concrete_cartridge` extension."""
 
 import json

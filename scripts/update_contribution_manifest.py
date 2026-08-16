@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 """Maintain contributions/merged/MANIFEST.jsonl — append-only ledger of merged inbox shards.
 
 Manifest line schema (minimal):

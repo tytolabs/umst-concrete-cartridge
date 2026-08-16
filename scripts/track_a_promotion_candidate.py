@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 """Track A → promotion candidate report (JSON only; never writes calibration TOML).
 
 Reads `proposed_next_mix.json` sidecar from Track A optimize and emits a

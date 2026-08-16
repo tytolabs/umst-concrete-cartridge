@@ -1,5 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 """Render PNG frames for the Striatus shell demo (PyVista, offscreen)."""
 from __future__ import annotations
 

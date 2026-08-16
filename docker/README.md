@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # UMST agent Docker image
 
 Local stdio MCP for Cursor / SDK — **not** a hosted MCP service.
@@ -53,3 +55,6 @@ See [`server.json`](server.json) for a static MCP registry entry (stdio transpor
 
 - [`docs/AGENT_MCP.md`](../docs/AGENT_MCP.md) — tools, env, runbook
 - [`contributions/README.md`](../contributions/README.md) — git federated memory inbox
+## 🔒 Confidentiality Notice
+
+This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

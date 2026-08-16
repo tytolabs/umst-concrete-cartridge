@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! S0/S3 parity canonicalization — redact nondeterministic MCP fields for golden compare.
 //!
 //! ADDITIVE — shared by `gate_parity` and `rmcp_parity` integration tests.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 """Run umst-manifold's `check_solver_status.py` against this repo's `docs/Solver-Status.md`.
 
 From `umst-concrete-cartridge/`::

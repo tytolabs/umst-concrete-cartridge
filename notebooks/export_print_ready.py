@@ -1,5 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 """Marching-cubes STL export + print-readiness sidecar JSON for the Striatus shell demo.
 
 Consumes `final.npy` (`float32`, shape `[1, N, 1]`) and `manifest.json` written by

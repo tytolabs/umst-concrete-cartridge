@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Shared MCP tool execution — hand-rolled stdio and `rmcp-wire` parity path.
 //!
 //! ADDITIVE (Stage S3): physics truth delegated to `umst-cli` / `umst-concrete-cartridge`.

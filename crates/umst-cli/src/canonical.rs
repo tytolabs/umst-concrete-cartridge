@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Deterministic JSON: lexicographically sorted object keys recursively, finite numbers only.
 //! Floating-point literals use **Ryū** shortest round-trip decimals; `serde_json` then materialises each
 //! number as [`Number`] so **`serde_json::to_vec`** emits the same literals (canonical wire contract).

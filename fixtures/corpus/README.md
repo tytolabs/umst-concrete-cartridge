@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # Audit corpus fixtures (memory bootstrap)
 
 **Provenance SSOT:** [`umst-prototype-2a/prototype/docs/2_Datasets.md`](../../../umst-prototype-2a/prototype/docs/2_Datasets.md)
@@ -57,3 +59,6 @@ python3 scripts/mcp_smoke.py --agent-layer
 - **D1 (UCI):** public-domain research use  
 - **D2–D4:** CC-BY 4.0 (Zenodo slices)  
 - **D5–D8:** physics-informed synthetic (documented in prototype `2_Datasets.md`)
+## 🔒 Confidentiality Notice
+
+This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

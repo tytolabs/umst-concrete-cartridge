@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Phase 0c — **Adapter** boundary: mix JSON wire → typed [`MixSpec`] lift.
 //!
 //! Parsing rationals and building facade wires lives here — **not** in the gate predicate

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! THMC solver gate wiring — inject [`ConcreteTransitionCartridge`] SSOT at post-step evidence hook.
 
 use umst_manifold::physics::solvers::ThmcSolver;

@@ -1,6 +1,6 @@
-<!--
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 SPDX-License-Identifier: MIT
-Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+<!--
 -->
 
 # `umst-mcp`
@@ -87,6 +87,9 @@ Released under the [MIT License](../../LICENSE).
 
 `umst-mcp` resolves `umst-manifold`, `umst-semantics`, `umst-trust`, and `umst-runtime-arena`
 via relative `path = "../../../…"` entries. A clone of **only** this repository will not
-build those optional/path edges. Build from the Studio TYTO workspace (or replace path deps
+build those optional/path edges. Build from the  workspace (or replace path deps
 with published crates) — the crates are package-local for MCP sources, not fully standalone
 for the full dependency graph.
+## 🔒 Confidentiality Notice
+
+This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

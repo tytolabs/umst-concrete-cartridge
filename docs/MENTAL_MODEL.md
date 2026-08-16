@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # MENTAL_MODEL.md — how to think about the agent surface (B6)
 
 Secondary to [`ARCHITECTURE.md`](ARCHITECTURE.md). No claim here may contradict it.

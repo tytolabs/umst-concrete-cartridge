@@ -1,5 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-
 //! Staged tensor physics pipeline and Track A proxy-loop gates.
 //!
 //! [`run_full_physics_pipeline`] is the cartridge functor root; [`evaluate_dual_gate`] composes

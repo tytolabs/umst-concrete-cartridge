@@ -1,5 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 //
 // FLEET-COMPOSER-Z Z29 — umst-mcp L4/L5 semantic + web tool surface close predicate.
 //

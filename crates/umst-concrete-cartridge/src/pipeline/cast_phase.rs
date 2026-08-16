@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! FP Manifesto §3 — collapsed-pipeline cast lifecycle classifier (MP3.1).
 //!
 //! [`CastPhase`] is the 0-D projection of manifold [`MaterialPhase`](umst_manifold::core::MaterialPhase):

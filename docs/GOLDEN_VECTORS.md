@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # Golden vectors — gate adversarial SSOT
 
 **Audience:** Agent authors, CI maintainers, external researchers validating `umst_gate_check`  

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Integration-style anchor: [`StrengthEngine::compute_strength_jennings`] with **`s_intrinsic`** from
 //! [`calibration/profiles/uci_d1.v1.toml`](../../calibration/profiles/uci_d1.v1.toml) should land near
 //! the UCI D1 compressive-strength cluster (~37 MPa) for a representative **w/c–α** tuple.

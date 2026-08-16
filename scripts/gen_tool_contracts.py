@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 """S2 / go-live Step 1: generate TOOL_CONTRACTS from manifest contracts JSON.
 
 Full 7-field tables for all 13 tools (no hand-SSOT placeholders).

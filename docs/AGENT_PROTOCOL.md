@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # AGENT_PROTOCOL.md — guarantees & workflows (B2)
 
 **What the code actually enforces** (not aspirational policy). Inventory: [`AGENT_SURFACE_AUDIT.md`](AGENT_SURFACE_AUDIT.md).

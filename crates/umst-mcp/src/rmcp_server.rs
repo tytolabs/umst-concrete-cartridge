@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Official `rmcp` MCP server (Stage S3) — stdio transport, golden-tool parity subset.
 //!
 //! ADDITIVE — compiled only with feature `rmcp-wire` (default off).

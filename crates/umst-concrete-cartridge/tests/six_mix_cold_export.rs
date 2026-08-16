@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Cold-path export for six-mix fixture land — operator GO only.
 //! Run: `cargo test -p umst-concrete-cartridge six_mix_cold_export -- --ignored --nocapture`
 

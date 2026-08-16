@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+// SPDX-License-Identifier: MIT
 //! Export frozen `gate_check_mix` verdicts for the UMST dashboard parity bundle.
 //! Run: `cargo run -p umst-concrete-cartridge --features agent-layer --example export_dashboard_gate_golden`
 

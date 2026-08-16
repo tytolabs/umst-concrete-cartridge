@@ -1,5 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 //
 // AGAP-2046-HCOM-029-TOOLS — map_to_geometry / refine_shape / get_audit_digest MCP surface.
 // Deconflict: propose_communicative_act smoke owned by AGAP-2046-HCOM-029-SIM.

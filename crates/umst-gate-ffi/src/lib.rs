@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! `umst-gate-ffi` — C-ABI over `gate_check_mix_result` (Layer 0 gate fiber).
 //!
 //! Chemistry scalars remain in `umst-concrete-ffi`. This crate does **not** replace them.

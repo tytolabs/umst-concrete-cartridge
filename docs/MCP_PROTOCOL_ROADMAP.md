@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # MCP protocol roadmap (v1 close-out)
 
 **Status:** Hand-rolled stdio JSON-RPC (MCP 2024-11-05) is **shipped**. No hosted MCP requirement.

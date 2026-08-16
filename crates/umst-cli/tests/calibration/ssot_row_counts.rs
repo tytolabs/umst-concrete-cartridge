@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Row-count audit: `docs/SSOT.json` must match on-disk `datasets/*.csv` line totals.
 //! Authoritative provenance text is [`datasets/PROVENANCE.md`](../../datasets/PROVENANCE.md).
 

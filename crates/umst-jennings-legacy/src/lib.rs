@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 //! Pure-f64 Jennings strength — legacy algorithm from `umst-concrete-cartridge`
 //! `physics/strength.rs` (R10-A0). No Burn. No golden-constant return.
 //!

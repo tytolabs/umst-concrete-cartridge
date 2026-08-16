@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # Contributing to UMST Concrete Cartridge
 
 We welcome contributions to the Unified Material-State Tensor (UMST) Concrete Cartridge.

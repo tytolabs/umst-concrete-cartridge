@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Single-parameter θ calibration on yield stress (δ=0 until ≥3 mixes).
 //!
 //! Pure maps **predicted τ₀ → calibrated τ₀**; no hidden state. Used by Track A dual gate and

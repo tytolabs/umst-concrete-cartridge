@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # The UMST Application Bouquet: Scientific & Industrial Architecture
 
 The Universal Material State Tensor (UMST) is a massive thermodynamic engine written in high-performance Rust (`burn::tensor`). While it is mathematically capable of predicting everything from a simple driveway mix to an alien Martian habitat, accessing that power requires understanding **how** the science works, **what physical tests** are required to calibrate it, and the specific **limits** of the current tensor graph.

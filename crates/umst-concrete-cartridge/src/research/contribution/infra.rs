@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Phase 0c — **Infra** boundary: explain codes, remediation, field-issue formatting.
 //!
 //! Operator diagnostics and MCP wire shaping — **not** admissibility math (blueprint §7 0c).

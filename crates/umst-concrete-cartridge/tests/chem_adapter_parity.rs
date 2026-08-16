@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Cluster A–H boundary parity — adapter delegates match pre-lift literals and
 //! `umst-chem` SSOT where lifted. Cluster H: H-01, H-02, H-03, and H-07 lifted.
 

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Closed-form hydration scalars used by [`crate::homogeneous`] routing.
 //!
 //! The asymptotic ultimate degree of hydration follows the Powers–Brownyard-style closure

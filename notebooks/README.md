@@ -1,6 +1,6 @@
-<!--
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 SPDX-License-Identifier: MIT
-Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+<!--
 -->
 
 # Notebooks
@@ -61,3 +61,6 @@ UMST_SHELL_NX=6 UMST_SHELL_NY=6 UMST_SHELL_NZ=2 UMST_SHELL_ITERS=2 UMST_SHELL_DU
 ```
 
 This path is CPU-oriented (Burn default backend in typical checkouts); **no GPU is required** for the smoke above. If other workspace builds link CPU BLAS, cap threads with **`VECLIB_MAXIMUM_THREADS`** (macOS Accelerate) or **`OPENBLAS_NUM_THREADS`** (OpenBLAS) — see the repo root [`README.md`](../README.md) “CPU matmul” note.
+## 🔒 Confidentiality Notice
+
+This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

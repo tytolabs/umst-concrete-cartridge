@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 # V4 — blocked until V3-gate opens (real compressive strength measurements).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

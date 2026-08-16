@@ -1,5 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-
 """Property test: CLI and Python ``predict`` canonical bytes match (Hypothesis)."""
 
 from __future__ import annotations

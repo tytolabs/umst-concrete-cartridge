@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # V2 — tyto_mortar physical specimen protocol
 
 1. Mix per [`../profiles/tyto_mortar.v1.toml`](../profiles/tyto_mortar.v1.toml) regime bounds.

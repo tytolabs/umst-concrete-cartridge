@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # Agent example workflows
 
 Runnable scripts for the Physical Reasoning Layer. See [`docs/AGENT_MCP.md`](../../docs/AGENT_MCP.md) for the full contract.
@@ -41,3 +43,6 @@ UMST_MEMORY_DB=.umst-memory/memory.db bash examples/agent/03_export_inbox.sh
 ```
 
 **Golden fixtures:** adversarial mixes live under [`fixtures/golden-adversarial/`](../../fixtures/golden-adversarial/) — see [`docs/GOLDEN_VECTORS.md`](../../docs/GOLDEN_VECTORS.md).
+## 🔒 Confidentiality Notice
+
+This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

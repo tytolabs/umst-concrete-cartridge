@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Calibrated **Vinet equation of state** scalars for cement-relevant crystalline phases.
 //!
 //! Full tensor EOS + inverse Newton live in `umst-manifold` Track H2

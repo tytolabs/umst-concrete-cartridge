@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # Agent MCP contract — Physical Reasoning Layer
 
 **Audience:** Cursor agents, SDK integrations, `umst-mcp` stdio consumers  

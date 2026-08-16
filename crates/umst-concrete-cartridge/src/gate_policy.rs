@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Cartridge-owned HTTP gate policy marker (`GateEvaluator` only — orthogonal to [`crate::core::ConcreteCartridge`] `IScienceCartridge`).
 
 use umst_manifold::gate::{GateEvaluator, HttpGateManifest as GateManifest};

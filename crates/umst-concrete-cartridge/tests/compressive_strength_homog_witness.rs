@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! T2-S6 batch B2 witness — `compressive_strength_mpa` archive closure ≡ `MixScalars` SSOT.
 //!
 //! Proves homogeneous FULL row archive preserves default-profile f_c on gate hot path.

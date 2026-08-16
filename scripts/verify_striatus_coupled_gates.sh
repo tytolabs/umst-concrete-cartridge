@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 #
 # Reproducible gate check for Striatus / Track L + B6 quick + print_ready pytest (m1-l / m1-b8 / B6 CI).
 # Run from anywhere:  bash scripts/verify_striatus_coupled_gates.sh

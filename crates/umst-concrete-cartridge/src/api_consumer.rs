@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! M1 — concrete cartridge implements [`umst_cartridge_api::UMSTCartridge`] at scalar parity.
 //!
 //! Post-T2-S6 (`g_spawn_i_s6_api_2054`), constitutive + scalar state routing is **unconditional**

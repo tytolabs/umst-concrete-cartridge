@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 # Pinned toolchain for parity with CI and umst-manifold (`--all-features` / rustc 1.88+ transitive MSRV paths).
 [toolchain]
 channel = "1.88"

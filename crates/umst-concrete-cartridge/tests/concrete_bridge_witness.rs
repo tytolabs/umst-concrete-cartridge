@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! T2-S5 path-dep bridge witness — monolith `concrete_bridge` ≡ `umst-cartridge-concrete` SSOT.
 //!
 //! Proves the monolith path-dep seam routes composed constitutive evaluation through the

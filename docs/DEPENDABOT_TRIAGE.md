@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # Dependabot triage — concrete cartridge
 
 **Status (2026-06-10):** Major bumps deferred via `.github/dependabot.yml` ignore rules.

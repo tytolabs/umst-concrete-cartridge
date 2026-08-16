@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Strength regression test — Jennings CM-II at 28 d.
 //!
 //! For OPC paste at w/c ∈ {0.30, 0.40, 0.50, 0.60}, the predicted 28-d

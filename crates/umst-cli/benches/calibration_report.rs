@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 #![forbid(unsafe_code)]
 
 //! Deterministic Markdown report of bundled calibration profiles (commit to `docs/Calibration.md`).
@@ -115,8 +114,6 @@ fn write_canonical_tables(rows: &[DatasetCsvRow]) -> anyhow::Result<()> {
     let readme = dir.join("README.md");
     let mut body = String::from(
         r#"<!--
-SPDX-License-Identifier: MIT
-Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 -->
 
 # Canonical headline metrics (`table_per_dataset_metrics.csv`)

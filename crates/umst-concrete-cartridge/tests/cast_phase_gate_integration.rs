@@ -1,5 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 //
 //! MP3.5 — CastPhase orchestrator router + CastGateVerdict integration golden pins.
 //! Schedule: `old/residuals/residuals/misc-outputs-tmp/fp_concrete_dual_gate_adt_plan.md` MP3.5.

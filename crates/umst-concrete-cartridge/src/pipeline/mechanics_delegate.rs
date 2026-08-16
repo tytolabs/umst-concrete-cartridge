@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! B2/B3 scalar delegate for [`super::orchestrator::run_full_physics_pipeline`].
 //!
 //! Card `g_spawn_i_orch_2054` — begin reroute of inelastic/fracture tail + B3 porosity audit

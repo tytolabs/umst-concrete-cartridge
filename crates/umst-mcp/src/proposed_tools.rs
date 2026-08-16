@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Stage S7 proposed tools (P1–P4) — **default-off** features behind `gate-explain-v2`,
 //! `tool-dry-run`, `tool-promote`, `tool-arena-session-unified`.
 //!

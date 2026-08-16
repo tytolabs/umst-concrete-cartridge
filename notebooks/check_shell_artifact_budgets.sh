@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 # After a shell demo run: assert hero GIF and STL stay within README clone budgets (C9).
 # Exits 0 with SKIP lines when files are absent (e.g. fresh clone before mini-run).
 set -euo pipefail

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 """Bulk-import contribution.v1 JSONL into SQLite memory store via `umst` gate re-check.
 
 Each line must be valid contribution.v1 JSON. Rows failing gate re-check are skipped

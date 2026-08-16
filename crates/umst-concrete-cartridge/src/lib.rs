@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! UMST differentiable concrete cartridge: calibration profiles, homogeneous routing, coupled tensor engines.
 
 #![allow(clippy::doc_lazy_continuation)]

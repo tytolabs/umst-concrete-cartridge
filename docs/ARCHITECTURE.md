@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # ARCHITECTURE.md — categorical agent surface (B1)
 
 **SSOT for Objects / Morphisms / Functors / Monads on the agent path.**  

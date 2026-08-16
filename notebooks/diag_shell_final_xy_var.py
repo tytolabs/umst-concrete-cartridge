@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 """Recompute `density_xy_plane_variance` on `examples/_artifacts/shell/final.npy` (same as `export_print_ready.py`).
 
 Requires a local solve artefact (file is gitignored). Usage from `umst-concrete-cartridge/`:

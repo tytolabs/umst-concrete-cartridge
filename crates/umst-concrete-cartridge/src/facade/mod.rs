@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Transport-facing wire types and pure prediction helpers (**serde** only, no **`serde_json`**).
 //! Parsing JSON blobs into [`MixSpecWire`] stays in **`umst-cli`** / **`umst-py`**.
 //!

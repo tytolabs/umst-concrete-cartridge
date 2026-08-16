@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! S3 parity harness — hand-rolled `umst-mcp` vs `umst-mcp-rmcp` golden `tools/call` frames.
 //!
 //! Run: `cargo test -p umst-mcp --features rmcp-wire --test rmcp_parity`

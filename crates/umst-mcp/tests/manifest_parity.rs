@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! S1 parity: `tool-manifest` dual-emit vs hand-rolled `tools/list`.
 //!
 //! With feature off (default): this module is empty — existing integration/gate_parity cover hand path.

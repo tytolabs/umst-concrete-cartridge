@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Mix-space geometry index — UMST Hilbert **discipline** on constitutive coordinates (not SDF voxels).
 //!
 //! Maps `(w_c, temperature_k, aggregate_volume_fraction)` to a 2D quantized grid, then a Morton

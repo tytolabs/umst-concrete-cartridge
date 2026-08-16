@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 # Federated git inbox dry-run (no git push).
 # Categorical:
 #   Path: COLD (scripts / filesystem — not MCP promote)

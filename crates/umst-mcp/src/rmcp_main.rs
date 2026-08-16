@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! `umst-mcp-rmcp` — official `rmcp` stdio MCP binary (Stage S3, default off).
 //!
 //! Hand-rolled `umst-mcp` remains the default binary (`default-run = "umst-mcp"`).

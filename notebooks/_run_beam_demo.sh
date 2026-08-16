@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
 # Run RC beam topology example with NPY dumps, then render the Strut-and-Tie GIF.
 # If `optimize_rc_beam` fails (e.g. OOM or future regression), fall back to

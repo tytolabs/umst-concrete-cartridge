@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Shared regression metrics for headline CSV calibration — used by [`tests/calibration/dataset_metrics`]
 //! and the `calibration_report` binary so MAE / RMSE / R² definitions cannot drift.
 

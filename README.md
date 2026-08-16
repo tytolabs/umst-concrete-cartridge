@@ -1,6 +1,6 @@
-<!--
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 SPDX-License-Identifier: MIT
-Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+<!--
 -->
 
 # UMST Concrete Cartridge
@@ -23,7 +23,7 @@ Underneath this cartridge is **UMST** — the Unified Material-State Tensor — 
 
 This **concrete cartridge** is the part that knows cement. It supplies chemical-physical closures for hydration, rheology, and load-bearing behaviour, calibrated against measured datasets, and plugs into the manifold through **`IScienceCartridge`**. Instead of curve-fitting past tests alone, it evaluates constitutive pipelines on the carrier — and agent contributions require a gate **PASS** before memory ingest ([§9](#9-special-protocol-note-to-autonomous-ai-agents--systems)).
 
-The library exposes gated constitutive prediction, mix audit, **print-stability and deposition physics in simulation**, and spatial structural shape optimizations under load limits. **Studio TYTO has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
+The library exposes gated constitutive prediction, mix audit, **print-stability and deposition physics in simulation**, and spatial structural shape optimizations under load limits. ** has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
 
 **Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here. Formal-catalog module counts are **not** owned by this README — see [§8](#8-deep-documentation-and-citations) (link the manifold lock; do not hardcode a drifting number).
 
@@ -639,7 +639,7 @@ Do **not** call these as if they exist on the MCP surface today:
 
 ## 10. Honesty and limits
 
-**Honest is / isn't.** **Is:** in-repo solvers, mix audits, notebooks, MCP tools, and mechanics/topology **surrogates**. **Isn't:** a completed Studio TYTO on-robot, on-extruder physical print campaign. Closed-loop extrusion remains an **integration target**.
+**Honest is / isn't.** **Is:** in-repo solvers, mix audits, notebooks, MCP tools, and mechanics/topology **surrogates**. **Isn't:** a completed  on-robot, on-extruder physical print campaign. Closed-loop extrusion remains an **integration target**.
 
 ### Honesty ledger (one status pointer)
 
@@ -705,9 +705,9 @@ Shared gate spine — **matter** (manifold + this cartridge) · **knowing** · *
 
 ## Authors
 
-**Santhosh Shyamsundar** — Studio TYTO · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)
+**Santhosh Shyamsundar** —  · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)
 
-**Santosh Prabhu Shenbagamoorthy** — Studio TYTO · [santosh@tyto.studio](mailto:santosh@tyto.studio)
+**Santosh Prabhu Shenbagamoorthy** —  · [santosh@tyto.studio](mailto:santosh@tyto.studio)
 
 ---
 
@@ -741,7 +741,7 @@ Bibliographic metadata is maintained in [`CITATION.cff`](CITATION.cff).
 
 ## License
 
-Released under the [MIT License](LICENSE). © 2026 Studio TYTO.
+Released under the [MIT License](LICENSE). © 2026 .
 
 <!-- AUTO-LATTICE:BEGIN -->
 ## Lattice position

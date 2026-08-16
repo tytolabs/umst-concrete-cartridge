@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! `tools_v1` — encoded MCP tool table (frozen schema snapshot + side-effect class).
 //!
 //! Snapshot captured from today's hand-rolled `tools/list` (S0 lock era). Hand tables in

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Observation stamping — **immutable clock threading** (no global mutex).
 //!
 //! `ProvenanceClock::advance` is the sole state transition; wall time is injected via [`WallClock`] at the IO boundary.

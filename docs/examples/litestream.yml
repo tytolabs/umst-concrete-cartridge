@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+# SPDX-License-Identifier: MIT
 # Example Litestream config for UMST_MEMORY_DB replication (operator template — not CI).
 # See docs/MEMORY_REPLICATION.md for defer rationale and S3 Object Lock notes.
 

@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Canonical `[Batch, Features]` layout for [`MaterialCompositionTensor`](umst_manifold::core::tensors::MaterialCompositionTensor) used by tensor physics.
 //!
 //! Hydration kernels (`physics::hydration`) read cement at column **1**, slag **5**, fly ash **6** — unchanged.

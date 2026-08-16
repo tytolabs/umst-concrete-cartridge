@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+// SPDX-License-Identifier: MIT
 // Cement C-ABI integration tests (pure morphisms; no gate filter handles).
 
 use umst_concrete_ffi::*;

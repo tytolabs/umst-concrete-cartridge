@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Parse dataset-style CSV (`dataset_d1` header-compatible) into [`PreparedAuditRow`] payloads.
 //!
 //! **Aggregate solids fraction** (dimensionless surrogate packed into [`mix_layout`] index 12):

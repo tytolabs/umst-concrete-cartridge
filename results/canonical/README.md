@@ -1,6 +1,6 @@
-<!--
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 SPDX-License-Identifier: MIT
-Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+<!--
 -->
 
 # Canonical headline metrics (`table_per_dataset_metrics.csv`)
@@ -34,3 +34,6 @@ The binary writes Markdown to **stdout** and refreshes this directory (`table_pe
 ## Manuscript alignment
 
 Aggregate counts in papers should reconcile with [`datasets/PROVENANCE.md`](../../datasets/PROVENANCE.md) and [`docs/SSOT.json`](../../docs/SSOT.json). External excerpts may subset rows; shipped `datasets/*.csv` define the canonical scope.
+## 🔒 Confidentiality Notice
+
+This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

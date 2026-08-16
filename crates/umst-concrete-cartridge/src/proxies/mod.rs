@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Virtual lab proxies composing manifold solvers (feature `virtual-proxies`).
 //!
 //! Each scoring fn is a pure map **τ₀ / extrudability → [0, 1]** used as a literature surrogate

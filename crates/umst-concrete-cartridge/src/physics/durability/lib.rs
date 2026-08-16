@@ -1,5 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 //
 // FLEET-COMPOSER-ACCEL-D AC105 — umst-concrete composite durability witness.
 // Pins on-disk census, orchestrator mix contract, and measured golden vector.

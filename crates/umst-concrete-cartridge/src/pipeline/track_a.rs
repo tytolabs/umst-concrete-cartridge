@@ -1,6 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
-
 //! Track A coordinate-descent optimiser: dual-gated mix proposal (printability AND thermodynamic).
 //!
 //! Search is iterative (bisection), but each step is a pure score + gate evaluation composed with

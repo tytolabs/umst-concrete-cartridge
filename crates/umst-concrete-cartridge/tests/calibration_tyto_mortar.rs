@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
 // WS-CAL: θ fit on tyto_mortar profile; predict-in-band for S1 composition.
 

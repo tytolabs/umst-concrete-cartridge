@@ -1,3 +1,5 @@
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
+SPDX-License-Identifier: MIT
 # REFERENCE.md — agent surface signatures (B5)
 
 **Signatures and schemas agents bind to.** Spot-check against source; full prose in [`AGENT_MCP.md`](AGENT_MCP.md).

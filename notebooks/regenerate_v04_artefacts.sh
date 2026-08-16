@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 #
 # Track L — regenerate Striatus v0.4 STL / print_ready / auxiliary assets after an
 # `optimize_shell_3d` run (see docs/Striatus.md). Requires Python deps from notebooks/requirements.txt.
