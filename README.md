@@ -16,6 +16,7 @@ SPDX-License-Identifier: MIT
 [![CI — Agent layer](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml)
 [![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+<!-- /readme:status -->
 
 ### Cartridge in plain words
 Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through the **thermodynamic admissibility gate**: conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.

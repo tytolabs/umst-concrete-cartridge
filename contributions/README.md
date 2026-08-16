@@ -4,7 +4,7 @@ SPDX-License-Identifier: MIT
 
 Labs contribute **validated memory rows** to the shared corpus via **pull request**, not live MCP to a central server.
 
-**Full spec:** [tyto-workspace `git-contribution-inbox` plan](https://github.com/tytolabs/tyto-workspace/blob/prime-spectral-research/outputs/.plans/git-contribution-inbox.md)
+**Full spec:** `tyto-workspace `git-contribution-inbox` plan`
 
 ## Quick flow
 
@@ -38,8 +38,7 @@ Required: `gate_summary.admissible` must be `true`. CI re-runs gate check — do
 
 No local MCP? Author `contribution.v1` JSONL by hand or tool, open PR to `contributions/inbox/`. CI validates schema and admissibility.
 
-## What merge does **not** do
-
+## Merge limits
 - Does **not** auto-update `calibration/profiles/` — use human `umst promote-contribution`.
 - Does **not** include `gate_reject` rows — rejects stay local.
 
@@ -52,6 +51,3 @@ python3 scripts/update_contribution_manifest.py --append contributions/merged/<Y
 ```
 
 Manifest schema (one JSON object per line): `path`, `sha256`, `merged_at`, `rows`, `lab`, optional `content_ids` for duplicate scanning.
-## 🔒 Confidentiality Notice
-
-This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

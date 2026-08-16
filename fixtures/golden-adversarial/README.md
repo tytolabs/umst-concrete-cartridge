@@ -23,7 +23,7 @@ The **hard safety witness** for gate admissibility is in **`umst-manifold`**, no
 
 This directory proves **agent JSON contracts** (schema, rational mix wire, `gate_reject.v1`, `explain` payloads). It does **not** replace manifold's 75-case adversarial golden or certify global FNR/FPR = 0. Run both layers when validating a full stack.
 
-**Manifold SSOT:** [`umst-manifold/docs/GOLDEN_FIXTURES.md`](../../../umst-manifold/docs/GOLDEN_FIXTURES.md) (monorepo sibling) · [GitHub mirror](https://github.com/tytolabs/umst-manifold/blob/main/docs/GOLDEN_FIXTURES.md)
+**Manifold SSOT:** [`umst-manifold/docs/GOLDEN_FIXTURES.md`](../../../umst-manifold/docs/GOLDEN_FIXTURES.md) (monorepo sibling) · `GitHub mirror`
 
 ### Run `gate_adversarial` locally (manifold)
 
@@ -129,6 +129,3 @@ Expect `explain.regime_violations` containing `thermodynamic_cd_fail` or `thermo
 ### 3. `mix_spec_wire_invalid`
 
 Parsed rationals that fail `MixSpec` validation (missing required field or out-of-envelope wire). Expect `explain.fields` listing paths; remediation references `contribution.v1.json`. Golden coverage: `phase8_adversarial` + schema CI on both JSON fixtures in this directory.
-## 🔒 Confidentiality Notice
-
-This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

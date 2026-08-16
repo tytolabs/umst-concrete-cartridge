@@ -33,6 +33,3 @@ cargo build -p umst-cli
 ## V3 pipeline rehearsal (not validation)
 
 [`../v3_pipeline_rehearsal/`](../v3_pipeline_rehearsal/) — placeholder data only; **V3-gate: CLOSED**.
-## 🔒 Confidentiality Notice
-
-This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.

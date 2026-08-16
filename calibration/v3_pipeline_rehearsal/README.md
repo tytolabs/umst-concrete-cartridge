@@ -17,6 +17,3 @@ Pipeline rehearsal — placeholder data, no physical measurement yet (V3-gate: C
 **S1 session fact:** proxy rheology / τ₀ band only — no compressive strength data.
 
 M2-2, M3-1, and M3-2 remain **gated** until V3-gate opens on a real specimen.
-## 🔒 Confidentiality Notice
-
-This repository contains proprietary information. Copyright (c) 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar. All rights reserved. Unauthorized copying, distribution, or use of these files, via any medium, is prohibited.
