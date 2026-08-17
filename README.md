@@ -1,11 +1,11 @@
-<!--
+SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 SPDX-License-Identifier: MIT
-Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+<!--
 -->
 
 # UMST Concrete Cartridge
 
-**Repository:** [`tytolabs/umst-concrete-cartridge`](https://github.com/tytolabs/umst-concrete-cartridge) — cementitious **matter** cartridge on the [UMST Manifold](https://github.com/tytolabs/umst-manifold).
+**Repository:** ``tytolabs/umst-concrete-cartridge`` — cementitious **matter** cartridge on the `UMST Manifold`.
 
 > _This ecosystem is dedicated to the thousands of unnamed contributors who wrote formal proofs, maintained open-source compilers, and built mathematical libraries for years — often without evidence that any of it would be used beyond pure theory. They chose to make their work free, because they understood that knowledge about physical reality cannot be owned. Whatever this system achieves is yours._
 
@@ -16,21 +16,21 @@ Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Stud
 [![CI — Agent layer](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml)
 [![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+<!-- /readme:status -->
 
-### What this is, in plain words
-
+### Cartridge in plain words
 Underneath this cartridge is **UMST** — the Unified Material-State Tensor — a single mathematical object that holds a material's full state (substance, processes, environment, geometry, and time) and only lets it change in ways physics actually permits. Every proposed change passes through the **thermodynamic admissibility gate**: conserve mass, never produce negative dissipation, or be rejected — no creating strength or energy from nothing.
 
 This **concrete cartridge** is the part that knows cement. It supplies chemical-physical closures for hydration, rheology, and load-bearing behaviour, calibrated against measured datasets, and plugs into the manifold through **`IScienceCartridge`**. Instead of curve-fitting past tests alone, it evaluates constitutive pipelines on the carrier — and agent contributions require a gate **PASS** before memory ingest ([§9](#9-special-protocol-note-to-autonomous-ai-agents--systems)).
 
-The library exposes gated constitutive prediction, mix audit, **print-stability and deposition physics in simulation**, and spatial structural shape optimizations under load limits. **Studio TYTO has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
+The library exposes gated constitutive prediction, mix audit, **print-stability and deposition physics in simulation**, and spatial structural shape optimizations under load limits. **Studio TYTO** has not yet run this cartridge through a full on-robot, on-extruder physical print campaign**; what follows describes what the code **is built to support** and what we **hope to demonstrate** once hardware, materials plant, and control stacks are integrated.
 
 **Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here. Formal-catalog module counts are **not** owned by this README — see [§8](#8-deep-documentation-and-citations) (link the manifold lock; do not hardcode a drifting number).
 
 ![RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)](./docs/assets/beam_strut_and_tie.gif)
 
 *Surrogate animation only — not a physical print or lab measurement. 32×8 RC beam: adjoint compliance topology optimization with a fixed bottom rebar row; yellow density (ρ) from the mechanics façade.*
-**What it is.** A Rust workspace that implements cementitious constitutive closures and mounts them on the manifold through typed ports (`IScienceCartridge`, …), exposing CLI / Python / stdio-MCP surfaces for mix prediction, audit, and gate-validated agent workflows.
+**Role.** A Rust workspace that implements cementitious constitutive closures and mounts them on the manifold through typed ports (`IScienceCartridge`, …), exposing CLI / Python / stdio-MCP surfaces for mix prediction, audit, and gate-validated agent workflows.
 
 **The gate idea.** Every proposed mix/state change is subject to the **thermodynamic admissibility gate** (reduced Clausius–Duhem + Landauer cost bounds on the shared stack): conserve mass, never produce negative dissipation, or be **rejected with structured remediation** — no silent failure.
 
@@ -40,10 +40,10 @@ These public repos share **one** thermodynamic admissibility gate, applied acros
 
 | Domain | Public repo | Role |
 |:---|:---|:---|
-| **Matter** | [`umst-manifold`](https://github.com/tytolabs/umst-manifold) + **this cartridge** **← you are here** | DEC carrier + cementitious constitutive law |
-| **Knowing** | [`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit) | Observation / measurement-cost formal fiber |
-| **Acting** | [`umst-formal`](https://github.com/tytolabs/umst-formal) | Economic-admissibility formal fiber |
-| **Time** | [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) | Temporal witness / stamp spine |
+| **Matter** | ``umst-manifold`` + **this cartridge** **← you are here** | DEC carrier + cementitious constitutive law |
+| **Knowing** | ``umst-formal-double-slit`` | Observation / measurement-cost formal fiber |
+| **Acting** | ``umst-formal`` | Economic-admissibility formal fiber |
+| **Time** | ``umst-ucrs`` | Temporal witness / stamp spine |
 
 Sibling links only — no paper-series arc naming in this README. Already-public per-repo DOI badges stay where they exist; this cartridge does not invent new ones here.
 
@@ -51,7 +51,7 @@ Sibling links only — no paper-series arc naming in this README. Already-public
 
 | Symbol | Role | Defined at |
 |:---|:---|:---|
-| `IScienceCartridge` | Material-law port: `compute_all` / `compute_topology` → `PhysicalResult` | [`umst-manifold/.../traits.rs:51`](https://github.com/tytolabs/umst-manifold/blob/main/src/core/traits.rs) |
+| `IScienceCartridge` | Material-law port: `compute_all` / `compute_topology` → `PhysicalResult` | ``umst-manifold/.../traits.rs:51`` |
 | `GateCartridge` | Universal gate port (spatial physics flag) | `traits.rs:62` |
 | `SpatialCartridge` | Marker: spatial physics subtype of `IScienceCartridge` | `traits.rs:69` |
 | `DesignRepresentation` | Pure latent → geometry decode (orthogonal to material law) | `traits.rs:98` |
@@ -113,8 +113,8 @@ Sibling links only — no paper-series arc naming in this README. Already-public
   - [9.6 Proposed (not yet built)](#96-proposed-not-yet-built)
   - [9.7 Principles](#97-principles)
 - [§11 Conclusion: Inferences & Forward Path](#11-conclusion-inferences--forward-path)
-  - [What this cartridge demonstrates](#what-this-cartridge-demonstrates)
-  - [What surprised us](#what-surprised-us)
+  - [This repository demonstrates](#this-repository-demonstrates)
+  - [Inferences from the work](#inferences-from-the-work)
 - [Related repositories](#related-repositories)
 - [Authors](#authors)
 - [Acknowledgments](#acknowledgments)
@@ -163,8 +163,8 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 #96-proposed-not-yet-built
 #97-principles
 #11-conclusion-inferences--forward-path
-#what-this-cartridge-demonstrates
-#what-surprised-us
+#this-repository-demonstrates
+#inferences-from-the-work
 #related-repositories
 #authors
 #acknowledgments
@@ -185,11 +185,11 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 
 ### 1.1 Mounting on the UMST carrier
 
-This cartridge implements **`IScienceCartridge`** on the [UMST Manifold](https://github.com/tytolabs/umst-manifold) and reads/writes the **UMST carrier** — the unified per-voxel state bundle described in the manifold README as an **[extensible pipeline](https://github.com/tytolabs/umst-manifold#2-unified-material-state-pipeline-umst-carrier)** (64 scalar **lanes** in today’s default tensor layout; lane semantics stay versioned with `schema/` and crate releases). Nothing here assumes a fixed “64 forever”; it assumes a **stable contract** between mix JSON, Rust tensors, and CI.
+This cartridge implements **`IScienceCartridge`** on the `UMST Manifold` and reads/writes the **UMST carrier** — the unified per-voxel state bundle described in the manifold README as an **`extensible pipeline`** (64 scalar **lanes** in today’s default tensor layout; lane semantics stay versioned with `schema/` and crate releases). Nothing here assumes a fixed “64 forever”; it assumes a **stable contract** between mix JSON, Rust tensors, and CI.
 
 ### 1.2 Grounding contract: derived, measured, and grounded constants
 
-**Every constant is derived, measured, or grounded in truth — not a silent knob.** The same obligation class as [UMST Manifold §1.4](https://github.com/tytolabs/umst-manifold#14-grounding-contract-constants-proofs-and-second-law-composition), applied to cementitious closures:
+**Every constant is derived, measured, or grounded in truth — not a silent knob.** The same obligation class as `UMST Manifold §1.4`, applied to cementitious closures:
 
 - **Derived** — Arrhenius forms, Vinet bulk modulus, GWP linear mix rule **g_i**, and other coefficients that follow from constitutive structure and dimensional analysis once material inputs are fixed.
 - **Measured** — Nano-indentation, UCI / Zenodo / ASTM-style benchmarks, site **`w` / `h` bead logs**, and rows in bundled **`calibration/`** profiles and **`datasets/`** CSVs matched by [`tests/calibration/dataset_metrics.rs`](tests/calibration/dataset_metrics.rs) (record *what* was measured, *where*, and under which schema version).
@@ -197,29 +197,29 @@ This cartridge implements **`IScienceCartridge`** on the [UMST Manifold](https:/
 
 Empirical numbers are **not** free mid-training knobs: they carry **provenance** (dataset, paper, profile TOML). If a value is fit, the fit range and admissibility envelope are part of the contract **`umst audit`** and related tools enforce.
 
-**Physics scales by composition under the second law.** Constitutive closures (hydration, creep, printability, carbonation, …) do not run as a grab bag of heuristics: they **compose into the same UMST carrier** the manifold integrates, and **admissible trajectories** are those the manifold’s **thermodynamic gate** accepts—local dissipation and entropy production stay in the inequality class inherited from the manifold’s **Clausius–Duhem** formulation ([manifold §1.2](https://github.com/tytolabs/umst-manifold#12-the-thermodynamic-gate)). Stacking chemistry + mechanics + transport means **re-applying that contract at each composed step**, not weakening it at the cartridge boundary.
+**Physics scales by composition under the second law.** Constitutive closures (hydration, creep, printability, carbonation, …) do not run as a grab bag of heuristics: they **compose into the same UMST carrier** the manifold integrates, and **admissible trajectories** are those the manifold’s **thermodynamic gate** accepts—local dissipation and entropy production stay in the inequality class inherited from the manifold’s **Clausius–Duhem** formulation (`manifold §1.2`). Stacking chemistry + mechanics + transport means **re-applying that contract at each composed step**, not weakening it at the cartridge boundary.
 
-**“Proven” here = documented invariants + tests + formal stack where shared.** Cement-specific lemmas live in this repo’s docs and regression suites; **DEC conservation and shared proof anchors** live on the manifold and in [`umst-formal`](https://github.com/tytolabs/umst-formal). We separate **machine-checked kernel obligations** from **constitutive calibration evidence** so neither is confused for the other.
+**“Proven” here = documented invariants + tests + formal stack where shared.** Cement-specific lemmas live in this repo’s docs and regression suites; **DEC conservation and shared proof anchors** live on the manifold and in ``umst-formal``. We separate **machine-checked kernel obligations** from **constitutive calibration evidence** so neither is confused for the other.
 
 To optimize a structural mix, we must follow the physical processes that govern its life cycle. The engine calculates mechanical properties by simulating the chemical reactions occurring at the microscopic scale:
 
 - **No Guessing at the Nanoscale:** When we predict how strong or stiff a material is, we do not guess based on soft averages. Our calculations are anchored in the fundamental atomic pressure-volume relationship of crystals (using a physical model called **Pellenq's Vinet bulk modulus** paired with **nano-indentation** tests):
   
-  <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;P(V)%20=%203B_0%20\left(\frac{1-\eta}{\eta^2}\right)%20\exp\left[\frac{3}{2}(\kappa_0'%20-%201)(1-\eta)\right]%20\quad%20\text{where}%20\quad%20\eta%20=%20\left(\frac{V}{V_0}\right)^{1/3}"><img alt="P(V) = 3B_0 \left(\frac{1-\eta}{\eta^2}\right) \exp\left[\frac{3}{2}(\kappa_0' -…" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;P(V)%20=%203B_0%20\left(\frac{1-\eta}{\eta^2}\right)%20\exp\left[\frac{3}{2}(\kappa_0'%20-%201)(1-\eta)\right]%20\quad%20\text{where}%20\quad%20\eta%20=%20\left(\frac{V}{V_0}\right)^{1/3}" style="max-width:100%;height:auto"></picture></p>
+  <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")%20=%203B_0%20\left(\frac{1-\eta}{\eta^2}\right)%20\exp\left[\frac{3}{2}(\kappa_0'%20-%201)(1-\eta)\right]%20\quad%20\text{where}%20\quad%20\eta%20=%20\left(\frac{V}{V_0}\right)^{1/3}"><img alt="P(V) = 3B_0 \left(\frac{1-\eta}{\eta^2}\right) \exp\left[\frac{3}{2}(\kappa_0' -…" src=")%20=%203B_0%20\left(\frac{1-\eta}{\eta^2}\right)%20\exp\left[\frac{3}{2}(\kappa_0'%20-%201)(1-\eta)\right]%20\quad%20\text{where}%20\quad%20\eta%20=%20\left(\frac{V}{V_0}\right)^{1/3}" style="max-width:100%;height:auto"></picture></p>
 
-  *The Outcome:* When the engine predicts the load-bearing capacity of a new, untested concrete mix, the prediction is anchored in immutable atomic physics (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;B_0"><img alt="B_0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;B_0" style="vertical-align:middle"></picture>, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;V_0"><img alt="V_0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;V_0" style="vertical-align:middle"></picture>), keeping predictions inside the physically admissible envelope.
+  *The Outcome:* When the engine predicts the load-bearing capacity of a new, untested concrete mix, the prediction is anchored in immutable atomic physics (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="B_0" src=" style="vertical-align:middle"></picture>, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="V_0" src=" style="vertical-align:middle"></picture>), keeping predictions inside the physically admissible envelope.
 - **Accurate Thermal Curing:** We track the exact speed of the chemical reaction that hardens cement (known as **hydration kinetics**) using a classical thermal correction model (the **Arrhenius relation**):
   
-  <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;\alpha(t)%20=%20\int_0^t%20k(T)%20\cdot%20f(\alpha)%20\,%20dt%20\quad%20\text{where}%20\quad%20k(T)%20=%20A%20\exp\left(-\frac{E_a}{R%20T}\right)"><img alt="\alpha(t) = \int_0^t k(T) \cdot f(\alpha) \, dt \quad \text{where} \quad k(T) = …" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;\alpha(t)%20=%20\int_0^t%20k(T)%20\cdot%20f(\alpha)%20\,%20dt%20\quad%20\text{where}%20\quad%20k(T)%20=%20A%20\exp\left(-\frac{E_a}{R%20T}\right)" style="max-width:100%;height:auto"></picture></p>
+  <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")%20=%20\int_0^t%20k(T)%20\cdot%20f(\alpha)%20\,%20dt%20\quad%20\text{where}%20\quad%20k(T)%20=%20A%20\exp\left(-\frac{E_a}{R%20T}\right)"><img alt="\alpha(t) = \int_0^t k(T) \cdot f(\alpha) \, dt \quad \text{where} \quad k(T) = …" src=")%20=%20\int_0^t%20k(T)%20\cdot%20f(\alpha)%20\,%20dt%20\quad%20\text{where}%20\quad%20k(T)%20=%20A%20\exp\left(-\frac{E_a}{R%20T}\right)" style="max-width:100%;height:auto"></picture></p>
 
   *The Outcome:* We simulate exactly how water reacts with cement over time, dynamically adjusting for the heat generated by the reaction. The engine tells you exactly when and where a thick concrete pour will crack due to its own trapped heat.
 - **Quantum-Anchored Baselines:** Our JSON mix profiles utilize **DFT-anchored calibration profiles** (Density Functional Theory). 
   *The Outcome:* Any high-level predictions about experimental cement alternatives (fly ash, slag) cannot drift outside the bounds of quantum mechanical energy reality.
 - **Differentiable Carbon Tracking:** We calculate the carbon footprint directly from the material recipe. Because this carbon calculation is fully connected to our spatial mathematical gradients (making it **differentiable**), design algorithms can explore the Pareto surface of shape and recipe that trades off greenhouse gases against thermodynamic admissibility (integration target; see §10):
   
-  <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;GWP(\mathbf{w})%20=%20\mathbf{w}%20\cdot%20\mathbf{g}%20=%20\sum_{i=1}^n%20w_i%20g_i"><img alt="GWP(\mathbf{w}) = \mathbf{w} \cdot \mathbf{g} = \sum_{i=1}^n w_i g_i" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;GWP(\mathbf{w})%20=%20\mathbf{w}%20\cdot%20\mathbf{g}%20=%20\sum_{i=1}^n%20w_i%20g_i" style="max-width:100%;height:auto"></picture></p>
+  <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")%20=%20\mathbf{w}%20\cdot%20\mathbf{g}%20=%20\sum_{i=1}^n%20w_i%20g_i"><img alt="GWP(\mathbf{w}) = \mathbf{w} \cdot \mathbf{g} = \sum_{i=1}^n w_i g_i" src=")%20=%20\mathbf{w}%20\cdot%20\mathbf{g}%20=%20\sum_{i=1}^n%20w_i%20g_i" style="max-width:100%;height:auto"></picture></p>
 
-  *The Outcome:* **Pareto-frontier optimization intent**. Because <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;GWP"><img alt="GWP" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;GWP" style="vertical-align:middle"></picture> is fully differentiable w.r.t the proportions <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\mathbf{w}"><img alt="\mathbf{w}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\mathbf{w}" style="vertical-align:middle"></picture>, the engine can search for mix ratios that lower CO2 while passing the thermodynamic admissibility gate. Structural capacity under load still requires FEM with boundary conditions — the gate does not substitute for collapse analysis.
+  *The Outcome:* **Pareto-frontier optimization intent**. Because <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="GWP" src=" style="vertical-align:middle"></picture> is fully differentiable w.r.t the proportions <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\mathbf{w}" src=" style="vertical-align:middle"></picture>, the engine can search for mix ratios that lower CO2 while passing the thermodynamic admissibility gate. Structural capacity under load still requires FEM with boundary conditions — the gate does not substitute for collapse analysis.
 
 ---
 
@@ -256,7 +256,7 @@ This cartridge exposes its physical equations through multiple programmatic surf
 
 *   **Mathematical Pipeline:** Leverages the `umst audit` pipeline on large-scale dataset inputs, matching empirical properties against DFT-anchored calibration profiles.
 
-*   **Computational Outcome:** Automated, high-throughput verification of compressive strength (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;f_c"><img alt="f_c" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;f_c" style="vertical-align:middle"></picture>) development curves, hydration heat profiles, and GWP footprints across batch CSV entries.
+*   **Computational Outcome:** Automated, high-throughput verification of compressive strength (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="f_c" src=" style="vertical-align:middle"></picture>) development curves, hydration heat profiles, and GWP footprints across batch CSV entries.
 
 *   **Honest limit:** `umst audit` matches calibration profiles and gate rules — not legal certification of supplier compliance or plant acceptance.
 </details>
@@ -271,14 +271,14 @@ This cartridge exposes its physical equations through multiple programmatic surf
 
 *   **Robotic & Kinematic Pipeline:**
     *   **URDF Geometry Mapping:** The physical nozzle tool-center-point (TCP) and robot bounding meshes are defined via Unified Robot Description Format (URDF). Forward Kinematics (FK), calculated via `tf2` transforms, maps the dynamic spatial position of the nozzle directly to active coordinates in the UMST 3D voxel grid.
-    *   **Closed-Loop Trajectory Correction (IK):** When the Thermodynamic Control Barrier Function (CBF) detects localized shear-yield limits or structural slump risks, the engine computes spatial gradient adjustments (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\Delta%20x,%20\Delta%20y,%20\Delta%20z"><img alt="\Delta x, \Delta y, \Delta z" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\Delta%20x,%20\Delta%20y,%20\Delta%20z" style="vertical-align:middle"></picture>). These Cartesian correction vectors are passed to the robot's Inverse Kinematics (IK) engine (e.g., `MoveIt2` or analytical IK solvers) to produce joint-angle deltas (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\Delta%20\theta"><img alt="\Delta \theta" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\Delta%20\theta" style="vertical-align:middle"></picture>) for the physical manipulators (6-DOF arms, modular gantries). Per-cycle latency is set by the printability/buckling solver — sub-second on small grids; rises with mesh size.
+    *   **Closed-Loop Trajectory Correction (IK):** When the Thermodynamic Control Barrier Function (CBF) detects localized shear-yield limits or structural slump risks, the engine computes spatial gradient adjustments (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\Delta x, \Delta y, \Delta z" src=" style="vertical-align:middle"></picture>). These Cartesian correction vectors are passed to the robot's Inverse Kinematics (IK) engine (e.g., `MoveIt2` or analytical IK solvers) to produce joint-angle deltas (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\Delta \theta" src=" style="vertical-align:middle"></picture>) for the physical manipulators (6-DOF arms, modular gantries). Per-cycle latency is set by the printability/buckling solver — sub-second on small grids; rises with mesh size.
     *   **Continuous Sensor Fusion:** Streams material feedback (nozzle extrusion pressure, mix temperature) into the material state tensor so the solver updates its curing-kinetics estimate against actual print conditions on every cycle.
 
 *   **Target outcome (software + integration):** A closed-loop manufacturing stack *would* correct the nozzle trajectory each CBF gating cycle, matching joint torque and print speed to the localized mechanical stiffness development of the extrudate. The cycle is the CBF cycle — *not* wall-clock real-time — and stays useful only while the printability-solver step stays below the layer-deposition interval. **Demonstrating that on real hardware is still ahead of us**; today the same physics runs in simulation and in batch/surrogate workflows.
 
 *   **Honest limit:** Closed-loop print on real hardware is an **integration target** — not a completed TYTO field campaign in this repository; WebSocket MCP streaming remains Proposed.
 
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://mermaid.ink/svg/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgYXV0b251bWJlclxuICAgIHBhcnRpY2lwYW50IE5venpsZSBhcyBOb3p6bGUgKFRDUClcbiAgICBwYXJ0aWNpcGFudCBTZW5zb3JzIGFzIFNlbnNvcnMgKFAsIFQpXG4gICAgcGFydGljaXBhbnQgQ2FydHJpZGdlIGFzIENhcnRyaWRnZVxuICAgIHBhcnRpY2lwYW50IFNvbHZlciBhcyBQcmludGFiaWxpdHkgU29sdmVyXG4gICAgcGFydGljaXBhbnQgQ0JGIGFzIFRoZXJtbyBDQkZcbiAgICBwYXJ0aWNpcGFudCBJSyBhcyBNb3ZlSXQyIElLXG4gICAgcGFydGljaXBhbnQgSm9pbnQgYXMgUm9ib3QgSm9pbnRzXG5cbiAgICBOb3p6bGUtPj5TZW5zb3JzOiBTdHJlYW0gZXh0cnVzaW9uIHByZXNzdXJlICYgdGVtcGVyYXR1cmVcbiAgICBTZW5zb3JzLT4-Q2FydHJpZGdlOiBGZWVkIHNlbnNvcnMgdG8gM0QgVm94ZWwgR3JpZFxuICAgIENhcnRyaWRnZS0-PlNvbHZlcjogVXBkYXRlIGxvY2FsaXplZCBzdGlmZm5lc3MgJiBhZ2UgcGFyYW1ldGVyc1xuICAgIFNvbHZlci0-PkNCRjogQ2FsY3VsYXRlIHRoaXhvdHJvcGljIHlpZWxkICYgc2x1bXAgcmlzayBsaW1pdHNcbiAgICBhbHQgTGltaXQgRXhjZWVkZWQgKFNsdW1wL0J1Y2tsaW5nIFJpc2spXG4gICAgICAgIENCRi0-PkNhcnRyaWRnZTogQ29tcHV0ZSBzcGF0aWFsIGdyYWRpZW50IGNvcnJlY3Rpb25zIChcdTAzOTR4LCBcdTAzOTR5LCBcdTAzOTR6KVxuICAgICAgICBDYXJ0cmlkZ2UtPj5JSzogU2VuZCBDYXJ0ZXNpYW4gY29ycmVjdGlvbiB2ZWN0b3JcbiAgICAgICAgSUstPj5Kb2ludDogQ29tcHV0ZSAmIGFwcGx5IHJlYWwtdGltZSBqb2ludCBhbmdsZXMgKFx1MDM5NFx1MDNiOClcbiAgICAgICAgSm9pbnQtPj5Ob3p6bGU6IEFkanVzdCBub3p6bGUgc3BlZWQgJiBwb3NpdGlvbiBkeW5hbWljYWxseVxuICAgIGVsc2UgU3RhYmxlIFByaW50IFN0YXRlXG4gICAgICAgIENCRi0-Pk5venpsZTogTWFpbnRhaW4gcGxhbm5lZCBwcmludCB0cmFqZWN0b3J5XG4gICAgZW5kIiwibWVybWFpZCI6IntcInRoZW1lXCI6IFwiZGFya1wifSJ9"><img alt="sequenceDiagram" src="https://mermaid.ink/svg/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgYXV0b251bWJlclxuICAgIHBhcnRpY2lwYW50IE5venpsZSBhcyBOb3p6bGUgKFRDUClcbiAgICBwYXJ0aWNpcGFudCBTZW5zb3JzIGFzIFNlbnNvcnMgKFAsIFQpXG4gICAgcGFydGljaXBhbnQgQ2FydHJpZGdlIGFzIENhcnRyaWRnZVxuICAgIHBhcnRpY2lwYW50IFNvbHZlciBhcyBQcmludGFiaWxpdHkgU29sdmVyXG4gICAgcGFydGljaXBhbnQgQ0JGIGFzIFRoZXJtbyBDQkZcbiAgICBwYXJ0aWNpcGFudCBJSyBhcyBNb3ZlSXQyIElLXG4gICAgcGFydGljaXBhbnQgSm9pbnQgYXMgUm9ib3QgSm9pbnRzXG5cbiAgICBOb3p6bGUtPj5TZW5zb3JzOiBTdHJlYW0gZXh0cnVzaW9uIHByZXNzdXJlICYgdGVtcGVyYXR1cmVcbiAgICBTZW5zb3JzLT4-Q2FydHJpZGdlOiBGZWVkIHNlbnNvcnMgdG8gM0QgVm94ZWwgR3JpZFxuICAgIENhcnRyaWRnZS0-PlNvbHZlcjogVXBkYXRlIGxvY2FsaXplZCBzdGlmZm5lc3MgJiBhZ2UgcGFyYW1ldGVyc1xuICAgIFNvbHZlci0-PkNCRjogQ2FsY3VsYXRlIHRoaXhvdHJvcGljIHlpZWxkICYgc2x1bXAgcmlzayBsaW1pdHNcbiAgICBhbHQgTGltaXQgRXhjZWVkZWQgKFNsdW1wL0J1Y2tsaW5nIFJpc2spXG4gICAgICAgIENCRi0-PkNhcnRyaWRnZTogQ29tcHV0ZSBzcGF0aWFsIGdyYWRpZW50IGNvcnJlY3Rpb25zIChcdTAzOTR4LCBcdTAzOTR5LCBcdTAzOTR6KVxuICAgICAgICBDYXJ0cmlkZ2UtPj5JSzogU2VuZCBDYXJ0ZXNpYW4gY29ycmVjdGlvbiB2ZWN0b3JcbiAgICAgICAgSUstPj5Kb2ludDogQ29tcHV0ZSAmIGFwcGx5IHJlYWwtdGltZSBqb2ludCBhbmdsZXMgKFx1MDM5NFx1MDNiOClcbiAgICAgICAgSm9pbnQtPj5Ob3p6bGU6IEFkanVzdCBub3p6bGUgc3BlZWQgJiBwb3NpdGlvbiBkeW5hbWljYWxseVxuICAgIGVsc2UgU3RhYmxlIFByaW50IFN0YXRlXG4gICAgICAgIENCRi0-Pk5venpsZTogTWFpbnRhaW4gcGxhbm5lZCBwcmludCB0cmFqZWN0b3J5XG4gICAgZW5kIiwibWVybWFpZCI6IntcInRoZW1lXCI6IFwiZGVmYXVsdFwifSJ9" style="max-width:100%;height:auto"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=" alt="sequenceDiagram" src=" style="max-width:100%;height:auto"></picture></p>
 </details>
 
 <a id="24-structural-verification--systems-integration"></a>
@@ -289,7 +289,7 @@ This cartridge exposes its physical equations through multiple programmatic surf
 
 *   **Architectural Benefits:** Direct memory linking allows zero-copy passing of tensor structures between host memory and the cartridge using native C pointer layouts—avoiding serialization overhead completely. Granular compilation gates (`solver-stable` vs `solver-experimental`) guarantee that critical production systems only execute verified, mathematically locked physics solvers while allowing research environments to concurrently test experimental kinetics blocks.
 
-*   **Cross-Domain Synergy:** Integrates micro-scale cementitious chemistry (Powers-Mills hydration envelopes and C-S-H nanoscale crystallization kinetics) directly into macro-scale structural mechanical solvers. As the chemical reaction proceeds, the localized degree of hydration (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;DoH"><img alt="DoH" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;DoH" style="vertical-align:middle"></picture>) directly scales the Young's Modulus and Voigt-Cauchy stiffness tensor, forming a tight physical-chemical coupling loop.
+*   **Cross-Domain Synergy:** Integrates micro-scale cementitious chemistry (Powers-Mills hydration envelopes and C-S-H nanoscale crystallization kinetics) directly into macro-scale structural mechanical solvers. As the chemical reaction proceeds, the localized degree of hydration (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="DoH" src=" style="vertical-align:middle"></picture>) directly scales the Young's Modulus and Voigt-Cauchy stiffness tensor, forming a tight physical-chemical coupling loop.
 
 *   **Computational Outcome & Improvement Potential:** Deterministic execution via the C ABI — stress-tensor lookups and multi-species transport run at native binding speeds, while spatial shell optimizations (full DEC) are batch runs measured in minutes-to-hours per [`docs/Solver-Status.md`](docs/Solver-Status.md). Future work may add an **optional GPU-backed** path for inner-loop spatial solvers where the deployment toolchain supports it; **default validation and CI remain CPU-oriented** today.
 
@@ -352,24 +352,24 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) holds **25** co
 
 | Applied Closure | Governing Physical Mechanism | Active Code Module | Engineering Output / Metric | Dynamic Optimization Benefit |
 | :--- | :--- | :--- | :--- | :--- |
-| **1. Nanoscale Slurry & ITZ** | Colloidal DLVO stability & Interfacial Weakness | `itz.rs` & `colloidal.rs` | Local ITZ mechanical stiffness reduction (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;E_{\text{ITZ}}"><img alt="E_{\text{ITZ}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;E_{\text{ITZ}}" style="vertical-align:middle"></picture>), slurry separation distance (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;D"><img alt="D" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;D" style="vertical-align:middle"></picture>). | Direct optimization of aggregate surface bonding to prevent microstructural shearing. |
-| **2. Creep & Drying Shrinkage** | Kelvin-Voigt Creep Chains & Capillary Tension | `creep.rs` & `shrinkage.rs` | Long-term viscoelastic compliance (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;J(t,%20t_0)"><img alt="J(t, t_0)" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;J(t,%20t_0)" style="vertical-align:middle"></picture>), capillary drying shrinkage strain (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\varepsilon_{\text{sh}}"><img alt="\varepsilon_{\text{sh}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\varepsilon_{\text{sh}}" style="vertical-align:middle"></picture>). | Automated design of columns and slabs that balance long-term deflections with environmental humidity. |
+| **1. Nanoscale Slurry & ITZ** | Colloidal DLVO stability & Interfacial Weakness | `itz.rs` & `colloidal.rs` | Local ITZ mechanical stiffness reduction (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="E_{\text{ITZ}}" src=" style="vertical-align:middle"></picture>), slurry separation distance (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="D" src=" style="vertical-align:middle"></picture>). | Direct optimization of aggregate surface bonding to prevent microstructural shearing. |
+| **2. Creep & Drying Shrinkage** | Kelvin-Voigt Creep Chains & Capillary Tension | `creep.rs` & `shrinkage.rs` | Long-term viscoelastic compliance (<picture><source media="(prefers-color-scheme: dark)" srcset=")"><img alt="J(t, t_0)" src=")" style="vertical-align:middle"></picture>), capillary drying shrinkage strain (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\varepsilon_{\text{sh}}" src=" style="vertical-align:middle"></picture>). | Automated design of columns and slabs that balance long-term deflections with environmental humidity. |
 | **3. Self-heal potential** | Empirical autogenous healing **potential** \([0,1]\) from hydration / RH / nano dosage — **not** a calcite mass ODE | `self_heal.rs` | Scalar field `healing_potential ∈ [0,1]` | Ranking relative crack-closure *potential* under moisture; see §5.3 retraction |
-| **4. 3D Concrete Printability** | Thixotropic Buildability & Column Buckling | `printability.rs` | Printed layers thixotropic yield buildup (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\tau_y"><img alt="\tau_y" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\tau_y" style="vertical-align:middle"></picture>), spatial elastic buckling loads (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;P_{\text{buckling}}"><img alt="P_{\text{buckling}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;P_{\text{buckling}}" style="vertical-align:middle"></picture>). | Gradient-corrected robotic deposition print speeds to prevent structural layer collapse. |
-| **5. Carbonation & LCA GWP** | Dynamic CO2 Carbonation Capture & Footprint | `sustainability.rs` | Global Warming Potential (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;GWP"><img alt="GWP" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;GWP" style="vertical-align:middle"></picture>), long-term carbonation sequestration depth (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;d_c"><img alt="d_c" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;d_c" style="vertical-align:middle"></picture>). | Pareto-optima balancing structural strength with carbon footprint. |
+| **4. 3D Concrete Printability** | Thixotropic Buildability & Column Buckling | `printability.rs` | Printed layers thixotropic yield buildup (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\tau_y" src=" style="vertical-align:middle"></picture>), spatial elastic buckling loads (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="P_{\text{buckling}}" src=" style="vertical-align:middle"></picture>). | Gradient-corrected robotic deposition print speeds to prevent structural layer collapse. |
+| **5. Carbonation & LCA GWP** | Dynamic CO2 Carbonation Capture & Footprint | `sustainability.rs` | Global Warming Potential (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="GWP" src=" style="vertical-align:middle"></picture>), long-term carbonation sequestration depth (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="d_c" src=" style="vertical-align:middle"></picture>). | Pareto-optima balancing structural strength with carbon footprint. |
 
 <a id="51-nanoscale-dlvo-slurry--itz-boundary-mechanics"></a>
 <details>
 <summary><b>1. Nanoscale DLVO Slurry & ITZ Boundary Mechanics</b> (Early Mixing & Weakness Layers)</summary>
 
 *   **Physical Concept:** Before concrete hardens, it is a colloidal slurry. The forces between tiny cement/silica particles govern how the wet mix flows. As it hardens, the boundary layers surrounding aggregates—the Interfacial Transition Zones (ITZ)—form a zone of mechanical weakness because of their higher porosity.
-*   **Exact Tensor Formulation:** DLVO forces calculate early-stage slurry colloidal stability by summing electrostatic repulsion (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;V_R"><img alt="V_R" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;V_R" style="vertical-align:middle"></picture>) and van der Waals attraction (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;V_A"><img alt="V_A" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;V_A" style="vertical-align:middle"></picture>). The ITZ layer scales local mechanical stiffness via local porosity:
+*   **Exact Tensor Formulation:** DLVO forces calculate early-stage slurry colloidal stability by summing electrostatic repulsion (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="V_R" src=" style="vertical-align:middle"></picture>) and van der Waals attraction (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="V_A" src=" style="vertical-align:middle"></picture>). The ITZ layer scales local mechanical stiffness via local porosity:
     
-    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;V_{\text{total}}%20=%20V_R%20+%20V_A%20=%202\pi\epsilon%20R%20\psi_0^2%20\ln\left(1%20+%20e^{-\kappa%20D}\right)%20-%20\frac{A_H%20R}{12%20D}"><img alt="V_{\text{total}} = V_R + V_A = 2\pi\epsilon R \psi_0^2 \ln\left(1 + e^{-\kappa D…" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;V_{\text{total}}%20=%20V_R%20+%20V_A%20=%202\pi\epsilon%20R%20\psi_0^2%20\ln\left(1%20+%20e^{-\kappa%20D}\right)%20-%20\frac{A_H%20R}{12%20D}" style="max-width:100%;height:auto"></picture></p>
+    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")%20-%20\frac{A_H%20R}{12%20D}"><img alt="V_{\text{total}} = V_R + V_A = 2\pi\epsilon R \psi_0^2 \ln\left(1 + e^{-\kappa D…" src=")%20-%20\frac{A_H%20R}{12%20D}" style="max-width:100%;height:auto"></picture></p>
     
-    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;E_{\text{ITZ}}%20=%20E_{\text{paste}}%20\cdot%20\left(%20\frac{1%20-%20\phi_{\text{ITZ}}}{1%20-%20\phi_{\text{paste}}}%20\right)^m"><img alt="E_{\text{ITZ}} = E_{\text{paste}} \cdot \left( \frac{1 - \phi_{\text{ITZ}}}{1 - …" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;E_{\text{ITZ}}%20=%20E_{\text{paste}}%20\cdot%20\left(%20\frac{1%20-%20\phi_{\text{ITZ}}}{1%20-%20\phi_{\text{paste}}}%20\right)^m" style="max-width:100%;height:auto"></picture></p>
+    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")^m"><img alt="E_{\text{ITZ}} = E_{\text{paste}} \cdot \left( \frac{1 - \phi_{\text{ITZ}}}{1 - …" src=")^m" style="max-width:100%;height:auto"></picture></p>
     
-    Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\psi_0"><img alt="\psi_0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\psi_0" style="vertical-align:middle"></picture> is surface potential, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\kappa^{-1}"><img alt="\kappa^{-1}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\kappa^{-1}" style="vertical-align:middle"></picture> is Debye length, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;A_H"><img alt="A_H" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;A_H" style="vertical-align:middle"></picture> is the Hamaker constant, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;D"><img alt="D" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;D" style="vertical-align:middle"></picture> is separation distance, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\phi"><img alt="\phi" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\phi" style="vertical-align:middle"></picture> is the localized volume fraction of porosity.
+    Where <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\psi_0" src=" style="vertical-align:middle"></picture> is surface potential, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\kappa^{-1}" src=" style="vertical-align:middle"></picture> is Debye length, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="A_H" src=" style="vertical-align:middle"></picture> is the Hamaker constant, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="D" src=" style="vertical-align:middle"></picture> is separation distance, and <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\phi" src=" style="vertical-align:middle"></picture> is the localized volume fraction of porosity.
 </details>
 
 <a id="52-long-term-creep-compliance--capillary-shrinkage"></a>
@@ -377,13 +377,13 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) holds **25** co
 <summary><b>2. Long-term Creep Compliance & Capillary Shrinkage</b> (Viscoelastic Aging & Drying)</summary>
 
 *   **Physical Concept:** Concrete undergoes two key long-term deformations. First, **creep**—the gradual, permanent bending under a sustained mechanical load over months. Second, **drying shrinkage**—the shrinking and cracking that occurs as moisture evaporates from microscopic capillary pores.
-*   **Exact Tensor Formulation:** Models creep compliance <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;J(t,%20t_0)"><img alt="J(t, t_0)" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;J(t,%20t_0)" style="vertical-align:middle"></picture> via a Kelvin-Voigt chain and shrinkage strain <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\epsilon_{\text{sh}}"><img alt="\epsilon_{\text{sh}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\epsilon_{\text{sh}}" style="vertical-align:middle"></picture> via Kelvin-Laplace capillary tension:
+*   **Exact Tensor Formulation:** Models creep compliance <picture><source media="(prefers-color-scheme: dark)" srcset=")"><img alt="J(t, t_0)" src=")" style="vertical-align:middle"></picture> via a Kelvin-Voigt chain and shrinkage strain <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\epsilon_{\text{sh}}" src=" style="vertical-align:middle"></picture> via Kelvin-Laplace capillary tension:
     
-    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;J(t,%20t_0)%20=%20\frac{1}{E_0}%20+%20\sum_{i=1}^k%20\frac{1}{E_i}%20\left(%201%20-%20e^{-(t-t_0)/\tau_i}%20\right)"><img alt="J(t, t_0) = \frac{1}{E_0} + \sum_{i=1}^k \frac{1}{E_i} \left( 1 - e^{-(t-t_0)/\t…" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;J(t,%20t_0)%20=%20\frac{1}{E_0}%20+%20\sum_{i=1}^k%20\frac{1}{E_i}%20\left(%201%20-%20e^{-(t-t_0)/\tau_i}%20\right)" style="max-width:100%;height:auto"></picture></p>
+    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")%20=%20\frac{1}{E_0}%20+%20\sum_{i=1}^k%20\frac{1}{E_i}%20\left(%201%20-%20e^{-(t-t_0)/\tau_i}%20\right)"><img alt="J(t, t_0) = \frac{1}{E_0} + \sum_{i=1}^k \frac{1}{E_i} \left( 1 - e^{-(t-t_0)/\t…" src=")%20=%20\frac{1}{E_0}%20+%20\sum_{i=1}^k%20\frac{1}{E_i}%20\left(%201%20-%20e^{-(t-t_0)/\tau_i}%20\right)" style="max-width:100%;height:auto"></picture></p>
     
-    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;\epsilon_{\text{sh}}(t)%20=%20\epsilon_{\infty}%20\cdot%20\left(%201%20-%20\text{RH}(t)^n%20\right)%20\quad%20\text{where}%20\quad%20P_{\text{cap}}%20=%20-%20\frac{\rho%20R%20T}{M}%20\ln(\text{RH})"><img alt="\epsilon_{\text{sh}}(t) = \epsilon_{\infty} \cdot \left( 1 - \text{RH}(t)^n \rig…" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;\epsilon_{\text{sh}}(t)%20=%20\epsilon_{\infty}%20\cdot%20\left(%201%20-%20\text{RH}(t)^n%20\right)%20\quad%20\text{where}%20\quad%20P_{\text{cap}}%20=%20-%20\frac{\rho%20R%20T}{M}%20\ln(\text{RH})" style="max-width:100%;height:auto"></picture></p>
+    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")%20=%20\epsilon_{\infty}%20\cdot%20\left(%201%20-%20\text{RH}(t)^n%20\right)%20\quad%20\text{where}%20\quad%20P_{\text{cap}}%20=%20-%20\frac{\rho%20R%20T}{M}%20\ln(\text{RH})"><img alt="\epsilon_{\text{sh}}(t) = \epsilon_{\infty} \cdot \left( 1 - \text{RH}(t)^n \rig…" src=")%20=%20\epsilon_{\infty}%20\cdot%20\left(%201%20-%20\text{RH}(t)^n%20\right)%20\quad%20\text{where}%20\quad%20P_{\text{cap}}%20=%20-%20\frac{\rho%20R%20T}{M}%20\ln(\text{RH})" style="max-width:100%;height:auto"></picture></p>
     
-    Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;t_0"><img alt="t_0" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;t_0" style="vertical-align:middle"></picture> is the age at loading, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\tau_i"><img alt="\tau_i" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\tau_i" style="vertical-align:middle"></picture> are relaxation times, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;P_{\text{cap}}"><img alt="P_{\text{cap}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;P_{\text{cap}}" style="vertical-align:middle"></picture> is internal capillary tension.
+    Where <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="t_0" src=" style="vertical-align:middle"></picture> is the age at loading, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\tau_i" src=" style="vertical-align:middle"></picture> are relaxation times, and <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="P_{\text{cap}}" src=" style="vertical-align:middle"></picture> is internal capillary tension.
 </details>
 
 <a id="53-calcite-crystallization--self-healing-kinetics"></a>
@@ -392,7 +392,7 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) holds **25** co
 
 **Retraction (A1 / honesty):** Prior README text described a calcite precipitation ODE \(dm_{\text{calcite}}/dt\). **That equation is not what the code implements.** Open [`self_heal.rs`](crates/umst-concrete-cartridge/src/physics/self_heal.rs).
 
-*   **What the code does** (`transform_healing_observable_state`, lines 20–52; public API `SelfHealEngine::compute_healing_potential`, lines 75–85):
+*   **Behaviour of the code** (`transform_healing_observable_state`, lines 20–52; public API `SelfHealEngine::compute_healing_potential`, lines 75–85):
     1. `unhydrated_fraction = clamp_min(1 − degree_hydration, 0)`
     2. `moisture_factor` from internal RH (boost when RH ≳ 0.8, clamped to \([0,1]\))
     3. `nano_boost = 1 + 0.5 · nano_dosage`
@@ -406,11 +406,11 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) holds **25** co
 <summary><b>4. Robotic Printability & Buckling Limit Envelopes</b> (3D Concrete Printing)</summary>
 
 *   **Physical Concept:** In 3D concrete printing, the printed layers must support their own weight without collapsing or buckling. The material must gain yield strength quickly enough to support the growing weight of the subsequent layers.
-*   **Exact Tensor Formulation:** Evaluates printed layer buildability by tracking yield stress development (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\tau_y"><img alt="\tau_y" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\tau_y" style="vertical-align:middle"></picture>) over print age (<picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;t"><img alt="t" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;t" style="vertical-align:middle"></picture>) and calculating structural elastic buckling limits:
+*   **Exact Tensor Formulation:** Evaluates printed layer buildability by tracking yield stress development (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\tau_y" src=" style="vertical-align:middle"></picture>) over print age (<picture><source media="(prefers-color-scheme: dark)" srcset=" alt="t" src=" style="vertical-align:middle"></picture>) and calculating structural elastic buckling limits:
     
-    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;\tau_y(t)%20=%20\tau_{y0}%20+%20R_{\text{th}}%20\cdot%20t%20\quad%20\Longrightarrow%20\quad%20P_{\text{buckling}}%20=%20\frac{\pi^2%20E(t)%20I}{4%20H(t)^2}"><img alt="\tau_y(t) = \tau_{y0} + R_{\text{th}} \cdot t \quad \Longrightarrow \quad P_{\te…" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;\tau_y(t)%20=%20\tau_{y0}%20+%20R_{\text{th}}%20\cdot%20t%20\quad%20\Longrightarrow%20\quad%20P_{\text{buckling}}%20=%20\frac{\pi^2%20E(t)%20I}{4%20H(t)^2}" style="max-width:100%;height:auto"></picture></p>
+    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")%20=%20\tau_{y0}%20+%20R_{\text{th}}%20\cdot%20t%20\quad%20\Longrightarrow%20\quad%20P_{\text{buckling}}%20=%20\frac{\pi^2%20E(t)%20I}{4%20H(t)^2}"><img alt="\tau_y(t) = \tau_{y0} + R_{\text{th}} \cdot t \quad \Longrightarrow \quad P_{\te…" src=")%20=%20\tau_{y0}%20+%20R_{\text{th}}%20\cdot%20t%20\quad%20\Longrightarrow%20\quad%20P_{\text{buckling}}%20=%20\frac{\pi^2%20E(t)%20I}{4%20H(t)^2}" style="max-width:100%;height:auto"></picture></p>
     
-    Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;\tau_{y0}"><img alt="\tau_{y0}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;\tau_{y0}" style="vertical-align:middle"></picture> is initial yield stress, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;R_{\text{th}}"><img alt="R_{\text{th}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;R_{\text{th}}" style="vertical-align:middle"></picture> is the structuration rate (thixotropic buildup), <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;E(t)"><img alt="E(t)" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;E(t)" style="vertical-align:middle"></picture> is aging Young’s modulus, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;I"><img alt="I" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;I" style="vertical-align:middle"></picture> is moment of inertia, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;H(t)"><img alt="H(t)" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;H(t)" style="vertical-align:middle"></picture> is total height of the printed element.
+    Where <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="\tau_{y0}" src=" style="vertical-align:middle"></picture> is initial yield stress, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="R_{\text{th}}" src=" style="vertical-align:middle"></picture> is the structuration rate (thixotropic buildup), <picture><source media="(prefers-color-scheme: dark)" srcset=")"><img alt="E(t)" src=")" style="vertical-align:middle"></picture> is aging Young’s modulus, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="I" src=" style="vertical-align:middle"></picture> is moment of inertia, and <picture><source media="(prefers-color-scheme: dark)" srcset=")"><img alt="H(t)" src=")" style="vertical-align:middle"></picture> is total height of the printed element.
 </details>
 
 <a id="55-global-warming-potential-gwp--dynamic-sequestration"></a>
@@ -420,9 +420,9 @@ The core library (`crates/umst-concrete-cartridge/src/physics/`) holds **25** co
 *   **Physical Concept:** Concrete production emits carbon dioxide, but over its lifetime, the exposed surfaces naturally absorb carbon dioxide back from the atmosphere. The engine tracks both the initial footprint and the long-term carbon capture rate.
 *   **Exact Tensor Formulation:** Calculates dynamic net carbon footprint by subtracting dynamic carbonation (sequestration) from the initial GWP:
     
-    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_black%5Ccolor%7Bwhite%7D&space;\text{Net%20CO}_2(t)%20=%20\sum%20w_i%20g_i%20-%20\int_A%20\int_0^x%20C_{\text{seq}}%20\cdot%20\text{erfc}\left(\frac{x}{2\sqrt{D_{\text{CO}_2}%20t}}\right)%20\,%20dx%20\,%20dA"><img alt="\text{Net CO}_2(t) = \sum w_i g_i - \int_A \int_0^x C_{\text{seq}} \cdot \text{e…" src="https://latex.codecogs.com/svg.image?%5Cdpi%7B150%7D%5Cbg_white&space;\text{Net%20CO}_2(t)%20=%20\sum%20w_i%20g_i%20-%20\int_A%20\int_0^x%20C_{\text{seq}}%20\cdot%20\text{erfc}\left(\frac{x}{2\sqrt{D_{\text{CO}_2}%20t}}\right)%20\,%20dx%20\,%20dA" style="max-width:100%;height:auto"></picture></p>
+    <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=")%20=%20\sum%20w_i%20g_i%20-%20\int_A%20\int_0^x%20C_{\text{seq}}%20\cdot%20\text{erfc}\left(\frac{x}{2\sqrt{D_{\text{CO}_2}%20t}}\right)%20\,%20dx%20\,%20dA"><img alt="\text{Net CO}_2(t) = \sum w_i g_i - \int_A \int_0^x C_{\text{seq}} \cdot \text{e…" src=")%20=%20\sum%20w_i%20g_i%20-%20\int_A%20\int_0^x%20C_{\text{seq}}%20\cdot%20\text{erfc}\left(\frac{x}{2\sqrt{D_{\text{CO}_2}%20t}}\right)%20\,%20dx%20\,%20dA" style="max-width:100%;height:auto"></picture></p>
     
-    Where <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;w_i"><img alt="w_i" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;w_i" style="vertical-align:middle"></picture> is constituent mass, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;g_i"><img alt="g_i" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;g_i" style="vertical-align:middle"></picture> is unit carbon intensity, <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;D_{\text{CO}_2}"><img alt="D_{\text{CO}_2}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;D_{\text{CO}_2}" style="vertical-align:middle"></picture> is carbon dioxide diffusion coefficient in carbonated concrete, and <picture><source media="(prefers-color-scheme: dark)" srcset="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bwhite%7D&space;C_{\text{seq}}"><img alt="C_{\text{seq}}" src="https://latex.codecogs.com/svg.image?%5Cinline%20%5Cdpi%7B110%7D%5Ccolor%7Bblack%7D&space;C_{\text{seq}}" style="vertical-align:middle"></picture> is maximum carbon capture capacity per unit volume.
+    Where <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="w_i" src=" style="vertical-align:middle"></picture> is constituent mass, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="g_i" src=" style="vertical-align:middle"></picture> is unit carbon intensity, <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="D_{\text{CO}_2}" src=" style="vertical-align:middle"></picture> is carbon dioxide diffusion coefficient in carbonated concrete, and <picture><source media="(prefers-color-scheme: dark)" srcset=" alt="C_{\text{seq}}" src=" style="vertical-align:middle"></picture> is maximum carbon capture capacity per unit volume.
 </details>
 
 ---
@@ -538,7 +538,7 @@ Declared in `Cargo.toml`; these mirror the manifold to ensure the physics boards
 
 **Manifold dependency pin (what this repo owns):** workspace `Cargo.toml` pins `umst-manifold` / `umst-runtime-arena` at git **`rev = "35bf75f5b99835265c40d343bd6a88bb629dff7f"`** ([`Cargo.toml`](Cargo.toml) lines 28–29). Bump that rev when promoting a manifold release — do **not** treat a prose catalog module count in this README as authoritative.
 
-**Formal catalog module counts (SSOT — link, do not hardcode here):** read [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json) (`module_count`, `upstream_catalog_digest_hex`, `fiber_pins`). Cartridge-local formal notes: [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md). Sibling checkout used while writing this README happened to show `module_count: 129` @ manifold `38d9780` — **re-open the lock file**; numbers drift by design.
+**Formal catalog module counts (SSOT — link, do not hardcode here):** read ``umst-manifold/artifacts/catalog.lock.json`` (`module_count`, `upstream_catalog_digest_hex`, `fiber_pins`). Cartridge-local formal notes: [`docs/PROOF-STATUS.md`](docs/PROOF-STATUS.md). Sibling checkout used while writing this README happened to show `module_count: 129` @ manifold `38d9780` — **re-open the lock file**; numbers drift by design.
 
 **Stack verify (monorepo):** from a manifold checkout, `bash scripts/verify_umst_stack.sh`. Cartridge parity: `cargo test -p umst-concrete-cartridge --features manifest-bridge` (matches GHA).
 
@@ -557,9 +557,9 @@ For rigorous validation reports, exact mathematical constitutive equations, and 
 
 **Manifold formal stack (shared — do not duplicate counts here):** the composed Lean export lock lives only on the manifold:
 
-- **SSOT file:** [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json)
+- **SSOT file:** ``umst-manifold/artifacts/catalog.lock.json``
 - **Fields:** `module_count`, `upstream_catalog_digest_hex`, `fiber_pins[].{repo,module_count,catalog_digest_hex}`
-- **Traceability:** [`umst-manifold/docs/claims-vs-proofs.md`](https://github.com/tytolabs/umst-manifold/blob/main/docs/claims-vs-proofs.md); verify via `bash scripts/verify_umst_stack.sh` on a manifold checkout ([`VERIFY.md`](https://github.com/tytolabs/umst-manifold/blob/main/docs/VERIFY.md))
+- **Traceability:** ``umst-manifold/docs/claims-vs-proofs.md``; verify via `bash scripts/verify_umst_stack.sh` on a manifold checkout (``VERIFY.md``)
 - **Deep cartridge ↔ gate mapping:** [`docs/FORMAL_GROUNDING_AUDIT.md`](docs/FORMAL_GROUNDING_AUDIT.md)
 
 **Concrete-owned numeric claim:** **25** constitutive modules under `crates/umst-concrete-cartridge/src/physics/` excluding `mod.rs` (listing pasted in §5).
@@ -639,15 +639,14 @@ Do **not** call these as if they exist on the MCP surface today:
 
 ## 10. Honesty and limits
 
-**Honest is / isn't.** **Is:** in-repo solvers, mix audits, notebooks, MCP tools, and mechanics/topology **surrogates**. **Isn't:** a completed Studio TYTO on-robot, on-extruder physical print campaign. Closed-loop extrusion remains an **integration target**.
+**Honest is / isn't.** **Is:** in-repo solvers, mix audits, notebooks, MCP tools, and mechanics/topology **surrogates**. **Isn't:** a completed  on-robot, on-extruder physical print campaign. Closed-loop extrusion remains an **integration target**.
 
 ### Honesty ledger (one status pointer)
 
 Do **not** blend “CI green”, “theorem count”, and “printed on a robot” into one progress %. Status of shipped vs partial vs USER-gated agent work lives in [`docs/AGENT_MCP.md`](docs/AGENT_MCP.md) (agent/MCP SSOT) and the workspace evidence index linked from [§ Release & agent path](#release--agent-path). Strengthen every disclaimer below; soften none.
 ## 11. Conclusion: Inferences & Forward Path
 
-### What this cartridge demonstrates
-
+### This repository demonstrates
 *What is actually shown in this repository today is **software**: solvers, audits, notebooks, MCP tools, and structural surrogates. A **physical** print with extruder feedback closed through this cartridge is **not** a completed TYTO deliverable here — the bullets below are what the stack **is designed to demonstrate** once integrated with hardware and plant workflows.*
 
 - **A physics-bound concrete cartridge on commodity hardware.** Hydration kinetics, Vinet bulk modulus, viscoplastic yield, and carbon accounting resolve through the **UMST carrier**, gated by the thermodynamic admissibility gate. Predictions are anchored in calibrated constitutive structure rather than unconstrained ML extrapolation.
@@ -655,8 +654,7 @@ Do **not** blend “CI green”, “theorem count”, and “printed on a robot�
 - **Print-time gating we aim to validate on hardware.** The CBF can reject trajectories that violate localized yield or buckling limits in simulation — **we do not claim** slump failures have already been turned from catastrophic to graceful on a production extruder using only this repo.
 - **Surfaces match audience.** CLI, Python (`umst_concrete_cartridge`), stdio MCP, FFI — one cartridge, four entry points (not four invented “engines”).
 
-### What surprised us
-
+### Inferences from the work
 - **Published mixes are not automatically admissible.** Treating public dataset rows as inputs to the gate (rather than as ground truth) shifts design priorities once `admissible` is hard-required. *(Prior README claimed “18,146 mixes / 82.4% violate” — **retracted**: not re-derived from a cited script + paste in this pass. Reintroduce only with a command and output.)*
 - **The cement literature often fits curves that wear physics’ clothes.** Anchoring to Vinet / DFT / measured profiles is how OOD binders stay inside an envelope.
 - **Print-time gating should beat upstream simulation — in principle.** That story is carried by **models and timing arguments**, not by a TYTO-led physical print log in this repo.
@@ -673,10 +671,10 @@ Shared gate spine — **matter** (manifold + this cartridge) · **knowing** · *
 
 | Repository | Spine role | Relation to this cartridge |
 |:---|:---|:---|
-| [`umst-manifold`](https://github.com/tytolabs/umst-manifold) | **Matter** substrate | DEC carrier, UMST lanes, thermodynamic gate, and catalog lock SSOT. This cartridge implements `IScienceCartridge` on that substrate; batch arena paths and solver status live there. |
-| [`umst-formal-double-slit`](https://github.com/tytolabs/umst-formal-double-slit) | **Knowing** | Observation-cost / PMIC / Englert proof tree. Agents may cite theorem names as **cold witnesses**; this repo does not host those proofs and does not run `lake build` on the MCP path. |
-| [`umst-formal`](https://github.com/tytolabs/umst-formal) | **Acting** | Economic / Kleisli admissibility vocabulary. Compatible with `ConcreteAdmissible`-style gate stories; surrogate “detector” modules are predicates ([`SAFETY-LIMITS.md`](https://github.com/tytolabs/umst-formal/blob/main/SAFETY-LIMITS.md)) — not MCP tools. |
-| [`umst-ucrs`](https://github.com/tytolabs/umst-ucrs) | **Time** | Stamp / witness library. Optional `ucrs-provenance` on memory accept; `UMST_UCRS_WITNESS` for Tier-2 vs synthetic. UCRS is **not** the MCP host — stdio tools stay in `umst-mcp` here. |
+| ``umst-manifold`` | **Matter** substrate | DEC carrier, UMST lanes, thermodynamic gate, and catalog lock SSOT. This cartridge implements `IScienceCartridge` on that substrate; batch arena paths and solver status live there. |
+| ``umst-formal-double-slit`` | **Knowing** | Observation-cost / PMIC / Englert proof tree. Agents may cite theorem names as **cold witnesses**; this repo does not host those proofs and does not run `lake build` on the MCP path. |
+| ``umst-formal`` | **Acting** | Economic / Kleisli admissibility vocabulary. Compatible with `ConcreteAdmissible`-style gate stories; surrogate “detector” modules are predicates (``SAFETY-LIMITS.md``) — not MCP tools. |
+| ``umst-ucrs`` | **Time** | Stamp / witness library. Optional `ucrs-provenance` on memory accept; `UMST_UCRS_WITNESS` for Tier-2 vs synthetic. UCRS is **not** the MCP host — stdio tools stay in `umst-mcp` here. |
 
 ---
 
@@ -705,9 +703,9 @@ Shared gate spine — **matter** (manifold + this cartridge) · **knowing** · *
 
 ## Authors
 
-**Santhosh Shyamsundar** — Studio TYTO · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)
+**Santhosh Shyamsundar** —  · [santhoshshyamsundar@tyto.studio](mailto:santhoshshyamsundar@tyto.studio)
 
-**Santosh Prabhu Shenbagamoorthy** — Studio TYTO · [santosh@tyto.studio](mailto:santosh@tyto.studio)
+**Santosh Prabhu Shenbagamoorthy** —  · [santosh@tyto.studio](mailto:santosh@tyto.studio)
 
 ---
 
@@ -721,7 +719,7 @@ The Cursor code editor, Composer, Claude Code, and Antigravity supported seamles
 
 The large-language models assisted with exploration, drafting, and code scaffolding — never with the validity of constitutive closures or gate regression tests. `cargo test`, calibration datasets, and [`docs/Validation.md`](docs/Validation.md) are authoritative for cartridge behavior.
 
-We gratefully acknowledge the open-source ecosystems that make this work possible: **Rust**; **Python** / **PyO3**; **Jupyter** notebooks; and the **MCP** agent surface. DEC conservation and shared proof anchors live on [`umst-manifold`](https://github.com/tytolabs/umst-manifold).
+We gratefully acknowledge the open-source ecosystems that make this work possible: **Rust**; **Python** / **PyO3**; **Jupyter** notebooks; and the **MCP** agent surface. DEC conservation and shared proof anchors live on ``umst-manifold``.
 
 ---
 
@@ -729,7 +727,7 @@ We gratefully acknowledge the open-source ecosystems that make this work possibl
 
 Corrections welcome via PR. Run `cargo test` / agent examples when touching MCP or gate paths. Security-sensitive reports: open a private GitHub security advisory or contact maintainers via [`CITATION.cff`](CITATION.cff) author emails. See also [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Catalog digest SSOT: [`umst-manifold/artifacts/catalog.lock.json`](https://github.com/tytolabs/umst-manifold/blob/main/artifacts/catalog.lock.json) — re-open the lock file; do not hardcode rival SHAs in this README.
+Catalog digest SSOT: ``umst-manifold/artifacts/catalog.lock.json`` — re-open the lock file; do not hardcode rival SHAs in this README.
 
 ---
 
@@ -741,4 +739,20 @@ Bibliographic metadata is maintained in [`CITATION.cff`](CITATION.cff).
 
 ## License
 
-Released under the [MIT License](LICENSE). © 2026 Studio TYTO.
+Released under the [MIT License](LICENSE). © 2026 .
+
+<!-- AUTO-LATTICE:BEGIN -->
+## Lattice position
+
+**Role.** `tytolabs/umst-concrete-cartridge` — cartridge · layer=cartridge
+
+**One-line role:** `cartridge` on layer `cartridge` (status `wip`, stability `evolving`, semver `0.1.0`).
+
+**Composes into:** `self`
+
+**Composed into by:** —(none declared)
+
+**Limits.** Lattice placement only — not a solver, MCP endpoint, or discovery service.
+
+_Generated by `scripts/gen-lattice-readme.sh` from `umst.toml`. Do not hand-edit inside markers._
+<!-- AUTO-LATTICE:END -->
