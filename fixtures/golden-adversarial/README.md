@@ -60,7 +60,7 @@ cargo test -p umst-concrete-cartridge --features agent-layer \
   --test research_memory --test golden_gate_check --test phase8_adversarial
 ```
 
-| Test binary | What it asserts |
+| Test binary | Asserts |
 |-------------|-----------------|
 | `golden_gate_check` | `expected_verdicts.json` → `gate_check_mix` admissible/verdict parity for both JSON fixtures |
 | `phase8_adversarial` | Full `gate_check_mix_result` wire: `gate_reject.v1` on reject, `explain` remediation/fields, memory `query_page` edge cases |
@@ -80,12 +80,12 @@ cargo test -p umst-concrete-cartridge --features agent-layer \
   --test golden_gate_check --test phase8_adversarial
 ```
 
-**What works without extra setup**
+**Works without extra setup**
 
 - `golden_gate_check` and `phase8_adversarial` — pure Rust integration tests; no database file, Docker, or MCP process required.
 - `expected_verdicts.json` is the SSOT for admissible/verdict expectations in `golden_gate_check`; `phase8_adversarial` additionally checks reject explain payloads (`regime_violations`, `remediation`, `fields`) and pagination filters.
 
-**What needs more than `cargo test`**
+**Needs more than `cargo test`**
 
 - `agent-layer` feature (enabled above) pulls `manifest-bridge`, SQLite, and pinned `umst-manifold` — first compile may take several minutes.
 - MCP smoke / `examples/agent/*` — need `cargo build` of `umst-mcp` and stdio JSON-RPC wiring; see [`docs/AGENT_MCP.md`](../../docs/AGENT_MCP.md).
