@@ -10,12 +10,12 @@ SPDX-License-Identifier: MIT
 > _This ecosystem is dedicated to the thousands of unnamed contributors who wrote formal proofs, maintained open-source compilers, and built mathematical libraries for years — often without evidence that any of it would be used beyond pure theory. They chose to make their work free, because they understood that knowledge about physical reality cannot be owned. Whatever this system achieves is yours._
 
 <!-- readme:status -->
-[![CI — Rust](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
-[![CI — Notebook](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml)
-[![CI — Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
-[![CI — Agent layer](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml)
-[![Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+[![Figure 1: CI Rust](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/rust.yml)
+[![Figure 2: CI Notebook](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/notebook.yml)
+[![Figure 3: CI Docker](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/docker.yml)
+[![Figure 4: CI Agent layer](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml/badge.svg)](https://github.com/tytolabs/umst-concrete-cartridge/actions/workflows/agent-layer.yml)
+[![Figure 5: Agent MCP](https://img.shields.io/badge/docs-Agent_MCP-C9A27A)](docs/AGENT_MCP.md)
+[![Figure 6: License MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 <!-- /readme:status -->
 
 ### Cartridge in plain words
@@ -27,7 +27,7 @@ The library exposes gated constitutive prediction, mix audit, **print-stability 
 
 **Scope:** Mix audits, notebooks, MCP tools, mechanics/topology surrogates (e.g. the RC beam animation below), and constitutive kernels are exercised in-repo. **Closed-loop extrusion on a real printer remains an integration target**, not a completed end-to-end claim here. Formal-catalog module counts are **not** owned by this README — see [§8](#8-deep-documentation-and-citations) (link the manifold lock; do not hardcode a drifting number).
 
-![RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)](./docs/assets/beam_strut_and_tie.gif)
+![Figure 7: RC beam strut-and-tie topology animation (32×8 grid, ρ field + compliance strip)](./docs/assets/beam_strut_and_tie.gif)
 
 *Surrogate animation only — not a physical print or lab measurement. 32×8 RC beam: adjoint compliance topology optimization with a fixed bottom rebar row; yellow density (ρ) from the mechanics façade.*
 **Role.** A Rust workspace that implements cementitious constitutive closures and mounts them on the manifold through typed ports (`IScienceCartridge`, …), exposing CLI / Python / stdio-MCP surfaces for mix prediction, audit, and gate-validated agent workflows.
@@ -113,8 +113,8 @@ Sibling links only — no paper-series arc naming in this README. Already-public
   - [9.6 Proposed (not yet built)](#96-proposed-not-yet-built)
   - [9.7 Principles](#97-principles)
 - [§11 Conclusion: Inferences & Forward Path](#11-conclusion-inferences--forward-path)
-  - [What this cartridge demonstrates](#what-this-cartridge-demonstrates)
-  - [What surprised us](#what-surprised-us)
+  - [This repository demonstrates](#this-repository-demonstrates)
+  - [Inferences from the work](#inferences-from-the-work)
 - [Related repositories](#related-repositories)
 - [Authors](#authors)
 - [Acknowledgments](#acknowledgments)
@@ -163,8 +163,8 @@ Each `##` / `###` heading on GitHub gets a stable **anchor** (the fragment after
 #96-proposed-not-yet-built
 #97-principles
 #11-conclusion-inferences--forward-path
-#what-this-cartridge-demonstrates
-#what-surprised-us
+#this-repository-demonstrates
+#inferences-from-the-work
 #related-repositories
 #authors
 #acknowledgments
@@ -591,7 +591,7 @@ Enforced at:
 
 | Layer | File:line | Behavior |
 |:---|:---|:---|
-| Result shape | [`contribution.rs:161–167`](crates/umst-concrete-cartridge/src/research/contribution.rs) | `GateCheckResult { gate_summary, gate_reject?, explain? }` |
+| Result shape | [`contribution.rs:161–167`](crates/umst-concrete-cartridge/src/research/contribution.rs) | `GateCheckResult { gate_summary, optional gate_reject, optional explain }` |
 | Explain / remediation | `contribution.rs:147–154`, `200–210` | `GateCheckExplain.remediation` from violation codes |
 | MCP `isError` | [`main.rs:502–508`](crates/umst-mcp/src/main.rs) | `is_error = !result.gate_summary.admissible` on `umst_gate_check` |
 | Agent prompts | [`agent_layer.rs:495–515`](crates/umst-mcp/src/agent_layer.rs) | Gate-before-contribute; read `explain.remediation` on REJECT |
