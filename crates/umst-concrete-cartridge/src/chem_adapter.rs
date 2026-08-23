@@ -24,8 +24,11 @@ use umst_chem::{
     powers_gel_volume as chem_powers_gel_volume, set_time_activation_energy_j_per_mol,
     ultimate_degree_of_hydration as chem_ultimate_degree_of_hydration,
     vinet_pressure_gpa as chem_vinet_pressure_gpa,
-    voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa, CementChemService, ChemistryService,
+    voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa,
+    chem_l0_02_service_honest, CementChemService, ChemistryService, ElementId,
+    formation_energy_tabulated_zero_theater_honest, formation_energy_tabulated_zero_witness,
     HydrationKineticsBundle, PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState,
+    FORMATION_ENERGY_TABULATED_ZERO_MARKER,
     BOLTZMANN_J_PER_K, CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE,
     CSH_VOLUME_FACTOR, DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER,
     DLVO_COLLAPSE_SEPARATION_NM, DLVO_REFERENCE_TEMPERATURE_K, GAS_CONSTANT_J_PER_MOL_K,
@@ -307,7 +310,7 @@ pub const fn cement_reaction_extent_kinetics_spec() -> ReactionExtentKineticsSpe
 
 /// Cartridge phase tag for DFT-backed Vinet table rows — inventory A-01…A-15.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum ClinkerPhaseTag {
+pub(crate) enum ClinkerPhaseTag {
     AliteM3,
     BeliteBetaC2s,
     Portlandite,
@@ -329,7 +332,7 @@ impl ClinkerPhaseTag {
 
 /// Reference Vinet parameter triple at the f32 cartridge boundary — inventory A-01…A-15.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct VinetPhaseParamsF32 {
+pub(crate) struct VinetPhaseParamsF32 {
     pub v0_per_fu_ang3: f32,
     pub bulk_modulus_gpa: f32,
     pub k0_prime: f32,
@@ -657,7 +660,7 @@ pub const fn chemo_diffusion_weight_scale_f32() -> f32 {
 
 /// Inventory row lift disposition for cluster H boundary witnesses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NanoChemLiftDisposition {
+pub(crate) enum NanoChemLiftDisposition {
     /// `umst-chem` SSOT wired through adapter delegate.
     LiftedToChemSsot,
     /// Reserved — `umst-chem` SSOT ready but cartridge delegate not yet wired.
@@ -669,14 +672,14 @@ pub enum NanoChemLiftDisposition {
 
 /// Witness row for `chem_adapter_parity` cartridge_retains manifest.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct NanoInventoryRowWitness {
+pub(crate) struct NanoInventoryRowWitness {
     /// Inventory row id (e.g. `H-01`).
     pub row_id: &'static str,
     /// Lift disposition — documents boundary without routing to `umst-chem`.
     pub disposition: NanoChemLiftDisposition,
 }
 
-/// Full cluster H inventory manifest — parity harness `cartridge_retains` / deferred pins.
+/// Full cluster H inventory manifest — parity census `cartridge_retains` / deferred pins.
 pub const CLUSTER_H_INVENTORY_MANIFEST: &[NanoInventoryRowWitness] = &[
     NanoInventoryRowWitness {
         row_id: "H-01",
@@ -712,7 +715,7 @@ pub const CLUSTER_H_INVENTORY_MANIFEST: &[NanoInventoryRowWitness] = &[
 ///
 /// Name retains "Deferred" for semver-stable API; all three pins are lifted @ TODO-M3-003.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct NanoDeferredKineticsPins {
+pub(crate) struct NanoDeferredKineticsPins {
     /// Reference SSA for nano-silica (m²/g) — inventory H-01.
     pub ssa_ref_m2_per_g: f32,
     /// Pozzolanic activity exponent α — inventory H-02.
@@ -723,7 +726,7 @@ pub struct NanoDeferredKineticsPins {
 
 /// Cartridge-retained nano calibration (H-04 … H-06) — empirical envelope pins.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct NanoCartridgeCalibration {
+pub(crate) struct NanoCartridgeCalibration {
     /// Optimal dosage (% cement) for strength efficiency curve — inventory H-04.
     pub optimal_dosage_pct: f32,
     /// Strength enhancement scale γ — inventory H-05.
@@ -801,5 +804,192 @@ pub fn nano_inventory_disposition(row_id: &str) -> Option<NanoChemLiftDispositio
         "H-01" | "H-02" | "H-03" | "H-07" => Some(NanoChemLiftDisposition::LiftedToChemSsot),
         "H-04" | "H-05" | "H-06" => Some(NanoChemLiftDisposition::CartridgeRetains),
         _ => None,
+    }
+}
+
+// ── CHEM-ECO-CONCRETE-ADAPTER — north-star occupancy + formation-zero honesty ──
+//
+// Fiber: acting occupancy — L1 [`SpeciesId`] + Powers/Jennings; C-S-H is **Ore** of L0 Ca,Si,O,H
+// (north-star X20), not L0 [`ElementId`]. Formation-energy tabulated-zero stays honest theater
+// until measured G(T,P,x) / Thermo_n lands — not physics GREEN.
+
+/// Cell id — concrete cartridge `chem_adapter` honesty slice.
+pub const CHEM_ECO_CONCRETE_ADAPTER_CELL_ID: &str = "CHEM-ECO-CONCRETE-ADAPTER";
+
+/// Machine-readable honesty marker.
+pub const CONCRETE_CHEM_ADAPTER_HONESTY_MARKER: &str = "concrete_chem_adapter_honesty_v1";
+
+/// Non-claim fence — occupancy Ore not ElementId; formation-zero theater until G lands.
+pub const CHEM_ECO_CONCRETE_ADAPTER_NON_CLAIM: &str =
+    "CHEM-ECO-CONCRETE-ADAPTER concrete chem_adapter Unwired — L1 SpeciesId occupancy; C-S-H Ore of L0 Ca,Si,O,H not ElementId; formation-zero tabulated theater not measured G(T,P,x); Thermo_n G not landed; not physics GREEN; not production_wired";
+
+/// North-star cross-classifier row — L1 occupancy ⊗ L0 Ca,Si,O,H.
+pub const NORTH_STAR_X20_ROW_ID: &str = "X20";
+
+/// Crosswalk authorities (include_str — design SSOT cites; not lib.rs wire on this cell).
+const CEMENT_SSOT_SRC: &str = include_str!("../../../../umst-chem/src/cement.rs");
+const CEMENT_ORE_XROW_SRC: &str = include_str!("../../../../umst-chem/src/x_rows/cement_ore.rs");
+const THERMO_G_SRC: &str = include_str!("../../../../umst-chem/src/thermo_g.rs");
+
+/// L1 occupancy presentation for cementitious closures — never L0 [`ElementId`] identity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ConcreteOccupancyPresentation {
+    /// L1 [`SpeciesId`] cartridge occupancy (Powers/Jennings/Vinet rows).
+    L1SpeciesIdOccupancy,
+    /// North-star X20: C-S-H as monoidal Ore of L0 Ca,Si,O,H — not ElementId.
+    CshOreOfL0Constituents,
+    /// Refused smuggle — cement/C-S-H as L0 ElementId identity.
+    ElementIdIdentity,
+}
+
+/// Whether adapter phase tags resolve through L1 [`SpeciesId`] only (never [`ElementId`]).
+#[must_use]
+pub const fn clinker_phase_tag_is_l1_species_id(tag: ClinkerPhaseTag) -> bool {
+    matches!(
+        tag.species_id(),
+        SpeciesId::AliteM3
+            | SpeciesId::BeliteBetaC2s
+            | SpeciesId::Portlandite
+            | SpeciesId::Ettringite
+            | SpeciesId::CshTobermorite14nm
+    )
+}
+
+/// Type-layer witness: [`SpeciesId`] C-S-H tag ≠ any L0 [`ElementId`] row (debug repr).
+#[must_use]
+pub fn species_id_ne_element_id_for_csh() -> bool {
+    let csh = SpeciesId::CshTobermorite14nm;
+    let csh_repr = format!("{csh:?}");
+    [
+        ElementId::Ca,
+        ElementId::Si,
+        ElementId::O,
+        ElementId::H,
+    ]
+        .iter()
+        .all(|element| format!("{element:?}") != csh_repr)
+}
+
+/// Occupancy is Ore semantics (X20) + L1 SpeciesId — not ElementId identity smuggle.
+#[must_use]
+pub fn concrete_occupancy_ore_not_element_id() -> bool {
+    clinker_phase_tag_is_l1_species_id(ClinkerPhaseTag::Csh14nmTobermorite)
+        && species_id_ne_element_id_for_csh()
+        && CEMENT_SSOT_SRC.contains("CEMENT_IS_L0_IDENTITY: bool = false")
+        && CEMENT_ORE_XROW_SRC.contains("not ElementId")
+        && CEMENT_ORE_XROW_SRC.contains("monoidal Ore")
+}
+
+/// Formation-zero tabulated theater honest — not measured G; Thermo_n G not landed.
+#[must_use]
+pub fn concrete_formation_zero_theater_honest_until_g_lands() -> bool {
+    formation_energy_tabulated_zero_theater_honest()
+        && chem_l0_02_service_honest()
+        && formation_energy_tabulated_zero_witness().honest()
+        && THERMO_G_SRC.contains("formation_zero_not_thermo_n")
+        && THERMO_G_SRC.contains("measured G")
+}
+
+/// Honest physics GREEN refusal for concrete chem_adapter slice.
+#[must_use]
+pub const fn concrete_chem_adapter_physics_green() -> bool {
+    false
+}
+
+/// Honest production-wired refusal for concrete chem_adapter slice.
+#[must_use]
+pub const fn concrete_chem_adapter_production_wired() -> bool {
+    false
+}
+
+/// Honesty fence snapshot for CHEM-ECO-CONCRETE-ADAPTER.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct ConcreteChemAdapterHonestyFence {
+    /// Cell id.
+    pub cell_id: &'static str,
+    /// Marker string.
+    pub marker: &'static str,
+    /// Physics GREEN — always false at this slice.
+    pub physics_green: bool,
+    /// Production wire — always false at this slice.
+    pub production_wired: bool,
+    /// C-S-H occupancy Ore (X20) + L1 SpeciesId — not ElementId smuggle.
+    pub occupancy_ore_not_element_id: bool,
+    /// Tabulated-zero theater honest; measured G / Thermo_n unwired.
+    pub formation_zero_theater_honest_until_g_lands: bool,
+    /// CHEM-L0-04 `ChemistryService` formation theater pins hold.
+    pub chem_service_contract_honest: bool,
+}
+
+/// Collect concrete `chem_adapter` honesty fence.
+#[must_use]
+pub fn concrete_chem_adapter_honesty_fence() -> ConcreteChemAdapterHonestyFence {
+    ConcreteChemAdapterHonestyFence {
+        cell_id: CHEM_ECO_CONCRETE_ADAPTER_CELL_ID,
+        marker: CONCRETE_CHEM_ADAPTER_HONESTY_MARKER,
+        physics_green: concrete_chem_adapter_physics_green(),
+        production_wired: concrete_chem_adapter_production_wired(),
+        occupancy_ore_not_element_id: concrete_occupancy_ore_not_element_id(),
+        formation_zero_theater_honest_until_g_lands: concrete_formation_zero_theater_honest_until_g_lands(),
+        chem_service_contract_honest: formation_energy_tabulated_zero_theater_honest()
+            && chem_l0_02_service_honest(),
+    }
+}
+
+/// Whether concrete `chem_adapter` north-star honesty holds without inventing GREEN.
+#[must_use]
+pub fn concrete_chem_adapter_honest() -> bool {
+    let fence = concrete_chem_adapter_honesty_fence();
+    fence.occupancy_ore_not_element_id
+        && fence.formation_zero_theater_honest_until_g_lands
+        && fence.chem_service_contract_honest
+        && !fence.physics_green
+        && !fence.production_wired
+}
+
+#[cfg(test)]
+mod concrete_chem_adapter_honesty_tests {
+    use super::*;
+    use umst_chem::CementChemService;
+
+    #[test]
+    fn concrete_chem_adapter_honesty_fence_no_green() {
+        let fence = concrete_chem_adapter_honesty_fence();
+        assert_eq!(fence.cell_id, CHEM_ECO_CONCRETE_ADAPTER_CELL_ID);
+        assert_eq!(fence.marker, CONCRETE_CHEM_ADAPTER_HONESTY_MARKER);
+        assert!(!fence.physics_green);
+        assert!(!fence.production_wired);
+        assert!(fence.occupancy_ore_not_element_id);
+        assert!(fence.formation_zero_theater_honest_until_g_lands);
+        assert!(fence.chem_service_contract_honest);
+        assert!(concrete_chem_adapter_honest());
+        assert!(CHEM_ECO_CONCRETE_ADAPTER_NON_CLAIM.contains("not ElementId"));
+        assert!(CHEM_ECO_CONCRETE_ADAPTER_NON_CLAIM.contains("not physics GREEN"));
+    }
+
+    #[test]
+    fn concrete_occupancy_ore_not_element_id_witness() {
+        assert!(concrete_occupancy_ore_not_element_id());
+        assert!(clinker_phase_tag_is_l1_species_id(ClinkerPhaseTag::Csh14nmTobermorite));
+        assert!(species_id_ne_element_id_for_csh());
+        assert_eq!(NORTH_STAR_X20_ROW_ID, "X20");
+        assert_ne!(
+            ConcreteOccupancyPresentation::CshOreOfL0Constituents,
+            ConcreteOccupancyPresentation::ElementIdIdentity
+        );
+    }
+
+    #[test]
+    fn concrete_formation_zero_theater_not_measured_g() {
+        assert!(concrete_formation_zero_theater_honest_until_g_lands());
+        assert!(formation_energy_tabulated_zero_theater_honest());
+        assert_eq!(
+            FORMATION_ENERGY_TABULATED_ZERO_MARKER,
+            "chem_formation_energy_tabulated_zero_theater_v1"
+        );
+        let chem = CementChemService::new();
+        let e = chem
+            .formation_energy(SpeciesId::CshTobermorite14nm, &ThermoState::ambient());
+        assert!(e.is_tabulated_zero_theater());
     }
 }
