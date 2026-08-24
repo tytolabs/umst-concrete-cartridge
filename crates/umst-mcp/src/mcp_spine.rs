@@ -131,7 +131,7 @@ pub const fn gateway_native_wrap_closed() -> bool {
 
 /// One row on the honest MCP product spine census.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct McpSpineFacet {
+pub(crate) struct McpSpineFacet {
     /// Facet id.
     pub id: &'static str,
     /// Whether production wiring is claimed.
@@ -142,7 +142,7 @@ pub struct McpSpineFacet {
 
 /// Honest product spine probe — Partial max; no closure invent.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct McpProductSpineProbe {
+pub(crate) struct McpProductSpineProbe {
     /// Canonical nested crate path.
     pub canonical_crate_path: &'static str,
     /// Top-level spine locator doc path.
@@ -236,7 +236,7 @@ pub fn mcp_product_spine_honest(probe: &McpProductSpineProbe) -> bool {
 
 /// FLEET-COMPOSER-D D23 typed probe — folds spine census + receipt authority chain.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct McpProductSpineD23Probe {
+pub(crate) struct McpProductSpineD23Probe {
     /// FLEET-COMPOSER-D23 card id.
     pub composer_d23_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -302,7 +302,7 @@ pub fn mcp_product_spine_d23_honest(probe: &McpProductSpineD23Probe) -> bool {
 
 /// FLEET-COMPOSER-D D25 typed probe — Round-2 umst-mcp gaps absorb backfill.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct McpProductSpineD25Probe {
+pub(crate) struct McpProductSpineD25Probe {
     /// FLEET-COMPOSER-D25 card id.
     pub composer_d25_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -406,7 +406,7 @@ pub fn mcp_product_spine_f68_authority_chain_honest() -> bool {
 
 /// FLEET-COMPOSER-F F68 typed probe — product spine + gateway schema receipt fold.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct McpProductSpineF68Probe {
+pub(crate) struct McpProductSpineF68Probe {
     /// FLEET-COMPOSER-F68 card id.
     pub composer_f68_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -462,7 +462,7 @@ pub fn mcp_product_spine_f68_honest(probe: &McpProductSpineF68Probe) -> bool {
 
 /// FLEET-COMPOSER-H H08 typed probe — folds F68 schema spine + native stdio smoke battery.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct McpProductSpineH08Probe {
+pub(crate) struct McpProductSpineH08Probe {
     /// FLEET-COMPOSER-H08 card id.
     pub composer_h08_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -528,7 +528,7 @@ pub fn mcp_product_spine_h08_honest(probe: &McpProductSpineH08Probe) -> bool {
 
 /// FLEET-COMPOSER-X X05 typed probe — folds H08 stdio smoke + WEB-009 retick boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct McpProductSpineX05Probe {
+pub(crate) struct McpProductSpineX05Probe {
     /// FLEET-COMPOSER-X05 card id.
     pub composer_x05_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -576,6 +576,193 @@ pub fn mcp_product_spine_x05_probe() -> McpProductSpineX05Probe {
         web_009_stdio_production_wired: crate::web_009::web_009_stdio_production_wired(),
         authority_chain_honest: mcp_product_spine_x05_authority_chain_honest(),
     }
+}
+
+/// CONCRETE-MCP-URGE-SESSION cell id — MCP session history cites §16.7 Kleisli verbs.
+pub const CONCRETE_MCP_URGE_SESSION_CELL_ID: &str = "CONCRETE-MCP-URGE-SESSION";
+
+/// Non-claim fence — session history spine cites Urge Kleisli verbs; no umst-urge dep.
+pub const MCP_URGE_SESSION_NON_CLAIM: &str =
+    "CONCRETE-MCP-URGE-SESSION MCP session history cites §16.7 Kleisli verbs status/merge/recover as history spine — no second axiom; history recovery composes imported Excitement.select not local argmin; no umst-urge Cargo dep; not physics GREEN; not production_wired";
+
+/// Machine-readable session history spine marker.
+pub const MCP_URGE_SESSION_MARKER: &str = "mcp_urge_session_spine_v1";
+
+/// Honest physics GREEN posture (must stay false).
+pub const MCP_URGE_SESSION_PHYSICS_GREEN: bool = false;
+
+/// Production wiring stays open (verb-table cite only).
+pub const MCP_URGE_SESSION_PRODUCTION_WIRED: bool = false;
+
+/// Blueprint §16.7 operator verb — `status` (Frugal MI observation).
+pub const OPERATOR_VERB_STATUS: &str = "status";
+
+/// Blueprint §16.7 operator verb — `merge` (gate_check_before_sync + MergeSafe).
+pub const OPERATOR_VERB_MERGE: &str = "merge";
+
+/// Blueprint §16.7 operator verb — `recover` (Excitement argmin + MergeSafe).
+pub const OPERATOR_VERB_RECOVER: &str = "recover";
+
+/// Formal cite — history recovery composes `UMST.Excitement.select` (no second axiom).
+pub const EXCITEMENT_SELECT_AUTHORITY: &str = "umst-meta/crates/umst-meta/src/excitement.rs::select_excitement";
+
+/// Urge Kleisli verbs cited as MCP session history spine (§16.7 subset — not fetch/push/clone).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum McpSessionHistoryVerb {
+    /// `status` — Frugal MI observation; replica-class entity check.
+    Status,
+    /// `merge` — `gate_check_before_sync` inbound + MergeSafe predicate.
+    Merge,
+    /// `recover` — Excitement argmin + MergeSafe + typed recovery morphism.
+    Recover,
+}
+
+impl McpSessionHistoryVerb {
+    /// Stable §16.7 verb tag.
+    #[must_use]
+    pub const fn tag(self) -> &'static str {
+        match self {
+            Self::Status => OPERATOR_VERB_STATUS,
+            Self::Merge => OPERATOR_VERB_MERGE,
+            Self::Recover => OPERATOR_VERB_RECOVER,
+        }
+    }
+
+    /// Kleisli gate column for this verb (blueprint §16.7).
+    #[must_use]
+    pub const fn kleisli_gate(self) -> &'static str {
+        match self {
+            Self::Status => "frugal_mi_observation",
+            Self::Merge => "gate_check_before_sync_inbound",
+            Self::Recover => "excitement_argmin_over_successors",
+        }
+    }
+}
+
+/// MCP tool surface bound to a session history spine verb.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct McpSessionToolBinding {
+    /// MCP tool name on `tools/list`.
+    pub tool_name: &'static str,
+    /// Urge Kleisli verb cited as history spine for this tool.
+    pub history_verb: McpSessionHistoryVerb,
+    /// Whether the tool mutates session state.
+    pub session_mutating: bool,
+}
+
+/// Session history spine — three §16.7 verbs, no second axiom.
+#[must_use]
+pub const fn mcp_session_history_spine() -> [McpSessionHistoryVerb; 3] {
+    [
+        McpSessionHistoryVerb::Status,
+        McpSessionHistoryVerb::Merge,
+        McpSessionHistoryVerb::Recover,
+    ]
+}
+
+/// MCP tool → session history verb bindings (constitutional agent-layer surface).
+#[must_use]
+pub fn mcp_session_tool_bindings() -> [McpSessionToolBinding; 8] {
+    [
+        McpSessionToolBinding {
+            tool_name: "umst_contribute_status",
+            history_verb: McpSessionHistoryVerb::Status,
+            session_mutating: false,
+        },
+        McpSessionToolBinding {
+            tool_name: "umst_memory_query",
+            history_verb: McpSessionHistoryVerb::Status,
+            session_mutating: false,
+        },
+        McpSessionToolBinding {
+            tool_name: "umst_mi_estimate",
+            history_verb: McpSessionHistoryVerb::Status,
+            session_mutating: false,
+        },
+        McpSessionToolBinding {
+            tool_name: "umst_gate_check",
+            history_verb: McpSessionHistoryVerb::Merge,
+            session_mutating: false,
+        },
+        McpSessionToolBinding {
+            tool_name: "umst_contribute",
+            history_verb: McpSessionHistoryVerb::Merge,
+            session_mutating: true,
+        },
+        McpSessionToolBinding {
+            tool_name: "umst_transition_propose",
+            history_verb: McpSessionHistoryVerb::Merge,
+            session_mutating: true,
+        },
+        McpSessionToolBinding {
+            tool_name: "umst_contribute_status",
+            history_verb: McpSessionHistoryVerb::Recover,
+            session_mutating: false,
+        },
+        McpSessionToolBinding {
+            tool_name: "umst_memory_query",
+            history_verb: McpSessionHistoryVerb::Recover,
+            session_mutating: false,
+        },
+    ]
+}
+
+/// Whether session history recovery cites imported Excitement select — not a local argmin fork.
+#[must_use]
+pub const fn mcp_session_history_no_second_axiom() -> bool {
+    !EXCITEMENT_SELECT_AUTHORITY.is_empty()
+        && EXCITEMENT_SELECT_AUTHORITY.len() > "select_excitement".len()
+}
+
+/// Typed probe — MCP session history spine cites Urge Kleisli verbs (Unwired).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct McpUrgeSessionSpineProbe {
+    /// Cell id pin.
+    pub cell_id: &'static str,
+    /// Model slug for receipt attribution.
+    pub composer_model_slug: &'static str,
+    /// Session history spine verb count (status + merge + recover).
+    pub spine_verb_count: usize,
+    /// MCP tool binding count.
+    pub tool_binding_count: usize,
+    /// No second axiom — Excitement select authority cited.
+    pub no_second_axiom: bool,
+    /// Honest physics GREEN (must be false).
+    pub physics_green: bool,
+    /// Production wired (must be false).
+    pub production_wired: bool,
+}
+
+/// Build the CONCRETE-MCP-URGE-SESSION spine probe.
+#[must_use]
+pub fn mcp_urge_session_spine_probe() -> McpUrgeSessionSpineProbe {
+    McpUrgeSessionSpineProbe {
+        cell_id: CONCRETE_MCP_URGE_SESSION_CELL_ID,
+        composer_model_slug: COMPOSER_MODEL_SLUG,
+        spine_verb_count: mcp_session_history_spine().len(),
+        tool_binding_count: mcp_session_tool_bindings().len(),
+        no_second_axiom: mcp_session_history_no_second_axiom(),
+        physics_green: MCP_URGE_SESSION_PHYSICS_GREEN,
+        production_wired: MCP_URGE_SESSION_PRODUCTION_WIRED,
+    }
+}
+
+/// Session history spine honesty gate — partial max; no umst-urge dep invent.
+#[must_use]
+pub fn mcp_urge_session_spine_honest(probe: &McpUrgeSessionSpineProbe) -> bool {
+    probe.cell_id == CONCRETE_MCP_URGE_SESSION_CELL_ID
+        && probe.composer_model_slug == COMPOSER_MODEL_SLUG
+        && probe.spine_verb_count == 3
+        && probe.tool_binding_count == 8
+        && probe.no_second_axiom
+        && mcp_session_history_no_second_axiom()
+        && !probe.physics_green
+        && !probe.production_wired
+        && !MCP_URGE_SESSION_PHYSICS_GREEN
+        && !MCP_URGE_SESSION_PRODUCTION_WIRED
+        && mcp_session_history_spine()[0] == McpSessionHistoryVerb::Status
+        && mcp_session_history_spine()[1] == McpSessionHistoryVerb::Merge
+        && mcp_session_history_spine()[2] == McpSessionHistoryVerb::Recover
 }
 
 /// X05 honesty gate — partial max; stdio GREEN without production flip invent.
@@ -714,6 +901,33 @@ mod tests {
         assert_eq!(crate::web_009::COMPOSER_X05_WAVE_SLOT, "X05");
         assert!(crate::web_009::COMPOSER_X05_RECEIPT_PATH.contains("COMPOSER_X05_0734"));
         assert!(mcp_product_spine_x05_authority_chain_honest());
+    }
+
+    #[test]
+    fn concrete_mcp_urge_session_spine_metadata() {
+        assert_eq!(CONCRETE_MCP_URGE_SESSION_CELL_ID, "CONCRETE-MCP-URGE-SESSION");
+        assert_eq!(MCP_URGE_SESSION_MARKER, "mcp_urge_session_spine_v1");
+        assert!(!MCP_URGE_SESSION_PHYSICS_GREEN);
+        assert!(!MCP_URGE_SESSION_PRODUCTION_WIRED);
+        assert!(mcp_session_history_no_second_axiom());
+        let spine = mcp_session_history_spine();
+        assert_eq!(spine[0].tag(), "status");
+        assert_eq!(spine[1].tag(), "merge");
+        assert_eq!(spine[2].tag(), "recover");
+    }
+
+    #[test]
+    fn concrete_mcp_urge_session_spine_honest_partial() {
+        let probe = mcp_urge_session_spine_probe();
+        assert_eq!(probe.spine_verb_count, 3);
+        assert_eq!(probe.tool_binding_count, 8);
+        assert!(probe.no_second_axiom);
+        assert!(!probe.physics_green);
+        assert!(!probe.production_wired);
+        assert!(mcp_urge_session_spine_honest(&probe));
+        let bindings = mcp_session_tool_bindings();
+        assert!(bindings.iter().any(|b| b.tool_name == "umst_contribute" && b.history_verb == McpSessionHistoryVerb::Merge));
+        assert!(bindings.iter().any(|b| b.tool_name == "umst_memory_query" && b.history_verb == McpSessionHistoryVerb::Recover));
     }
 
     #[test]
