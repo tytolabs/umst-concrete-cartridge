@@ -4,6 +4,9 @@
 
 #![allow(clippy::doc_lazy_continuation)]
 
+/// §R₂ consumer polymer trio concrete cartridge batch wired pin.
+pub const CONSUMER_POLYMER_TRIO_CONCRETE_BATCH_WIRED: bool = true;
+
 pub mod api_consumer;
 /// S2 B1 composed delegate — always linked post-S5 path-dep bridge.
 pub mod api_consumer_compose;

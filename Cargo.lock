@@ -4257,6 +4257,7 @@ name = "umst-cartridge-active"
 version = "0.1.0"
 dependencies = [
  "umst-cartridge-api",
+ "umst-chem",
 ]
 
 [[package]]
@@ -4291,6 +4292,7 @@ dependencies = [
  "serde",
  "serde_json",
  "umst-cartridge-api",
+ "umst-chem",
 ]
 
 [[package]]
@@ -4307,6 +4309,7 @@ name = "umst-cartridge-fieldcoupled"
 version = "0.1.0"
 dependencies = [
  "umst-cartridge-api",
+ "umst-chem",
 ]
 
 [[package]]
@@ -4314,6 +4317,7 @@ name = "umst-cartridge-fluids"
 version = "0.1.0"
 dependencies = [
  "umst-cartridge-api",
+ "umst-chem",
 ]
 
 [[package]]
@@ -4321,6 +4325,7 @@ name = "umst-cartridge-polymer"
 version = "0.1.0"
 dependencies = [
  "umst-cartridge-api",
+ "umst-chem",
 ]
 
 [[package]]
@@ -4328,6 +4333,7 @@ name = "umst-cartridge-poromechanics"
 version = "0.1.0"
 dependencies = [
  "umst-cartridge-api",
+ "umst-chem",
 ]
 
 [[package]]
@@ -4343,6 +4349,7 @@ name = "umst-cartridge-solid-inelastic"
 version = "0.1.0"
 dependencies = [
  "umst-cartridge-api",
+ "umst-chem",
 ]
 
 [[package]]
