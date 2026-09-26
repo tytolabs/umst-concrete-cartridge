@@ -80,6 +80,20 @@ fn metrics(profile_id: &str, csv_name: &str) -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
+fn name_audit_synthetic_rehearsal_not_validation() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../calibration/v3_pipeline_rehearsal/placeholder_points.json");
+    let body = match std::fs::read_to_string(&path) {
+        Ok(s) => s,
+        Err(_) => String::new(),
+    };
+    assert!(body.contains("SYNTHETIC"));
+    assert!(body.contains("pipeline_rehearsal_synthetic"));
+    assert!(body.contains("Do not cite as validation data"));
+    assert!(body.contains("strength_mpa_placeholder"));
+}
+
+#[test]
 fn headline_contract_profiles_vs_csv() -> Result<(), Box<dyn Error>> {
     let mut pairs = BTreeMap::new();
     pairs.insert("uci_d1", "dataset_d1.csv");
