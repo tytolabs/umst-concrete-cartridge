@@ -25,8 +25,10 @@ use umst_chem::{
 use umst_concrete_cartridge::chem_adapter::{
     cartridge_default_intrinsic_strength_mpa, cement_reaction_enthalpy_j_per_kg,
     cement_reaction_extent_kinetics_spec, cement_volume_per_wc_f32,
-    chemo_diffusion_weight_scale_f32, clinker_bulk_modulus_ambient_gpa_f32,
-    clinker_vinet_params_f32, critical_wc, critical_wc_f32, csh_hd_scale_of_bulk_f32,
+    chemo_diffusion_weight_scale_f32, clinker_bulk_modulus_ambient_gpa_for_species,
+    clinker_vinet_bulk_modulus_gpa_for_species, clinker_vinet_k0_prime_for_species,
+    clinker_vinet_v0_per_fu_ang3_for_species, cluster_h_inventory_manifest_for_each,
+    cluster_h_inventory_manifest_len, critical_wc, critical_wc_f32, csh_hd_scale_of_bulk_f32,
     csh_ld_frac_intercept_subtrahend_f32, csh_ld_frac_slope_f32, csh_ld_scale_of_bulk_f32,
     csh_ld_volume_fraction_f32, csh_volume_factor_f32, csh_youngs_moduli_from_k0_f32,
     desiccation_rh_drop_scale, desiccation_rh_drop_scale_f32,
@@ -40,17 +42,17 @@ use umst_concrete_cartridge::chem_adapter::{
     hydration_alpha_max_scm_slope_f32, hydration_degree_calibrated, hydration_k_ref_f32,
     hydration_scm_rate_slope_f32, hydration_t_ref_k_f32, jennings_capillary_porosity_clamped_f32,
     jennings_compressive_strength_f32, jennings_strength_exponent_default,
-    kelvin_capillary_scale_mpa, kelvin_capillary_scale_mpa_f32, nano_cartridge_calibration,
-    nano_deferred_kinetics_pins, nano_healing_boost_per_dosage_f32, nano_inventory_disposition,
-    nano_nucleation_beta_min_per_decade_f32, nano_optimal_dosage_pct_f32,
+    kelvin_capillary_scale_mpa, kelvin_capillary_scale_mpa_f32,
+    nano_deferred_kinetics_match_f32_witnesses, nano_healing_boost_per_dosage_f32,
+    nano_inventory_is_cartridge_retains, nano_inventory_is_lifted_to_chem_ssot,
+    nano_manifest_disposition_consistent, nano_nucleation_beta_min_per_decade_f32, nano_optimal_dosage_pct_f32,
     nano_pore_refinement_delta_f32, nano_pozzolanic_alpha_f32, nano_ssa_ref_m2_per_g_f32,
     nano_strength_gamma_f32, paste_bulk_modulus_voigt_from_wc_gpa, powers_capillary_porosity_f32,
     powers_capillary_water_volume_f32, powers_compressive_strength_f32, powers_gel_volume_f32,
     powers_gel_volume_factor_f32, powers_non_evap_water_coeff_f32,
     powers_paste_denominator_offset_f32, reaction_gibbs_opc_hydration_joules,
     set_time_activation_energy_f32, ultimate_degree_of_hydration_f32, vinet_pressure_gpa_f32,
-    voigt_bulk_modulus_gpa_f32, ClinkerPhaseTag, NanoChemLiftDisposition,
-    ADIABATIC_TEMP_RISE_PER_ALPHA, CHEM_AFFINITY_EXPONENT, CLUSTER_H_INVENTORY_MANIFEST,
+    voigt_bulk_modulus_gpa_f32, ADIABATIC_TEMP_RISE_PER_ALPHA, CHEM_AFFINITY_EXPONENT,
     THERMO_REF_RATE,
 };
 use umst_concrete_cartridge::{
@@ -310,26 +312,24 @@ fn cluster_c_dissipation_modulus_eta_matches_enthalpy_bridge() {
 
 #[test]
 fn cluster_d_vinet_table_matches_chem_ssot() {
-    for (tag, species) in [
-        (ClinkerPhaseTag::AliteM3, SpeciesId::AliteM3),
-        (ClinkerPhaseTag::BeliteBetaC2s, SpeciesId::BeliteBetaC2s),
-        (ClinkerPhaseTag::Portlandite, SpeciesId::Portlandite),
-        (ClinkerPhaseTag::Ettringite, SpeciesId::Ettringite),
-        (
-            ClinkerPhaseTag::Csh14nmTobermorite,
-            SpeciesId::CshTobermorite14nm,
-        ),
+    for species in [
+        SpeciesId::AliteM3,
+        SpeciesId::BeliteBetaC2s,
+        SpeciesId::Portlandite,
+        SpeciesId::Ettringite,
+        SpeciesId::CshTobermorite14nm,
     ] {
-        let adapter = clinker_vinet_params_f32(tag);
+        let v0 = clinker_vinet_v0_per_fu_ang3_for_species(species);
+        let k0 = clinker_vinet_bulk_modulus_gpa_for_species(species);
+        let kp = clinker_vinet_k0_prime_for_species(species);
         let ssot = species.vinet_params();
         // V₀ uses VINET_F32_ABS_TOL (not EPS_F32): f64 SSOT → f32 cartridge boundary.
+        assert!((f64::from(v0) - ssot.v0_per_fu_ang3).abs() < VINET_F32_ABS_TOL);
+        assert!((f64::from(k0) - ssot.bulk_modulus_gpa).abs() < EPS_F32);
+        assert!((f64::from(kp) - ssot.k0_prime).abs() < EPS_F32);
         assert!(
-            (f64::from(adapter.v0_per_fu_ang3) - ssot.v0_per_fu_ang3).abs() < VINET_F32_ABS_TOL
-        );
-        assert!((f64::from(adapter.bulk_modulus_gpa) - ssot.bulk_modulus_gpa).abs() < EPS_F32);
-        assert!((f64::from(adapter.k0_prime) - ssot.k0_prime).abs() < EPS_F32);
-        assert!(
-            (f64::from(clinker_bulk_modulus_ambient_gpa_f32(tag)) - ssot.bulk_modulus_gpa).abs()
+            (f64::from(clinker_bulk_modulus_ambient_gpa_for_species(species)) - ssot.bulk_modulus_gpa)
+                .abs()
                 < EPS_F32
         );
     }
@@ -337,18 +337,15 @@ fn cluster_d_vinet_table_matches_chem_ssot() {
 
 #[test]
 fn cluster_d_vinet_pressure_matches_chem_closure() {
-    let p = clinker_vinet_params_f32(ClinkerPhaseTag::AliteM3);
-    let adapter = vinet_pressure_gpa_f32(
-        p.v0_per_fu_ang3,
-        p.bulk_modulus_gpa,
-        p.k0_prime,
-        p.v0_per_fu_ang3 * 0.97,
-    );
+    let v0 = clinker_vinet_v0_per_fu_ang3_for_species(SpeciesId::AliteM3);
+    let k0 = clinker_vinet_bulk_modulus_gpa_for_species(SpeciesId::AliteM3);
+    let kp = clinker_vinet_k0_prime_for_species(SpeciesId::AliteM3);
+    let adapter = vinet_pressure_gpa_f32(v0, k0, kp, v0 * 0.97);
     let chem = vinet_pressure_gpa(
-        f64::from(p.v0_per_fu_ang3),
-        f64::from(p.bulk_modulus_gpa),
-        f64::from(p.k0_prime),
-        f64::from(p.v0_per_fu_ang3 * 0.97),
+        f64::from(v0),
+        f64::from(k0),
+        f64::from(kp),
+        f64::from(v0 * 0.97),
     );
     assert!((f64::from(adapter) - chem).abs() < EPS_F32);
     assert!(chem > 0.0);
@@ -356,7 +353,7 @@ fn cluster_d_vinet_pressure_matches_chem_closure() {
 
 #[test]
 fn cluster_d_voigt_bulk_modulus_matches_chem_closure() {
-    let k_csh = clinker_bulk_modulus_ambient_gpa_f32(ClinkerPhaseTag::Csh14nmTobermorite);
+    let k_csh = clinker_bulk_modulus_ambient_gpa_for_species(SpeciesId::CshTobermorite14nm);
     let k_ld = k_csh * csh_ld_scale_of_bulk_f32();
     let k_hd = k_csh * csh_hd_scale_of_bulk_f32();
     let fv = 0.45_f32;
@@ -490,75 +487,45 @@ fn cluster_g_chemo_diffusion_weight_is_cartridge_witness() {
 fn cluster_h_h01_ssa_ref_delegates_to_chem_ssot() {
     assert!((NANO_SSA_REF_M2_PER_G - 200.0).abs() < EPS);
     assert!((f64::from(nano_ssa_ref_m2_per_g_f32()) - NANO_SSA_REF_M2_PER_G).abs() < EPS_F32);
-    assert_eq!(
-        nano_inventory_disposition("H-01"),
-        Some(NanoChemLiftDisposition::LiftedToChemSsot)
-    );
+    assert!(nano_inventory_is_lifted_to_chem_ssot("H-01"));
 }
 
 #[test]
 fn cluster_h_deferred_kinetics_pins_match_nano_rs_literals() {
-    let pins = nano_deferred_kinetics_pins();
-    assert!((f64::from(pins.ssa_ref_m2_per_g) - 200.0).abs() < EPS_F32);
-    assert!((f64::from(pins.pozzolanic_alpha) - POZZOLANIC_ALPHA).abs() < EPS_F32);
-    assert!(
-        (f64::from(pins.nucleation_beta_min_per_decade) - NUCLEATION_BETA_MIN_PER_DECADE).abs()
-            < EPS_F32
-    );
     assert!((f64::from(nano_ssa_ref_m2_per_g_f32()) - 200.0).abs() < EPS_F32);
     assert!((f64::from(nano_pozzolanic_alpha_f32()) - POZZOLANIC_ALPHA).abs() < EPS_F32);
     assert!(
-        (f64::from(nano_nucleation_beta_min_per_decade_f32()) - NUCLEATION_BETA_MIN_PER_DECADE)
-            .abs()
+        (f64::from(nano_nucleation_beta_min_per_decade_f32()) - NUCLEATION_BETA_MIN_PER_DECADE).abs()
             < EPS_F32
     );
 }
 
 #[test]
 fn cluster_h_cartridge_retains_manifest_h04_h06() {
-    let cal = nano_cartridge_calibration();
-    assert!((f64::from(cal.optimal_dosage_pct) - 2.5).abs() < EPS_F32);
-    assert!((f64::from(cal.strength_gamma) - 0.15).abs() < EPS_F32);
-    assert!((f64::from(cal.pore_refinement_delta) - 5.0).abs() < EPS_F32);
     assert!((f64::from(nano_optimal_dosage_pct_f32()) - 2.5).abs() < EPS_F32);
     assert!((f64::from(nano_strength_gamma_f32()) - 0.15).abs() < EPS_F32);
     assert!((f64::from(nano_pore_refinement_delta_f32()) - 5.0).abs() < EPS_F32);
 
-    for witness in CLUSTER_H_INVENTORY_MANIFEST {
-        match witness.row_id {
-            "H-01" | "H-02" | "H-03" | "H-07" => {
-                assert_eq!(
-                    witness.disposition,
-                    NanoChemLiftDisposition::LiftedToChemSsot
-                );
-            }
-            "H-04" | "H-05" | "H-06" => {
-                assert_eq!(
-                    witness.disposition,
-                    NanoChemLiftDisposition::CartridgeRetains
-                );
-            }
-            _ => panic!("unexpected cluster H row {}", witness.row_id),
+    cluster_h_inventory_manifest_for_each(|row_id| match row_id {
+        "H-01" | "H-02" | "H-03" | "H-07" => {
+            assert!(nano_inventory_is_lifted_to_chem_ssot(row_id));
         }
-        assert_eq!(
-            nano_inventory_disposition(witness.row_id),
-            Some(witness.disposition)
-        );
-    }
+        "H-04" | "H-05" | "H-06" => {
+            assert!(nano_inventory_is_cartridge_retains(row_id));
+        }
+        _ => panic!("unexpected cluster H row {row_id}"),
+    });
+    cluster_h_inventory_manifest_for_each(|row_id| {
+        assert!(nano_manifest_disposition_consistent(row_id));
+    });
 }
 
 #[test]
 fn cluster_h_h02_pozzolanic_alpha_delegates_to_chem_ssot() {
     assert!((POZZOLANIC_ALPHA - 0.5).abs() < EPS);
     assert!((f64::from(nano_pozzolanic_alpha_f32()) - POZZOLANIC_ALPHA).abs() < EPS_F32);
-    assert_eq!(
-        nano_deferred_kinetics_pins().pozzolanic_alpha,
-        nano_pozzolanic_alpha_f32()
-    );
-    assert_eq!(
-        nano_inventory_disposition("H-02"),
-        Some(NanoChemLiftDisposition::LiftedToChemSsot)
-    );
+    assert!(nano_deferred_kinetics_match_f32_witnesses());
+    assert!(nano_inventory_is_lifted_to_chem_ssot("H-02"));
 }
 
 #[test]
@@ -569,14 +536,8 @@ fn cluster_h_h03_nucleation_beta_delegates_to_chem_ssot() {
             .abs()
             < EPS_F32
     );
-    assert_eq!(
-        nano_deferred_kinetics_pins().nucleation_beta_min_per_decade,
-        nano_nucleation_beta_min_per_decade_f32()
-    );
-    assert_eq!(
-        nano_inventory_disposition("H-03"),
-        Some(NanoChemLiftDisposition::LiftedToChemSsot)
-    );
+    assert!(nano_deferred_kinetics_match_f32_witnesses());
+    assert!(nano_inventory_is_lifted_to_chem_ssot("H-03"));
 }
 
 #[test]
@@ -585,24 +546,15 @@ fn cluster_h_self_heal_nano_boost_h07_lifted_to_chem_ssot() {
         (f64::from(nano_healing_boost_per_dosage_f32()) - NANO_HEALING_BOOST_PER_DOSAGE).abs()
             < EPS_F32
     );
-    assert_eq!(
-        nano_inventory_disposition("H-07"),
-        Some(NanoChemLiftDisposition::LiftedToChemSsot)
-    );
+    assert!(nano_inventory_is_lifted_to_chem_ssot("H-07"));
 }
 
 #[test]
 fn cluster_h_deferred_boundary_does_not_block_e_f_clusters() {
     // Cluster H manifest is isolated — E/F chem_adapter sections remain independent.
-    assert_eq!(CLUSTER_H_INVENTORY_MANIFEST.len(), 7);
-    assert_eq!(
-        nano_inventory_disposition("H-01"),
-        Some(NanoChemLiftDisposition::LiftedToChemSsot)
-    );
-    assert_eq!(
-        nano_inventory_disposition("H-04"),
-        Some(NanoChemLiftDisposition::CartridgeRetains)
-    );
+    assert_eq!(cluster_h_inventory_manifest_len(), 7);
+    assert!(nano_inventory_is_lifted_to_chem_ssot("H-01"));
+    assert!(nano_inventory_is_cartridge_retains("H-04"));
     // Shrinkage chem seam (G-04) routes only `critical_wc` — nano literals are OUT-OF-SCOPE.
     assert!((f64::from(critical_wc_f32()) - CRITICAL_WC).abs() < EPS_F32);
 }

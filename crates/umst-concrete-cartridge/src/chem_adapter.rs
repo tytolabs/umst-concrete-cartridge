@@ -366,6 +366,68 @@ pub fn vinet_pressure_gpa_f32(v0: f32, k0_gpa: f32, k0_prime: f32, v_per_fu_ang3
     ) as f32
 }
 
+fn clinker_phase_tag_for_species(species: SpeciesId) -> Option<ClinkerPhaseTag> {
+    match species {
+        SpeciesId::AliteM3 => Some(ClinkerPhaseTag::AliteM3),
+        SpeciesId::BeliteBetaC2s => Some(ClinkerPhaseTag::BeliteBetaC2s),
+        SpeciesId::Portlandite => Some(ClinkerPhaseTag::Portlandite),
+        SpeciesId::Ettringite => Some(ClinkerPhaseTag::Ettringite),
+        SpeciesId::CshTobermorite14nm => Some(ClinkerPhaseTag::Csh14nmTobermorite),
+        _ => None,
+    }
+}
+
+/// `chem_adapter_parity` — Vinet row via L1 [`SpeciesId`] (no exported phase tag).
+#[must_use]
+pub fn clinker_vinet_params_for_species(species: SpeciesId) -> VinetPhaseParamsF32 {
+    let phase = match clinker_phase_tag_for_species(species) {
+        Some(tag) => tag,
+        None => ClinkerPhaseTag::AliteM3,
+    };
+    clinker_vinet_params_f32(phase)
+}
+
+/// `chem_adapter_parity` — ambient K₀ (GPa) for a clinker / C-S-H [`SpeciesId`].
+#[must_use]
+pub fn clinker_bulk_modulus_ambient_gpa_for_species(species: SpeciesId) -> f32 {
+    let phase = match clinker_phase_tag_for_species(species) {
+        Some(tag) => tag,
+        None => ClinkerPhaseTag::AliteM3,
+    };
+    clinker_bulk_modulus_ambient_gpa_f32(phase)
+}
+
+/// `chem_adapter_parity` — Vinet V₀ (Å³/f.u.) for cluster-D [`SpeciesId`].
+#[must_use]
+pub fn clinker_vinet_v0_per_fu_ang3_for_species(species: SpeciesId) -> f32 {
+    clinker_vinet_params_for_species(species).v0_per_fu_ang3
+}
+
+/// `chem_adapter_parity` — Vinet K₀ (GPa) for cluster-D [`SpeciesId`].
+#[must_use]
+pub fn clinker_vinet_bulk_modulus_gpa_for_species(species: SpeciesId) -> f32 {
+    clinker_vinet_params_for_species(species).bulk_modulus_gpa
+}
+
+/// `chem_adapter_parity` — Vinet K₀′ for cluster-D [`SpeciesId`].
+#[must_use]
+pub fn clinker_vinet_k0_prime_for_species(species: SpeciesId) -> f32 {
+    clinker_vinet_params_for_species(species).k0_prime
+}
+
+/// `chem_adapter_parity` — cluster H manifest row count (inventory H-01 … H-07).
+#[must_use]
+pub const fn cluster_h_inventory_manifest_len() -> usize {
+    CLUSTER_H_INVENTORY_MANIFEST.len()
+}
+
+/// `chem_adapter_parity` — invoke `f` for each cluster H inventory row id.
+pub fn cluster_h_inventory_manifest_for_each(mut f: impl FnMut(&str)) {
+    for witness in CLUSTER_H_INVENTORY_MANIFEST {
+        f(witness.row_id);
+    }
+}
+
 /// Voigt upper bound on bulk modulus (GPa) — inventory cluster D homogenisation.
 #[must_use]
 pub fn voigt_bulk_modulus_gpa_f32(fv_phase_a: f32, k_a: f32, k_b: f32) -> f32 {
@@ -805,6 +867,45 @@ pub fn nano_inventory_disposition(row_id: &str) -> Option<NanoChemLiftDispositio
         "H-04" | "H-05" | "H-06" => Some(NanoChemLiftDisposition::CartridgeRetains),
         _ => None,
     }
+}
+
+/// `chem_adapter_parity` — deferred kinetics pins agree with f32 delegate witnesses.
+#[must_use]
+pub fn nano_deferred_kinetics_match_f32_witnesses() -> bool {
+    let pins = nano_deferred_kinetics_pins();
+    pins.pozzolanic_alpha == nano_pozzolanic_alpha_f32()
+        && pins.nucleation_beta_min_per_decade == nano_nucleation_beta_min_per_decade_f32()
+        && pins.ssa_ref_m2_per_g == nano_ssa_ref_m2_per_g_f32()
+}
+
+/// `chem_adapter_parity` — row disposition matches [`CLUSTER_H_INVENTORY_MANIFEST`].
+#[must_use]
+pub fn nano_manifest_disposition_consistent(row_id: &str) -> bool {
+    let Some(witness) = CLUSTER_H_INVENTORY_MANIFEST
+        .iter()
+        .find(|witness| witness.row_id == row_id)
+    else {
+        return false;
+    };
+    nano_inventory_disposition(row_id) == Some(witness.disposition)
+}
+
+/// `chem_adapter_parity` — inventory row lifted to `umst-chem` SSOT (H-01…H-03, H-07).
+#[must_use]
+pub fn nano_inventory_is_lifted_to_chem_ssot(row_id: &str) -> bool {
+    matches!(
+        nano_inventory_disposition(row_id),
+        Some(NanoChemLiftDisposition::LiftedToChemSsot)
+    )
+}
+
+/// `chem_adapter_parity` — inventory row retained in cartridge calibration (H-04…H-06).
+#[must_use]
+pub fn nano_inventory_is_cartridge_retains(row_id: &str) -> bool {
+    matches!(
+        nano_inventory_disposition(row_id),
+        Some(NanoChemLiftDisposition::CartridgeRetains)
+    )
 }
 
 // ── CHEM-ECO-CONCRETE-ADAPTER — north-star occupancy + formation-zero honesty ──
