@@ -25,6 +25,7 @@ use umst_chem::{
     ultimate_degree_of_hydration as chem_ultimate_degree_of_hydration,
     vinet_pressure_gpa as chem_vinet_pressure_gpa,
     voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa,
+    cement::{cement_is_l0_identity, CEMENT_IS_L0_IDENTITY},
     chem_l0_02_service_honest, chem_l0_02_service_probe, CementChemService, ChemistryService,
     ElementId, FormationEnergyModality, FormationEnergyWitness, HydrationKineticsBundle,
     PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState,
@@ -926,11 +927,6 @@ pub const CHEM_ECO_CONCRETE_ADAPTER_NON_CLAIM: &str =
 /// North-star cross-classifier row — L1 occupancy ⊗ L0 Ca,Si,O,H.
 pub const NORTH_STAR_X20_ROW_ID: &str = "X20";
 
-/// Crosswalk authorities (include_str — design SSOT cites; not lib.rs wire on this cell).
-const CEMENT_SSOT_SRC: &str = include_str!("../../../../umst-chem/src/cement.rs");
-const CEMENT_ORE_XROW_SRC: &str = include_str!("../../../../umst-chem/src/x_rows/cement_ore.rs");
-const THERMO_G_SRC: &str = include_str!("../../../../umst-chem/src/thermo_g.rs");
-
 /// L1 occupancy presentation for cementitious closures — never L0 [`ElementId`] identity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ConcreteOccupancyPresentation {
@@ -975,19 +971,15 @@ pub fn species_id_ne_element_id_for_csh() -> bool {
 pub fn concrete_occupancy_ore_not_element_id() -> bool {
     clinker_phase_tag_is_l1_species_id(ClinkerPhaseTag::Csh14nmTobermorite)
         && species_id_ne_element_id_for_csh()
-        && CEMENT_SSOT_SRC.contains("CEMENT_IS_L0_IDENTITY: bool = false")
-        && CEMENT_ORE_XROW_SRC.contains("not ElementId")
-        && CEMENT_ORE_XROW_SRC.contains("monoidal Ore")
+        && !CEMENT_IS_L0_IDENTITY
+        && !cement_is_l0_identity()
 }
 
 /// Formation-zero theater honest at L1 service — not measured G; Thermo_n G not landed.
 #[must_use]
 pub fn concrete_formation_zero_theater_honest_until_g_lands() -> bool {
     let l0_02 = chem_l0_02_service_probe();
-    l0_02.formation_theater_honest
-        && chem_l0_02_service_honest()
-        && THERMO_G_SRC.contains("formation_zero_not_thermo_n")
-        && THERMO_G_SRC.contains("measured G")
+    l0_02.formation_theater_honest && chem_l0_02_service_honest()
 }
 
 /// Honest physics GREEN refusal for concrete chem_adapter slice.

@@ -4477,12 +4477,14 @@ dependencies = [
  "umst-cartridge-concrete",
  "umst-gate",
  "umst-layout-codegen",
+ "umst-math",
 ]
 
 [[package]]
 name = "umst-math"
 version = "0.1.0"
 dependencies = [
+ "blake3",
  "ordered-float",
  "petgraph",
  "pqcrypto-dilithium",

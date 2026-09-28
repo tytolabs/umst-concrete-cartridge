@@ -4,8 +4,7 @@
 
 use umst_ucrs::shared_types::observation::{ObservedAtV2Wire, UcrsObservedAt, WIRE_SCALE};
 
-const WIRE_V2_FIXTURE: &str =
-    include_str!("../../../../umst-ucrs/fixtures/wire_v2_observed_at.json");
+const WIRE_V2_FIXTURE: &str = include_str!("../fixtures/wire_v2_observed_at.json");
 
 #[test]
 fn wire_v2_fixture_roundtrip_via_shared_types() {

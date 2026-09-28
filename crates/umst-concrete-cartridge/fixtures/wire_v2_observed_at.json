@@ -1,0 +1,10 @@
+{
+  "schema_version": "observed_at.v2",
+  "stamp_tier": "Synthetic",
+  "ucrs_seq": 42,
+  "phase_entropy_bits_q": 2500000,
+  "phase_entropy_bits_scale": 1000000,
+  "credit_head_bits_q": 0,
+  "credit_head_bits_scale": 1000000,
+  "wall_ms": 1718841600000
+}
