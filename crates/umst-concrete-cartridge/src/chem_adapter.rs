@@ -25,10 +25,9 @@ use umst_chem::{
     ultimate_degree_of_hydration as chem_ultimate_degree_of_hydration,
     vinet_pressure_gpa as chem_vinet_pressure_gpa,
     voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa,
-    chem_l0_02_service_honest, CementChemService, ChemistryService, ElementId,
-    formation_energy_tabulated_zero_theater_honest, formation_energy_tabulated_zero_witness,
-    HydrationKineticsBundle, PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState,
-    FORMATION_ENERGY_TABULATED_ZERO_MARKER,
+    chem_l0_02_service_honest, chem_l0_02_service_probe, CementChemService, ChemistryService,
+    ElementId, FormationEnergyModality, FormationEnergyWitness, HydrationKineticsBundle,
+    PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState,
     BOLTZMANN_J_PER_K, CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE,
     CSH_VOLUME_FACTOR, DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER,
     DLVO_COLLAPSE_SEPARATION_NM, DLVO_REFERENCE_TEMPERATURE_K, GAS_CONSTANT_J_PER_MOL_K,
@@ -981,12 +980,12 @@ pub fn concrete_occupancy_ore_not_element_id() -> bool {
         && CEMENT_ORE_XROW_SRC.contains("monoidal Ore")
 }
 
-/// Formation-zero tabulated theater honest — not measured G; Thermo_n G not landed.
+/// Formation-zero theater honest at L1 service — not measured G; Thermo_n G not landed.
 #[must_use]
 pub fn concrete_formation_zero_theater_honest_until_g_lands() -> bool {
-    formation_energy_tabulated_zero_theater_honest()
+    let l0_02 = chem_l0_02_service_probe();
+    l0_02.formation_theater_honest
         && chem_l0_02_service_honest()
-        && formation_energy_tabulated_zero_witness().honest()
         && THERMO_G_SRC.contains("formation_zero_not_thermo_n")
         && THERMO_G_SRC.contains("measured G")
 }
@@ -1032,8 +1031,7 @@ pub fn concrete_chem_adapter_honesty_fence() -> ConcreteChemAdapterHonestyFence 
         production_wired: concrete_chem_adapter_production_wired(),
         occupancy_ore_not_element_id: concrete_occupancy_ore_not_element_id(),
         formation_zero_theater_honest_until_g_lands: concrete_formation_zero_theater_honest_until_g_lands(),
-        chem_service_contract_honest: formation_energy_tabulated_zero_theater_honest()
-            && chem_l0_02_service_honest(),
+        chem_service_contract_honest: chem_l0_02_service_honest(),
     }
 }
 
@@ -1083,14 +1081,16 @@ mod concrete_chem_adapter_honesty_tests {
     #[test]
     fn concrete_formation_zero_theater_not_measured_g() {
         assert!(concrete_formation_zero_theater_honest_until_g_lands());
-        assert!(formation_energy_tabulated_zero_theater_honest());
-        assert_eq!(
-            FORMATION_ENERGY_TABULATED_ZERO_MARKER,
-            "chem_formation_energy_tabulated_zero_theater_v1"
-        );
+        let l0_02 = chem_l0_02_service_probe();
+        assert!(l0_02.formation_theater_honest);
+        assert!(l0_02.deepen_honest);
         let chem = CementChemService::new();
         let e = chem
             .formation_energy(SpeciesId::CshTobermorite14nm, &ThermoState::ambient());
-        assert!(e.is_tabulated_zero_theater());
+        let witness = FormationEnergyWitness {
+            energy: e,
+            modality: FormationEnergyModality::TabulatedZeroTheater,
+        };
+        assert!(witness.honest());
     }
 }
