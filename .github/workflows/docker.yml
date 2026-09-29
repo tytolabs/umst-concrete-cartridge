@@ -31,10 +31,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve Docker build context (siblings + nested checkout)
+        id: dockerctx
+        run: |
+          set -euo pipefail
+          PARENT="$(dirname "${GITHUB_WORKSPACE}")"
+          if [ ! -f "${PARENT}/umst-concrete-cartridge/Dockerfile" ]; then
+            echo "::error::missing ${PARENT}/umst-concrete-cartridge/Dockerfile"
+            ls -la "${PARENT}" || true
+            exit 1
+          fi
+          echo "context=${PARENT}" >> "${GITHUB_OUTPUT}"
       - name: Build and push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
-          context: ${{ github.workspace }}/..
+          context: ${{ steps.dockerctx.outputs.context }}
           file: umst-concrete-cartridge/Dockerfile
           push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           tags: ghcr.io/tytolabs/umst-mcp:${{ github.ref_name }}
