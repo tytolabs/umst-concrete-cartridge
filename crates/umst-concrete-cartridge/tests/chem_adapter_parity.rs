@@ -252,7 +252,8 @@ fn cluster_c_enthalpy_matches_chem_ssot() {
 #[test]
 fn cluster_c_reaction_gibbs_matches_gate_lean() {
     // ψ(α) = −Q_hyd·α at reference — inventory C-03.
-    let gibbs = reaction_gibbs_opc_hydration_joules();
+    let gibbs = reaction_gibbs_opc_hydration_joules()
+        .expect("cement OPC hydration reaction_gibbs measured");
     assert!((gibbs + OPC_REACTION_ENTHALPY_J_PER_KG).abs() < EPS);
 }
 

@@ -28,6 +28,7 @@ use umst_chem::{
     vinet_pressure_gpa as chem_vinet_pressure_gpa,
     voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa, CementChemService, ChemistryService,
     ElementId, FormationEnergyModality, FormationEnergyWitness, HydrationKineticsBundle,
+    ReactionGibbsAbsent,
     PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState, BOLTZMANN_J_PER_K,
     CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE, CSH_VOLUME_FACTOR,
     DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER, DLVO_COLLAPSE_SEPARATION_NM,
@@ -265,10 +266,10 @@ pub const fn cement_reaction_enthalpy_j_per_kg() -> f64 {
 
 /// ψ(α) reference Gibbs energy for OPC hydration at ambient — inventory C-03.
 #[must_use]
-pub fn reaction_gibbs_opc_hydration_joules() -> f64 {
+pub fn reaction_gibbs_opc_hydration_joules() -> Result<f64, ReactionGibbsAbsent> {
     CementChemService::new()
         .reaction_gibbs(&Reaction::OpcHydration, &ThermoState::ambient())
-        .as_joules()
+        .map(|energy| energy.as_joules())
 }
 
 /// Universal gas constant (J/mol·K) — inventory C-06, C-13.
