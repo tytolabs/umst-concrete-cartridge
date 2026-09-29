@@ -12,6 +12,15 @@ repo = "https://github.com/tytolabs/umst-cartridge-api"
 
 [umst-cartridges]
 sha = "ab87088303320452643e6743c0e4bafb2f899827"
+repo = "https://github.com/tytolabs/umst-cartridges"
+
+[umst-chem]
+sha = "7c36bd71fe1645fc8f21405fb743be7d2635ad7a"
+repo = "https://github.com/tytolabs/umst-chem"
+
+[umst-cartridge-registry]
+sha = "ea69af507c4930abd51b6359d480dda60964b74a"
+repo = "https://github.com/tytolabs/umst-cartridge-registry"
 
 [umst-semantics]
 sha = "6f7f5bef678ef2526d5763efe2ff3fabfde6e800"
@@ -24,12 +33,3 @@ repo = "https://github.com/tytolabs/umst-manifold"
 [umst-ucrs]
 sha = "a1202338638241749daa226855f682fd73f8f872"
 repo = "https://github.com/tytolabs/umst-ucrs"
-repo = "https://github.com/tytolabs/umst-cartridges"
-
-[umst-chem]
-sha = "7c36bd71fe1645fc8f21405fb743be7d2635ad7a"
-repo = "https://github.com/tytolabs/umst-chem"
-
-[umst-cartridge-registry]
-sha = "ea69af507c4930abd51b6359d480dda60964b74a"
-repo = "https://github.com/tytolabs/umst-cartridge-registry"
