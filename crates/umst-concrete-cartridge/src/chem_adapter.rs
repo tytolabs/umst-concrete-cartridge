@@ -932,6 +932,7 @@ pub const NORTH_STAR_X20_ROW_ID: &str = "X20";
 
 /// L1 occupancy presentation for cementitious closures — never L0 [`ElementId`] identity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum ConcreteOccupancyPresentation {
     /// L1 [`SpeciesId`] cartridge occupancy (Powers/Jennings/Vinet rows).
     L1SpeciesIdOccupancy,
