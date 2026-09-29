@@ -12,17 +12,12 @@ permissions:
   contents: read
   packages: write
 
-env:
-  UMST_PRIVATE_CHECKOUT: ${{ secrets.UMST_PRIVATE_CHECKOUT }}
-
 jobs:
   push-ghcr:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - name: Checkout private UMST siblings (Docker path deps)
-        env:
-          UMST_PRIVATE_CHECKOUT: ${{ secrets.UMST_PRIVATE_CHECKOUT }}
+      - name: Checkout public UMST siblings (Docker path deps)
         run: bash .github/scripts/ci-checkout-siblings.sh
       - name: Log in to GHCR
         if: startsWith(github.ref, 'refs/tags/v')
@@ -31,13 +26,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Stage private siblings into Docker build context
+      - name: Stage public siblings into Docker build context
         run: |
           set -euo pipefail
           PARENT="$(dirname "${GITHUB_WORKSPACE}")"
           for repo in umst-foundations umst-cartridge-api umst-cartridges umst-chem umst-cartridge-registry umst-manifold umst-semantics umst-ucrs; do
             if [ ! -d "${PARENT}/${repo}" ]; then
-              echo "::error::missing sibling ${PARENT}/${repo}"
+              echo "::error::missing sibling ${PARENT}/${repo} (W-63: repo private or checkout failed)"
               exit 1
             fi
             rm -rf "${GITHUB_WORKSPACE}/${repo}"

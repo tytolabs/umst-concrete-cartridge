@@ -22,18 +22,13 @@ on:
       - '.github/workflows/agent-layer.yml'
 
 env:
-  UMST_PRIVATE_CHECKOUT: ${{ secrets.UMST_PRIVATE_CHECKOUT }}
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
 
 jobs:
   agent-layer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Checkout private UMST siblings
-        env:
-          UMST_PRIVATE_CHECKOUT: ${{ secrets.UMST_PRIVATE_CHECKOUT }}
-        run: bash .github/scripts/ci-checkout-siblings.sh
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: ./.github/actions/setup-ci
 
       - name: Research memory + golden gate_check

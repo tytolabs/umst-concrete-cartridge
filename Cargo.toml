@@ -26,7 +26,9 @@ authors = [
 ]
 repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 
-# Single CI pin for all workspace crates (bump after umst-manifold releases).
+# Single CI pin for all workspace crates — SHAs in `.umst-pins.toml` (W-62).
+# Path deps + anonymous sibling checkout in CI; `umst-manifold` / `umst-ucrs` git-pinned (manifest-bridge / UCRS).
+# Full git-only workspace graph blocked until sibling crates shed path deps (W-63 public ladder).
 [workspace.dependencies]
 umst-cartridge-api = { version = "0.1.0", path = "../umst-cartridge-api" }
 # S5 path-dep bridge — full B1+B2+B3 compose stack reachable from monolith workspace.
