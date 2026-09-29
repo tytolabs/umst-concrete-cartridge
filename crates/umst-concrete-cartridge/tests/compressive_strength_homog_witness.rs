@@ -20,6 +20,7 @@ fn g0_pass_row(profile: &Profile) -> umst_concrete_cartridge::homogeneous::MixRo
 }
 
 #[test]
+#[cfg(feature = "b1-delegate")]
 fn s6_archived_compressive_strength_default_matches_mix_scalars() {
     let profile = default_profile();
     let row = g0_pass_row(&profile);

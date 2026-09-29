@@ -308,6 +308,9 @@ pub const fn cement_reaction_extent_kinetics_spec() -> ReactionExtentKineticsSpe
 // ── Cluster D — Phase EOS / Vinet (inventory A-01 … A-15) ────────────────────
 
 /// Cartridge phase tag for DFT-backed Vinet table rows — inventory A-01…A-15.
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: L1 [`SpeciesId`] phase tag at cartridge boundary; Vinet rows inventory A-01…A-15.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ClinkerPhaseTag {
     AliteM3,
@@ -740,8 +743,10 @@ pub struct NanoInventoryRowWitness {
     pub disposition: NanoChemLiftDisposition,
 }
 
-/// Full cluster H inventory manifest — parity census `cartridge_retains` / deferred pins.
 /// Reserved disposition — zero live manifest rows; kept for parity taxonomy (TODO-M3-003b).
+/// formal_anchor: NONE
+/// formal_status: NONE
+/// formal_anchor_rationale: Witness for `DeferredToChemSsot` taxonomy without live manifest rows.
 pub const NANO_CHEM_LIFT_DEFERRED_TO_CHEM_SSOT: NanoChemLiftDisposition =
     NanoChemLiftDisposition::DeferredToChemSsot;
 
