@@ -4501,6 +4501,7 @@ dependencies = [
  "burn",
  "burn-ndarray",
  "num-traits",
+ "ordered-float",
  "rand 0.8.8",
  "serde",
  "serde_json",

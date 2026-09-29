@@ -81,8 +81,18 @@ pub const fn top_level_spine_present() -> bool {
 }
 
 /// Constitutional 13-tool GO-LIVE surface (`default = ["agent-layer"]`).
-pub const fn constitutional_tools_wired() -> bool {
-    true
+#[must_use]
+pub fn constitutional_tools_wired() -> bool {
+    #[cfg(feature = "agent-layer")]
+    {
+        crate::tool_census::expected_tools_list_count_for_build()
+            == crate::tool_census::CONSTITUTIONAL_COUNT
+            && crate::tool_census::additive_tool_count_for_build() == 0
+    }
+    #[cfg(not(feature = "agent-layer"))]
+    {
+        false
+    }
 }
 
 /// S7c `umst_promote_contribution` — returns `promote_not_wired`.
