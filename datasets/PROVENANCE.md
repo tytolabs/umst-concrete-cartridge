@@ -42,6 +42,10 @@ CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. R
 
 ## dataset_uhpc.csv
 
+- **synthetic: true**
+- **Generator:** `scripts/gen_datasets.py` (`random.seed(42)`, 500 rows); step 2 adds `temperature` / `humidity` (see script header).
+- **Strength formula (uncited):** `f28 = 250·(1 − (w/c)^0.7)` plus silica-fume bonus, log-age factor, Gaussian noise σ = 6 MPa.
+- **Range citations:** Graybeal (2006) FHWA; Ma & Schneider (2002).
 - **Source path:** `datasets/dataset_uhpc.csv`
 - **Rows (incl. header):** 501
 - **Calibration profile:** `uhpc` (Boundary)
@@ -49,6 +53,10 @@ CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. R
 
 ## dataset_highscm.csv
 
+- **synthetic: true**
+- **Generator:** `scripts/gen_datasets.py` (`random.seed(42)`, 500 rows); step 2 adds `temperature` / `humidity`.
+- **Strength formula (uncited):** SCM-aware power-law in script (`gen_highscm`).
+- **Range citations:** Neville (2011) *Properties of Concrete* 5th ed.; Mehta & Monteiro (2014).
 - **Source path:** `datasets/dataset_highscm.csv`
 - **Rows (incl. header):** 501
 - **Calibration profile:** `highscm`
@@ -56,7 +64,18 @@ CSV filenames are stable (`dataset_d*.csv`, …) so external links stay valid. R
 
 ## dataset_selfheal.csv
 
+- **synthetic: true**
+- **Generator:** `scripts/gen_datasets.py` (`random.seed(42)`, 500 rows); step 2 adds `temperature` / `humidity`.
+- **Strength formula (uncited):** bacterial healing bonus 3–8 MPa on reference curve (`gen_selfheal`).
+- **Range citations:** Jonkers et al. (2010) *Cem. Concr. Res.* 40(2), 317–323.
 - **Source path:** `datasets/dataset_selfheal.csv`
 - **Rows (incl. header):** 501
 - **Calibration profile:** `selfheal` (Boundary)
 - **SHA-256:** `7ad647899db864a1f821edd359bb71c87f7235df79284fb74ba80cd359dd5105`
+
+## dataset_lunar.csv (not bundled)
+
+- **synthetic: true** (generator still ships in `scripts/gen_datasets.py` with `--include-lunar`).
+- **Removal:** v0.1 cartridge dropped `dataset_lunar.csv` and the `lunar` calibration profile — no measured lunar corpus; see `CHANGELOG.md` §Removed.
+- **Range citations (generator only):** Marzulli et al. (2020) *Acta Astronautica*; NASA JSC-1A specification.
+- **Strength formula (uncited):** regolith-mortar closure in `gen_lunar`.
