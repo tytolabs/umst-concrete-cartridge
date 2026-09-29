@@ -1,12 +1,8 @@
 # SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# After actions/checkout: private sibling clone (path deps) + Rust 1.88 + cache.
 name: Setup UMST concrete-cartridge CI
-description: Checkout private siblings, Rust 1.88 toolchain, Swatinem cache
+description: Rust 1.88 toolchain and Swatinem cache (run sibling checkout step before this)
 inputs:
-  umst_private_checkout:
-    description: Fine-grained PAT (repo secret UMST_PRIVATE_CHECKOUT)
-    required: true
   components:
     description: Optional rustup components (e.g. rustfmt, clippy)
     required: false
@@ -14,19 +10,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Checkout private UMST siblings (path deps + git patches)
-      shell: bash
-      env:
-        UMST_PRIVATE_CHECKOUT: ${{ inputs.umst_private_checkout }}
-      run: |
-        set -euo pipefail
-        if [ -z "${UMST_PRIVATE_CHECKOUT:-}" ]; then
-          echo "::error::UMST_PRIVATE_CHECKOUT secret missing. Operator: gh secret set UMST_PRIVATE_CHECKOUT -R tytolabs/umst-concrete-cartridge --body YOUR_PAT (see workspace/ops/G14_CI.json OPERATOR_ACTION)"
-          exit 1
-        fi
-        git config --global url."https://x-access-token:${UMST_PRIVATE_CHECKOUT}@github.com/".insteadOf "https://github.com/"
-        bash .github/scripts/checkout-umst-siblings.sh
-
     - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
       with:
         toolchain: "1.88"
