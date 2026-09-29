@@ -910,7 +910,10 @@ mod tests {
             "CONCRETE-MCP-URGE-SESSION"
         );
         assert_eq!(MCP_URGE_SESSION_MARKER, "mcp_urge_session_spine_v1");
-        let _ = (MCP_URGE_SESSION_PHYSICS_GREEN, MCP_URGE_SESSION_PRODUCTION_WIRED);
+        let _ = (
+            MCP_URGE_SESSION_PHYSICS_GREEN,
+            MCP_URGE_SESSION_PRODUCTION_WIRED,
+        );
         assert!(mcp_session_history_no_second_axiom());
         let spine = mcp_session_history_spine();
         assert_eq!(spine[0].tag(), "status");

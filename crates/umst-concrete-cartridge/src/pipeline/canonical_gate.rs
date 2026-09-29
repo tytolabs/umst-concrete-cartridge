@@ -7,9 +7,9 @@
 //! `predict_with_options` physics composite.
 
 use crate::calibration::Profile;
-use crate::facade::MixSpec;
 #[cfg(feature = "manifest-bridge")]
 use crate::calibration::{self as calib};
+use crate::facade::MixSpec;
 #[cfg(feature = "manifest-bridge")]
 use crate::homogeneous::{self as homog, mix_row_from_scalar_spec};
 

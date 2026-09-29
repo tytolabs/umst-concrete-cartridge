@@ -7,6 +7,7 @@
 use assert_cmd::Command;
 use serde_json::Value;
 use std::error::Error;
+use umst_manifold::gate::{GATE_PARITY_V0_SHA256, GATE_PARITY_V0_SHA256_PREFIX};
 
 #[test]
 fn ops_parity_digest_locked() -> Result<(), Box<dyn Error>> {
@@ -16,8 +17,9 @@ fn ops_parity_digest_locked() -> Result<(), Box<dyn Error>> {
         .assert()
         .success();
     let stdout = String::from_utf8_lossy(&assert.get_output().stdout);
+    let expected = format!("parity digest: {GATE_PARITY_V0_SHA256_PREFIX}… OK");
     assert!(
-        stdout.contains("parity digest: d5608148e29eeabd… OK"),
+        stdout.contains(&expected),
         "expected locked digest line, got: {stdout}"
     );
     Ok(())
@@ -32,10 +34,7 @@ fn ops_parity_digest_json_wire() -> Result<(), Box<dyn Error>> {
         .assert()
         .success();
     let v: Value = serde_json::from_slice(assert.get_output().stdout.as_slice())?;
-    assert_eq!(
-        v["sha256"].as_str(),
-        Some("d5608148e29eeabd83935988699d08ce1233c3e87f2cd217d658e0c71c7a841e")
-    );
+    assert_eq!(v["sha256"].as_str(), Some(GATE_PARITY_V0_SHA256));
     assert_eq!(v["matches_locked"].as_bool(), Some(true));
     Ok(())
 }

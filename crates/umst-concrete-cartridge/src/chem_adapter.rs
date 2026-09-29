@@ -27,11 +27,10 @@ use umst_chem::{
     ultimate_degree_of_hydration as chem_ultimate_degree_of_hydration,
     vinet_pressure_gpa as chem_vinet_pressure_gpa,
     voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa, CementChemService, ChemistryService,
-    ElementId, HydrationKineticsBundle,
-    ReactionGibbsAbsent,
-    PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState, BOLTZMANN_J_PER_K,
-    CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE, CSH_VOLUME_FACTOR,
-    DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER, DLVO_COLLAPSE_SEPARATION_NM,
+    ElementId, HydrationKineticsBundle, PowersIntrinsicStrength, Reaction, ReactionGibbsAbsent,
+    SpeciesId, ThermoState, BOLTZMANN_J_PER_K, CEMENT_VOLUME_PER_WC, CRITICAL_WC,
+    CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE, CSH_VOLUME_FACTOR, DEBYE_PREFACTOR_NM,
+    DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER, DLVO_COLLAPSE_SEPARATION_NM,
     DLVO_REFERENCE_TEMPERATURE_K, GAS_CONSTANT_J_PER_MOL_K, HAMAKER_CEMENT_WATER_J,
     JENNINGS_STRENGTH_EXPONENT_DEFAULT, KELVIN_CAPILLARY_SCALE_MPA, NANO_HEALING_BOOST_PER_DOSAGE,
     NANO_SSA_REF_M2_PER_G, NUCLEATION_BETA_MIN_PER_DECADE, OPC_REACTION_ENTHALPY_J_PER_KG,
@@ -1041,9 +1040,7 @@ pub fn concrete_chem_adapter_honest() -> bool {
 #[cfg(test)]
 mod concrete_chem_adapter_honesty_tests {
     use super::*;
-    use umst_chem::{
-        CementChemService, FormationEnergyModality, FormationEnergyWitness,
-    };
+    use umst_chem::{CementChemService, FormationEnergyModality, FormationEnergyWitness};
 
     #[test]
     fn concrete_chem_adapter_honesty_fence_no_green() {
