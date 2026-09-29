@@ -1,28 +1,45 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-# Clone UMST sibling repositories next to the runner workspace (../<repo>) without credentials.
-# Public siblings are cloned anonymously at the requested SHA. A private sibling cannot be cloned without
-# credentials, and this workflow uses none: the job stops and names the public/private boundary (W-63).
+# Legacy path checkout for monorepo dev only. Public CI uses git-pinned workspace.dependencies (W-62).
 set -euo pipefail
+if [ -z "${UMST_PRIVATE_CHECKOUT:-}" ]; then
+  echo "::error::UMST_PRIVATE_CHECKOUT secret missing. Public CI does not use sibling path checkout — use git SHAs in Cargo.toml. For local monorepo path overrides, copy .cargo/config.toml.example → .cargo/config.toml"
+  exit 1
+fi
 PARENT="$(dirname "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE required}")"
-clone_public() {
-  local name="$1" sha="${2:-}" dest="${PARENT}/$1"
-  local url="https://github.com/tytolabs/${name}.git"
-  if ! git ls-remote --exit-code "${url}" HEAD >/dev/null 2>&1; then
-    echo "::error::${name} is private: this public repository depends on it by path and cannot build from a fresh clone. Resolve through W-63 (public ladder or a public-only dependency graph)."
-    return 2
-  fi
-  if [ ! -d "${dest}/.git" ]; then git clone --depth 1 "${url}" "${dest}"; fi
-  if [ -n "${sha}" ]; then
-    git -C "${dest}" fetch --depth 1 origin "${sha}"
-    git -C "${dest}" checkout "${sha}"
+clone_private() {
+  local name="$1"
+  local sha="${2:-}"
+  local dest="${PARENT}/${name}"
+  local url="https://x-access-token:${UMST_PRIVATE_CHECKOUT}@github.com/tytolabs/${name}.git"
+  if [ -d "${dest}/.git" ]; then
+    git -C "${dest}" fetch --depth 1 origin "${sha:-HEAD}"
+    git -C "${dest}" checkout "${sha:-FETCH_HEAD}"
+  else
+    if [ -n "${sha}" ]; then
+      git clone --depth 1 "${url}" "${dest}"
+      git -C "${dest}" fetch --depth 1 origin "${sha}"
+      git -C "${dest}" checkout "${sha}"
+    else
+      git clone --depth 1 "${url}" "${dest}"
+    fi
   fi
   echo "cloned ${name} @ $(git -C "${dest}" rev-parse --short HEAD)"
 }
-status=0
+if [ "$#" -eq 0 ]; then
+  mapfile -t specs < <(python3 - <<'PY'
+import tomllib
+from pathlib import Path
+pins = tomllib.loads(Path(".umst-pins.toml").read_bytes())
+for name, cfg in pins.items():
+    print(f"{name}@{cfg['sha']}")
+PY
+)
+  set -- "${specs[@]}"
+fi
 for spec in "$@"; do
-  name="${spec%%@*}"; sha=""
+  name="${spec%%@*}"
+  sha=""
   if [[ "${spec}" == *"@"* ]]; then sha="${spec#*@}"; fi
-  clone_public "${name}" "${sha}" || status=$?
+  clone_private "${name}" "${sha}"
 done
-exit "${status}"

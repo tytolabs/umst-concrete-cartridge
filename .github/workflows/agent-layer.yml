@@ -21,23 +21,16 @@ on:
       - 'scripts/mcp_smoke.py'
       - '.github/workflows/agent-layer.yml'
 
+env:
+  UMST_PRIVATE_CHECKOUT: ${{ secrets.UMST_PRIVATE_CHECKOUT }}
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+
 jobs:
   agent-layer:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Clone UMST siblings (public only, no credentials) (foundations + cartridge-api)
-        run: |
-          set -euo pipefail
-          fsha=$(python3 -c "import tomllib; print(tomllib.load(open('.umst-pins.toml','rb'))['umst-foundations']['sha'])")
-          asha=$(python3 -c "import tomllib; print(tomllib.load(open('.umst-pins.toml','rb'))['umst-cartridge-api']['sha'])")
-          bash .github/scripts/checkout-umst-siblings.sh "umst-foundations@${fsha}" "umst-cartridge-api@${asha}"
-
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.88.0
+      - uses: ./.github/actions/setup-ci
 
       - name: Research memory + golden gate_check
         working-directory: .

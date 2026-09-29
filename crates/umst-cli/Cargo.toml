@@ -29,7 +29,7 @@ path = "src/lib.rs"
 
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
-umst-manifold = { version = "0.1.0", path = "../../../umst-manifold" }
+umst-manifold = { workspace = true }
 burn = { version = "=0.13.2", default-features = false }
 burn-ndarray = "=0.13.2"
 clap = { version = "4.5", features = ["derive"] }

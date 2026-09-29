@@ -68,7 +68,7 @@ umst-cartridge-concrete = { workspace = true }
 umst-cartridge-continuum = { workspace = true }
 umst-cartridge-solid-inelastic = { workspace = true }
 umst-manifold = { workspace = true }
-umst-cartridge-registry = { version = "0.0.0", path = "../../../umst-cartridge-registry" }
+umst-cartridge-registry = { workspace = true }
 umst-chem = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
