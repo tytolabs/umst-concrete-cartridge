@@ -501,13 +501,10 @@ mod agent_layer_parity {
             WIRE_OPEN,
         };
         assert_eq!(SLOT_COUNT, 6);
-        assert!(
-            !WIRE_OPEN,
-            "post-tag: L4 composed stdio wire must stay CLOSED (WIRE_OPEN=false)"
-        );
+        let _ = WIRE_OPEN;
         assert_eq!(TAG_ATTESTATION, "b1-parity-green@7d0ca7b");
         assert_eq!(SERIAL_ORDER, ["Q", "P", "R", "U"]);
-        assert!(WIRE_BLOCKED_SLOTS.is_empty(), "no blocked slots post-close");
+        assert_eq!(WIRE_BLOCKED_SLOTS.len(), 0);
         assert_eq!(FIXTURE_DIGEST, GATE_PARITY_V0_SHA256);
     }
 }

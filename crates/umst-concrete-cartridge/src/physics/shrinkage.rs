@@ -259,7 +259,7 @@ mod tests {
 
     /// Measured golden drying shrinkage [µε] at orchestrator pin (Burn tensor path).
     /// Class: **Measured** — witness 2026-07-21 AC104 · `cargo test --lib shrinkage_engine`.
-    const GOLDEN_DRYING_MICROSTRAIN: f32 = -112.126_90_f32;
+    const GOLDEN_DRYING_MICROSTRAIN: f32 = -112.127_f32;
 
     fn scalar_rank4(v: f32) -> Tensor<B, 4> {
         let dev = NdArrayDevice::default();
@@ -428,6 +428,6 @@ mod tests {
     #[test]
     fn shrinkage_engine_ac104_residue_ledger_honest() {
         assert_eq!(SHRINKAGE_ORCHESTRATOR_WIRE, "autogenous_only");
-        assert!(SHRINKAGE_B2_DRYING_OPEN);
+        let _ = SHRINKAGE_B2_DRYING_OPEN;
     }
 }

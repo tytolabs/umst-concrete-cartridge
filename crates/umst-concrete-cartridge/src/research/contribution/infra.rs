@@ -195,7 +195,7 @@ fn collect_gate_explain_codes(
             }
         }
         codes.push(explain_code_thermodynamic_fail());
-        return codes;
+        codes
     }
     #[cfg(not(feature = "b1-delegate"))]
     {

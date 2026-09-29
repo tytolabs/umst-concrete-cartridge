@@ -193,6 +193,11 @@ path = "tests/cast_phase_gate_integration.rs"
 name = "topology_mix_spec"
 path = "tests/topology_mix_spec.rs"
 
+[[test]]
+name = "six_mix_cold_export"
+path = "tests/six_mix_cold_export.rs"
+required-features = ["agent-layer"]
+
 [[example]]
 name = "dual_track_comparison"
 path = "examples/dual_track_comparison.rs"

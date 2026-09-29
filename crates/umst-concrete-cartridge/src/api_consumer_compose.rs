@@ -134,12 +134,8 @@ pub fn mix_json_to_mix_scalars_for_profile(
 
 /// B1 kinematic rates from reaction scalar α̇ — reaction-only routes keep ε̇=ḋ=0.
 #[must_use]
-pub fn continuum_rates_from_alpha_dot(alpha_dot: f64) -> ContinuumAtomRates {
-    if alpha_dot == 0.0 {
-        ContinuumAtomRates::PASSIVE
-    } else {
-        ContinuumAtomRates::PASSIVE
-    }
+pub fn continuum_rates_from_alpha_dot(_alpha_dot: f64) -> ContinuumAtomRates {
+    ContinuumAtomRates::PASSIVE
 }
 
 /// Production delegate — composed gate route at G0 probe pin.
@@ -243,11 +239,8 @@ pub fn powers_compressive_strength_mpa_from_row(row: &MixRow) -> f64 {
 ///
 /// T2-S6 PARTIAL tail (`g_spawn_i_s6_eta_2054`): profile `s_intrinsic` threaded from
 /// calibration [`Profile`]; enthalpy routes `umst-chem` SSOT via consumer compose (`g_spawn_i_chemC_2054`).
-#[must_use]
 pub fn dissipation_modulus_eta_from_profile(profile: &Profile) -> f64 {
-    umst_cartridge_concrete::dissipation_modulus_eta_from_profile(f64::from(
-        profile.powers.s_intrinsic,
-    ))
+    umst_cartridge_concrete::dissipation_modulus_eta_from_profile(profile.powers.s_intrinsic)
 }
 
 /// Scalar state fields from composed constitutive ledger.

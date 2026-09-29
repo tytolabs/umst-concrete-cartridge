@@ -110,7 +110,7 @@ pub fn gate_recheck_with_spec(
     #[cfg(feature = "b1-delegate")]
     {
         let _ = spec;
-        return gate_admissible_via_compose(ctx.profile, &contribution.mix_spec);
+        gate_admissible_via_compose(ctx.profile, &contribution.mix_spec)
     }
 
     #[cfg(all(not(feature = "b1-delegate"), feature = "manifest-bridge"))]

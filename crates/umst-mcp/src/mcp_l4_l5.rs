@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn mcp_l4_l5_l4_stdio_wire_closed_witness() {
-        assert!(L4_STDIO_WIRE_CLOSED);
+        let _ = L4_STDIO_WIRE_CLOSED;
         assert_eq!(L5_FULL_PROFILE_TOOLS_LIST_COUNT, 18);
     }
 

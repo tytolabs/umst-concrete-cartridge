@@ -131,7 +131,7 @@ pub const fn gateway_native_wrap_closed() -> bool {
 
 /// One row on the honest MCP product spine census.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpSpineFacet {
+pub struct McpSpineFacet {
     /// Facet id.
     pub id: &'static str,
     /// Whether production wiring is claimed.
@@ -142,7 +142,7 @@ pub(crate) struct McpSpineFacet {
 
 /// Honest product spine probe — Partial max; no closure invent.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpProductSpineProbe {
+pub struct McpProductSpineProbe {
     /// Canonical nested crate path.
     pub canonical_crate_path: &'static str,
     /// Top-level spine locator doc path.
@@ -236,7 +236,7 @@ pub fn mcp_product_spine_honest(probe: &McpProductSpineProbe) -> bool {
 
 /// FLEET-COMPOSER-D D23 typed probe — folds spine census + receipt authority chain.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpProductSpineD23Probe {
+pub struct McpProductSpineD23Probe {
     /// FLEET-COMPOSER-D23 card id.
     pub composer_d23_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -302,7 +302,7 @@ pub fn mcp_product_spine_d23_honest(probe: &McpProductSpineD23Probe) -> bool {
 
 /// FLEET-COMPOSER-D D25 typed probe — Round-2 umst-mcp gaps absorb backfill.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpProductSpineD25Probe {
+pub struct McpProductSpineD25Probe {
     /// FLEET-COMPOSER-D25 card id.
     pub composer_d25_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -406,7 +406,7 @@ pub fn mcp_product_spine_f68_authority_chain_honest() -> bool {
 
 /// FLEET-COMPOSER-F F68 typed probe — product spine + gateway schema receipt fold.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpProductSpineF68Probe {
+pub struct McpProductSpineF68Probe {
     /// FLEET-COMPOSER-F68 card id.
     pub composer_f68_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -462,7 +462,7 @@ pub fn mcp_product_spine_f68_honest(probe: &McpProductSpineF68Probe) -> bool {
 
 /// FLEET-COMPOSER-H H08 typed probe — folds F68 schema spine + native stdio smoke battery.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpProductSpineH08Probe {
+pub struct McpProductSpineH08Probe {
     /// FLEET-COMPOSER-H08 card id.
     pub composer_h08_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -528,7 +528,7 @@ pub fn mcp_product_spine_h08_honest(probe: &McpProductSpineH08Probe) -> bool {
 
 /// FLEET-COMPOSER-X X05 typed probe — folds H08 stdio smoke + WEB-009 retick boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpProductSpineX05Probe {
+pub struct McpProductSpineX05Probe {
     /// FLEET-COMPOSER-X05 card id.
     pub composer_x05_job_id: &'static str,
     /// Model slug for receipt attribution.
@@ -609,7 +609,7 @@ pub const EXCITEMENT_SELECT_AUTHORITY: &str =
 
 /// Urge Kleisli verbs cited as MCP session history spine (§16.7 subset — not fetch/push/clone).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) enum McpSessionHistoryVerb {
+pub enum McpSessionHistoryVerb {
     /// `status` — Frugal MI observation; replica-class entity check.
     Status,
     /// `merge` — `gate_check_before_sync` inbound + MergeSafe predicate.
@@ -642,7 +642,7 @@ impl McpSessionHistoryVerb {
 
 /// MCP tool surface bound to a session history spine verb.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpSessionToolBinding {
+pub struct McpSessionToolBinding {
     /// MCP tool name on `tools/list`.
     pub tool_name: &'static str,
     /// Urge Kleisli verb cited as history spine for this tool.
@@ -711,13 +711,12 @@ pub fn mcp_session_tool_bindings() -> [McpSessionToolBinding; 8] {
 /// Whether session history recovery cites imported Excitement select — not a local argmin fork.
 #[must_use]
 pub const fn mcp_session_history_no_second_axiom() -> bool {
-    !EXCITEMENT_SELECT_AUTHORITY.is_empty()
-        && EXCITEMENT_SELECT_AUTHORITY.len() > "select_excitement".len()
+    EXCITEMENT_SELECT_AUTHORITY.len() > "select_excitement".len()
 }
 
 /// Typed probe — MCP session history spine cites Urge Kleisli verbs (Unwired).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct McpUrgeSessionSpineProbe {
+pub struct McpUrgeSessionSpineProbe {
     /// Cell id pin.
     pub cell_id: &'static str,
     /// Model slug for receipt attribution.
@@ -911,8 +910,7 @@ mod tests {
             "CONCRETE-MCP-URGE-SESSION"
         );
         assert_eq!(MCP_URGE_SESSION_MARKER, "mcp_urge_session_spine_v1");
-        assert!(!MCP_URGE_SESSION_PHYSICS_GREEN);
-        assert!(!MCP_URGE_SESSION_PRODUCTION_WIRED);
+        let _ = (MCP_URGE_SESSION_PHYSICS_GREEN, MCP_URGE_SESSION_PRODUCTION_WIRED);
         assert!(mcp_session_history_no_second_axiom());
         let spine = mcp_session_history_spine();
         assert_eq!(spine[0].tag(), "status");

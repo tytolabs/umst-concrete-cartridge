@@ -59,7 +59,7 @@ fn s6_scalar_fields_eta_threads_profile_s_intrinsic() {
     let row = g0_mix_row();
     let (_, _, eta) = scalar_fields_from_composed(&profile, &row, 0.0);
     let mix = MixScalars::g0_pass_rational_default()
-        .with_profile_s_intrinsic_mpa(f64::from(profile.powers.s_intrinsic));
+        .with_profile_s_intrinsic_mpa(profile.powers.s_intrinsic);
     assert!(
         (eta - mix.dissipation_modulus_eta()).abs() < 1e-6,
         "scalar_fields η must match profile-threaded MixScalars"

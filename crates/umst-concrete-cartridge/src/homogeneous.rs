@@ -117,7 +117,7 @@ pub fn powers_compressive_strength_mpa(
 
     #[cfg(feature = "b1-delegate")]
     {
-        return powers_compressive_strength_mpa_delegate(profile, row, alpha, w_c_effective);
+        powers_compressive_strength_mpa_delegate(profile, row, alpha, w_c_effective)
     }
 
     #[cfg(not(feature = "b1-delegate"))]
@@ -208,7 +208,7 @@ fn apply_powers_fc_dataset_modifiers(profile: &Profile, row: &MixRow, fc: &mut f
 pub fn compressive_strength_mpa(profile: &Profile, row: &MixRow) -> Result<f32, HomogeneousError> {
     #[cfg(feature = "b1-delegate")]
     {
-        return compressive_strength_mpa_delegate(profile, row);
+        compressive_strength_mpa_delegate(profile, row)
     }
 
     #[cfg(not(feature = "b1-delegate"))]

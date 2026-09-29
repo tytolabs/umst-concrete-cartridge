@@ -83,10 +83,7 @@ fn metrics(profile_id: &str, csv_name: &str) -> Result<(), Box<dyn Error>> {
 fn name_audit_synthetic_rehearsal_not_validation() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../calibration/v3_pipeline_rehearsal/placeholder_points.json");
-    let body = match std::fs::read_to_string(&path) {
-        Ok(s) => s,
-        Err(_) => String::new(),
-    };
+    let body: String = std::fs::read_to_string(&path).unwrap_or_default();
     assert!(body.contains("SYNTHETIC"));
     assert!(body.contains("pipeline_rehearsal_synthetic"));
     assert!(body.contains("Do not cite as validation data"));

@@ -113,7 +113,6 @@ impl CastGateVerdict {
 /// formal_citation: "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band"
 /// formal_form: "τ₀ ∈ [180, 360] Pa AND extrudability ≥ 0.35"
 /// formal_anchor_rationale: Enum leg evaluator for printability band (MP3.3).
-#[must_use]
 pub fn printability_leg_scalars(
     tau_y_pa: f32,
     extrudability: f32,
@@ -148,7 +147,6 @@ pub fn printability_leg_scalars(
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Summary-scalar wrapper over [`printability_leg_scalars`].
-#[must_use]
 pub fn printability_leg(summary: &PhysicsPipelineSummary) -> Result<(), PrintabilityReject> {
     printability_leg_scalars(
         summary.rheology_yield_stress_pa,
@@ -176,7 +174,6 @@ pub fn printability_leg(summary: &PhysicsPipelineSummary) -> Result<(), Printabi
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
 /// formal_anchor_rationale: Enum leg evaluator for thermodynamic CD transition (MP3.3).
-#[must_use]
 pub fn thermodynamic_leg(profile: &Profile, spec: &MixSpec) -> Result<(), ThermoReject> {
     thermodynamic_verdict(profile, spec)
 }
@@ -185,7 +182,6 @@ pub fn thermodynamic_leg(profile: &Profile, spec: &MixSpec) -> Result<(), Thermo
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Track A composite gate; legs carry individual anchors.
-#[must_use]
 pub fn evaluate_dual_gate(
     profile: &Profile,
     spec: &MixSpec,

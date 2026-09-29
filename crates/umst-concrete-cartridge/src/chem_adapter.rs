@@ -27,7 +27,7 @@ use umst_chem::{
     ultimate_degree_of_hydration as chem_ultimate_degree_of_hydration,
     vinet_pressure_gpa as chem_vinet_pressure_gpa,
     voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa, CementChemService, ChemistryService,
-    ElementId, FormationEnergyModality, FormationEnergyWitness, HydrationKineticsBundle,
+    ElementId, HydrationKineticsBundle,
     ReactionGibbsAbsent,
     PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState, BOLTZMANN_J_PER_K,
     CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE, CSH_VOLUME_FACTOR,
@@ -265,7 +265,6 @@ pub const fn cement_reaction_enthalpy_j_per_kg() -> f64 {
 }
 
 /// ψ(α) reference Gibbs energy for OPC hydration at ambient — inventory C-03.
-#[must_use]
 pub fn reaction_gibbs_opc_hydration_joules() -> Result<f64, ReactionGibbsAbsent> {
     CementChemService::new()
         .reaction_gibbs(&Reaction::OpcHydration, &ThermoState::ambient())
@@ -311,7 +310,7 @@ pub const fn cement_reaction_extent_kinetics_spec() -> ReactionExtentKineticsSpe
 
 /// Cartridge phase tag for DFT-backed Vinet table rows — inventory A-01…A-15.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub(crate) enum ClinkerPhaseTag {
+pub enum ClinkerPhaseTag {
     AliteM3,
     BeliteBetaC2s,
     Portlandite,
@@ -333,7 +332,7 @@ impl ClinkerPhaseTag {
 
 /// Reference Vinet parameter triple at the f32 cartridge boundary — inventory A-01…A-15.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct VinetPhaseParamsF32 {
+pub struct VinetPhaseParamsF32 {
     pub v0_per_fu_ang3: f32,
     pub bulk_modulus_gpa: f32,
     pub k0_prime: f32,
@@ -723,7 +722,7 @@ pub const fn chemo_diffusion_weight_scale_f32() -> f32 {
 
 /// Inventory row lift disposition for cluster H boundary witnesses.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum NanoChemLiftDisposition {
+pub enum NanoChemLiftDisposition {
     /// `umst-chem` SSOT wired through adapter delegate.
     LiftedToChemSsot,
     /// Reserved — `umst-chem` SSOT ready but cartridge delegate not yet wired.
@@ -735,7 +734,7 @@ pub(crate) enum NanoChemLiftDisposition {
 
 /// Witness row for `chem_adapter_parity` cartridge_retains manifest.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct NanoInventoryRowWitness {
+pub struct NanoInventoryRowWitness {
     /// Inventory row id (e.g. `H-01`).
     pub row_id: &'static str,
     /// Lift disposition — documents boundary without routing to `umst-chem`.
@@ -743,6 +742,10 @@ pub(crate) struct NanoInventoryRowWitness {
 }
 
 /// Full cluster H inventory manifest — parity census `cartridge_retains` / deferred pins.
+/// Reserved disposition — zero live manifest rows; kept for parity taxonomy (TODO-M3-003b).
+pub const NANO_CHEM_LIFT_DEFERRED_TO_CHEM_SSOT: NanoChemLiftDisposition =
+    NanoChemLiftDisposition::DeferredToChemSsot;
+
 pub const CLUSTER_H_INVENTORY_MANIFEST: &[NanoInventoryRowWitness] = &[
     NanoInventoryRowWitness {
         row_id: "H-01",
@@ -778,7 +781,7 @@ pub const CLUSTER_H_INVENTORY_MANIFEST: &[NanoInventoryRowWitness] = &[
 ///
 /// Name retains "Deferred" for semver-stable API; all three pins are lifted @ TODO-M3-003.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct NanoDeferredKineticsPins {
+pub struct NanoDeferredKineticsPins {
     /// Reference SSA for nano-silica (m²/g) — inventory H-01.
     pub ssa_ref_m2_per_g: f32,
     /// Pozzolanic activity exponent α — inventory H-02.
@@ -789,7 +792,7 @@ pub(crate) struct NanoDeferredKineticsPins {
 
 /// Cartridge-retained nano calibration (H-04 … H-06) — empirical envelope pins.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct NanoCartridgeCalibration {
+pub struct NanoCartridgeCalibration {
     /// Optimal dosage (% cement) for strength efficiency curve — inventory H-04.
     pub optimal_dosage_pct: f32,
     /// Strength enhancement scale γ — inventory H-05.
@@ -930,7 +933,7 @@ pub const NORTH_STAR_X20_ROW_ID: &str = "X20";
 
 /// L1 occupancy presentation for cementitious closures — never L0 [`ElementId`] identity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum ConcreteOccupancyPresentation {
+pub enum ConcreteOccupancyPresentation {
     /// L1 [`SpeciesId`] cartridge occupancy (Powers/Jennings/Vinet rows).
     L1SpeciesIdOccupancy,
     /// North-star X20: C-S-H as monoidal Ore of L0 Ca,Si,O,H — not ElementId.
@@ -992,7 +995,7 @@ pub const fn concrete_chem_adapter_production_wired() -> bool {
 
 /// Honesty fence snapshot for CHEM-ECO-CONCRETE-ADAPTER.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct ConcreteChemAdapterHonestyFence {
+pub struct ConcreteChemAdapterHonestyFence {
     /// Cell id.
     pub cell_id: &'static str,
     /// Marker string.
@@ -1038,7 +1041,9 @@ pub fn concrete_chem_adapter_honest() -> bool {
 #[cfg(test)]
 mod concrete_chem_adapter_honesty_tests {
     use super::*;
-    use umst_chem::CementChemService;
+    use umst_chem::{
+        CementChemService, FormationEnergyModality, FormationEnergyWitness,
+    };
 
     #[test]
     fn concrete_chem_adapter_honesty_fence_no_green() {
@@ -1064,8 +1069,16 @@ mod concrete_chem_adapter_honesty_tests {
         assert!(species_id_ne_element_id_for_csh());
         assert_eq!(NORTH_STAR_X20_ROW_ID, "X20");
         assert_ne!(
+            ConcreteOccupancyPresentation::L1SpeciesIdOccupancy,
+            ConcreteOccupancyPresentation::ElementIdIdentity
+        );
+        assert_ne!(
             ConcreteOccupancyPresentation::CshOreOfL0Constituents,
             ConcreteOccupancyPresentation::ElementIdIdentity
+        );
+        assert_eq!(
+            NANO_CHEM_LIFT_DEFERRED_TO_CHEM_SSOT,
+            NanoChemLiftDisposition::DeferredToChemSsot
         );
     }
 

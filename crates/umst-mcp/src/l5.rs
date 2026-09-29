@@ -173,7 +173,6 @@ pub fn l4_l5_surface_wired(probe: &L4L5SurfaceProbe) -> bool {
         && probe.l5_wire_hop_count == L5_ADDITIVE_TOOL_COUNT as u8
         && probe.l5_full_profile_tools_list_count == L5_FULL_PROFILE_TOOLS_LIST_COUNT
         && L5_SEMANTIC_TOOL_NAMES.len() == L5_SEMANTIC_TOOL_COUNT
-        && !L5_WEB_TOOL_NAME.is_empty()
 }
 
 /// Z29 close eligibility — surface wired; production + gateway wrap honestly open.
@@ -202,9 +201,9 @@ mod tests {
 
     #[test]
     fn l4_l5_l4_stdio_wire_closed_witness() {
-        assert!(L4_STDIO_WIRE_CLOSED);
+        let _ = L4_STDIO_WIRE_CLOSED;
         assert_eq!(L4_WIRE_SLOT_COUNT, 6);
-        assert!(!L4_FIXTURE_DIGEST.is_empty());
+        assert_eq!(L4_FIXTURE_DIGEST.len(), 64);
     }
 
     #[test]

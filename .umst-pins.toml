@@ -15,7 +15,7 @@ sha = "ab87088303320452643e6743c0e4bafb2f899827"
 repo = "https://github.com/tytolabs/umst-cartridges"
 
 [umst-chem]
-sha = "7c36bd71fe1645fc8f21405fb743be7d2635ad7a"
+sha = "6db9510ee6f6e8e5ecc68127f662258f4c72ec2b"
 repo = "https://github.com/tytolabs/umst-chem"
 
 [umst-cartridge-registry]

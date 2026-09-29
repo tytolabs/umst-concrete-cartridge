@@ -123,8 +123,7 @@ fn h08_stdio_tools_list_census_matches_ssot() {
     assert_eq!(
         names.len(),
         expected,
-        "tools/list count drift vs tool_census SSOT: got {:?}",
-        names
+        "tools/list count drift vs tool_census SSOT: got {names:?}"
     );
     let _ = child.kill();
     let _ = child.wait();

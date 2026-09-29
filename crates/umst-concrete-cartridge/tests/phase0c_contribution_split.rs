@@ -59,7 +59,7 @@ fn phase0c_gate_does_not_import_explain_types() {
         "temperature_k": "29315/100"
     });
     let summary = gate_check_mix(&profile, &mix);
-    assert!(summary.admissible || !summary.admissible);
+    let _ = summary.admissible;
 }
 
 #[test]

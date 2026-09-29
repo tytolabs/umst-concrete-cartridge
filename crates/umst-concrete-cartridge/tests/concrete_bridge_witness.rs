@@ -95,8 +95,7 @@ fn s5_mcp_gate_admissible_pass_high_wc_in_regime_at_hyperbox() {
     });
     assert!(
         gate_admissible_via_compose(&profile, &mix_json),
-        "pass_high_wc_in_regime must PASS @ hyperbox max {}",
-        GATE_W_C_REGIME_HYPERBOX_MAX
+        "pass_high_wc_in_regime must PASS @ hyperbox max {GATE_W_C_REGIME_HYPERBOX_MAX}"
     );
     let wire = umst_concrete_cartridge::api_consumer_compose::mix_json_to_mix_scalars_for_profile(
         &profile,

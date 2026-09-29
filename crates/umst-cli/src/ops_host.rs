@@ -362,7 +362,7 @@ mod tests {
         };
         assert_eq!(
             format_parity_digest_line(&report),
-            "parity digest: d5608148e29eeabd… OK"
+            format!("parity digest: {GATE_PARITY_V0_SHA256_PREFIX}… OK")
         );
     }
 

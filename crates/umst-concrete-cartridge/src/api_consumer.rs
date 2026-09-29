@@ -63,7 +63,6 @@ impl ConcreteApiCartridge {
     /// formal_anchor: NONE
     /// formal_status: NONE
     /// formal_anchor_rationale: Deterministic bundled baseline for tests and smoke defaults.
-    #[must_use]
     pub fn new() -> Result<Self, crate::calibration::CalibrationError> {
         Ok(Self::with_profile(Profile::load_bundled("uci_d1")?))
     }
@@ -71,7 +70,6 @@ impl ConcreteApiCartridge {
     /// formal_anchor: NONE
     /// formal_status: NONE
     /// formal_anchor_rationale: Caller-owned calibration bundle; avoids silent profile mixing.
-    #[must_use]
     pub fn with_profile(profile: Profile) -> Self {
         Self { profile }
     }
@@ -79,7 +77,6 @@ impl ConcreteApiCartridge {
     /// formal_anchor: STRUCTURAL
     /// formal_status: Structural
     /// formal_anchor_rationale: Lifts [`MixRow`] into scalar [`State`] slots for [`UMSTCartridge`] evaluation.
-    #[must_use]
     pub fn scalar_state_from_mix_row(
         &self,
         row: &MixRow,
@@ -131,7 +128,6 @@ impl ConcreteApiCartridge {
     /// formal_anchor: STRUCTURAL
     /// formal_status: Structural
     /// formal_anchor_rationale: Adapter seam toward Core `gate<R>` (`ConstitutiveResponse` bundle).
-    #[must_use]
     pub fn constitutive_response_from_mix_row(
         &self,
         row: &MixRow,

@@ -77,8 +77,7 @@ fn stdio_tools_list_count_matches_tool_census_ssot() {
     assert_eq!(
         names.len(),
         expected,
-        "tools/list count drift vs tool_census SSOT: got {:?}",
-        names
+        "tools/list count drift vs tool_census SSOT: got {names:?}"
     );
 
     let _ = child.kill();

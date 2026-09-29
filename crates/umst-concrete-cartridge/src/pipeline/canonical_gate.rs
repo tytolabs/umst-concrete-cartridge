@@ -6,8 +6,11 @@
 //! [`umst_manifold::gate::canonical_thermo_transition_admissible`] — **not** the
 //! `predict_with_options` physics composite.
 
-use crate::calibration::{self as calib, Profile};
+use crate::calibration::Profile;
 use crate::facade::MixSpec;
+#[cfg(feature = "manifest-bridge")]
+use crate::calibration::{self as calib};
+#[cfg(feature = "manifest-bridge")]
 use crate::homogeneous::{self as homog, mix_row_from_scalar_spec};
 
 #[cfg(feature = "manifest-bridge")]
@@ -53,7 +56,6 @@ pub fn thermodynamic_admissible(profile: &Profile, spec: &MixSpec) -> bool {
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
 /// formal_anchor_rationale: Enum path for thermodynamic leg; MCP wire frozen on bool shim.
-#[must_use]
 pub fn thermodynamic_verdict(profile: &Profile, spec: &MixSpec) -> Result<(), ThermoReject> {
     #[cfg(feature = "manifest-bridge")]
     {
@@ -101,7 +103,6 @@ fn thermodynamic_verdict_manifest_bridge(
 /// formal_axioms: physicalSecondLaw
 /// catalog_id: umst.gate.cd_transition
 #[cfg(feature = "manifest-bridge")]
-#[must_use]
 pub fn transition_verdict_for_row(
     profile: &Profile,
     row: &homog::MixRow,
@@ -111,7 +112,7 @@ pub fn transition_verdict_for_row(
     };
     let temp_k = f64::from(temp_c) + 273.15;
     let w_c = f64::from(w_c_eff);
-    let s_intrinsic = f64::from(profile.powers.s_intrinsic);
+    let s_intrinsic = profile.powers.s_intrinsic;
     let old = ThermodynamicStateSnapshot::from_mix_calibrated(w_c, 0.0, temp_k, s_intrinsic);
     let new =
         ThermodynamicStateSnapshot::from_mix_calibrated(w_c, f64::from(alpha), temp_k, s_intrinsic);
@@ -148,8 +149,8 @@ fn transition_verdict_from_outcome(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::facade::MixSpec;
 
+    #[cfg(feature = "manifest-bridge")]
     fn default_profile() -> Profile {
         Profile::load_bundled("default").expect("default profile")
     }

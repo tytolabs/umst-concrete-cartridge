@@ -41,10 +41,10 @@ pub fn is_placeholder_catalog_hash(catalog_hash: &str) -> bool {
 pub fn grounded_catalog_hash() -> String {
     #[cfg(feature = "manifest-bridge")]
     {
-        return format!(
+        format!(
             "sha256:{}",
             umst_manifold::runtime::catalog::catalog_lock_bundle_sha256_hex()
-        );
+        )
     }
     #[cfg(not(feature = "manifest-bridge"))]
     DEFAULT_CATALOG_HASH.to_string()
