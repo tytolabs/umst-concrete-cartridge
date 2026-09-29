@@ -29,8 +29,8 @@ clone_private() {
 if [ "$#" -eq 0 ]; then
   mapfile -t specs < <(python3 - <<'PY'
 import tomllib
-from pathlib import Path
-pins = tomllib.loads(Path(".umst-pins.toml").read_bytes())
+with open(".umst-pins.toml", "rb") as f:
+    pins = tomllib.load(f)
 for name, cfg in pins.items():
     print(f"{name}@{cfg['sha']}")
 PY
