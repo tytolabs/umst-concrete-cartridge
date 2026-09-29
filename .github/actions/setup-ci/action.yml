@@ -1,9 +1,12 @@
 # SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
-# After actions/checkout: git auth for private cargo git deps (W-62) + Rust 1.88 + cache.
+# After actions/checkout: private sibling clone (path deps) + Rust 1.88 + cache.
 name: Setup UMST concrete-cartridge CI
-description: Authenticate git for cargo, Rust 1.88 toolchain, Swatinem cache
+description: Checkout private siblings, Rust 1.88 toolchain, Swatinem cache
 inputs:
+  umst_private_checkout:
+    description: Fine-grained PAT (repo secret UMST_PRIVATE_CHECKOUT)
+    required: true
   components:
     description: Optional rustup components (e.g. rustfmt, clippy)
     required: false
@@ -14,7 +17,7 @@ runs:
     - name: Checkout private UMST siblings (path deps + git patches)
       shell: bash
       env:
-        UMST_PRIVATE_CHECKOUT: ${{ env.UMST_PRIVATE_CHECKOUT }}
+        UMST_PRIVATE_CHECKOUT: ${{ inputs.umst_private_checkout }}
       run: |
         set -euo pipefail
         if [ -z "${UMST_PRIVATE_CHECKOUT:-}" ]; then

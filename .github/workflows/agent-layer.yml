@@ -31,6 +31,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-ci
+        with:
+          umst_private_checkout: ${{ secrets.UMST_PRIVATE_CHECKOUT }}
 
       - name: Research memory + golden gate_check
         working-directory: .
