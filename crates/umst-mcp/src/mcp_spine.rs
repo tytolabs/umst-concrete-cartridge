@@ -604,7 +604,8 @@ pub const OPERATOR_VERB_MERGE: &str = "merge";
 pub const OPERATOR_VERB_RECOVER: &str = "recover";
 
 /// Formal cite — history recovery composes `UMST.Excitement.select` (no second axiom).
-pub const EXCITEMENT_SELECT_AUTHORITY: &str = "umst-meta/crates/umst-meta/src/excitement.rs::select_excitement";
+pub const EXCITEMENT_SELECT_AUTHORITY: &str =
+    "umst-meta/crates/umst-meta/src/excitement.rs::select_excitement";
 
 /// Urge Kleisli verbs cited as MCP session history spine (§16.7 subset — not fetch/push/clone).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -905,7 +906,10 @@ mod tests {
 
     #[test]
     fn concrete_mcp_urge_session_spine_metadata() {
-        assert_eq!(CONCRETE_MCP_URGE_SESSION_CELL_ID, "CONCRETE-MCP-URGE-SESSION");
+        assert_eq!(
+            CONCRETE_MCP_URGE_SESSION_CELL_ID,
+            "CONCRETE-MCP-URGE-SESSION"
+        );
         assert_eq!(MCP_URGE_SESSION_MARKER, "mcp_urge_session_spine_v1");
         assert!(!MCP_URGE_SESSION_PHYSICS_GREEN);
         assert!(!MCP_URGE_SESSION_PRODUCTION_WIRED);
@@ -926,8 +930,12 @@ mod tests {
         assert!(!probe.production_wired);
         assert!(mcp_urge_session_spine_honest(&probe));
         let bindings = mcp_session_tool_bindings();
-        assert!(bindings.iter().any(|b| b.tool_name == "umst_contribute" && b.history_verb == McpSessionHistoryVerb::Merge));
-        assert!(bindings.iter().any(|b| b.tool_name == "umst_memory_query" && b.history_verb == McpSessionHistoryVerb::Recover));
+        assert!(bindings
+            .iter()
+            .any(|b| b.tool_name == "umst_contribute"
+                && b.history_verb == McpSessionHistoryVerb::Merge));
+        assert!(bindings.iter().any(|b| b.tool_name == "umst_memory_query"
+            && b.history_verb == McpSessionHistoryVerb::Recover));
     }
 
     #[test]

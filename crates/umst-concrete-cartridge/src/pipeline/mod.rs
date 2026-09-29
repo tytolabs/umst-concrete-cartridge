@@ -8,10 +8,10 @@
 pub mod canonical_gate;
 pub mod cast_phase;
 pub mod dual_gate;
+pub mod mechanics_delegate;
 pub mod orchestrator;
 pub mod orchestrator_delegate;
 pub mod physical_summary;
-pub mod mechanics_delegate;
 pub mod report;
 #[cfg(feature = "proxy-loop")]
 pub mod track_a;

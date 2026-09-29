@@ -45,15 +45,15 @@ use umst_concrete_cartridge::chem_adapter::{
     kelvin_capillary_scale_mpa, kelvin_capillary_scale_mpa_f32,
     nano_deferred_kinetics_match_f32_witnesses, nano_healing_boost_per_dosage_f32,
     nano_inventory_is_cartridge_retains, nano_inventory_is_lifted_to_chem_ssot,
-    nano_manifest_disposition_consistent, nano_nucleation_beta_min_per_decade_f32, nano_optimal_dosage_pct_f32,
-    nano_pore_refinement_delta_f32, nano_pozzolanic_alpha_f32, nano_ssa_ref_m2_per_g_f32,
-    nano_strength_gamma_f32, paste_bulk_modulus_voigt_from_wc_gpa, powers_capillary_porosity_f32,
-    powers_capillary_water_volume_f32, powers_compressive_strength_f32, powers_gel_volume_f32,
-    powers_gel_volume_factor_f32, powers_non_evap_water_coeff_f32,
-    powers_paste_denominator_offset_f32, reaction_gibbs_opc_hydration_joules,
-    set_time_activation_energy_f32, ultimate_degree_of_hydration_f32, vinet_pressure_gpa_f32,
-    voigt_bulk_modulus_gpa_f32, ADIABATIC_TEMP_RISE_PER_ALPHA, CHEM_AFFINITY_EXPONENT,
-    THERMO_REF_RATE,
+    nano_manifest_disposition_consistent, nano_nucleation_beta_min_per_decade_f32,
+    nano_optimal_dosage_pct_f32, nano_pore_refinement_delta_f32, nano_pozzolanic_alpha_f32,
+    nano_ssa_ref_m2_per_g_f32, nano_strength_gamma_f32, paste_bulk_modulus_voigt_from_wc_gpa,
+    powers_capillary_porosity_f32, powers_capillary_water_volume_f32,
+    powers_compressive_strength_f32, powers_gel_volume_f32, powers_gel_volume_factor_f32,
+    powers_non_evap_water_coeff_f32, powers_paste_denominator_offset_f32,
+    reaction_gibbs_opc_hydration_joules, set_time_activation_energy_f32,
+    ultimate_degree_of_hydration_f32, vinet_pressure_gpa_f32, voigt_bulk_modulus_gpa_f32,
+    ADIABATIC_TEMP_RISE_PER_ALPHA, CHEM_AFFINITY_EXPONENT, THERMO_REF_RATE,
 };
 use umst_concrete_cartridge::{
     calibration::{ModelKind, Profile},
@@ -328,7 +328,8 @@ fn cluster_d_vinet_table_matches_chem_ssot() {
         assert!((f64::from(k0) - ssot.bulk_modulus_gpa).abs() < EPS_F32);
         assert!((f64::from(kp) - ssot.k0_prime).abs() < EPS_F32);
         assert!(
-            (f64::from(clinker_bulk_modulus_ambient_gpa_for_species(species)) - ssot.bulk_modulus_gpa)
+            (f64::from(clinker_bulk_modulus_ambient_gpa_for_species(species))
+                - ssot.bulk_modulus_gpa)
                 .abs()
                 < EPS_F32
         );
@@ -495,7 +496,8 @@ fn cluster_h_deferred_kinetics_pins_match_nano_rs_literals() {
     assert!((f64::from(nano_ssa_ref_m2_per_g_f32()) - 200.0).abs() < EPS_F32);
     assert!((f64::from(nano_pozzolanic_alpha_f32()) - POZZOLANIC_ALPHA).abs() < EPS_F32);
     assert!(
-        (f64::from(nano_nucleation_beta_min_per_decade_f32()) - NUCLEATION_BETA_MIN_PER_DECADE).abs()
+        (f64::from(nano_nucleation_beta_min_per_decade_f32()) - NUCLEATION_BETA_MIN_PER_DECADE)
+            .abs()
             < EPS_F32
     );
 }

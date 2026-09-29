@@ -10,8 +10,10 @@
 //! is f32/f64 cast + cartridge-policy witnesses only.
 
 use umst_chem::{
-    csh_gel_modulus_scales, csh_ld_volume_fraction, csh_paste_bulk_modulus_voigt_gpa,
-    csh_youngs_moduli_gpa, hydration_degree_calibrated as chem_hydration_degree_calibrated,
+    cement::{cement_is_l0_identity, CEMENT_IS_L0_IDENTITY},
+    chem_l0_02_service_honest, chem_l0_02_service_probe, csh_gel_modulus_scales,
+    csh_ld_volume_fraction, csh_paste_bulk_modulus_voigt_gpa, csh_youngs_moduli_gpa,
+    hydration_degree_calibrated as chem_hydration_degree_calibrated,
     kinetics::ReactionExtentKineticsSpec as ChemKineticsSpec,
     powers::{
         gel_space_ratio as chem_gel_space_ratio,
@@ -24,18 +26,16 @@ use umst_chem::{
     powers_gel_volume as chem_powers_gel_volume, set_time_activation_energy_j_per_mol,
     ultimate_degree_of_hydration as chem_ultimate_degree_of_hydration,
     vinet_pressure_gpa as chem_vinet_pressure_gpa,
-    voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa,
-    cement::{cement_is_l0_identity, CEMENT_IS_L0_IDENTITY},
-    chem_l0_02_service_honest, chem_l0_02_service_probe, CementChemService, ChemistryService,
+    voigt_bulk_modulus_gpa as chem_voigt_bulk_modulus_gpa, CementChemService, ChemistryService,
     ElementId, FormationEnergyModality, FormationEnergyWitness, HydrationKineticsBundle,
-    PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState,
-    BOLTZMANN_J_PER_K, CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE,
-    CSH_VOLUME_FACTOR, DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER,
-    DLVO_COLLAPSE_SEPARATION_NM, DLVO_REFERENCE_TEMPERATURE_K, GAS_CONSTANT_J_PER_MOL_K,
-    HAMAKER_CEMENT_WATER_J, JENNINGS_STRENGTH_EXPONENT_DEFAULT, KELVIN_CAPILLARY_SCALE_MPA,
-    NANO_HEALING_BOOST_PER_DOSAGE, NANO_SSA_REF_M2_PER_G, NUCLEATION_BETA_MIN_PER_DECADE,
-    OPC_REACTION_ENTHALPY_J_PER_KG, POWERS_GEL_VOLUME_FACTOR, POWERS_NON_EVAP_WATER_COEFF,
-    POWERS_PASTE_DENOMINATOR_OFFSET, POZZOLANIC_ALPHA, VACUUM_PERMITTIVITY,
+    PowersIntrinsicStrength, Reaction, SpeciesId, ThermoState, BOLTZMANN_J_PER_K,
+    CEMENT_VOLUME_PER_WC, CRITICAL_WC, CSH_LD_FRAC_INTERCEPT, CSH_LD_FRAC_SLOPE, CSH_VOLUME_FACTOR,
+    DEBYE_PREFACTOR_NM, DESICCATION_RH_DROP_SCALE, DIELECTRIC_WATER, DLVO_COLLAPSE_SEPARATION_NM,
+    DLVO_REFERENCE_TEMPERATURE_K, GAS_CONSTANT_J_PER_MOL_K, HAMAKER_CEMENT_WATER_J,
+    JENNINGS_STRENGTH_EXPONENT_DEFAULT, KELVIN_CAPILLARY_SCALE_MPA, NANO_HEALING_BOOST_PER_DOSAGE,
+    NANO_SSA_REF_M2_PER_G, NUCLEATION_BETA_MIN_PER_DECADE, OPC_REACTION_ENTHALPY_J_PER_KG,
+    POWERS_GEL_VOLUME_FACTOR, POWERS_NON_EVAP_WATER_COEFF, POWERS_PASTE_DENOMINATOR_OFFSET,
+    POZZOLANIC_ALPHA, VACUUM_PERMITTIVITY,
 };
 use umst_manifold::core::ReactionExtentKineticsSpec;
 
@@ -956,12 +956,7 @@ pub const fn clinker_phase_tag_is_l1_species_id(tag: ClinkerPhaseTag) -> bool {
 pub fn species_id_ne_element_id_for_csh() -> bool {
     let csh = SpeciesId::CshTobermorite14nm;
     let csh_repr = format!("{csh:?}");
-    [
-        ElementId::Ca,
-        ElementId::Si,
-        ElementId::O,
-        ElementId::H,
-    ]
+    [ElementId::Ca, ElementId::Si, ElementId::O, ElementId::H]
         .iter()
         .all(|element| format!("{element:?}") != csh_repr)
 }
@@ -1022,7 +1017,8 @@ pub fn concrete_chem_adapter_honesty_fence() -> ConcreteChemAdapterHonestyFence 
         physics_green: concrete_chem_adapter_physics_green(),
         production_wired: concrete_chem_adapter_production_wired(),
         occupancy_ore_not_element_id: concrete_occupancy_ore_not_element_id(),
-        formation_zero_theater_honest_until_g_lands: concrete_formation_zero_theater_honest_until_g_lands(),
+        formation_zero_theater_honest_until_g_lands:
+            concrete_formation_zero_theater_honest_until_g_lands(),
         chem_service_contract_honest: chem_l0_02_service_honest(),
     }
 }
@@ -1061,7 +1057,9 @@ mod concrete_chem_adapter_honesty_tests {
     #[test]
     fn concrete_occupancy_ore_not_element_id_witness() {
         assert!(concrete_occupancy_ore_not_element_id());
-        assert!(clinker_phase_tag_is_l1_species_id(ClinkerPhaseTag::Csh14nmTobermorite));
+        assert!(clinker_phase_tag_is_l1_species_id(
+            ClinkerPhaseTag::Csh14nmTobermorite
+        ));
         assert!(species_id_ne_element_id_for_csh());
         assert_eq!(NORTH_STAR_X20_ROW_ID, "X20");
         assert_ne!(
@@ -1077,8 +1075,7 @@ mod concrete_chem_adapter_honesty_tests {
         assert!(l0_02.formation_theater_honest);
         assert!(l0_02.deepen_honest);
         let chem = CementChemService::new();
-        let e = chem
-            .formation_energy(SpeciesId::CshTobermorite14nm, &ThermoState::ambient());
+        let e = chem.formation_energy(SpeciesId::CshTobermorite14nm, &ThermoState::ambient());
         let witness = FormationEnergyWitness {
             energy: e,
             modality: FormationEnergyModality::A4bCitedSentinel,

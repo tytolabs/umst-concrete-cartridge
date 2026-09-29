@@ -97,10 +97,9 @@ fn phase_field_inputs_from_umst<B: Backend<FloatElem = f32>>(
         .slice([0..n_nodes, SCALAR_DAMAGE..SCALAR_DAMAGE + 1])
         .unsqueeze_dim::<3>(0);
 
-    let gc_scalar =
-        crate::pipeline::mechanics_delegate::fracture_energy_gc_j_m2_orchestrator(
-            profile.powers.s_intrinsic,
-        );
+    let gc_scalar = crate::pipeline::mechanics_delegate::fracture_energy_gc_j_m2_orchestrator(
+        profile.powers.s_intrinsic,
+    );
     let gc = if nf > SCALAR_FRACTURE_ENERGY_GC {
         features
             .clone()
