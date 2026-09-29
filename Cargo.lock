@@ -4544,6 +4544,7 @@ name = "umst-semantics"
 version = "0.0.0-prep"
 dependencies = [
  "bincode",
+ "ordered-float",
  "serde",
  "serde_json",
  "sha2",

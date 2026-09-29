@@ -1081,7 +1081,7 @@ mod concrete_chem_adapter_honesty_tests {
             .formation_energy(SpeciesId::CshTobermorite14nm, &ThermoState::ambient());
         let witness = FormationEnergyWitness {
             energy: e,
-            modality: FormationEnergyModality::TabulatedZeroTheater,
+            modality: FormationEnergyModality::A4bCitedSentinel,
         };
         assert!(witness.honest());
     }
