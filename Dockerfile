@@ -9,8 +9,7 @@ ENV CARGO_NET_RETRY=10 \
     CARGO_NET_GIT_FETCH_WITH_CLI=true
 
 WORKDIR /app
-# Cargo.lock is not committed (workspace gitignore); resolve deps during image build.
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 COPY schema ./schema
 COPY schemas ./schemas
