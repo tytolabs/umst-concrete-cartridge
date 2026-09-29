@@ -24,6 +24,7 @@ COPY umst-cartridge-registry ./umst-cartridge-registry
 COPY umst-manifold ./umst-manifold
 COPY umst-semantics ./umst-semantics
 COPY umst-ucrs ./umst-ucrs
+COPY umst-supercap-cartridge ./umst-supercap-cartridge
 
 WORKDIR /build-parent/umst-concrete-cartridge
 RUN for attempt in 1 2 3; do \

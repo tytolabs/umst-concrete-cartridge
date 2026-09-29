@@ -34,7 +34,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
-          context: ..
+          context: ${{ github.workspace }}/..
           file: umst-concrete-cartridge/Dockerfile
           push: ${{ startsWith(github.ref, 'refs/tags/v') }}
           tags: ghcr.io/tytolabs/umst-mcp:${{ github.ref_name }}

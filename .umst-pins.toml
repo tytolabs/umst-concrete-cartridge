@@ -33,3 +33,7 @@ repo = "https://github.com/tytolabs/umst-manifold"
 [umst-ucrs]
 sha = "a1202338638241749daa226855f682fd73f8f872"
 repo = "https://github.com/tytolabs/umst-ucrs"
+
+[umst-supercap-cartridge]
+sha = "f8d2675df39a69408614988d45166e57ce0188bb"
+repo = "https://github.com/tytolabs/umst-supercap-cartridge"
