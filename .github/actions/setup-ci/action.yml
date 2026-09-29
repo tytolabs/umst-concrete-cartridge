@@ -11,7 +11,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Authenticate git for private cargo dependencies
+    - name: Checkout private UMST siblings (path deps + git patches)
       shell: bash
       env:
         UMST_PRIVATE_CHECKOUT: ${{ env.UMST_PRIVATE_CHECKOUT }}
@@ -22,6 +22,7 @@ runs:
           exit 1
         fi
         git config --global url."https://x-access-token:${UMST_PRIVATE_CHECKOUT}@github.com/".insteadOf "https://github.com/"
+        bash .github/scripts/checkout-umst-siblings.sh
 
     - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # master
       with:

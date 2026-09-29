@@ -20,6 +20,7 @@ on:
       - 'docs/TOOL_CONTRACTS.generated.md'
       - 'scripts/gen_tool_contracts.py'
       - '.github/workflows/tool-contracts-gen.yml'
+  workflow_dispatch:
 
 jobs:
   tool-contracts-gen:
