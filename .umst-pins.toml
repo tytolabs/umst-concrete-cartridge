@@ -27,7 +27,7 @@ sha = "6f7f5bef678ef2526d5763efe2ff3fabfde6e800"
 repo = "https://github.com/tytolabs/umst-semantics"
 
 [umst-manifold]
-sha = "575d9508f872e6c5ae3d5fc9fe3bfcb1f44d5ab1"
+sha = "71e1688d4a30699a3463a9856646157540a3f52b"
 repo = "https://github.com/tytolabs/umst-manifold"
 
 [umst-ucrs]
