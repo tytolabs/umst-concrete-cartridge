@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 ---
 name: Bug report
 about: Report a defect in the constitutive engine

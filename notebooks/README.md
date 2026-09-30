@@ -1,11 +1,11 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 <!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 -->
 
 # Notebooks
 
-Jupyter notebooks for exploratory audits against the bundled UCI and Zenodo CSV slices using the ``umst_concrete_cartridge`` Python bindings.
+Jupyter notebooks for exploratory audits against the bundled UCI and Zenodo CSV slices using the [`umst_concrete_cartridge`](https://github.com/tytolabs/umst-concrete-cartridge) Python bindings.
 
 | Notebook | Content |
 |----------|--------|

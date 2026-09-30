@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # Audit corpus fixtures (memory bootstrap)
 
 **Provenance SSOT:** [`umst-prototype-2a/prototype/docs/2_Datasets.md`](../../../umst-prototype-2a/prototype/docs/2_Datasets.md)

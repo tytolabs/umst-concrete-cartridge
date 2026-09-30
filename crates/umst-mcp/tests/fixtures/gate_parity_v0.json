@@ -1,100 +1,28 @@
 {
   "schema_version": "gate_parity_v0",
-  "description": "S0 golden lock — gate_check_mix_result (sorted keys) for fixed mix table; ObservedAt frozen Synthetic/ucrs_seq=0/wall_ms=1000; explain=true; profile=default. GO-LIVE Step 3: tools_list_names.default is the 13-tool agent-native surface (was 4); base_four preserves the prior no-agent-layer list. UNLOCK-6 six-mix land @ AGAP-2033-LIB-PARITY: reject_cold_regime cold-byte PASS @ T=277K (library truth; DRAFT REJECT mis-expectation per R-gate-temp-regime.md). 5 PASS + 1 CD REJECT (reject_high_wc).",
+  "description": "S0 golden lock \u2014 gate_check_mix_result (sorted keys) for fixed mix table; ObservedAt frozen Synthetic/ucrs_seq=0/wall_ms=1000; explain=true; profile=default. GO-LIVE Step 3: tools_list_names.default is the 13-tool agent-native surface (was 4); base_four preserves the prior no-agent-layer list. Gate verdict bytes unchanged.",
   "observed_at": {
     "stamp_tier": "Synthetic",
     "ucrs_seq": 0,
     "wall_ms": 1000
   },
   "mix_table": {
-    "pass_early_age": {
-      "aggregate_volume_fraction": "7/10",
-      "target_age_hours": "1/1",
-      "temperature_k": "29315/100",
-      "w_c": "9/20"
-    },
-    "pass_high_wc_in_regime": {
-      "aggregate_volume_fraction": "7/10",
-      "target_age_hours": "672/1",
-      "temperature_k": "29315/100",
-      "w_c": "13/20"
-    },
-    "pass_low_wc_mature": {
-      "aggregate_volume_fraction": "7/10",
-      "target_age_hours": "672/1",
-      "temperature_k": "29315/100",
-      "w_c": "3/10"
-    },
     "pass_rational_default": {
-      "aggregate_volume_fraction": "7/10",
+      "w_c": "9/20",
       "temperature_k": "29315/100",
-      "w_c": "9/20"
+      "aggregate_volume_fraction": "7/10"
     },
     "reject_high_wc": {
-      "aggregate_volume_fraction": "7/10",
-      "fly_ash_pct": "0/1",
-      "silica_fume_pct": "0/1",
-      "superplasticiser_pct": "0/1",
-      "target_age_hours": "672/1",
+      "w_c": "3/4",
       "temperature_k": "29315/100",
-      "w_c": "3/4"
-    },
-    "reject_cold_regime": {
       "aggregate_volume_fraction": "7/10",
-      "target_age_hours": "672/1",
-      "temperature_k": "277/1",
-      "w_c": "9/20"
+      "superplasticiser_pct": "0/1",
+      "silica_fume_pct": "0/1",
+      "fly_ash_pct": "0/1",
+      "target_age_hours": "672/1"
     }
   },
   "gate_check_mix_result": {
-    "pass_early_age": {
-      "explain": {
-        "catalog_witnesses": [
-          "umst.gate.cd_transition"
-        ],
-        "regime_violations": []
-      },
-      "gate_summary": {
-        "admissible": true,
-        "catalog_ids": [
-          "umst.gate.cd_transition"
-        ],
-        "mi_bits_est": "500/10000",
-        "verdict": "PASS"
-      }
-    },
-    "pass_high_wc_in_regime": {
-      "explain": {
-        "catalog_witnesses": [
-          "umst.gate.cd_transition"
-        ],
-        "regime_violations": []
-      },
-      "gate_summary": {
-        "admissible": true,
-        "catalog_ids": [
-          "umst.gate.cd_transition"
-        ],
-        "mi_bits_est": "3500/10000",
-        "verdict": "PASS"
-      }
-    },
-    "pass_low_wc_mature": {
-      "explain": {
-        "catalog_witnesses": [
-          "umst.gate.cd_transition"
-        ],
-        "regime_violations": []
-      },
-      "gate_summary": {
-        "admissible": true,
-        "catalog_ids": [
-          "umst.gate.cd_transition"
-        ],
-        "mi_bits_est": "3500/10000",
-        "verdict": "PASS"
-      }
-    },
     "pass_rational_default": {
       "explain": {
         "catalog_witnesses": [
@@ -130,7 +58,7 @@
           "thermodynamic_cd_fail"
         ],
         "remediation": [
-          "Mix violates Clausius–Duhem margin; reduce w_c, adjust temperature_k, or change the thermal schedule before re-checking."
+          "Mix violates Clausius\u2013Duhem margin; reduce w_c, adjust temperature_k, or change the thermal schedule before re-checking."
         ]
       },
       "gate_reject": {
@@ -158,22 +86,6 @@
         ],
         "mi_bits_est": "5500/10000",
         "verdict": "REJECT"
-      }
-    },
-    "reject_cold_regime": {
-      "explain": {
-        "catalog_witnesses": [
-          "umst.gate.cd_transition"
-        ],
-        "regime_violations": []
-      },
-      "gate_summary": {
-        "admissible": true,
-        "catalog_ids": [
-          "umst.gate.cd_transition"
-        ],
-        "mi_bits_est": "3730/10000",
-        "verdict": "PASS"
       }
     }
   },

@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Feed-forward orchestration across tensor physics engines (collapsed batch semantics).
 //!
 //! formal_anchor: NONE
@@ -19,6 +20,9 @@ use crate::mix_layout::{
 use crate::physics::chemo_water::ChemoWaterEngine;
 use crate::physics::colloidal::ColloidalEngine;
 use crate::physics::cost::compute_cost;
+use crate::physics::creep::CreepEngine;
+use crate::physics::fracture::FractureEngine;
+use crate::physics::fracture_material::fracture_energy_gc_j_per_m2_from_profile;
 use crate::physics::freeze_thaw::FreezeThawEngine;
 use crate::physics::hydration::compute_hydration_degree;
 use crate::physics::itz::{
@@ -31,16 +35,11 @@ use crate::physics::printability::PrintabilityEngine;
 use crate::physics::rheology::RheologyEngine;
 use crate::physics::self_heal::SelfHealEngine;
 use crate::physics::set_time::SetTimeEngine;
+use crate::physics::shrinkage::ShrinkageEngine;
 use crate::physics::strength::StrengthEngine;
 use crate::physics::sustainability::SustainabilityEngine;
 use crate::physics::thermo::ThermoEngine;
 use crate::physics::transport::TransportEngine;
-use crate::pipeline::cast_phase::{classify_cast_phase, stage_eligible, CastPhaseInputs};
-use crate::pipeline::mechanics_delegate::{
-    capillary_porosity_b3_audit, try_autogenous_shrinkage_orchestrator,
-    try_creep_compliance_orchestrator, try_fracture_k_ic_orchestrator, OrchestratorMixScalars,
-};
-use crate::pipeline::orchestrator_delegate::compute_effective_modulus_mt_orchestrator;
 use crate::pipeline::report::{
     PhysicsPipelineReport, PhysicsPipelineSummary, PipelineStageRecord,
     PHYSICS_PIPELINE_SCHEMA_VERSION,
@@ -125,9 +124,6 @@ fn min_f32_rank4<B: Backend<FloatElem = f32>>(t: Tensor<B, 4>) -> f32 {
         .fold(f32::INFINITY, f32::min)
 }
 
-/// Parity-preserving sentinel when a stage is skipped for cast-phase incompatibility (MP3.2).
-const PHASE_SKIP_SENTINEL: f32 = 0.0;
-
 /// Runs staged tensor physics modules and aggregates a deterministic JSON/report capsule.
 ///
 /// **Representation:** `batch_collapsed` — rank‑4 kernels use singleton spatial axes (see [`crate::mix_layout::collapsed_rank4_from_rank2_scalar`]).
@@ -147,48 +143,13 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     let w_c_eff = effective_w_c_homogeneous(profile, &row)
         .unwrap_or_else(|| (row.water_kg_m3 / binder_kg(&row).max(1.0)).clamp(0.2, 0.85));
 
-    let mut orchestrator_mix = OrchestratorMixScalars {
-        w_c_eff: w_c_eff as f64,
-        hydration_alpha: 0.0,
-        fc_mpa: PHASE_SKIP_SENTINEL as f64,
-        cement_kg_m3: row.cement_kg_m3.max(1.0) as f64,
-        scm_mass_fraction: scm_mass_fraction(&row) as f64,
-        age_days: row.age_days.max(0.1) as f64,
-    };
-
     let mut stages = Vec::new();
 
     let age_t = t01(row.age_days, &dev);
     let temp_t = t01(row.temperature_c, &dev);
     let alpha_t = compute_hydration_degree(mix, age_t, temp_t);
     let alpha = alpha_t.slice([0..1, 0..1]).into_scalar().clamp(0.0, 1.0);
-    orchestrator_mix.hydration_alpha = alpha as f64;
     stages.push(PipelineStageRecord::ok("hydration_degree"));
-
-    // MP3.2: classify cast lifecycle and route stages by eligibility matrix.
-    let material_phase = classify_cast_phase(
-        &CastPhaseInputs {
-            hydration_alpha: alpha,
-            yield_stress_pa: PHASE_SKIP_SENTINEL,
-            age_days: row.age_days,
-        },
-        &profile.cast_lifecycle,
-    );
-
-    // Summary scalars default to parity sentinels; overwritten only when a stage executes.
-    let mut fc_scalar = PHASE_SKIP_SENTINEL;
-    let mut tau_scalar = PHASE_SKIP_SENTINEL;
-    let mut eta_scalar = PHASE_SKIP_SENTINEL;
-    let mut thermo_rise = PHASE_SKIP_SENTINEL;
-    let mut d_scalar = PHASE_SKIP_SENTINEL;
-    let mut build_scalar = PHASE_SKIP_SENTINEL;
-    let mut extr_scalar = PHASE_SKIP_SENTINEL;
-    let mut itz_mic = PHASE_SKIP_SENTINEL;
-    let mut k_ic_scalar = PHASE_SKIP_SENTINEL;
-    let mut shrink_scalar = PHASE_SKIP_SENTINEL;
-    let mut ft_scalar = PHASE_SKIP_SENTINEL;
-    let mut creep_scalar = PHASE_SKIP_SENTINEL;
-    let mut dlvo_min = PHASE_SKIP_SENTINEL;
 
     let coarse_vf = agg_vf * 0.60_f32;
     let fine_vf = (agg_vf * 0.40_f32).max(0.0);
@@ -199,10 +160,6 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     let alpha_rank2 = t01(alpha, &dev);
     let poro_b = compute_capillary_porosity(wc_rank2.clone(), alpha_rank2.clone());
     let porosity_scalar = poro_b.slice([0..1, 0..1]).into_scalar();
-    // B3 shadow audit — chem capwrap φ_c; report SSOT remains tensor path until parity witness.
-    let _phi_b3_audit = capillary_porosity_b3_audit(w_c_eff as f64, alpha as f64);
-    debug_assert!(_phi_b3_audit.is_finite());
-    debug_assert!((0.0..=1.0).contains(&_phi_b3_audit));
     stages.push(PipelineStageRecord::ok("porosity_capillary_bulk"));
 
     let air_content = mix_layout::collapsed_rank4_from_rank2_scalar(t01(0.02_f32, &dev), &dev);
@@ -211,231 +168,143 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     let intrinsic_scale = profile.powers.s_intrinsic as f32;
     let intrinsic = mix_layout::collapsed_rank4_from_rank2_scalar(t01(intrinsic_scale, &dev), &dev);
 
-    if stage_eligible("strength_jennings", material_phase) {
-        let (fc_tensor, _, _) = StrengthEngine::<B>::compute_strength_jennings(
-            wc4.clone(),
-            a4.clone(),
-            air_content,
-            intrinsic,
-        );
-        fc_scalar = fc_tensor.into_data().value[0];
-        orchestrator_mix.fc_mpa = fc_scalar as f64;
-        stages.push(PipelineStageRecord::ok("strength_jennings"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "strength_jennings",
-            material_phase,
-        ));
-    }
+    let (fc_tensor, _, _) = StrengthEngine::<B>::compute_strength_jennings(
+        wc4.clone(),
+        a4.clone(),
+        air_content,
+        intrinsic,
+    );
+    let fc_scalar = fc_tensor.into_data().value[0];
+    stages.push(PipelineStageRecord::ok("strength_jennings"));
 
-    if stage_eligible("colloidal_dlvo", material_phase) {
-        let zeta_nom =
-            Tensor::from_data(Data::new(vec![-25.0_f32], Shape::new([1, 1, 1, 1])), &dev);
-        let ionic = Tensor::from_data(Data::new(vec![0.03_f32], Shape::new([1, 1, 1, 1])), &dev);
-        let sep = Tensor::from_data(Data::new(vec![50.0_f32], Shape::new([1, 1, 1, 1])), &dev);
-        let dlvo_col = ColloidalEngine::<B>::compute_dlvo_potential(sep, zeta_nom, ionic);
-        dlvo_min = min_f32_rank4(dlvo_col);
-        stages.push(PipelineStageRecord::ok("colloidal_dlvo"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "colloidal_dlvo",
-            material_phase,
-        ));
-    }
+    let zeta_nom = Tensor::from_data(Data::new(vec![-25.0_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let ionic = Tensor::from_data(Data::new(vec![0.03_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let sep = Tensor::from_data(Data::new(vec![50.0_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let dlvo_col = ColloidalEngine::<B>::compute_dlvo_potential(sep, zeta_nom, ionic);
+    let dlvo_min = min_f32_rank4(dlvo_col);
+    stages.push(PipelineStageRecord::ok("colloidal_dlvo"));
 
-    if stage_eligible("rheology_yodel", material_phase) {
-        let (phi_s, phi_m_s, d50_s, f_sigma_s) = yodel_inputs_from_layout(&layout, w_c_eff);
-        let phi = Tensor::from_data(Data::new(vec![phi_s], Shape::new([1, 1, 1, 1])), &dev);
-        let phi_m = Tensor::from_data(Data::new(vec![phi_m_s], Shape::new([1, 1, 1, 1])), &dev);
-        let d50 = Tensor::from_data(Data::new(vec![d50_s], Shape::new([1, 1, 1, 1])), &dev);
-        let f_sigma = Tensor::from_data(Data::new(vec![f_sigma_s], Shape::new([1, 1, 1, 1])), &dev);
-        let tau_y = RheologyEngine::<B>::compute_yield_stress_yodel(
-            phi.clone(),
-            phi_m.clone(),
-            d50.clone(),
-            f_sigma.clone(),
-        );
-        tau_scalar = tau_y.into_data().value.into_iter().fold(0_f32, f32::max);
-        stages.push(PipelineStageRecord::ok("rheology_yodel"));
-
-        if stage_eligible("rheology_chateau_ovarlez", material_phase) {
-            let eta_intrinsic =
-                Tensor::from_data(Data::new(vec![2.5_f32], Shape::new([1, 1, 1, 1])), &dev);
-            let eta_fluid =
-                Tensor::from_data(Data::new(vec![0.001_f32], Shape::new([1, 1, 1, 1])), &dev);
-            let eta_plastic = RheologyEngine::<B>::compute_chateau_ovarlez(
-                phi.clone(),
-                phi_m.clone(),
-                eta_intrinsic,
-                eta_fluid,
-            );
-            eta_scalar = min_f32_rank4(eta_plastic);
-            stages.push(PipelineStageRecord::ok("rheology_chateau_ovarlez"));
-        } else {
-            stages.push(PipelineStageRecord::skip_incompatible_phase(
-                "rheology_chateau_ovarlez",
-                material_phase,
-            ));
-        }
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "rheology_yodel",
-            material_phase,
-        ));
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "rheology_chateau_ovarlez",
-            material_phase,
-        ));
-    }
+    let (phi_s, phi_m_s, d50_s, f_sigma_s) = yodel_inputs_from_layout(&layout, w_c_eff);
+    let phi = Tensor::from_data(Data::new(vec![phi_s], Shape::new([1, 1, 1, 1])), &dev);
+    let phi_m = Tensor::from_data(Data::new(vec![phi_m_s], Shape::new([1, 1, 1, 1])), &dev);
+    let d50 = Tensor::from_data(Data::new(vec![d50_s], Shape::new([1, 1, 1, 1])), &dev);
+    let f_sigma = Tensor::from_data(Data::new(vec![f_sigma_s], Shape::new([1, 1, 1, 1])), &dev);
+    let tau_y = RheologyEngine::<B>::compute_yield_stress_yodel(
+        phi.clone(),
+        phi_m.clone(),
+        d50.clone(),
+        f_sigma.clone(),
+    );
+    let tau_scalar = tau_y.into_data().value.into_iter().fold(0_f32, f32::max);
+    let eta_intrinsic = Tensor::from_data(Data::new(vec![2.5_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let eta_fluid = Tensor::from_data(Data::new(vec![0.001_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let eta_plastic = RheologyEngine::<B>::compute_chateau_ovarlez(
+        phi.clone(),
+        phi_m.clone(),
+        eta_intrinsic,
+        eta_fluid,
+    );
+    let eta_scalar = min_f32_rank4(eta_plastic);
+    stages.push(PipelineStageRecord::ok("rheology_yodel"));
+    stages.push(PipelineStageRecord::ok("rheology_chateau_ovarlez"));
 
     let temp_c_4 = Tensor::from_data(
         Data::new(vec![row.temperature_c], Shape::new([1, 1, 1, 1])),
         &dev,
     );
     let alpha_4 = Tensor::from_data(Data::new(vec![alpha], Shape::new([1, 1, 1, 1])), &dev);
+    let ea = Tensor::from_data(Data::new(vec![40e3_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let (_, dt_adiabatic) =
+        ThermoEngine::<B>::compute_heat_rate(temp_c_4.clone(), alpha_4, ea.clone());
+    let thermo_rise = dt_adiabatic.into_data().value[0];
+    stages.push(PipelineStageRecord::ok("thermo_heat_rate_proxy"));
 
-    if stage_eligible("thermo_heat_rate_proxy", material_phase) {
-        let ea = Tensor::from_data(Data::new(vec![40e3_f32], Shape::new([1, 1, 1, 1])), &dev);
-        let (_, dt_adiabatic) =
-            ThermoEngine::<B>::compute_heat_rate(temp_c_4.clone(), alpha_4, ea.clone());
-        thermo_rise = dt_adiabatic.into_data().value[0];
-        stages.push(PipelineStageRecord::ok("thermo_heat_rate_proxy"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "thermo_heat_rate_proxy",
-            material_phase,
-        ));
-    }
+    let phi_cap_t = TransportEngine::<B>::compute_capillary_porosity(wc4.clone(), a4.clone());
+    let ref_d = Tensor::from_data(Data::new(vec![1e-12_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let d_cl = TransportEngine::<B>::compute_chloride_diffusivity(phi_cap_t.clone(), ref_d);
+    let d_scalar = min_f32_rank4(d_cl.clone());
+    stages.push(PipelineStageRecord::ok("transport_chloride"));
 
-    let phi_cap_t = if stage_eligible("transport_chloride", material_phase)
-        || stage_eligible("chemo_water", material_phase)
+    let tau_for_print = tau_scalar.max(50.0_f32);
+    let build = PrintabilityEngine::<B>::compute_buildability(
+        t4_scalar(tau_for_print, &dev),
+        t4_scalar(w_c_eff, &dev),
+        80.0,
+    );
+    let build_scalar = min_f32_rank4(build);
+    let pump_pa = (tau_for_print * 0.85).max(45.0);
+    let extr = PrintabilityEngine::<B>::compute_extrudability(
+        t4_scalar(tau_for_print, &dev),
+        t4_scalar(pump_pa, &dev),
+        16.0,
+        120.0,
+    );
+    let extr_scalar = min_f32_rank4(extr.clone());
+    if extr
+        .into_data()
+        .value
+        .iter()
+        .copied()
+        .all(|x| x.is_finite())
     {
-        Some(TransportEngine::<B>::compute_capillary_porosity(
-            wc4.clone(),
-            a4.clone(),
-        ))
+        stages.push(PipelineStageRecord::ok("printability"));
     } else {
-        None
-    };
-
-    if stage_eligible("transport_chloride", material_phase) {
-        let phi_cap = phi_cap_t.as_ref().expect("phi_cap prepared for transport");
-        let ref_d = Tensor::from_data(Data::new(vec![1e-12_f32], Shape::new([1, 1, 1, 1])), &dev);
-        let d_cl = TransportEngine::<B>::compute_chloride_diffusivity(phi_cap.clone(), ref_d);
-        d_scalar = min_f32_rank4(d_cl);
-        stages.push(PipelineStageRecord::ok("transport_chloride"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "transport_chloride",
-            material_phase,
-        ));
-    }
-
-    if stage_eligible("printability", material_phase) {
-        let tau_for_print = tau_scalar.max(50.0_f32);
-        let build = PrintabilityEngine::<B>::compute_buildability(
-            t4_scalar(tau_for_print, &dev),
-            t4_scalar(w_c_eff, &dev),
-            80.0,
-        );
-        build_scalar = min_f32_rank4(build);
-        let pump_pa = (tau_for_print * 0.85).max(45.0);
-        let extr = PrintabilityEngine::<B>::compute_extrudability(
-            t4_scalar(tau_for_print, &dev),
-            t4_scalar(pump_pa, &dev),
-            16.0,
-            120.0,
-        );
-        extr_scalar = min_f32_rank4(extr.clone());
-        if extr
-            .into_data()
-            .value
-            .iter()
-            .copied()
-            .all(|x| x.is_finite())
-        {
-            stages.push(PipelineStageRecord::ok("printability"));
-        } else {
-            stages.push(PipelineStageRecord::fail(
-                "printability",
-                "non-finite extrudability",
-            ));
-        }
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
+        stages.push(PipelineStageRecord::fail(
             "printability",
-            material_phase,
+            "non-finite extrudability",
         ));
     }
 
-    if stage_eligible("itz", material_phase) {
-        let thick = compute_itz_thickness_microns::<B>(Tensor::from_data(
-            Data::new(vec![w_c_eff * 48.0_f32.sqrt()], Shape::new([1, 1])),
+    let thick = compute_itz_thickness_microns::<B>(Tensor::from_data(
+        Data::new(vec![w_c_eff * 48.0_f32.sqrt()], Shape::new([1, 1])),
+        &dev,
+    ));
+    let itz_mic = thick.slice([0..1, 0..1]).into_scalar();
+    let itz_poro = compute_itz_porosity::<B>(wc_rank2.clone());
+    let _itz_p = itz_poro.slice([0..1, 0..1]).into_scalar();
+    let _perc = compute_itz_percolation_factor::<B>(Tensor::from_data(
+        Data::new(vec![0.25_f32], Shape::new([1, 1])),
+        &dev,
+    ));
+    stages.push(PipelineStageRecord::ok("itz"));
+
+    let (_rh_internal, tension) = ChemoWaterEngine::<B>::compute_moisture_transport(
+        wc4.clone(),
+        a4.clone(),
+        mix_layout::collapsed_rank4_from_rank2_scalar(
+            Tensor::from_data(Data::new(vec![0.65_f32], Shape::new([1, 1])), &dev),
             &dev,
-        ));
-        itz_mic = thick.slice([0..1, 0..1]).into_scalar();
-        let itz_poro = compute_itz_porosity::<B>(wc_rank2.clone());
-        let _itz_p = itz_poro.slice([0..1, 0..1]).into_scalar();
-        let _perc = compute_itz_percolation_factor::<B>(Tensor::from_data(
-            Data::new(vec![0.25_f32], Shape::new([1, 1])),
+        ),
+        phi_cap_t.clone(),
+    );
+    let _rh_peak = tension.into_data().value.into_iter().fold(0_f32, f32::max);
+    stages.push(PipelineStageRecord::ok("chemo_water"));
+
+    let e_paste = mix_layout::collapsed_rank4_from_rank2_scalar(
+        Tensor::from_data(
+            Data::new(vec![(fc_scalar * 5.0_f32).max(1.0_f32)], Shape::new([1, 1])),
             &dev,
-        ));
-        stages.push(PipelineStageRecord::ok("itz"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "itz",
-            material_phase,
-        ));
-    }
+        ),
+        &dev,
+    );
+    let e_agg = Tensor::from_data(Data::new(vec![60e9_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let e_itz = Tensor::from_data(Data::new(vec![20e9_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let v_agg = Tensor::from_data(Data::new(vec![0.65_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let v_itz = Tensor::from_data(Data::new(vec![0.06_f32], Shape::new([1, 1, 1, 1])), &dev);
+    let e_eff =
+        FractureEngine::<B>::compute_effective_modulus_mt(e_paste, e_agg, e_itz, v_agg, v_itz);
+    let g_f = fracture_energy_gc_j_per_m2_from_profile(profile);
+    let fracture_energy = Tensor::from_data(Data::new(vec![g_f], Shape::new([1, 1, 1, 1])), &dev);
+    let k_ic = FractureEngine::<B>::compute_fracture_toughness(e_eff, fracture_energy);
+    let k_ic_scalar = min_f32_rank4(k_ic);
+    stages.push(PipelineStageRecord::ok("fracture"));
 
-    if stage_eligible("chemo_water", material_phase) {
-        let phi_cap = phi_cap_t.as_ref().cloned().unwrap_or_else(|| {
-            TransportEngine::<B>::compute_capillary_porosity(wc4.clone(), a4.clone())
-        });
-        let (_rh_internal, tension) = ChemoWaterEngine::<B>::compute_moisture_transport(
-            wc4.clone(),
-            a4.clone(),
-            mix_layout::collapsed_rank4_from_rank2_scalar(
-                Tensor::from_data(Data::new(vec![0.65_f32], Shape::new([1, 1])), &dev),
-                &dev,
-            ),
-            phi_cap,
-        );
-        let _rh_peak = tension.into_data().value.into_iter().fold(0_f32, f32::max);
-        stages.push(PipelineStageRecord::ok("chemo_water"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "chemo_water",
-            material_phase,
-        ));
-    }
-
-    if stage_eligible("fracture", material_phase) {
-        // B1 carve @ g_spawn_i_b16_mt_carve_0721 — continuum homogenization; monolith tensor retained until S7.
-        let e_eff_scalar = compute_effective_modulus_mt_orchestrator(fc_scalar as f64);
-        k_ic_scalar = try_fracture_k_ic_orchestrator(e_eff_scalar, profile.powers.s_intrinsic)
-            .unwrap_or(PHASE_SKIP_SENTINEL);
-        stages.push(PipelineStageRecord::ok("fracture"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "fracture",
-            material_phase,
-        ));
-    }
-
-    if stage_eligible("nano_enhancement_baseline", material_phase) {
-        NanoEngine::<B>::compute_enhancements(
-            Tensor::from_data(Data::new(vec![0.01_f32], Shape::new([1, 1, 1, 1])), &dev),
-            Tensor::from_data(Data::new(vec![200.0_f32], Shape::new([1, 1, 1, 1])), &dev),
-            Tensor::from_data(Data::new(vec![1.0_f32], Shape::new([1, 1, 1, 1])), &dev),
-        );
-        stages.push(PipelineStageRecord::ok("nano_enhancement_baseline"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "nano_enhancement_baseline",
-            material_phase,
-        ));
-    }
+    NanoEngine::<B>::compute_enhancements(
+        Tensor::from_data(Data::new(vec![0.01_f32], Shape::new([1, 1, 1, 1])), &dev),
+        Tensor::from_data(Data::new(vec![200.0_f32], Shape::new([1, 1, 1, 1])), &dev),
+        Tensor::from_data(Data::new(vec![1.0_f32], Shape::new([1, 1, 1, 1])), &dev),
+    );
+    stages.push(PipelineStageRecord::ok("nano_enhancement_baseline"));
 
     let mass_ce = Tensor::from_data(
         Data::new(vec![row.cement_kg_m3.max(0.0)], Shape::new([1, 1, 1, 1])),
@@ -483,116 +352,86 @@ pub fn run_full_physics_pipeline<B: Backend<FloatElem = f32>>(
     let _dot_cost = compute_cost(mix, unit_t);
     stages.push(PipelineStageRecord::ok("cost_linear_dot"));
 
-    // S6_RETIRE @ g_spawn_i_orch_2054 — B2 scalar delegate; Burn `physics/creep.rs` retained.
-    if stage_eligible("creep", material_phase) {
-        creep_scalar =
-            try_creep_compliance_orchestrator(orchestrator_mix).unwrap_or(PHASE_SKIP_SENTINEL);
-        stages.push(PipelineStageRecord::ok("creep"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "creep",
-            material_phase,
-        ));
-    }
+    let creep = CreepEngine::<B>::compute_compliance(
+        t4_scalar(fc_scalar, &dev),
+        wc4.clone(),
+        Tensor::from_data(Data::new(vec![0.55_f32], Shape::new([1, 1, 1, 1])), &dev),
+        7.0_f32,
+        row.age_days.max(0.1_f32),
+    );
+    let creep_scalar = creep.into_data().value[0];
+    stages.push(PipelineStageRecord::ok("creep"));
 
     let scm_r_t = scm_mass_fraction(&row);
-    if stage_eligible("set_time", material_phase) {
-        let (_, _) = SetTimeEngine::<B>::compute_setting_time(
-            wc4.clone(),
-            temp_c_4.clone(),
-            Tensor::from_data(Data::new(vec![0.75_f32], Shape::new([1, 1, 1, 1])), &dev),
-            mix_layout::collapsed_rank4_from_rank2_scalar(
-                Tensor::from_data(Data::new(vec![scm_r_t], Shape::new([1, 1])), &dev),
-                &dev,
-            ),
-            Tensor::from_data(Data::new(vec![0.0_f32], Shape::new([1, 1, 1, 1])), &dev),
-            Tensor::from_data(Data::new(vec![1.0_f32], Shape::new([1, 1, 1, 1])), &dev),
-            Tensor::from_data(Data::new(vec![350.0_f32], Shape::new([1, 1, 1, 1])), &dev),
-            Tensor::from_data(Data::new(vec![0.55_f32], Shape::new([1, 1, 1, 1])), &dev),
-        );
-        stages.push(PipelineStageRecord::ok("set_time"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "set_time",
-            material_phase,
-        ));
-    }
+    let (_, _) = SetTimeEngine::<B>::compute_setting_time(
+        wc4.clone(),
+        temp_c_4.clone(),
+        Tensor::from_data(Data::new(vec![0.75_f32], Shape::new([1, 1, 1, 1])), &dev),
+        mix_layout::collapsed_rank4_from_rank2_scalar(
+            Tensor::from_data(Data::new(vec![scm_r_t], Shape::new([1, 1])), &dev),
+            &dev,
+        ),
+        Tensor::from_data(Data::new(vec![0.0_f32], Shape::new([1, 1, 1, 1])), &dev),
+        Tensor::from_data(Data::new(vec![1.0_f32], Shape::new([1, 1, 1, 1])), &dev),
+        Tensor::from_data(Data::new(vec![350.0_f32], Shape::new([1, 1, 1, 1])), &dev),
+        Tensor::from_data(Data::new(vec![0.55_f32], Shape::new([1, 1, 1, 1])), &dev),
+    );
+    stages.push(PipelineStageRecord::ok("set_time"));
 
-    if stage_eligible("shrinkage", material_phase) {
-        shrink_scalar = try_autogenous_shrinkage_orchestrator(orchestrator_mix)
-            .map(|v| v.max(0.0_f32))
-            .unwrap_or(PHASE_SKIP_SENTINEL);
-        stages.push(PipelineStageRecord::ok("shrinkage"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "shrinkage",
-            material_phase,
-        ));
-    }
-
-    if stage_eligible("freeze_thaw", material_phase) {
-        let paste_frac = Tensor::from_data(
+    let shrink = ShrinkageEngine::<B>::compute_autogenous_shrinkage(
+        wc4.clone(),
+        a4.clone(),
+        Tensor::from_data(
             Data::new(
-                vec![(1.0_f32 - agg_vf).clamp(0.15, 0.65)],
+                vec![row.cement_kg_m3.max(1.0_f32)],
                 Shape::new([1, 1, 1, 1]),
             ),
             &dev,
-        );
-        let (_, durability_factor) = FreezeThawEngine::<B>::compute_durability(
-            Tensor::from_data(Data::new(vec![0.04_f32], Shape::new([1, 1, 1, 1])), &dev),
-            paste_frac,
-            Tensor::from_data(Data::new(vec![35.0_f32], Shape::new([1, 1, 1, 1])), &dev),
-            6.0_f32,
-        );
-        ft_scalar = min_f32_rank4(durability_factor);
-        stages.push(PipelineStageRecord::ok("freeze_thaw"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "freeze_thaw",
-            material_phase,
-        ));
-    }
+        ),
+        mix_layout::collapsed_rank4_from_rank2_scalar(
+            Tensor::from_data(Data::new(vec![scm_r_t], Shape::new([1, 1])), &dev),
+            &dev,
+        ),
+    );
+    let shrink_scalar = shrink.into_data().value.into_iter().fold(0_f32, f32::max);
+    stages.push(PipelineStageRecord::ok("shrinkage"));
+
+    let paste_frac = Tensor::from_data(
+        Data::new(
+            vec![(1.0_f32 - agg_vf).clamp(0.15, 0.65)],
+            Shape::new([1, 1, 1, 1]),
+        ),
+        &dev,
+    );
+    let (_, durability_factor) = FreezeThawEngine::<B>::compute_durability(
+        Tensor::from_data(Data::new(vec![0.04_f32], Shape::new([1, 1, 1, 1])), &dev),
+        paste_frac,
+        Tensor::from_data(Data::new(vec![35.0_f32], Shape::new([1, 1, 1, 1])), &dev),
+        6.0_f32,
+    );
+    let ft_scalar = min_f32_rank4(durability_factor);
+    stages.push(PipelineStageRecord::ok("freeze_thaw"));
 
     stages.push(PipelineStageRecord::skip_missing(
         "polymer",
         "zero polymer-cement ratio on bulk path",
     ));
 
-    if stage_eligible("self_heal", material_phase) {
-        let internal_rh = mix_layout::collapsed_rank4_from_rank2_scalar(
-            Tensor::from_data(Data::new(vec![0.92_f32], Shape::new([1, 1])), &dev),
-            &dev,
-        );
-        SelfHealEngine::<B>::compute_healing_potential(
-            a4.clone(),
-            internal_rh,
-            t4_scalar(0.0, &dev),
-        );
-        stages.push(PipelineStageRecord::ok("self_heal"));
-    } else {
-        stages.push(PipelineStageRecord::skip_incompatible_phase(
-            "self_heal",
-            material_phase,
-        ));
-    }
+    let internal_rh = mix_layout::collapsed_rank4_from_rank2_scalar(
+        Tensor::from_data(Data::new(vec![0.92_f32], Shape::new([1, 1])), &dev),
+        &dev,
+    );
+    SelfHealEngine::<B>::compute_healing_potential(a4.clone(), internal_rh, t4_scalar(0.0, &dev));
+    stages.push(PipelineStageRecord::ok("self_heal"));
 
     stages.push(PipelineStageRecord::skip_missing(
         "fiber",
         "zero fiber volume fraction on bulk path",
     ));
 
-    let phase_skip_sentinels = stages.iter().any(|s| {
-        matches!(
-            s.status,
-            crate::pipeline::report::PipelineStageStatus::SkippedIncompatiblePhase
-        )
-    });
-
     PhysicsPipelineReport {
         schema_version: PHYSICS_PIPELINE_SCHEMA_VERSION.to_string(),
         representation: "batch_collapsed",
-        material_phase,
-        phase_skip_sentinels,
         stages,
         summary: PhysicsPipelineSummary {
             effective_water_cement_ratio: w_c_eff,

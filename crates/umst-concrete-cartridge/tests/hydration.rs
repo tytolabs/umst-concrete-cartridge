@@ -1,18 +1,22 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Hydration regression test against Powers (1948) OPC isothermal calorimetry.
 //!
 //! Asserts that the predicted degree of hydration at 1 d, 7 d, 28 d, and 90 d
 //! agrees with the Powers reference curve for w/c = 0.40 within ±10 % MAE.
 
 use approx::assert_abs_diff_eq;
-use umst_concrete_cartridge::chem_adapter::ultimate_degree_of_hydration_f32;
 
 const TAU_HOURS: f32 = 10.0;
 const BETA: f32 = 0.85;
 
+fn ultimate_doh(w_c: f32) -> f32 {
+    1.031 * w_c / (0.194 + w_c)
+}
+
 fn doh_at(t_hours: f32, w_c: f32) -> f32 {
-    let alpha_inf = ultimate_degree_of_hydration_f32(w_c);
+    let alpha_inf = ultimate_doh(w_c);
     let arg = (t_hours / TAU_HOURS).powf(BETA);
     alpha_inf * (1.0 - (-arg).exp())
 }
@@ -44,7 +48,7 @@ fn powers_doh_envelope() {
 #[test]
 fn ultimate_doh_within_physical_bounds() {
     for &w_c in &[0.30_f32, 0.40, 0.50, 0.60] {
-        let alpha = ultimate_degree_of_hydration_f32(w_c);
+        let alpha = ultimate_doh(w_c);
         assert!((0.0..=1.0).contains(&alpha), "α∞ = {alpha} for w/c = {w_c}");
     }
 }

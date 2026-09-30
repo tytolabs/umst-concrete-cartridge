@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar,
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! CLI transport: JSON (`serde_json`), error aggregation, and optimisation driver.
@@ -293,11 +293,11 @@ pub fn optimize_mix_with_gate(
     target: f64,
     steps: usize,
 ) -> Result<(MixSpec, bool), CliError> {
-    use umst_concrete_cartridge::pipeline::{evaluate_mix_dual_gate, CastGateVerdict};
+    use umst_concrete_cartridge::pipeline::evaluate_mix_dual_gate;
 
     let mix = optimize_mix(profile, base, field, target, steps)?;
     let (_, verdict) = evaluate_mix_dual_gate(profile, &mix);
-    Ok((mix, matches!(verdict, CastGateVerdict::Admissible)))
+    Ok((mix, verdict.passes()))
 }
 
 fn optimize_w_c_for_strength(

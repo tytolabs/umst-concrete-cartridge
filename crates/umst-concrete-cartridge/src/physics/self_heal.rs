@@ -1,8 +1,7 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
-use burn::tensor::{backend::Backend, Tensor};
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
-use crate::chem_adapter::nano_healing_boost_per_dosage_f32;
+use burn::tensor::{backend::Backend, Tensor};
 
 /// Differentiable slice of the manifold state feeding the autogenous-healing head.
 ///
@@ -43,9 +42,7 @@ pub(crate) fn transform_healing_observable_state<B: Backend>(
         .clamp_max(1.0_f32);
 
     // 3. Nucleation Seeding (Nano-silica provides sites for C-S-H precipitation)
-    let nano_boost = nano_dosage
-        .mul_scalar(nano_healing_boost_per_dosage_f32())
-        .add_scalar(1.0_f32);
+    let nano_boost = nano_dosage.mul_scalar(0.5_f32).add_scalar(1.0_f32);
 
     // Healing potential metric (0.0 to 1.0)
     unhydrated_fraction

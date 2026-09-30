@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # Agent surface audit (B0)
 
 **Purpose.** Ground Work-order B: enumerate the **current real** agent surface with `file:line`, classify hot vs cold, and mark §5.1 **target** separately.  

@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Track A coordinate-descent optimiser: dual-gated mix proposal (printability AND thermodynamic).
 //!
 //! Search is iterative (bisection), but each step is a pure score + gate evaluation composed with
@@ -17,7 +18,7 @@ use crate::facade::{
 };
 use crate::mix_layout;
 use crate::physics::printability::PrintabilityEngine;
-use crate::pipeline::dual_gate::{evaluate_dual_gate, CastGateVerdict};
+use crate::pipeline::dual_gate::{evaluate_dual_gate, DualGateVerdict};
 use crate::pipeline::physical_summary::nominal_mix_tensor_for_mix_spec;
 use crate::pipeline::{
     run_full_physics_pipeline, PhysicsPipelineSummary, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
@@ -53,86 +54,16 @@ pub struct MixSpecWireOut {
     pub profile_name: String,
 }
 
-/// v1 JSON wire block for `proposed_next_mix.v1` sidecar.
-///
-/// Bool fields (`printability_ok`, `thermodynamic_ok`, `passes`) are **wire-compat
-/// keys** for operator scripts and CLI contract tests — not MP3.6 Rust shim debt
-/// (bool shims closed @ MP3.6; values from [`CastGateVerdict`] leg-pass helpers).
-/// Prefer [`Self::is_printability_ok`], [`Self::is_thermodynamic_ok`], [`Self::is_admissible`].
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Dual-gate audit block for proposed mix JSON sidecar.
-#[allow(missing_docs)] // Legacy bool mirrors — prefer accessor predicates (P26).
 #[derive(Debug, Clone, Serialize)]
 pub struct DualGateWire {
-    /// Legacy v1 wire mirror — prefer [`Self::is_printability_ok`].
-    #[deprecated(
-        since = "0.2.0",
-        note = "use DualGateWire::is_printability_ok() — v1 JSON key unchanged"
-    )]
     pub printability_ok: bool,
-    /// Legacy v1 wire mirror — prefer [`Self::is_thermodynamic_ok`].
-    #[deprecated(
-        since = "0.2.0",
-        note = "use DualGateWire::is_thermodynamic_ok() — v1 JSON key unchanged"
-    )]
     pub thermodynamic_ok: bool,
-    /// Legacy v1 wire mirror — prefer [`Self::is_admissible`].
-    #[deprecated(
-        since = "0.2.0",
-        note = "use DualGateWire::is_admissible() — v1 JSON key `passes` unchanged"
-    )]
     pub passes: bool,
     pub yield_stress_pa: f64,
     pub printability_extrudability: f64,
-}
-
-impl DualGateWire {
-    /// Printability leg pass — mirrors [`CastGateVerdict::printability_leg_pass`].
-    #[must_use]
-    pub fn is_printability_ok(&self) -> bool {
-        #[allow(deprecated)]
-        {
-            self.printability_ok
-        }
-    }
-
-    /// Thermodynamic leg pass — mirrors [`CastGateVerdict::thermodynamic_leg_pass`].
-    #[must_use]
-    pub fn is_thermodynamic_ok(&self) -> bool {
-        #[allow(deprecated)]
-        {
-            self.thermodynamic_ok
-        }
-    }
-
-    /// Composite admissibility — mirrors [`CastGateVerdict::is_admissible`].
-    #[must_use]
-    pub fn is_admissible(&self) -> bool {
-        #[allow(deprecated)]
-        {
-            self.passes
-        }
-    }
-
-    /// Build v1 wire-stable bool block from [`CastGateVerdict`] leg-pass helpers.
-    ///
-    /// Wire-compat only: JSON keys are frozen for `proposed_next_mix.v1`; intentional
-    /// serde surface, not residual MP3.6 bool-shim debt.
-    /// formal_anchor: NONE
-    /// formal_status: NONE
-    /// formal_anchor_rationale: SSOT for dual-gate sidecar bools from enum algebra.
-    #[must_use]
-    #[allow(deprecated)]
-    pub fn from_verdict(verdict: &CastGateVerdict, summary: &PhysicsPipelineSummary) -> Self {
-        Self {
-            printability_ok: verdict.printability_leg_pass(),
-            thermodynamic_ok: verdict.thermodynamic_leg_pass(),
-            passes: verdict.is_admissible(),
-            yield_stress_pa: f64::from(summary.rheology_yield_stress_pa),
-            printability_extrudability: f64::from(summary.printability_extrudability),
-        }
-    }
 }
 
 impl From<&MixSpec> for MixSpecWireOut {
@@ -230,7 +161,7 @@ fn buildability_from_tau_pa(tau_pa: f32) -> f32 {
 pub fn evaluate_mix_dual_gate(
     profile: &Profile,
     spec: &MixSpec,
-) -> (PhysicsPipelineSummary, CastGateVerdict) {
+) -> (PhysicsPipelineSummary, DualGateVerdict) {
     let device = NdArrayDevice::default();
     let mix = nominal_mix_tensor_for_mix_spec::<FacadeBackend>(profile, spec, &device);
     let report = run_full_physics_pipeline::<FacadeBackend>(profile, &mix);
@@ -265,7 +196,7 @@ struct SearchBounds {
 struct SearchState {
     mix: MixSpec,
     summary: PhysicsPipelineSummary,
-    verdict: CastGateVerdict,
+    verdict: DualGateVerdict,
     score: f32,
 }
 
@@ -281,7 +212,7 @@ pub fn coordinate_descent_optimize(
     base: &MixSpec,
     objective: TrackAObjective,
     steps: usize,
-) -> (MixSpec, PhysicsPipelineSummary, CastGateVerdict) {
+) -> (MixSpec, PhysicsPipelineSummary, DualGateVerdict) {
     let steps = steps.max(4);
     let (summary, verdict) = evaluate_mix_dual_gate(profile, base);
     let score = objective_score(objective, &summary, &verdict);
@@ -319,6 +250,7 @@ fn bisect_axis(
         let cand = mix_with_axis(&best.mix, axis, mid);
         let (summary, verdict) = evaluate_mix_dual_gate(profile, &cand);
         let score = objective_score(objective, &summary, &verdict);
+        let printable_pass = verdict.passes();
 
         bounds = update_bisection_bounds(objective, &summary, bounds, mid);
 
@@ -331,9 +263,7 @@ fn bisect_axis(
             };
         }
 
-        if objective == TrackAObjective::PrintableWindow
-            && matches!(verdict, CastGateVerdict::Admissible)
-        {
+        if objective == TrackAObjective::PrintableWindow && printable_pass {
             break;
         }
     }
@@ -347,20 +277,16 @@ fn bisect_axis(
 fn candidate_preferred(
     objective: TrackAObjective,
     score: f32,
-    verdict: &CastGateVerdict,
+    verdict: &DualGateVerdict,
     best_score: f32,
-    best_verdict: &CastGateVerdict,
+    best_verdict: &DualGateVerdict,
 ) -> bool {
     let score_improves = score < best_score;
     let gate_improves = match objective {
-        TrackAObjective::PrintableWindow => {
-            matches!(verdict, CastGateVerdict::Admissible)
-                && !matches!(best_verdict, CastGateVerdict::Admissible)
-        }
+        TrackAObjective::PrintableWindow => verdict.passes() && !best_verdict.passes(),
         _ => score_improves,
     };
-    let admissible = matches!(verdict, CastGateVerdict::Admissible);
-    gate_improves || (score_improves && admissible)
+    gate_improves || (score_improves && verdict.passes())
 }
 
 /// formal_anchor: NONE
@@ -428,15 +354,18 @@ fn axis_bounds(axis: SearchAxis, w_lo: f32, w_hi: f32) -> SearchBounds {
 fn objective_score(
     objective: TrackAObjective,
     summary: &PhysicsPipelineSummary,
-    verdict: &CastGateVerdict,
+    verdict: &DualGateVerdict,
 ) -> f32 {
     match objective {
         TrackAObjective::YieldStressPa(t) => (summary.rheology_yield_stress_pa - t).abs(),
         TrackAObjective::Extrudability(t) => (summary.printability_extrudability - t).abs(),
-        TrackAObjective::PrintableWindow => match verdict {
-            CastGateVerdict::Admissible => 0.0,
-            _ => 1.0 + (summary.rheology_yield_stress_pa - PRINTABLE_TAU_LO).abs(),
-        },
+        TrackAObjective::PrintableWindow => {
+            if verdict.passes() {
+                0.0
+            } else {
+                1.0 + (summary.rheology_yield_stress_pa - PRINTABLE_TAU_LO).abs()
+            }
+        }
     }
 }
 
@@ -464,7 +393,7 @@ pub fn proposed_next_mix_json(
     base: &MixSpec,
     proposed: &MixSpec,
     summary: &PhysicsPipelineSummary,
-    verdict: &CastGateVerdict,
+    verdict: &DualGateVerdict,
     objective: &str,
     steps: usize,
 ) -> ProposedNextMix {
@@ -473,7 +402,13 @@ pub fn proposed_next_mix_json(
         calibration_profile: profile.bundle_id.clone(),
         base_mix: MixSpecWireOut::from(base),
         proposed_mix: MixSpecWireOut::from(proposed),
-        dual_gate: DualGateWire::from_verdict(verdict, summary),
+        dual_gate: DualGateWire {
+            printability_ok: verdict.printability_ok,
+            thermodynamic_ok: verdict.thermodynamic_ok,
+            passes: verdict.passes(),
+            yield_stress_pa: f64::from(summary.rheology_yield_stress_pa),
+            printability_extrudability: f64::from(summary.printability_extrudability),
+        },
         objective: objective.to_string(),
         steps,
     }
@@ -490,62 +425,4 @@ pub fn thermodynamic_gate_ok(profile: &Profile, spec: &MixSpec) -> bool {
         ..PredictOptions::default()
     };
     predict_with_options(profile, spec, opts).is_ok()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::pipeline::dual_gate::{CastGateVerdict, PrintabilityReject};
-    use crate::pipeline::ThermoReject;
-    use umst_manifold::gate::verdict::GateRejectReason;
-
-    fn stub_summary(tau_pa: f32, extr: f32) -> PhysicsPipelineSummary {
-        PhysicsPipelineSummary {
-            effective_water_cement_ratio: 0.45,
-            hydration_alpha: 0.1,
-            porosity_capillary: 0.15,
-            strength_jennings_mpa: 20.0,
-            rheology_yield_stress_pa: tau_pa,
-            thermo_adiabatic_rise_proxy_c: 5.0,
-            chloride_diffusivity_m2_s: 1e-12,
-            printability_buildability: 0.5,
-            printability_extrudability: extr,
-            rheology_plastic_viscosity_pa_s: 50.0,
-            itz_thickness_microns: 30.0,
-            fracture_toughness_k_ic_mpa_sqrt_m: 1.0,
-            sustainability_gwp_kg_co2_m3: 300.0,
-            sustainability_cost_usd_per_m3: 100.0,
-            dlvo_potential_kt_minimum: 0.9,
-            shrinkage_microstrain_proxy: 200.0,
-            freeze_thaw_durability_factor: 0.8,
-            creep_compliance_1_over_gpa: 1e-2,
-        }
-    }
-
-    #[test]
-    fn dual_gate_wire_accessors_match_verdict_legs() {
-        let summary = stub_summary(250.0, 0.5);
-        let cases = [
-            CastGateVerdict::Admissible,
-            CastGateVerdict::RejectPrintability(PrintabilityReject::TauBelowBand {
-                tau_pa: 100.0,
-                lo: PRINTABLE_TAU_LO,
-                hi: PRINTABLE_TAU_HI,
-            }),
-            CastGateVerdict::RejectThermodynamic(ThermoReject(GateRejectReason::RegimeEnvelope)),
-            CastGateVerdict::RejectBoth {
-                printability: PrintabilityReject::ExtrudabilityLow {
-                    extr: 0.1,
-                    min: 0.35,
-                },
-                thermodynamic: ThermoReject(GateRejectReason::MassViolation),
-            },
-        ];
-        for verdict in cases {
-            let wire = DualGateWire::from_verdict(&verdict, &summary);
-            assert_eq!(wire.is_printability_ok(), verdict.printability_leg_pass());
-            assert_eq!(wire.is_thermodynamic_ok(), verdict.thermodynamic_leg_pass());
-            assert_eq!(wire.is_admissible(), verdict.is_admissible());
-        }
-    }
 }

@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # UMST agent Docker image
 
 Local stdio MCP for Cursor / SDK — **not** a hosted MCP service.

@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar,
 # Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 [workspace]
@@ -7,7 +7,6 @@ resolver = "2"
 members = [
     "crates/umst-agent-mcp-core",
     "crates/umst-concrete-cartridge",
-    "crates/umst-jennings-legacy",
     "crates/umst-concrete-ffi",
     "crates/umst-cli",
     "crates/umst-gate-ffi",
@@ -26,36 +25,13 @@ authors = [
 ]
 repository = "https://github.com/tytolabs/umst-concrete-cartridge"
 
-# Single CI pin for all workspace crates — SHAs in `.umst-pins.toml` (W-62).
-# Path deps + anonymous sibling checkout in CI; `umst-manifold` / `umst-ucrs` git-pinned (manifest-bridge / UCRS).
-# Full git-only workspace graph blocked until sibling crates shed path deps (W-63 public ladder).
+# Single CI pin for all workspace crates (bump after umst-manifold releases).
 [workspace.dependencies]
-umst-cartridge-api = { version = "0.1.0", path = "../umst-cartridge-api" }
-# S5 path-dep bridge — full B1+B2+B3 compose stack reachable from monolith workspace.
-umst-cartridge-concrete = { version = "0.1.0", path = "../umst-cartridges/crates/materials/umst-cartridge-concrete" }
-umst-cartridge-continuum = { version = "0.1.0", path = "../umst-cartridges/crates/atoms/umst-cartridge-continuum" }
-umst-cartridge-solid-inelastic = { version = "0.1.0", path = "../umst-cartridges/crates/atoms/umst-cartridge-solid-inelastic" }
-umst-cartridge-poromechanics = { version = "0.1.0", path = "../umst-cartridges/crates/atoms/umst-cartridge-poromechanics" }
-umst-gate = { version = "0.1.0", path = "../umst-foundations/crates/umst-gate" }
-umst-trust = { version = "0.1.0", path = "../umst-foundations/crates/umst-trust" }
-umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "71e1688d4a30699a3463a9856646157540a3f52b" }
-umst-runtime-arena = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "71e1688d4a30699a3463a9856646157540a3f52b", package = "umst-runtime-arena" }
-umst-ucrs = { git = "https://github.com/tytolabs/umst-ucrs.git", rev = "a1202338638241749daa226855f682fd73f8f872", default-features = false }
-umst-chem = { version = "0.1.0", path = "../umst-chem" }
-umst-cartridge-registry = { version = "0.0.0", path = "../umst-cartridge-registry" }
-umst-semantics = { version = "0.0.0-prep", path = "../umst-semantics", default-features = false }
+umst-manifold = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "35bf75f5b99835265c40d343bd6a88bb629dff7f" }
+umst-runtime-arena = { git = "https://github.com/tytolabs/umst-manifold.git", rev = "35bf75f5b99835265c40d343bd6a88bb629dff7f", package = "umst-runtime-arena" }
+umst-ucrs = { git = "https://github.com/tytolabs/umst-ucrs.git", rev = "eda7ac052a05cff82e64027799ad42124872518a" }
 
-[patch."https://github.com/tytolabs/umst-ucrs.git"]
-umst-ucrs = { version = "1.0.0", path = "../umst-ucrs/Rust" }
-
-# R2-1: tracked sibling patch so gate_parity resolves umst-gate after A2 carve.
-# Pure git pin 575d9508 alone fails ("no matching package named umst-gate") because
-# the remote rev predates the carve; local umst-manifold path-deps foundations.
-# See umst-foundations/crates/umst-gate/CONSUMER_PATH.md.
-[patch."https://github.com/tytolabs/umst-manifold.git"]
-umst-manifold = { path = "../umst-manifold" }
-umst-runtime = { path = "../umst-manifold/crates/umst-runtime" }
-umst-runtime-arena = { path = "../umst-manifold/umst-runtime-arena" }
+# Local dev: copy `.cargo/config.toml.example` → `.cargo/config.toml` to patch sibling umst-manifold.
 
 # Striatus dev loop: keep harness code debuggable; compile Burn/ndarray deps at full speed.
 [profile.dev.package."*"]

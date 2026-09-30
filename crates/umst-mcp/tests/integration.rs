@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Subprocess MCP smoke: **`umst-mcp`** binary under **`target/{{PROFILE}}`** (cargo test builds it first).
 
 use serde_json::{json, Value};
@@ -14,14 +15,11 @@ fn read_json_line<R: BufRead>(reader: &mut R) -> Value {
 }
 
 fn mcp_binary_path() -> PathBuf {
-    if let Ok(exe) = std::env::var("CARGO_BIN_EXE_umst-mcp") {
-        return PathBuf::from(exe);
-    }
     let profile = option_env!("PROFILE").unwrap_or("debug");
-    let target_base = std::env::var("CARGO_TARGET_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target"));
-    target_base.join(profile).join("umst-mcp")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target")
+        .join(profile)
+        .join("umst-mcp")
 }
 
 #[test]

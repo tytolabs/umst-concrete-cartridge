@@ -1,6 +1,6 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 <!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 -->
 
 # Proof status (Rust cartridge sources)
@@ -52,8 +52,8 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `compute_heat_rate` | `crates/umst-concrete-cartridge/src/physics/thermo.rs:17` | `lean://umst-formal/Lean/Concrete/Helmholtz.lean#ψAntitoneHelmholtz` | umst.gate.cd_transition | NONE |
 | `compute_capillary_porosity` | `crates/umst-concrete-cartridge/src/physics/transport.rs:17` | `lean://umst-formal/Lean/Concrete/Powers.lean#PowersState` | thermodynamic_mix | NONE |
 | `compute_chloride_diffusivity` | `crates/umst-concrete-cartridge/src/physics/transport.rs:46` | `lean://umst-formal/Lean/MeasurementCost.lean#zero_info_zero_energy` | umst.gate.landauer_cbf | NONE |
-| `CD_TRANSITION_CATALOG_ID` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:27` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
-| `thermodynamic_admissible` | `crates/umst-concrete-cartridge/src/pipeline/canonical_gate.rs:49` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `CD_TRANSITION_CATALOG_ID` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:21` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
+| `thermodynamic_ok` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:97` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 | `gate_check_mix` | `crates/umst-concrete-cartridge/src/research/contribution.rs:102` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 | `gate_check_mix_result` | `crates/umst-concrete-cartridge/src/research/contribution.rs:169` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
 | `gate_recheck` | `crates/umst-concrete-cartridge/src/research/contribution.rs:441` | `lean://umst-formal/Lean/Compat/Gate.lean#Admissible` | umst.gate.cd_transition | physicalSecondLaw |
@@ -245,9 +245,9 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `SustainabilityEngine` | `crates/umst-concrete-cartridge/src/physics/sustainability.rs:6` | `literature://EN-15804+A2-GWP-and-unit-costs` | — | "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)" |
 | `compute_embodied_carbon` | `crates/umst-concrete-cartridge/src/physics/sustainability.rs:19` | `literature://EN-15804+A2-GWP-and-unit-costs` | — | "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)" |
 | `compute_financial_cost` | `crates/umst-concrete-cartridge/src/physics/sustainability.rs:51` | `literature://EN-15804+A2-GWP-and-unit-costs` | — | "EN 15804+A2 (2019) cradle-to-gate / modules A2 — indicative EPD-style CO₂e intensities; financial row uses linear $/kg mass factors" \| "GWP_mix = sum_i m_i * e_i  (kg CO2-eq / m^3)" |
-| `PRINTABLE_TAU_LO` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:33` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ ∈ [180, 360] Pa extrusion window" |
-| `PRINTABLE_TAU_HI` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:38` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ ∈ [180, 360] Pa extrusion window" |
-| `printability_leg_scalars` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:124` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ ∈ [180, 360] Pa AND extrudability ≥ 0.35" |
+| `PRINTABLE_TAU_LO` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:28` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ ∈ [180, 360] Pa extrusion window" |
+| `PRINTABLE_TAU_HI` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:33` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ ∈ [180, 360] Pa extrusion window" |
+| `printability_window_ok` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:59` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "τ₀ band AND extrudability ≥ 0.35" |
 | `EXTRUDABLE_TAU_LO_PA` | `crates/umst-concrete-cartridge/src/proxies/virtual_extrusion.rs:4` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — lower τ₀ bound" \| "τ₀ ≥ 180 Pa" |
 | `EXTRUDABLE_TAU_HI_PA` | `crates/umst-concrete-cartridge/src/proxies/virtual_extrusion.rs:10` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — upper τ₀ bound" \| "τ₀ ≤ 360 Pa" |
 | `extrusion_band_score` | `crates/umst-concrete-cartridge/src/proxies/virtual_extrusion.rs:16` | `literature://roussel-2018-buildability-window` | — | "Roussel (2018) Cem. Concr. Res. 112, 76 — printable τ₀ band" \| "0.5 when τ₀ ∈ band else 0" |
@@ -281,7 +281,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `bool_and` | `crates/umst-concrete-cartridge/src/burn_compat.rs:8` | `NONE` | — | Burn-version compatibility shim for boolean tensor AND across crate semver skew. |
 | `ProvenanceFormal` | `crates/umst-concrete-cartridge/src/calibration.rs:70` | `NONE` | — | Serde lift of TOML `[provenance.formal]`; `status` string is file metadata (may include Boundary scope), not a Rust `formal_status` bucket. |
 | `CalibrationProvenance` | `crates/umst-concrete-cartridge/src/calibration.rs:103` | `NONE` | — | Dataset and Zenodo citation bundle parsed from TOML only; no Lean witness on this serde container — see `docs/FormalAnchors.md` “Future formal links” for manifold adjoint context. |
-| `CalibrationModelSection` | `crates/umst-concrete-cartridge/src/calibration.rs:156` | `NONE` | — | Dispatch metadata only; Jennings gel-space path returns `HomogeneousError::JenningsNotImplemented` until operator boards CC-P-JENNINGS (`old/residuals/residuals/misc-outputs-tmp/JENNINGS_RESIDUAL_2252.md` TODO-M3-002). |
+| `CalibrationModelSection` | `crates/umst-concrete-cartridge/src/calibration.rs:156` | `NONE` | — | Dispatch metadata only; Jennings gel-space monotone strength witness applies once `powers_compressive_strength_mpa` ships a Jennings branch (TODO_FORMAL note on that function). |
 | `ContractBlock` | `crates/umst-concrete-cartridge/src/calibration.rs:181` | `NONE` | — | Contract metadata (`verification_status`); hyperbox regime warnings are soundness-witnessed on `regime_check_scalars` — see RegimeSoundness anchor there. |
 | `CalibrationError` | `crates/umst-concrete-cartridge/src/calibration.rs:217` | `NONE` | — | Bundled profile IO and TOML parse failures only; DEC mass-conservation witness belongs on the manifold Laplacian — see `docs/FormalAnchors.md` “Future formal links”. |
 | `load_from_path` | `crates/umst-concrete-cartridge/src/calibration.rs:269` | `NONE` | — | Filesystem path IO for non-bundled TOML; parse errors surface as CalibrationError. |
@@ -357,12 +357,12 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `collapsed_rank4_from_rank2_scalar` | `crates/umst-concrete-cartridge/src/mix_layout.rs:123` | `NONE` | — | Engine APIs require rank-4 tensors; singleton spatial dims document batch-collapsed mode. |
 | `compute_cost` | `crates/umst-concrete-cartridge/src/physics/cost.rs:7` | `NONE` | — | Auxiliary objective; linear cost vector, no physical claim. |
 | `TransportEngine` | `crates/umst-concrete-cartridge/src/physics/transport.rs:6` | `NONE` | — | Tensor facade grouping porosity and chloride diffusivity kernels documented on methods. |
-| `CastGateVerdict` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:45` | `NONE` | — | Algebraic dual-gate verdict enum (MP3.3); enum-primary Track A carrier (MP3.6 closed). |
-| `is_admissible` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:90` | `NONE` | — | Admissibility predicate on [`CastGateVerdict`]. |
-| `printability_leg_pass` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:98` | `NONE` | — | Printability leg pass — not `RejectPrintability` / `RejectBoth`. |
-| `thermodynamic_leg_pass` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:109` | `NONE` | — | Thermodynamic leg pass — not `RejectThermodynamic` / `RejectBoth`. |
-| `evaluate_dual_gate` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:193` | `NONE` | — | Track A composite gate; legs carry individual anchors. |
-| `evaluate_dual_gate, CastGateVerdict, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:30` | `NONE` | — | Re-export dual-gate verdict for MCP/CLI Track A. |
+| `DualGateVerdict` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:39` | `NONE` | — | Composite verdict; legs documented on helper fns. |
+| `passes` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:50` | `NONE` | — | Equal-weight AND of printability and thermodynamic legs. |
+| `printability_from_summary` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:71` | `NONE` | — | Summary-scalar wrapper over [`printability_window_ok`]. |
+| `printability_with_virtual_proxies` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:82` | `NONE` | — | Lazy AND of summary band + Roussel stack/extrusion surrogates. |
+| `evaluate_dual_gate` | `crates/umst-concrete-cartridge/src/pipeline/dual_gate.rs:110` | `NONE` | — | Track A composite gate; legs carry individual anchors. |
+| `evaluate_dual_gate, DualGateVerdict, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:15` | `NONE` | — | Re-export dual-gate verdict for MCP/CLI Track A. |
 | `run_full_physics_pipeline` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:19` | `NONE` | — | Stable import path for staged tensor physics. |
 | `nominal_mix_tensor_for_mix_spec, nominal_mix_tensor_for_topology, physical_result_from_report, topology_pipeline_headlines, topology_pipeline_report, TopologyNominalMix` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:23` | `NONE` | — | Topology / predict policy maps from pipeline report. |
 | `PhysicsPipelineReport, PhysicsPipelineSummary, PipelineStageRecord, PipelineStageStatus, PHYSICS_PIPELINE_SCHEMA_VERSION` | `crates/umst-concrete-cartridge/src/pipeline/mod.rs:30` | `NONE` | — | JSON envelope types for MCP/CLI audit trails. |
@@ -384,11 +384,7 @@ cargo test -p umst-concrete-cartridge --test proof_status_doc \
 | `PhysicsPipelineReport` | `crates/umst-concrete-cartridge/src/pipeline/report.rs:105` | `NONE` | — | Cartridge-local rich JSON envelope parallel to manifold tensors. |
 | `ProposedNextMix` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:27` | `NONE` | — | Wire envelope for Track A CLI; physics claims live on nested gate fields. |
 | `MixSpecWireOut` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:42` | `NONE` | — | Mix JSON mirror without newtype wrappers for serde output. |
-| `DualGateWire` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:66` | `NONE` | — | v1 JSON wire block; bool keys wire-compat (P26 accessors). |
-| `DualGateWire::is_printability_ok` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:93` | `NONE` | — | Printability leg pass reader (P26). |
-| `DualGateWire::is_thermodynamic_ok` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:102` | `NONE` | — | Thermodynamic leg pass reader (P26). |
-| `DualGateWire::is_admissible` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:111` | `NONE` | — | Composite admissibility reader (P26). |
-| `DualGateWire::from_verdict` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:127` | `NONE` | — | SSOT serde bools from [`CastGateVerdict`] leg-pass helpers. |
+| `DualGateWire` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:57` | `NONE` | — | Dual-gate audit block for proposed mix JSON sidecar. |
 | `summary_with_calibrated_tau` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:98` | `NONE` | — | Applies θ bias before dual-gate printability leg. |
 | `evaluate_mix_dual_gate` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:156` | `NONE` | — | Track A scoring helper; gate semantics from `dual_gate`. |
 | `TrackAObjective` | `crates/umst-concrete-cartridge/src/pipeline/track_a.rs:173` | `NONE` | — | Track A optimise targets mirrored from CLI `OptimizeField`. |

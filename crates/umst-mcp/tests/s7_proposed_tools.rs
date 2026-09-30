@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! S7 proposed-tools parity — features **off** keeps 13-tool golden; features **on** grow list.
 
 #![allow(unexpected_cfgs)]
@@ -87,7 +88,7 @@ fn s7_features_off_thirteen_tools() {
     )
 ))]
 #[test]
-fn proposed_tools_extend_list() {
+fn s7_proposed_tools_extend_list() {
     let exe = mcp_binary_path();
     let mut child = StdCmd::new(&exe)
         .stdin(Stdio::piped())

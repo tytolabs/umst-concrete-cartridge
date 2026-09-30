@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Regenerates `docs/PROOF-STATUS.md` from a deterministic scan of formal doc blocks under
 //! `src/**/*.rs` and `crates/umst-cli/src/**/*.rs`.
 
@@ -293,6 +294,8 @@ fn render_markdown(rows: &[Row]) -> String {
 
     let mut md = String::from(
         r#"<!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 -->
 
 # Proof status (Rust cartridge sources)

@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Shared regression metrics for headline CSV calibration — used by [`tests/calibration/dataset_metrics`]
 //! and the `calibration_report` binary so MAE / RMSE / R² definitions cannot drift.
 
@@ -65,17 +66,4 @@ pub fn regression_metrics(predicted: &[f64], observed: &[f64]) -> RegressionMetr
         r2,
         max_abs_error: max_err,
     }
-}
-
-/// RMSE of the constant mean predictor on `observed` (K6 beats-mean witness baseline).
-#[must_use]
-pub fn mean_predictor_rmse(observed: &[f64]) -> f64 {
-    assert!(!observed.is_empty(), "empty observed slice");
-    let mean_y = observed.iter().sum::<f64>() / observed.len() as f64;
-    let mse = observed
-        .iter()
-        .map(|yi| (yi - mean_y).powi(2))
-        .sum::<f64>()
-        / observed.len() as f64;
-    mse.sqrt()
 }

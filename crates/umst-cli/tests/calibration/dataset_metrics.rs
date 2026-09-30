@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar,
 // Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 //! Headline CSV strength gates apply only to **`[contract].verification_status = "Contract"`** profiles.
@@ -11,9 +11,7 @@ use std::error::Error;
 use std::path::PathBuf;
 
 use umst_concrete_cartridge::calibration::Profile;
-use umst_concrete_cartridge::calibration_metrics::{
-    mean_predictor_rmse, regression_metrics, RegressionMetrics,
-};
+use umst_concrete_cartridge::calibration_metrics::{regression_metrics, RegressionMetrics};
 use umst_concrete_cartridge::homogeneous::{compressive_strength_mpa, MixRow};
 
 fn datasets_dir() -> PathBuf {
@@ -64,9 +62,8 @@ fn metrics(profile_id: &str, csv_name: &str) -> Result<(), Box<dyn Error>> {
     let rmse_max = p.acceptance.strength_rmse_max.unwrap_or(f64::INFINITY);
     let r2_min = p.acceptance.strength_r2_min.unwrap_or(f64::NEG_INFINITY);
 
-    let mean_rmse = mean_predictor_rmse(&obs);
     eprintln!(
-        "{profile_id} ({csv_name}): MAE={mae:.4} RMSE={rmse:.4} R2={r2:.4} max_abs_err={max_err:.4} mean_predictor_rmse={mean_rmse:.4}",
+        "{profile_id} ({csv_name}): MAE={mae:.4} RMSE={rmse:.4} R2={r2:.4} max_abs_err={max_err:.4}",
     );
 
     assert!(
@@ -86,7 +83,7 @@ fn metrics(profile_id: &str, csv_name: &str) -> Result<(), Box<dyn Error>> {
 fn name_audit_synthetic_rehearsal_not_validation() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../calibration/v3_pipeline_rehearsal/placeholder_points.json");
-    let body: String = std::fs::read_to_string(&path).unwrap_or_default();
+    let body = std::fs::read_to_string(&path).unwrap_or_default();
     assert!(body.contains("SYNTHETIC"));
     assert!(body.contains("pipeline_rehearsal_synthetic"));
     assert!(body.contains("Do not cite as validation data"));

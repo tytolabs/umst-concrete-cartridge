@@ -1,16 +1,12 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+
 //! Staged tensor physics pipeline and Track A proxy-loop gates.
 //!
 //! [`run_full_physics_pipeline`] is the cartridge functor root; [`evaluate_dual_gate`] composes
 //! printability ⊗ thermodynamic witnesses (see [`dual_gate`] module docs and witness ladder R1).
 
-pub mod canonical_gate;
-pub mod cast_phase;
 pub mod dual_gate;
-pub mod mechanics_delegate;
 pub mod orchestrator;
-pub mod orchestrator_delegate;
 pub mod physical_summary;
 pub mod report;
 #[cfg(feature = "proxy-loop")]
@@ -18,22 +14,8 @@ pub mod track_a;
 
 /// formal_anchor: NONE
 /// formal_status: NONE
-/// formal_anchor_rationale: Phase 0d canonical admissibility surface (manifold composed gate).
-pub use canonical_gate::thermodynamic_admissible;
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Thermodynamic leg reject newtype (P2 `GateRejectReason` bridge).
-pub use canonical_gate::ThermoReject;
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: MP3.1 cast lifecycle classifier (α thresholds; orchestrator wiring deferred).
-pub use cast_phase::{classify_cast_phase, CastLifecycleThresholds, CastPhase, CastPhaseInputs};
-/// formal_anchor: NONE
-/// formal_status: NONE
 /// formal_anchor_rationale: Re-export dual-gate verdict for MCP/CLI Track A.
-pub use dual_gate::{
-    evaluate_dual_gate, CastGateVerdict, PrintabilityReject, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO,
-};
+pub use dual_gate::{evaluate_dual_gate, DualGateVerdict, PRINTABLE_TAU_HI, PRINTABLE_TAU_LO};
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Stable import path for staged tensor physics.

@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Stage S7 proposed tools (P1–P4) — **default-off** features behind `gate-explain-v2`,
 //! `tool-dry-run`, `tool-promote`, `tool-arena-session-unified`.
 //!
@@ -259,7 +260,6 @@ pub fn exec_dry_run(
 }
 
 /// Promotion stub (P3) — structured not-wired response; never writes memory.
-/// Board **TODO-M3-005 OPEN** — S7 operator ceremony; see `old/residuals/residuals/misc-outputs-tmp/RESEARCH_TODO_NIGHT_2334.md`.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Human gate placeholder; federated inbox remains SSOT.

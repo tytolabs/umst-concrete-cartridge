@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # Agent example workflows
 
 Runnable scripts for the Physical Reasoning Layer. See [`docs/AGENT_MCP.md`](../../docs/AGENT_MCP.md) for the full contract.
@@ -8,7 +6,7 @@ Runnable scripts for the Physical Reasoning Layer. See [`docs/AGENT_MCP.md`](../
 
 ## Fast path — arena / in-process (recommended for heavy use)
 
-| Script | Shows | CI |
+| Script | What it shows | CI |
 |--------|----------------|-----|
 | [`06_arena_batch.py`](06_arena_batch.py) | In-process `gate_check_mix` batch loop — no JSON-RPC overhead | yes |
 | [`07_arena_mmap_load.py`](07_arena_mmap_load.py) | `load_arena` → `UmstArenaView` hot loop (mmap proxy via CI test) | yes |
@@ -18,7 +16,7 @@ Benchmarks: [`umst-manifold/docs/benchmarks/arena_vs_mcp.md`](../../../umst-mani
 
 ## MCP stdio — prototyping & discovery
 
-| Script | Shows | CI |
+| Script | What it shows | CI |
 |--------|----------------|-----|
 | [`01_gate_explore.py`](01_gate_explore.py) | Safe exploration: REJECT with remediation, PASS gate, memory query (read-only contribute path) | yes |
 | [`02_contribute_admissible.py`](02_contribute_admissible.py) | Gate → contribute golden fixture → verify row in memory (temp SQLite) | yes |

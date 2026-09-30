@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Concrete-cartridge [`GateCartridge::transition_evidence`] — dissipation / strength / hydration SSOT.
 
 use umst_manifold::gate::transition_proposal::{
@@ -122,7 +123,7 @@ mod tests {
         let old = ConcreteTransitionCartridge::snapshot_from_mix(0.45, 0.3, 293.15);
         let new = old;
         let host = transition_outcome(&old, &new, 1.0, 1e-6);
-        assert!(host.is_energy_positive());
+        assert!(host.energy_positive);
 
         let evidence = ConcreteTransitionCartridge.transition_evidence(&old, &new, 1.0);
         assert_eq!(evidence.catalog_id, CD_TRANSITION_CATALOG_ID);
@@ -136,7 +137,7 @@ mod tests {
         new.free_energy = 1.0e6;
         let host = transition_outcome(&old, &new, 1.0, TRANSITION_TOLERANCE);
         assert!(
-            !host.is_energy_positive(),
+            !host.energy_positive,
             "sanity: ψ spike should reject on host"
         );
         let evidence = ConcreteTransitionCartridge.transition_evidence(&old, &new, 1.0);

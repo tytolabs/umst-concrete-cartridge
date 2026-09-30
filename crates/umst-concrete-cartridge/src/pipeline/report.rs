@@ -1,13 +1,12 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Serialized multi-stage physics envelope for CLI / MCP tooling.
 //! formal_anchor: NONE
 //! formal_status: NONE
 //! formal_anchor_rationale: Wire schema sidecar adjacent to manifold `PhysicalResult`; no standalone Lean witness.
 
 use serde::{Deserialize, Serialize};
-
-use super::cast_phase::CastPhase;
 
 /// Wire schema tag for [`PhysicsPipelineReport`].
 /// formal_anchor: NONE
@@ -24,8 +23,6 @@ pub enum PipelineStageStatus {
     Executed,
     SkippedMissingInputs,
     SkippedUnsupportedSignature,
-    /// Stage omitted because the resolved [`CastPhase`] forbids this engine (MP3.2).
-    SkippedIncompatiblePhase,
     Failed,
 }
 
@@ -63,18 +60,6 @@ impl PipelineStageRecord {
             id: id.to_string(),
             status: PipelineStageStatus::SkippedMissingInputs,
             detail: Some(reason.into()),
-        }
-    }
-
-    #[must_use]
-    /// formal_anchor: NONE
-    /// formal_status: NONE
-    /// formal_anchor_rationale: Honest skip when cast lifecycle phase forbids the engine (MP3.2).
-    pub fn skip_incompatible_phase(id: &'static str, phase: CastPhase) -> Self {
-        Self {
-            id: id.to_string(),
-            status: PipelineStageStatus::SkippedIncompatiblePhase,
-            detail: Some(format!("incompatible with cast_phase={phase:?}")),
         }
     }
 
@@ -125,11 +110,6 @@ pub struct PhysicsPipelineSummary {
 pub struct PhysicsPipelineReport {
     pub schema_version: String,
     pub representation: &'static str,
-    /// Resolved macroscopic cast phase for this run (MP3.2 audit field).
-    pub material_phase: CastPhase,
-    /// `true` when any stage was skipped for phase incompatibility; summary scalars use parity sentinels.
-    #[serde(default)]
-    pub phase_skip_sentinels: bool,
     pub stages: Vec<PipelineStageRecord>,
     pub summary: PhysicsPipelineSummary,
 }

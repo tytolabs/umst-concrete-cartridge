@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # Golden adversarial fixtures (agent wire contract)
 
 Agent-eval fixture pack for the Physical Reasoning Layer **MCP boundary** (`umst_gate_check` / `gate_check_mix`).
@@ -23,7 +21,7 @@ The **hard safety witness** for gate admissibility is in **`umst-manifold`**, no
 
 This directory proves **agent JSON contracts** (schema, rational mix wire, `gate_reject.v1`, `explain` payloads). It does **not** replace manifold's 75-case adversarial golden or certify global FNR/FPR = 0. Run both layers when validating a full stack.
 
-**Manifold SSOT:** [`umst-manifold/docs/GOLDEN_FIXTURES.md`](../../../umst-manifold/docs/GOLDEN_FIXTURES.md) (monorepo sibling) · `GitHub mirror`
+**Manifold SSOT:** [`umst-manifold/docs/GOLDEN_FIXTURES.md`](../../../umst-manifold/docs/GOLDEN_FIXTURES.md) (monorepo sibling) · [GitHub mirror](https://github.com/tytolabs/umst-manifold/blob/main/docs/GOLDEN_FIXTURES.md)
 
 ### Run `gate_adversarial` locally (manifold)
 
@@ -60,7 +58,7 @@ cargo test -p umst-concrete-cartridge --features agent-layer \
   --test research_memory --test golden_gate_check --test phase8_adversarial
 ```
 
-| Test binary | Asserts |
+| Test binary | What it asserts |
 |-------------|-----------------|
 | `golden_gate_check` | `expected_verdicts.json` → `gate_check_mix` admissible/verdict parity for both JSON fixtures |
 | `phase8_adversarial` | Full `gate_check_mix_result` wire: `gate_reject.v1` on reject, `explain` remediation/fields, memory `query_page` edge cases |
@@ -80,12 +78,12 @@ cargo test -p umst-concrete-cartridge --features agent-layer \
   --test golden_gate_check --test phase8_adversarial
 ```
 
-**Works without extra setup**
+**What works without extra setup**
 
 - `golden_gate_check` and `phase8_adversarial` — pure Rust integration tests; no database file, Docker, or MCP process required.
 - `expected_verdicts.json` is the SSOT for admissible/verdict expectations in `golden_gate_check`; `phase8_adversarial` additionally checks reject explain payloads (`regime_violations`, `remediation`, `fields`) and pagination filters.
 
-**Needs more than `cargo test`**
+**What needs more than `cargo test`**
 
 - `agent-layer` feature (enabled above) pulls `manifest-bridge`, SQLite, and pinned `umst-manifold` — first compile may take several minutes.
 - MCP smoke / `examples/agent/*` — need `cargo build` of `umst-mcp` and stdio JSON-RPC wiring; see [`docs/AGENT_MCP.md`](../../docs/AGENT_MCP.md).

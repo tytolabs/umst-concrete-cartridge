@@ -1,5 +1,6 @@
-# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 [package]
 name = "umst-py"
 version.workspace = true
@@ -7,7 +8,7 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
-repository = "https://github.com/tytolabs/umst-concrete-cartridge"
+repository.workspace = true
 description = "PyO3 extension for UMST concrete cartridge wire APIs."
 publish = false
 

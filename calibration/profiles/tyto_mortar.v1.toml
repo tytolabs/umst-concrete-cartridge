@@ -1,4 +1,3 @@
-# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
 # Tyto S1 proxy-rheology mortar (2026-06-02 lab session) — single-mix θ calibration only.
 
@@ -27,10 +26,6 @@ age_hours_min = 0.25
 age_hours_max = 48.0
 fly_ash_pct_max = 0.0
 silica_fume_pct_max = 15.0
-
-[cast_lifecycle]
-alpha_set = 0.15
-alpha_hard = 0.85
 
 [model]
 kind = "powers_gel_space"

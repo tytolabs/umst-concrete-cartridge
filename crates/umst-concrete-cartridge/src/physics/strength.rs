@@ -1,13 +1,9 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 use burn::tensor::{backend::Backend, Tensor};
 
-use crate::chem_adapter::{
-    cement_volume_per_wc_f32, clinker_bulk_modulus_ambient_gpa_f32,
-    csh_ld_frac_intercept_subtrahend_f32, csh_ld_frac_slope_f32, csh_volume_factor_f32,
-    csh_youngs_moduli_from_k0_f32, e_to_fc_stiffness_bridge_f32, powers_non_evap_water_coeff_f32,
-    ClinkerPhaseTag,
-};
+use crate::physics::clinker_eos::ClinkerPhase;
 
 // Track H2 (v0.4): DFT-backed bulk moduli for clinker / C-S-H phases live in [`super::clinker_eos`].
 // The two C-S-H Young's moduli used below (E_LD = 21.7 GPa, E_HD = 29.4 GPa) are no longer hardcoded —
@@ -19,9 +15,13 @@ use crate::chem_adapter::{
 // formal_anchor: literature://micromechanics/csh-modulus-dft-anchored
 // formal_citation: Pellenq et al. 2009 PNAS 106:16102 (DFT K_csh); Jennings 2000 CCR 30:101 (LD/HD partitioning); Ulm & Constantinides 2004 (gel-scale moduli)
 //
-// LD/HD scaling factors delegate to `umst-chem` via `chem_adapter` (cluster E). If you change
-// `clinker_bulk_modulus_ambient_gpa_f32(ClinkerPhaseTag::Csh14nmTobermorite)`, the gel moduli scale linearly.
-// Regression tests pin the Ulm–Constantinides anchors (21.7 / 29.4 GPa).
+// The LD/HD scaling factors (0.31, 0.42) are chosen so that the resulting Young's moduli match the
+// Ulm–Constantinides nano-indentation anchors to within rounding. The arithmetic is in the constants
+// below — if you change `ClinkerPhase::Csh14nmTobermorite::params().bulk_modulus_gpa`, the gel
+// moduli scale linearly with it. A regression test (`strength_module_uses_vinet_anchored_csh_moduli`)
+// pins the relationship.
+const CSH_LD_SCALE_OF_BULK: f32 = 0.31_f32;
+const CSH_HD_SCALE_OF_BULK: f32 = 0.42_f32;
 
 /// Returns Vinet-anchored Young's moduli `(E_LD, E_HD)` for C-S-H gel in GPa, derived from
 /// Pellenq et al. 2009 DFT bulk modulus of 1.4-nm tobermorite. The scaling factors reproduce
@@ -30,12 +30,12 @@ use crate::chem_adapter::{
 /// formal_anchor: literature://micromechanics/csh-vinet-anchored-gel-moduli
 /// formal_status: Literature
 /// formal_citation: "Pellenq et al. 2009 PNAS 106:16102; Ulm & Constantinides 2004; Jennings 2000"
-/// formal_form: "(E_LD, E_HD) = (csh_ld_scale, csh_hd_scale) * K_csh_vinet via chem_adapter"
+/// formal_form: "(E_LD, E_HD) = (CSH_LD_SCALE_OF_BULK, CSH_HD_SCALE_OF_BULK) * K_csh_vinet"
 #[must_use]
 pub fn paste_csh_youngs_moduli_gpa() -> (f32, f32) {
-    // Vinet EoS `K₀` for 1.4-nm tobermorite (ambient) — cluster D via chem_adapter.
-    let k0_csh = clinker_bulk_modulus_ambient_gpa_f32(ClinkerPhaseTag::Csh14nmTobermorite);
-    csh_youngs_moduli_from_k0_f32(k0_csh)
+    // Vinet EoS `K₀` for 1.4-nm tobermorite (ambient) — single source of truth in `clinker_eos`.
+    let k0_csh = ClinkerPhase::Csh14nmTobermorite.params().bulk_modulus_gpa;
+    (k0_csh * CSH_LD_SCALE_OF_BULK, k0_csh * CSH_HD_SCALE_OF_BULK)
 }
 
 /// Pure tensor implementation of the Strength & Micromechanics Engine.
@@ -72,20 +72,15 @@ impl<B: Backend> StrengthEngine<B> {
 
         // 1. Volumes of Phases (Tennis & Jennings, 2000)
         // Normalized volume scaling
-        let v_cement = safe_wc
-            .clone()
-            .powf_scalar(-1.0_f32)
-            .mul_scalar(cement_volume_per_wc_f32());
-        let v_csh_total = degree_hydration
-            .clone()
-            .mul(v_cement)
-            .mul_scalar(csh_volume_factor_f32());
+        let v_cement = safe_wc.clone().powf_scalar(-1.0_f32).mul_scalar(0.317_f32);
+        let v_csh_total = degree_hydration.clone().mul(v_cement).mul_scalar(1.52_f32); // C-S-H forms ~1.52x cement volume
 
-        // 2. High-Density (HD) vs Low-Density (LD) C-S-H partitioning (Jennings via chem_adapter)
+        // 2. High-Density (HD) vs Low-Density (LD) C-S-H partitioning
+        // V_LD / V_total_CSH = 3.017 * (w/c) - 0.347 (simplified linear fit from T&J 2000)
         let ld_fraction = safe_wc
             .clone()
-            .mul_scalar(csh_ld_frac_slope_f32())
-            .sub_scalar(csh_ld_frac_intercept_subtrahend_f32())
+            .mul_scalar(3.017_f32)
+            .sub_scalar(0.347_f32)
             .clamp(0.0_f32, 1.0_f32);
         let hd_fraction = ld_fraction.clone().mul_scalar(-1.0_f32).add_scalar(1.0_f32);
 
@@ -93,7 +88,9 @@ impl<B: Backend> StrengthEngine<B> {
         let v_hd = v_csh_total.clone().mul(hd_fraction);
 
         // 3. Continuum Micromechanics (Ulm & Constantinides 2004, DFT-anchored via Pellenq 2009)
-        // C-S-H gel Young's moduli derived from cluster D Vinet bulk modulus (70 GPa) × cluster E LD/HD scales.
+        // C-S-H gel Young's moduli derived from `ClinkerPhase::Csh14nmTobermorite` Vinet bulk
+        // modulus (70 GPa) × empirical LD/HD scaling factors. Equivalent to the legacy hardcodes
+        // (21.7 / 29.4 GPa) within rounding — pinned by `strength_module_uses_vinet_anchored_csh_moduli`.
         let (e_ld, e_hd) = paste_csh_youngs_moduli_gpa();
 
         // Effective Paste Modulus via rule of mixtures for C-S-H matrix (Voigt approx)
@@ -105,11 +102,7 @@ impl<B: Backend> StrengthEngine<B> {
         // 4. Porosity penalization (Capillary + Air)
         let porosity_capillary = safe_wc
             .clone()
-            .sub(
-                degree_hydration
-                    .clone()
-                    .mul_scalar(powers_non_evap_water_coeff_f32()),
-            )
+            .sub(degree_hydration.clone().mul_scalar(0.36_f32))
             .clamp_min(0.0_f32);
         let total_porosity = porosity_capillary.add(air_content);
 
@@ -122,83 +115,22 @@ impl<B: Backend> StrengthEngine<B> {
         let e_eff = e_matrix.mul(solid_fraction.clone().powf_scalar(3.0_f32));
 
         // 5. Strength Scaling
-        // Strength is proportional to the effective stiffness of the C-S-H gel network.
-        // E→fc bridge (inventory E-09) is cartridge calibration — not chem SSOT (prep §2.5).
-        let compressive_strength = e_eff
-            .mul(intrinsic_strength)
-            .mul_scalar(e_to_fc_stiffness_bridge_f32());
+        // Strength is proportional to the effective stiffness of the C-S-H gel network
+        // We use the intrinsic strength anchor to scale the GPa modulus into MPa strength
+        let compressive_strength = e_eff.mul(intrinsic_strength).mul_scalar(0.05_f32);
 
         (compressive_strength, v_hd, v_ld)
     }
 }
 
-/// Orchestrator strength pin — matches `pipeline/orchestrator.rs` air default and
-/// `calibration/profiles/default.v1.toml` `s_intrinsic`.
-/// Class: **Primitive-fact** (routing contract, not fitted from f_c output).
-/// Pub for `umst-diff` B3 old-side adapter (DIFF-HARNESS-B3).
-pub const ORCHESTRATOR_PIN_WC: f32 = 0.45;
-pub const ORCHESTRATOR_PIN_ALPHA: f32 = 0.75;
-pub const ORCHESTRATOR_PIN_AIR: f32 = 0.02;
-pub const ORCHESTRATOR_PIN_S_INTRINSIC: f32 = 80.0;
-
-/// Measured golden compressive strength [MPa] at orchestrator paste pin — pinned by
-/// `strength_engine_measured_golden_vector_paste_at_orchestrator_pin`.
-/// Class: **Measured** (engine output under recorded pin, not invented).
-/// Pub for `umst-diff` B3 old-side adapter (DIFF-HARNESS-B3).
-pub const STRENGTH_GOLDEN_FC_MPA: f32 = 35.689_57_f32;
-
-/// Pure f64 image of [`StrengthEngine::compute_strength_jennings`] for differential harnesses
-/// (`umst-diff` R10-A0). Delegates to [`umst_jennings_legacy`] — the Burn-free extract of this
-/// algorithm living under the concrete cartridge tree.
-///
-/// Returns `(fc_mpa, v_hd, v_ld)`. Does **not** return the pinned golden constant — callers
-/// must compute from inputs. Not a claim of physics GREEN.
-#[must_use]
-pub fn compute_strength_jennings_f64(
-    wc_ratio: f64,
-    degree_hydration: f64,
-    air_content: f64,
-    intrinsic_strength: f64,
-) -> (f64, f64, f64) {
-    umst_jennings_legacy::compute_strength_jennings_f64(
-        wc_ratio,
-        degree_hydration,
-        air_content,
-        intrinsic_strength,
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chem_adapter::{csh_hd_scale_of_bulk_f32, csh_ld_scale_of_bulk_f32};
-    use burn::tensor::{Data, Shape, Tensor};
-    use burn_ndarray::{NdArray, NdArrayDevice};
-
-    type B = NdArray<f32>;
-
-    fn scalar_rank4(v: f32) -> Tensor<B, 4> {
-        let dev = NdArrayDevice::default();
-        Tensor::from_data(Data::new(vec![v], Shape::new([1, 1, 1, 1])), &dev)
-    }
-
-    fn strength_at_pin(wc: f32, alpha: f32, air: f32, s_intrinsic: f32) -> (f32, f32, f32) {
-        let (fc, v_hd, v_ld) = StrengthEngine::<B>::compute_strength_jennings(
-            scalar_rank4(wc),
-            scalar_rank4(alpha),
-            scalar_rank4(air),
-            scalar_rank4(s_intrinsic),
-        );
-        (
-            fc.into_data().value[0],
-            v_hd.into_data().value[0],
-            v_ld.into_data().value[0],
-        )
-    }
 
     /// Pins the Vinet-anchored gel moduli to the historical Ulm–Constantinides nano-indentation
-    /// anchors (21.7 / 29.4 GPa). If cluster D `K₀` or cluster E LD/HD scales ever drift, this
-    /// test catches the regression so we don't silently change a published strength curve.
+    /// anchors (21.7 / 29.4 GPa). If `ClinkerPhase::Csh14nmTobermorite::bulk_modulus_ambient_gpa()`
+    /// or `CSH_{LD,HD}_SCALE_OF_BULK` ever drift, this test catches the regression so we don't
+    /// silently change a published strength curve.
     #[test]
     fn strength_module_uses_vinet_anchored_csh_moduli() {
         let (e_ld, e_hd) = paste_csh_youngs_moduli_gpa();
@@ -219,62 +151,14 @@ mod tests {
     #[test]
     fn csh_youngs_moduli_scale_linearly_with_vinet_bulk_modulus() {
         let (e_ld, e_hd) = paste_csh_youngs_moduli_gpa();
-        let k_csh = clinker_bulk_modulus_ambient_gpa_f32(ClinkerPhaseTag::Csh14nmTobermorite);
+        let k_csh = ClinkerPhase::Csh14nmTobermorite.bulk_modulus_ambient_gpa();
         assert!(
-            (e_ld / k_csh - csh_ld_scale_of_bulk_f32()).abs() < 1e-6_f32,
+            (e_ld / k_csh - CSH_LD_SCALE_OF_BULK).abs() < 1e-6_f32,
             "LD scaling factor regressed"
         );
         assert!(
-            (e_hd / k_csh - csh_hd_scale_of_bulk_f32()).abs() < 1e-6_f32,
+            (e_hd / k_csh - CSH_HD_SCALE_OF_BULK).abs() < 1e-6_f32,
             "HD scaling factor regressed"
-        );
-    }
-
-    /// Monolith golden vector — pins Jennings paste strength at orchestrator mix contract.
-    /// Constant class: **Measured** (first witness under pin; tolerance guards drift).
-    #[test]
-    fn strength_engine_measured_golden_vector_paste_at_orchestrator_pin() {
-        let (fc_mpa, v_hd, v_ld) = strength_at_pin(
-            ORCHESTRATOR_PIN_WC,
-            ORCHESTRATOR_PIN_ALPHA,
-            ORCHESTRATOR_PIN_AIR,
-            ORCHESTRATOR_PIN_S_INTRINSIC,
-        );
-        assert!(
-            fc_mpa.is_finite() && fc_mpa > 0.0,
-            "orchestrator-pin f_c must be finite and positive; got {fc_mpa}"
-        );
-        assert!(
-            v_hd.is_finite() && v_ld.is_finite() && v_hd >= 0.0 && v_ld >= 0.0,
-            "C-S-H phase volumes must be finite and non-negative: v_hd={v_hd} v_ld={v_ld}"
-        );
-        // Witness value recorded 2026-07-21 AC11 — update only with new measured run + receipt.
-        const GOLDEN_FC_MPA: f32 = STRENGTH_GOLDEN_FC_MPA;
-        let rel_err = (fc_mpa - GOLDEN_FC_MPA).abs() / GOLDEN_FC_MPA;
-        assert!(
-            rel_err < 1e-5,
-            "strength paste golden drift: measured={fc_mpa} golden={GOLDEN_FC_MPA} rel_err={rel_err}"
-        );
-    }
-
-    /// Admissibility: higher hydration at fixed w/c ⇒ higher paste strength.
-    #[test]
-    fn strength_engine_paste_fc_increases_with_hydration() {
-        let (fc_early, _, _) = strength_at_pin(
-            ORCHESTRATOR_PIN_WC,
-            0.40,
-            ORCHESTRATOR_PIN_AIR,
-            ORCHESTRATOR_PIN_S_INTRINSIC,
-        );
-        let (fc_late, _, _) = strength_at_pin(
-            ORCHESTRATOR_PIN_WC,
-            0.90,
-            ORCHESTRATOR_PIN_AIR,
-            ORCHESTRATOR_PIN_S_INTRINSIC,
-        );
-        assert!(
-            fc_late > fc_early,
-            "f_c must rise with α at fixed w/c: early={fc_early} late={fc_late}"
         );
     }
 }

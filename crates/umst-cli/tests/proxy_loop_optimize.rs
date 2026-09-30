@@ -1,4 +1,3 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
 // WS-TRACK-A: CLI integration — dual-gated printable_window optimise + sidecar JSON.
 

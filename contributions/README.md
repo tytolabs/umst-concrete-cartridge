@@ -1,10 +1,8 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # Git contribution inbox — federated memory
 
 Labs contribute **validated memory rows** to the shared corpus via **pull request**, not live MCP to a central server.
 
-**Full spec:** `tyto-workspace `git-contribution-inbox` plan`
+**Full spec:** [MaOS-Workspace `git-contribution-inbox` plan](https://github.com/tytolabs/MaOS-Workspace/blob/prime-spectral-research/outputs/.plans/git-contribution-inbox.md)
 
 ## Quick flow
 
@@ -38,7 +36,8 @@ Required: `gate_summary.admissible` must be `true`. CI re-runs gate check — do
 
 No local MCP? Author `contribution.v1` JSONL by hand or tool, open PR to `contributions/inbox/`. CI validates schema and admissibility.
 
-## Merge limits
+## What merge does **not** do
+
 - Does **not** auto-update `calibration/profiles/` — use human `umst promote-contribution`.
 - Does **not** include `gate_reject` rows — rejects stay local.
 

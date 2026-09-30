@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # Memory replication — operator guide
 
 **Status:** v1 per-deployment SQLite + JSONL sidecar (shipped). External replication is opt-in.

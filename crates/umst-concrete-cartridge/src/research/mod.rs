@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Per-cartridge research memory — **pure core** + effects at store/IO boundaries.
 //!
 //! ## FP discipline
@@ -8,8 +9,6 @@
 //! - **Effects only at boundary:** `WallClock::epoch_ms`, `SqliteStore`, `apply_promotion_writes`, MCP/CLI session loop.
 //! - **No** global `Mutex`/`RefCell` in this module.
 
-pub mod cart_provenance;
-pub mod catalog_pin;
 pub mod checkpoint;
 pub mod contribution;
 pub mod export;
@@ -40,18 +39,6 @@ pub mod wire_v2;
 #[cfg(test)]
 pub(crate) mod witness_test_lock;
 
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Re-exports constitutive admit UCRS/trust stamp (SEC-CART-PROV).
-pub use cart_provenance::ConstitutiveAdmitStamp;
-/// formal_anchor: NONE
-/// formal_status: NONE
-/// formal_anchor_rationale: Re-exports catalog digest pin helpers for material ingest.
-pub use catalog_pin::{
-    catalog_pin_witness_ok, grounded_catalog_hash, is_placeholder_catalog_hash,
-    resolve_catalog_hash_for_ingest, CatalogPinError, JOB_ID as CART_PROV_JOB_ID,
-    RECEIPT_PATH as CART_PROV_RECEIPT_PATH,
-};
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: Re-exports Merkle checkpoint helpers; audit IO on defining module.

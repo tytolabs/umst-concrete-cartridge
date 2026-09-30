@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-# SPDX-License-Identifier: MIT
 # H5 — inbox-promote bot defense-in-depth.
 #
 # Re-validate merged shard paths with live gate re-check and manifest consistency

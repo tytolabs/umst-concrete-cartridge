@@ -1,11 +1,11 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 <!--
+SPDX-License-Identifier: MIT
+Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
 -->
 
 # Striatus and the funicular shell lineage
 
-> **2026-06-30:** SIMP shell harness (`optimize_shell_3d`, B6 tests) moved to **`tyto-workspace/crates/umst-topology-opt-archived`**. This repo keeps notebooks/render pipeline; Rust solver lives in the archived experiment crate. See [`docs/SOLVER_LANES_TO_AND_TNA.md`](../../docs/SOLVER_LANES_TO_AND_TNA.md).
+> **2026-06-30:** SIMP shell harness (`optimize_shell_3d`, B6 tests) moved to **`MaOS-Workspace/crates/umst-topology-opt-archived`**. This repo keeps notebooks/render pipeline; Rust solver lives in the archived experiment crate. See [`docs/SOLVER_LANES_TO_AND_TNA.md`](../../docs/SOLVER_LANES_TO_AND_TNA.md).
 
 This note connects a concrete shell topology-optimisation demo in this repository to a long design tradition: finding where **compression** wants to flow when gravity and surface loads are fixed. Each historical step below is cited with `[Author Year]` shorthand that resolves to [`References.bib`](References.bib).
 

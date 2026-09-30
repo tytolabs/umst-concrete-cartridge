@@ -1,4 +1,3 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
 // Virtual Roussel buildability proxy (stack height vs yield stress).
 

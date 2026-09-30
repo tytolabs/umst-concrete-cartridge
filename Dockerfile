@@ -1,29 +1,21 @@
 # SPDX-License-Identifier: MIT
 # UMST MCP server image — multi-stage; binary only in runtime layer.
-# CI stages private siblings into the repo root before build (see docker.yml).
 
 FROM rust:bookworm AS build
 
+# crates.io HTTP/2 framing flakes in CI Docker builds (burn-core download).
 ENV CARGO_NET_RETRY=10 \
-    CARGO_HTTP_MULTIPLEXING=false \
-    CARGO_NET_GIT_FETCH_WITH_CLI=true
+    CARGO_HTTP_MULTIPLEXING=false
 
-WORKDIR /build
-COPY Cargo.toml Cargo.lock ./
+WORKDIR /app
+# Cargo.lock is not committed (workspace gitignore); resolve deps during image build.
+COPY Cargo.toml ./
 COPY crates ./crates
 COPY schema ./schema
 COPY schemas ./schemas
 COPY calibration ./calibration
 COPY datasets ./datasets
 COPY governance ./governance
-COPY umst-foundations ./umst-foundations
-COPY umst-cartridge-api ./umst-cartridge-api
-COPY umst-cartridges ./umst-cartridges
-COPY umst-chem ./umst-chem
-COPY umst-cartridge-registry ./umst-cartridge-registry
-COPY umst-manifold ./umst-manifold
-COPY umst-semantics ./umst-semantics
-COPY umst-ucrs ./umst-ucrs
 
 RUN for attempt in 1 2 3; do \
       cargo fetch && break; \
@@ -39,6 +31,6 @@ RUN for attempt in 1 2 3; do \
 
 FROM gcr.io/distroless/cc-debian12:nonroot
 WORKDIR /srv
-COPY --from=build /build/target/release/umst-mcp /usr/local/bin/umst-mcp
+COPY --from=build /app/target/release/umst-mcp /usr/local/bin/umst-mcp
 USER nonroot
 ENTRYPOINT ["/usr/local/bin/umst-mcp"]

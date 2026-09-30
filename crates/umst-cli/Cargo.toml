@@ -1,5 +1,6 @@
-# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 [package]
 name = "umst-cli"
 version.workspace = true
@@ -7,7 +8,7 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
-repository = "https://github.com/tytolabs/umst-concrete-cartridge"
+repository.workspace = true
 autobenches = false
 description = "Command-line front-end for the UMST concrete cartridge."
 publish = false
@@ -30,8 +31,8 @@ path = "src/lib.rs"
 [dependencies]
 umst-concrete-cartridge = { path = "../umst-concrete-cartridge" }
 umst-manifold = { workspace = true }
-burn = { version = "=0.13.2", default-features = false }
-burn-ndarray = "=0.13.2"
+burn = { version = "0.13.0", default-features = false }
+burn-ndarray = "0.13.0"
 clap = { version = "4.5", features = ["derive"] }
 serde_json = "1.0"
 anyhow = "1.0"
@@ -75,10 +76,6 @@ path = "tests/audit.rs"
 [[test]]
 name = "cli_public_contract"
 path = "tests/public_contract.rs"
-
-[[test]]
-name = "cli_ops_host"
-path = "tests/ops_host.rs"
 
 [[test]]
 name = "calibration_migration_anchor"

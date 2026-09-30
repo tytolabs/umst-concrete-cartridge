@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! MCP Physical Reasoning Layer — **pure session threading** at the impure stdio boundary.
 
 use serde_json::{json, Value};
@@ -12,10 +13,10 @@ use umst_concrete_cartridge::calibration::Profile;
 use umst_concrete_cartridge::facade::{MixSpec, PredictionWireVersion};
 use umst_concrete_cartridge::research::{
     accept, append_gate_reject_jsonl, append_memory_jsonl, estimate_mi_bits_from_mix,
-    gate_check_mix_result, grounded_catalog_hash, mix_wire_from_spec_value, query_page,
-    synthetic_observed_at, AcceptError, AcceptResult, GateCheckResult, GateContext, MemoryQuery,
-    MemoryQueryPage, ProvenanceClock, ResearchStore, StoreError, WallClock, CANON_VERSION,
-    CONTRIBUTION_SCHEMA,
+    gate_check_mix_result, mix_wire_from_spec_value, query_page, synthetic_observed_at,
+    AcceptError, AcceptResult, GateCheckResult, GateContext, MemoryQuery, MemoryQueryPage,
+    ProvenanceClock, ResearchStore, StoreError, WallClock, CANON_VERSION, CONTRIBUTION_SCHEMA,
+    DEFAULT_CATALOG_HASH,
 };
 
 const JSON_SCHEMA_2020: &str = "https://json-schema.org/draft/2020-12/schema";
@@ -82,7 +83,6 @@ fn with_schema_2020(mut tool: Value, read_only: bool) -> Value {
 }
 
 /// Async contribute job state (in-memory stub for heavy physics path).
-/// Board **TODO-M3-006 OPEN** — post-S7 heavy job queue; see `old/residuals/residuals/misc-outputs-tmp/RESEARCH_TODO_NIGHT_2334.md`.
 /// formal_anchor: NONE
 /// formal_status: NONE
 /// formal_anchor_rationale: MCP job status wire; physics on `gate_check_mix` / `accept`.
@@ -325,7 +325,7 @@ impl AgentSession {
             "process": process.cloned().unwrap_or_else(|| json!({})),
             "outcome": outcome_obj,
             "gate_summary": gate.gate_summary,
-            "catalog_hash": grounded_catalog_hash(),
+            "catalog_hash": DEFAULT_CATALOG_HASH,
             "observed_at": observed,
         });
 
@@ -765,14 +765,5 @@ pub fn agent_tools_schema() -> Vec<Value> {
         feature = "tool-arena-session-unified"
     ))]
     tools.extend(crate::proposed_tools::proposed_tool_schemas());
-    #[cfg(feature = "tool-propose-communicative-act")]
-    tools.extend(crate::semantic_hcom::hcom_semantic_agent_tool_schemas());
-    #[cfg(all(
-        feature = "tool-semantic-hcom",
-        not(feature = "tool-propose-communicative-act")
-    ))]
-    tools.push(crate::semantic_hcom_schema::propose_communicative_act_tool_schema());
-    #[cfg(feature = "tool-web-propose-delta")]
-    tools.push(crate::web_propose_delta::web_propose_delta_tool_schema());
     tools
 }

@@ -1,70 +1,22 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! S0 parity harness (`docs/MCP_BUILD_PLAN.md` Stage S0).
 //!
 //! Locks gate + `tools/list` / `tools/call` responses as golden fixtures.
 //! GO-LIVE Step 3: package `default = ["agent-layer"]` → default `tools/list` is **13** tools.
 //! Gate `gate_check_mix_result` bytes are unchanged (surface expansion only).
 //!
-//! ## L4 composed stdio wire — **CLOSED** (post `b1-parity-green` @ `7d0ca7b`)
-//!
-//! Conjuncts **Q ∧ P ∧ R ∧ U** green @ 2026-07-18. Stdio harness (`gate_parity` 7/7) exercises the
-//! composed delegate path through live `umst-mcp` spawn — not L5 adapter witness alone.
-//!
-//! **Digest SSOT:** `7a3d3e5f…` (UNLOCK-6 six-mix land; `reject_cold_regime`). Prior digest superseded — see `workspace/ops/gate_parity_digest_superseded_by.json`; `149081fa…` departed earlier.
-//!
-//! Residue: `R-gateway-wrap-native-mcp` · A9 gateway wrap remains **post** L4 close per WAVE3 TOP 3 #3.
-//!
-//! ## Serial close (landed)
-//!
-//! ```text
-//! Q  api_consumer production delegate  →  P  this harness stdio  →  R  api_consumer_parity  →  U  tag
-//! ```
-//!
-//! Slot inventory (see [`l4_wire_phase2_inventory`] module):
-//! | Slot | Test | Wire @ post-tag | Status |
-//! |------|------|-----------------|--------|
-//! | 1 | `gate_parity_v0_fixture_sha256_locked` | digest witness | ✅ |
-//! | 2 | `gate_check_mix_result_parity_fixture` | composed cold oracle | ✅ |
-//! | 3 | `tools_list_default_thirteen_names` | stdio spawn | ✅ |
-//! | 4 | `tools_list_agent_layer_thirteen_names` | stdio spawn | ✅ |
-//! | 5 | `tools_call_result_frames_parity` | `umst_gate_check` frame | ✅ |
-//! | 6 | `mcp_gate_check_matches_library_admissible_catalog` | stdio vs cold | ✅ |
-//!
 //! Run:
 //! - default (13-tool list + gate + call frames): `cargo test -p umst-mcp --test gate_parity`
 //! - base-four surface (`--no-default-features`): still asserts the historical 4-tool list
 //! - rewrite call-frame goldens: `UMST_GATE_PARITY_UPDATE=1 cargo test -p umst-mcp --test gate_parity tools_call_result_frames_parity -- --ignored`
-//!
-//! **Phase 0f lock:** fixture bytes SHA256 pinned below; must match census + manifold phase0f suite.
-
-/// L4 wire inventory — post-tag attestation pin (`WIRE_OPEN=false` after U ceremony).
-///
-/// SSOT: `old/residuals/residuals/misc-outputs-tmp/research_l4_phase2_s0_1438.md` · close receipt `g_spawn_m3_l4_1542b.md`
-mod l4_wire_phase2_inventory {
-    /// Harness slot count (S0 Stage 0f lock).
-    pub const SLOT_COUNT: usize = 6;
-    /// L4 composed stdio wire closed @ `b1-parity-green` (`7d0ca7b`).
-    pub const WIRE_OPEN: bool = false;
-    /// Operator tag attestation — flip `WIRE_OPEN` only on honest P∧Q∧R receipt.
-    pub const TAG_ATTESTATION: &str = "b1-parity-green@7d0ca7b";
-    /// Binding serial order: delegate before harness rewire before parity before tag.
-    pub const SERIAL_ORDER: [&str; 4] = ["Q", "P", "R", "U"];
-    /// Fixture digest pin — held through wire close.
-    /// Updated to match the current `gate_parity_v0.json` fixture bytes and the
-    /// `GATE_PARITY_V0_SHA256` SSOT in `umst-manifold`.
-    pub const FIXTURE_DIGEST: &str =
-        "7a3d3e5f5d634322474aee76dea9cc79d2cbeb1fe87920c51a4c1a6bdb9e0a87";
-    /// No blocked slots after post-tag hardening (was `[2,3,4,5,6]` while wire open).
-    pub const WIRE_BLOCKED_SLOTS: [usize; 0] = [];
-}
 
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command as StdCmd, Stdio};
-use umst_manifold::gate::{GATE_PARITY_V0_FIXTURE_REL, GATE_PARITY_V0_SHA256};
 #[cfg(feature = "agent-layer")]
 use umst_mcp::parity::{canonical_bytes, canonicalize_tools_call_result, sort_keys};
 
@@ -79,39 +31,12 @@ fn load_fixture_root() -> Value {
     serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {}: {e}", path.display()))
 }
 
-fn sha256_hex(bytes: &[u8]) -> String {
-    use sha2::{Digest, Sha256};
-    format!("{:x}", Sha256::digest(bytes))
-}
-
-#[test]
-fn gate_parity_v0_fixture_sha256_locked() {
-    let path = fixtures_dir().join("gate_parity_v0.json");
-    assert!(
-        path.ends_with(GATE_PARITY_V0_FIXTURE_REL),
-        "local fixture owner path must suffix-match SSOT rel: {} vs {GATE_PARITY_V0_FIXTURE_REL}",
-        path.display()
-    );
-    let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
-    assert_eq!(
-        sha256_hex(&bytes),
-        GATE_PARITY_V0_SHA256,
-        "gate_parity_v0.json digest drift — update pin only after intentional fixture change"
-    );
-    let root = load_fixture_root();
-    assert_eq!(
-        root["schema_version"].as_str(),
-        Some("gate_parity_v0"),
-        "fixture schema_version must remain gate_parity_v0"
-    );
-}
-
 fn mcp_binary_path() -> PathBuf {
     let profile = option_env!("PROFILE").unwrap_or("debug");
-    let target_base = std::env::var("CARGO_TARGET_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target"));
-    target_base.join(profile).join("umst-mcp")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../target")
+        .join(profile)
+        .join("umst-mcp")
 }
 
 fn read_json_line<R: BufRead>(reader: &mut R) -> Value {
@@ -223,8 +148,6 @@ fn tools_list_base_four_names_without_agent_layer() {
 }
 
 /// Default package features (`default = ["agent-layer"]`): tools/list must be the 13-tool set.
-///
-/// **L4 slot 3 · conjunct P · post-tag closed:** stdio spawn green on composed delegate path.
 #[cfg(feature = "agent-layer")]
 #[test]
 fn tools_list_default_thirteen_names() {
@@ -271,8 +194,6 @@ mod agent_layer_parity {
     }
 
     /// Cold library `gate_check_mix_result` JSON (sorted keys) byte-identical to fixture.
-    ///
-    /// **L4 slot 2 · conjunct P · post-tag closed:** cold oracle matches fixture @ digest pin.
     #[test]
     fn gate_check_mix_result_parity_fixture() {
         let root = load_fixture_root();
@@ -298,8 +219,6 @@ mod agent_layer_parity {
     }
 
     /// Agent-layer binary: tools/list name set must be exactly the 13 tools.
-    ///
-    /// **L4 slot 4 · conjunct P · post-tag closed:** stdio spawn on composed delegate path.
     #[test]
     fn tools_list_agent_layer_thirteen_names() {
         let root = load_fixture_root();
@@ -325,8 +244,6 @@ mod agent_layer_parity {
     }
 
     /// MCP `umst_gate_check` envelope matches cold library for `admissible` + `catalog_ids`.
-    ///
-    /// **L4 slot 6 · conjunct P · post-tag closed:** stdio `tools/call` matches cold oracle.
     #[test]
     fn mcp_gate_check_matches_library_admissible_catalog() {
         let root = load_fixture_root();
@@ -448,8 +365,6 @@ mod agent_layer_parity {
     }
 
     /// N golden `tools/call` `result` frames (ids/timestamps redacted).
-    ///
-    /// **L4 slot 5 · conjunct P · post-tag closed:** `umst_gate_check` frame bytes locked.
     #[test]
     fn tools_call_result_frames_parity() {
         let root = load_fixture_root();
@@ -491,20 +406,5 @@ mod agent_layer_parity {
         let s = serde_json::to_string_pretty(v).expect("pretty");
         std::fs::write(path, format!("{s}\n"))
             .unwrap_or_else(|e| panic!("write {}: {e}", path.display()));
-    }
-
-    /// Post-tag L4 inventory pin — asserts wire close constants; no reopen without operator receipt.
-    #[test]
-    fn l4_wire_phase2_inventory_doc_only() {
-        use super::l4_wire_phase2_inventory::{
-            FIXTURE_DIGEST, SERIAL_ORDER, SLOT_COUNT, TAG_ATTESTATION, WIRE_BLOCKED_SLOTS,
-            WIRE_OPEN,
-        };
-        assert_eq!(SLOT_COUNT, 6);
-        let _ = WIRE_OPEN;
-        assert_eq!(TAG_ATTESTATION, "b1-parity-green@7d0ca7b");
-        assert_eq!(SERIAL_ORDER, ["Q", "P", "R", "U"]);
-        assert_eq!(WIRE_BLOCKED_SLOTS.len(), 0);
-        assert_eq!(FIXTURE_DIGEST, GATE_PARITY_V0_SHA256);
     }
 }

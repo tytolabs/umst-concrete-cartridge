@@ -1,4 +1,3 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
 // WS-COMPARE: Track A (coordinate descent + dual gate) vs Track B (experimental PPO stub).
 
@@ -36,7 +35,7 @@ fn main() {
         proposed_a.superplasticiser_pct,
         summary_a.rheology_yield_stress_pa,
         summary_a.printability_extrudability,
-        gate_a.is_admissible(),
+        gate_a.passes(),
         dt_a
     );
 
@@ -45,7 +44,7 @@ fn main() {
     println!("  Status: experimental; promotion off-flag requires human sign-off.");
     println!("  Track A is the publishable best-working path for S1 mortar retune.");
 
-    if !gate_a.is_admissible() {
+    if !gate_a.passes() {
         eprintln!("warning: Track A did not reach dual-gate pass on this run");
         std::process::exit(1);
     }

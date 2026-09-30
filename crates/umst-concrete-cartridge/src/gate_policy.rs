@@ -1,11 +1,12 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Cartridge-owned HTTP gate policy marker (`GateEvaluator` only — orthogonal to [`crate::core::ConcreteCartridge`] `IScienceCartridge`).
 
 use umst_manifold::gate::{GateEvaluator, HttpGateManifest as GateManifest};
 use umst_manifold::manifest::UmstManifest;
 
-use umst_cartridge_registry::{
+use crate::cartridge_registry::{
     CONCRETE_POWERS_MANIFEST_GATE_FAMILY, DOMAIN_POLICY_CATALOG_ID,
     MIX_PREDICTION_VS_PHYSICS_GATE_FAMILY,
 };

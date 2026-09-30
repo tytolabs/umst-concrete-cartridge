@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # V1 — tyto_mortar prediction bundle (Track V)
 
 **Profile:** [`profiles/tyto_mortar.v1.toml`](../profiles/tyto_mortar.v1.toml)  

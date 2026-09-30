@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 # SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Santhosh Shyamsundar,
 # Santosh Prabhu Shenbagamoorthy — Studio TYTO
 
 [package]
@@ -9,7 +9,7 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
-repository = "https://github.com/tytolabs/umst-concrete-cartridge"
+repository.workspace = true
 autobenches = false
 description = "Differentiable constitutive engine for cementitious materials, mounted on the UMST manifold."
 documentation = "https://docs.rs/umst-concrete-cartridge"
@@ -51,25 +51,15 @@ formal-witness = ["umst-manifold/formal-witness"]
 virtual-proxies = ["solver-research", "umst-manifold/rheology-bingham"]
 # Track A/B optimisation loop: manifest CD + virtual proxies + local manifold patch.
 proxy-loop = ["manifest-bridge", "virtual-proxies"]
-# S2 B1 composed delegate — routes production api_consumer + gate through gate_route_composed.
-# S5: consumer path deps are always linked; feature gates routing only.
-b1-delegate = []
 # Physical Reasoning Layer: gate-validated research memory + MCP contribute/query (default off).
-agent-layer = ["manifest-bridge", "b1-delegate", "umst-cartridge-concrete/agent-layer", "dep:rusqlite", "dep:uuid", "dep:thiserror", "dep:sha2", "dep:serde_json", "dep:serde_yaml"]
+agent-layer = ["manifest-bridge", "dep:rusqlite", "dep:uuid", "dep:thiserror", "dep:sha2", "dep:serde_json", "dep:serde_yaml"]
 # UCRS Tier-2 observation stamps on memory ingest (git-pinned `umst-ucrs`; local `[patch]` optional).
-ucrs-provenance = ["agent-layer", "dep:umst-ucrs", "dep:umst-trust"]
+ucrs-provenance = ["agent-layer", "dep:umst-ucrs"]
 
 [dependencies]
 burn = { version = "=0.13.2", default-features = false, features = ["autodiff", "ndarray", "train"] }
-burn-ndarray = "=0.13.2"
-umst-jennings-legacy = { path = "../umst-jennings-legacy" }
-umst-cartridge-api = { workspace = true }
-umst-cartridge-concrete = { workspace = true }
-umst-cartridge-continuum = { workspace = true }
-umst-cartridge-solid-inelastic = { workspace = true }
+burn-ndarray = "0.13.0"
 umst-manifold = { workspace = true }
-umst-cartridge-registry = { workspace = true }
-umst-chem = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 time = "0.3.47"
@@ -83,8 +73,7 @@ thiserror = { version = "2", optional = true }
 sha2 = { version = "0.10", optional = true }
 serde_json = { version = "1.0", optional = true }
 serde_yaml = { version = "0.9", optional = true }
-umst-ucrs = { workspace = true, optional = true, default-features = false }
-umst-trust = { workspace = true, optional = true }
+umst-ucrs = { workspace = true, optional = true }
 
 [dev-dependencies]
 approx = "0.5"
@@ -96,20 +85,6 @@ walkdir = "2.5"
 [lib]
 name = "umst_concrete_cartridge"
 path = "src/lib.rs"
-
-[[test]]
-name = "psi_mix_scalars_witness"
-path = "tests/psi_mix_scalars_witness.rs"
-
-[[test]]
-name = "concrete_bridge_witness"
-path = "tests/concrete_bridge_witness.rs"
-required-features = ["agent-layer"]
-
-[[test]]
-name = "api_consumer_parity"
-path = "tests/api_consumer_parity.rs"
-required-features = ["agent-layer"]
 
 [[test]]
 name = "tier2c_closure_parity"
@@ -125,11 +100,6 @@ required-features = ["tier2c-handshake", "manifold-gate", "solver-experimental"]
 name = "manifest_bridge_catalog_grounding"
 path = "tests/manifest_bridge_catalog_grounding.rs"
 required-features = ["manifest-bridge"]
-
-[[test]]
-name = "chem_adapter_parity"
-path = "tests/chem_adapter_parity.rs"
-required-features = ["manifold-gate", "tier2c-handshake"]
 
 [[test]]
 name = "formal_anchors"
@@ -152,16 +122,6 @@ name = "rheology_sweep"
 path = "tests/rheology_sweep.rs"
 
 [[test]]
-name = "cart_provenance_stamp"
-path = "tests/cart_provenance_stamp.rs"
-required-features = ["agent-layer", "ucrs-provenance"]
-
-[[test]]
-name = "ucrs_wire_v2_parity"
-path = "tests/ucrs_wire_v2_parity.rs"
-required-features = ["ucrs-provenance"]
-
-[[test]]
 name = "research_memory"
 path = "tests/research_memory.rs"
 required-features = ["agent-layer"]
@@ -169,11 +129,6 @@ required-features = ["agent-layer"]
 [[test]]
 name = "golden_gate_check"
 path = "tests/golden_gate_check.rs"
-required-features = ["agent-layer"]
-
-[[test]]
-name = "phase0c_contribution_split"
-path = "tests/phase0c_contribution_split.rs"
 required-features = ["agent-layer"]
 
 [[test]]
@@ -186,22 +141,8 @@ name = "calibration_tyto_mortar"
 path = "tests/calibration_tyto_mortar.rs"
 
 [[test]]
-name = "cast_phase_gate_integration"
-path = "tests/cast_phase_gate_integration.rs"
-
-[[test]]
 name = "topology_mix_spec"
 path = "tests/topology_mix_spec.rs"
-
-[[test]]
-name = "six_mix_cold_export"
-path = "tests/six_mix_cold_export.rs"
-required-features = ["agent-layer"]
-
-[[test]]
-name = "compressive_strength_homog_witness"
-path = "tests/compressive_strength_homog_witness.rs"
-required-features = ["b1-delegate"]
 
 [[example]]
 name = "dual_track_comparison"

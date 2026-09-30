@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Wire types for `contribution.v1` / `memory_record.v1` (agent-layer).
 
 use super::geometry::MixGeometryKey;
@@ -175,12 +176,4 @@ pub struct AcceptResult {
     pub content_id: String,
     pub observed_at: ObservedAt,
     pub stamp_tier: String,
-    /// Resolved catalog digest pinned on the memory row (SEC-CART-PROV).
-    pub catalog_hash: String,
-    /// Constitutive gate admit witness — always true on successful accept.
-    pub constitutive_admit: bool,
-    /// Optional `durable_accept.v0` when trust env + `ucrs-provenance` are configured.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg(feature = "ucrs-provenance")]
-    pub durable_accept: Option<serde_json::Value>,
 }

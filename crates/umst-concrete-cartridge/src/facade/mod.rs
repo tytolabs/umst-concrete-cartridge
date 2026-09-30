@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Santhosh Shyamsundar, Santosh Prabhu Shenbagamoorthy — Studio TYTO
+
 //! Transport-facing wire types and pure prediction helpers (**serde** only, no **`serde_json`**).
 //! Parsing JSON blobs into [`MixSpecWire`] stays in **`umst-cli`** / **`umst-py`**.
 //!
@@ -26,6 +27,11 @@ use crate::pipeline::{
     physical_result_from_report, run_full_physics_pipeline, PhysicsPipelineReport,
 };
 use umst_manifold::core::traits::PhysicalResult;
+
+#[cfg(feature = "manifest-bridge")]
+use manifest::UmstManifest;
+#[cfg(feature = "manifest-bridge")]
+use umst_manifold::gate::{ThermodynamicState, TransitionGateEvaluator};
 
 /// Sidecar manifests for topology / Track **`manifest.json`** (wire-only; [**no duplicated thermodynamics**](crate::physics::thermo)).
 ///
@@ -392,13 +398,22 @@ fn profile_axioms_for_wire(profile: &Profile) -> Vec<String> {
     axioms
 }
 
-/// Host Clausius–Duhem transition gate via canonical routing surface (Phase 0d).
+/// Host Clausius–Duhem transition gate via [`UmstManifest::default_transition_gate`] (manifold SSOT; no duplicated thermo math).
 #[cfg(feature = "manifest-bridge")]
 fn enforce_manifold_transition_gate(
     profile: &Profile,
     row: &homog::MixRow,
 ) -> Result<(), FacadeError> {
-    if crate::pipeline::canonical_gate::transition_admissible_for_row(profile, row) {
+    let (w_c_eff, alpha, temp_c) = homog::mix_hydration_state(profile, row)?;
+    let temp_k = f64::from(temp_c) + 273.15;
+    let w_c = f64::from(w_c_eff);
+    let s_intrinsic = profile.powers.s_intrinsic;
+    let old = ThermodynamicState::from_mix_calibrated(w_c, 0.0, temp_k, s_intrinsic);
+    let new = ThermodynamicState::from_mix_calibrated(w_c, f64::from(alpha), temp_k, s_intrinsic);
+    let dt_s = f64::from((row.age_days * 24.0 * 3600.0).max(1.0));
+    let mut gate = UmstManifest::default().default_transition_gate;
+    let verdict = gate.check_transition_host(&old, &new, dt_s);
+    if verdict.admissible {
         Ok(())
     } else {
         Err(FacadeError::Tensor(

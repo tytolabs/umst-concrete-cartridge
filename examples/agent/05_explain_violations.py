@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-# SPDX-License-Identifier: MIT
 """Walk gate REJECT payloads with explain:true (rational parse + thermodynamic fail).
 
 Categorical:

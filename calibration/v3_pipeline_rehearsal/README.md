@@ -1,5 +1,3 @@
-SPDX-FileCopyrightText: 2026 Santosh Prabhu Shenbagamoorthy and Santhosh Shyamsundar
-SPDX-License-Identifier: MIT
 # V3 pipeline rehearsal (Track V) — **not validation**
 
 **V3-gate: CLOSED** — pending Term 3 cast and real compressive strength tests.
