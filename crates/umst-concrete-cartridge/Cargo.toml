@@ -79,7 +79,7 @@ umst-ucrs = { workspace = true, optional = true }
 approx = "0.5"
 proc-macro2 = { version = "1.0.95", features = ["span-locations"] }
 serde_json = "1.0"
-syn = { version = "2.0", features = ["full", "visit"] }
+syn = { version = "3.0", features = ["full", "visit"] }
 walkdir = "2.5"
 
 [lib]
