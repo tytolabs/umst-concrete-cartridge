@@ -34,7 +34,7 @@ jobs:
           git diff --exit-code -- docs/TOOL_CONTRACTS.generated.md docs/TOOL_CONTRACTS.md
       - name: Upload generated contracts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tool-contracts-generated
           path: docs/TOOL_CONTRACTS.generated.md
