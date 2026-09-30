@@ -66,3 +66,16 @@ pub fn regression_metrics(predicted: &[f64], observed: &[f64]) -> RegressionMetr
         max_abs_error: max_err,
     }
 }
+
+/// RMSE of the constant mean predictor on `observed` (K6 beats-mean witness baseline).
+#[must_use]
+pub fn mean_predictor_rmse(observed: &[f64]) -> f64 {
+    assert!(!observed.is_empty(), "empty observed slice");
+    let mean_y = observed.iter().sum::<f64>() / observed.len() as f64;
+    let mse = observed
+        .iter()
+        .map(|yi| (yi - mean_y).powi(2))
+        .sum::<f64>()
+        / observed.len() as f64;
+    mse.sqrt()
+}
