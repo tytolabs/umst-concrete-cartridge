@@ -4376,7 +4376,9 @@ name = "umst-cartridge-registry"
 version = "0.0.0"
 dependencies = [
  "jsonschema 0.29.1",
+ "serde",
  "serde_json",
+ "toml",
 ]
 
 [[package]]
